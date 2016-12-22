@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.cpp
+ReadSocket.h
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.h
+iostream
+-
+algorithm
+-
+sys/types.h
+-
+sys/socket.h
+-
+unistd.h
+-
+
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.h
+string
+-
+sys/socket.h
+-
+netinet/in.h
+-
+netdb.h
+-
+arpa/inet.h
+-
+
