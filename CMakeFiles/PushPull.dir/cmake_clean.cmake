@@ -1,8 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/PushPull.dir/PushPullSrc/AbstractConsumer.cpp.o"
-  "CMakeFiles/PushPull.dir/PushPullSrc/BaseProducer.cpp.o"
-  "CMakeFiles/PushPull.dir/PushPullSrc/TestPushPull.cpp.o"
-  "CMakeFiles/PushPull.dir/PushPullSrc/ZeroMQPushPull.cpp.o"
+  "CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o"
   "bin/PushPull.pdb"
   "bin/PushPull"
 )

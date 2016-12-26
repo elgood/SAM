@@ -1,2 +1,2 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc lib/libNetflowLib.a  CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc lib/libNetflowLib.a  CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib lib/libNetflowLib.a

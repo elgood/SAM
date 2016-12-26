@@ -1,7 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o"
-  "CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o"
-  "CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o"
+  "CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o"
   "bin/ReadSocket.pdb"
   "bin/ReadSocket"
 )

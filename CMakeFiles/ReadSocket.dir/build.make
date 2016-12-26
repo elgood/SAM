@@ -57,94 +57,42 @@ include CMakeFiles/ReadSocket.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/ReadSocket.dir/flags.make
 
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o: CMakeFiles/ReadSocket.dir/flags.make
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o: ReadSocketSrc/ReadSocket.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.cpp
+CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o: CMakeFiles/ReadSocket.dir/flags.make
+CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o: ExecutableSrc/TestNCSpeed.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/ExecutableSrc/TestNCSpeed.cpp
 
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.cpp > CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.i
+CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/ExecutableSrc/TestNCSpeed.cpp > CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.i
 
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.cpp -o CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.s
+CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/ExecutableSrc/TestNCSpeed.cpp -o CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.s
 
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o.requires:
+CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o.requires:
 
-.PHONY : CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o.requires
+.PHONY : CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o.requires
 
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o.provides: CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o.requires
-	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o.provides.build
-.PHONY : CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o.provides
+CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o.provides: CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o.requires
+	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o.provides.build
+.PHONY : CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o.provides
 
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o.provides.build: CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o
-
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o: CMakeFiles/ReadSocket.dir/flags.make
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o: ReadSocketSrc/TestNCSpeed.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/TestNCSpeed.cpp
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/TestNCSpeed.cpp > CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.i
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/TestNCSpeed.cpp -o CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.s
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o.requires:
-
-.PHONY : CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o.requires
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o.provides: CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o.requires
-	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o.provides.build
-.PHONY : CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o.provides
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o.provides.build: CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o
-
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o: CMakeFiles/ReadSocket.dir/flags.make
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o: ReadSocketSrc/ZeroMqPushPull.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ZeroMqPushPull.cpp
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ZeroMqPushPull.cpp > CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.i
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ZeroMqPushPull.cpp -o CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.s
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o.requires:
-
-.PHONY : CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o.requires
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o.provides: CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o.requires
-	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o.provides.build
-.PHONY : CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o.provides
-
-CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o.provides.build: CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o
+CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o.provides.build: CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o
 
 
 # Object files for target ReadSocket
 ReadSocket_OBJECTS = \
-"CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o" \
-"CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o" \
-"CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o"
+"CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o"
 
 # External object files for target ReadSocket
 ReadSocket_EXTERNAL_OBJECTS =
 
-bin/ReadSocket: CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o
-bin/ReadSocket: CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o
-bin/ReadSocket: CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o
+bin/ReadSocket: CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o
 bin/ReadSocket: CMakeFiles/ReadSocket.dir/build.make
-bin/ReadSocket: /usr/local/lib/libboost_program_options.dylib
+bin/ReadSocket: lib/libSamLib.a
 bin/ReadSocket: CMakeFiles/ReadSocket.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable bin/ReadSocket"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/ReadSocket"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ReadSocket.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -152,9 +100,7 @@ CMakeFiles/ReadSocket.dir/build: bin/ReadSocket
 
 .PHONY : CMakeFiles/ReadSocket.dir/build
 
-CMakeFiles/ReadSocket.dir/requires: CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o.requires
-CMakeFiles/ReadSocket.dir/requires: CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o.requires
-CMakeFiles/ReadSocket.dir/requires: CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o.requires
+CMakeFiles/ReadSocket.dir/requires: CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o.requires
 
 .PHONY : CMakeFiles/ReadSocket.dir/requires
 

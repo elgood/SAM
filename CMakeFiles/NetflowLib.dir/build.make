@@ -57,41 +57,145 @@ include CMakeFiles/NetflowLib.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/NetflowLib.dir/flags.make
 
-CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o: CMakeFiles/NetflowLib.dir/flags.make
-CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o: NetflowSrc/Netflow.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/NetflowSrc/Netflow.cpp
+CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o: CMakeFiles/NetflowLib.dir/flags.make
+CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o: SamSrc/AbstractConsumer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.cpp
 
-CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/NetflowSrc/Netflow.cpp > CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.i
+CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.cpp > CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.i
 
-CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/NetflowSrc/Netflow.cpp -o CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.s
+CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.cpp -o CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.s
 
-CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o.requires:
+CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o.requires:
 
-.PHONY : CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o.requires
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o.requires
 
-CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o.provides: CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o.requires
-	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o.provides.build
-.PHONY : CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o.provides
+CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o.provides: CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o.requires
+	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o.provides.build
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o.provides
 
-CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o.provides.build: CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o
+CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o.provides.build: CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o
+
+
+CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o: CMakeFiles/NetflowLib.dir/flags.make
+CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o: SamSrc/BaseProducer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseProducer.cpp
+
+CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseProducer.cpp > CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.i
+
+CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseProducer.cpp -o CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.s
+
+CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o.requires:
+
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o.requires
+
+CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o.provides: CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o.requires
+	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o.provides.build
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o.provides
+
+CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o.provides.build: CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o
+
+
+CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o: CMakeFiles/NetflowLib.dir/flags.make
+CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o: SamSrc/Netflow.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/Netflow.cpp
+
+CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/Netflow.cpp > CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.i
+
+CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/Netflow.cpp -o CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.s
+
+CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o.requires:
+
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o.requires
+
+CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o.provides: CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o.requires
+	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o.provides.build
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o.provides
+
+CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o.provides.build: CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o
+
+
+CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o: CMakeFiles/NetflowLib.dir/flags.make
+CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o: SamSrc/ReadSocket.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ReadSocket.cpp
+
+CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ReadSocket.cpp > CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.i
+
+CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ReadSocket.cpp -o CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.s
+
+CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o.requires:
+
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o.requires
+
+CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o.provides: CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o.requires
+	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o.provides.build
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o.provides
+
+CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o.provides.build: CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o
+
+
+CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o: CMakeFiles/NetflowLib.dir/flags.make
+CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o: SamSrc/ZeroMQPushPull.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ZeroMQPushPull.cpp
+
+CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ZeroMQPushPull.cpp > CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.i
+
+CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ZeroMQPushPull.cpp -o CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.s
+
+CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o.requires:
+
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o.requires
+
+CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o.provides: CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o.requires
+	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o.provides.build
+.PHONY : CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o.provides
+
+CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o.provides.build: CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o
 
 
 # Object files for target NetflowLib
 NetflowLib_OBJECTS = \
-"CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o"
+"CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o" \
+"CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o" \
+"CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o" \
+"CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o" \
+"CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o"
 
 # External object files for target NetflowLib
 NetflowLib_EXTERNAL_OBJECTS =
 
-lib/libNetflowLib.a: CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o
+lib/libNetflowLib.a: CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o
+lib/libNetflowLib.a: CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o
+lib/libNetflowLib.a: CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o
+lib/libNetflowLib.a: CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o
+lib/libNetflowLib.a: CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o
 lib/libNetflowLib.a: CMakeFiles/NetflowLib.dir/build.make
 lib/libNetflowLib.a: CMakeFiles/NetflowLib.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library lib/libNetflowLib.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX static library lib/libNetflowLib.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/NetflowLib.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/NetflowLib.dir/link.txt --verbose=$(VERBOSE)
 
@@ -100,7 +204,11 @@ CMakeFiles/NetflowLib.dir/build: lib/libNetflowLib.a
 
 .PHONY : CMakeFiles/NetflowLib.dir/build
 
-CMakeFiles/NetflowLib.dir/requires: CMakeFiles/NetflowLib.dir/NetflowSrc/Netflow.cpp.o.requires
+CMakeFiles/NetflowLib.dir/requires: CMakeFiles/NetflowLib.dir/SamSrc/AbstractConsumer.cpp.o.requires
+CMakeFiles/NetflowLib.dir/requires: CMakeFiles/NetflowLib.dir/SamSrc/BaseProducer.cpp.o.requires
+CMakeFiles/NetflowLib.dir/requires: CMakeFiles/NetflowLib.dir/SamSrc/Netflow.cpp.o.requires
+CMakeFiles/NetflowLib.dir/requires: CMakeFiles/NetflowLib.dir/SamSrc/ReadSocket.cpp.o.requires
+CMakeFiles/NetflowLib.dir/requires: CMakeFiles/NetflowLib.dir/SamSrc/ZeroMQPushPull.cpp.o.requires
 
 .PHONY : CMakeFiles/NetflowLib.dir/requires
 

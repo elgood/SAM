@@ -31,4 +31,6 @@ netdb.h
 -
 arpa/inet.h
 -
+BaseProducer.h
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/BaseProducer.h
 

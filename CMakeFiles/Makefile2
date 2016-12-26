@@ -60,39 +60,150 @@ CMAKE_SOURCE_DIR = /Users/elgood/Code/eclipse/Streaming-c++/SAM
 CMAKE_BINARY_DIR = /Users/elgood/Code/eclipse/Streaming-c++/SAM
 
 #=============================================================================
-# Target rules for target CMakeFiles/NetflowLib.dir
+# Target rules for target CMakeFiles/TestActiveWindow.dir
 
 # All Build rule for target.
-CMakeFiles/NetflowLib.dir/all:
-	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/depend
-	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=1,2 "Built target NetflowLib"
-.PHONY : CMakeFiles/NetflowLib.dir/all
+CMakeFiles/TestActiveWindow.dir/all:
+	$(MAKE) -f CMakeFiles/TestActiveWindow.dir/build.make CMakeFiles/TestActiveWindow.dir/depend
+	$(MAKE) -f CMakeFiles/TestActiveWindow.dir/build.make CMakeFiles/TestActiveWindow.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=11,12 "Built target TestActiveWindow"
+.PHONY : CMakeFiles/TestActiveWindow.dir/all
 
 # Include target in all.
-all: CMakeFiles/NetflowLib.dir/all
+all: CMakeFiles/TestActiveWindow.dir/all
 
 .PHONY : all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/NetflowLib.dir/rule: cmake_check_build_system
+CMakeFiles/TestActiveWindow.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/NetflowLib.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/TestActiveWindow.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
-.PHONY : CMakeFiles/NetflowLib.dir/rule
+.PHONY : CMakeFiles/TestActiveWindow.dir/rule
 
 # Convenience name for target.
-NetflowLib: CMakeFiles/NetflowLib.dir/rule
+TestActiveWindow: CMakeFiles/TestActiveWindow.dir/rule
 
-.PHONY : NetflowLib
-
-# clean rule for target.
-CMakeFiles/NetflowLib.dir/clean:
-	$(MAKE) -f CMakeFiles/NetflowLib.dir/build.make CMakeFiles/NetflowLib.dir/clean
-.PHONY : CMakeFiles/NetflowLib.dir/clean
+.PHONY : TestActiveWindow
 
 # clean rule for target.
-clean: CMakeFiles/NetflowLib.dir/clean
+CMakeFiles/TestActiveWindow.dir/clean:
+	$(MAKE) -f CMakeFiles/TestActiveWindow.dir/build.make CMakeFiles/TestActiveWindow.dir/clean
+.PHONY : CMakeFiles/TestActiveWindow.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/TestActiveWindow.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/TestSlidingWindow.dir
+
+# All Build rule for target.
+CMakeFiles/TestSlidingWindow.dir/all:
+	$(MAKE) -f CMakeFiles/TestSlidingWindow.dir/build.make CMakeFiles/TestSlidingWindow.dir/depend
+	$(MAKE) -f CMakeFiles/TestSlidingWindow.dir/build.make CMakeFiles/TestSlidingWindow.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=15,16 "Built target TestSlidingWindow"
+.PHONY : CMakeFiles/TestSlidingWindow.dir/all
+
+# Include target in all.
+all: CMakeFiles/TestSlidingWindow.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/TestSlidingWindow.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 2
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/TestSlidingWindow.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
+.PHONY : CMakeFiles/TestSlidingWindow.dir/rule
+
+# Convenience name for target.
+TestSlidingWindow: CMakeFiles/TestSlidingWindow.dir/rule
+
+.PHONY : TestSlidingWindow
+
+# clean rule for target.
+CMakeFiles/TestSlidingWindow.dir/clean:
+	$(MAKE) -f CMakeFiles/TestSlidingWindow.dir/build.make CMakeFiles/TestSlidingWindow.dir/clean
+.PHONY : CMakeFiles/TestSlidingWindow.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/TestSlidingWindow.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/SamLib.dir
+
+# All Build rule for target.
+CMakeFiles/SamLib.dir/all:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/depend
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=5,6,7,8,9,10 "Built target SamLib"
+.PHONY : CMakeFiles/SamLib.dir/all
+
+# Include target in all.
+all: CMakeFiles/SamLib.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/SamLib.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 6
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/SamLib.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
+.PHONY : CMakeFiles/SamLib.dir/rule
+
+# Convenience name for target.
+SamLib: CMakeFiles/SamLib.dir/rule
+
+.PHONY : SamLib
+
+# clean rule for target.
+CMakeFiles/SamLib.dir/clean:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/clean
+.PHONY : CMakeFiles/SamLib.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/SamLib.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/TestDormantWindow.dir
+
+# All Build rule for target.
+CMakeFiles/TestDormantWindow.dir/all:
+	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/depend
+	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=13,14 "Built target TestDormantWindow"
+.PHONY : CMakeFiles/TestDormantWindow.dir/all
+
+# Include target in all.
+all: CMakeFiles/TestDormantWindow.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/TestDormantWindow.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 2
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/TestDormantWindow.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
+.PHONY : CMakeFiles/TestDormantWindow.dir/rule
+
+# Convenience name for target.
+TestDormantWindow: CMakeFiles/TestDormantWindow.dir/rule
+
+.PHONY : TestDormantWindow
+
+# clean rule for target.
+CMakeFiles/TestDormantWindow.dir/clean:
+	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/clean
+.PHONY : CMakeFiles/TestDormantWindow.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/TestDormantWindow.dir/clean
 
 .PHONY : clean
 
@@ -100,10 +211,10 @@ clean: CMakeFiles/NetflowLib.dir/clean
 # Target rules for target CMakeFiles/PushPull.dir
 
 # All Build rule for target.
-CMakeFiles/PushPull.dir/all: CMakeFiles/ReadSocketLib.dir/all
+CMakeFiles/PushPull.dir/all: CMakeFiles/SamLib.dir/all
 	$(MAKE) -f CMakeFiles/PushPull.dir/build.make CMakeFiles/PushPull.dir/depend
 	$(MAKE) -f CMakeFiles/PushPull.dir/build.make CMakeFiles/PushPull.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=3,4,5,6,7 "Built target PushPull"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=1,2 "Built target PushPull"
 .PHONY : CMakeFiles/PushPull.dir/all
 
 # Include target in all.
@@ -113,7 +224,7 @@ all: CMakeFiles/PushPull.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/PushPull.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 7
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 8
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/PushPull.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
 .PHONY : CMakeFiles/PushPull.dir/rule
@@ -134,50 +245,13 @@ clean: CMakeFiles/PushPull.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/ReadSocketLib.dir
-
-# All Build rule for target.
-CMakeFiles/ReadSocketLib.dir/all:
-	$(MAKE) -f CMakeFiles/ReadSocketLib.dir/build.make CMakeFiles/ReadSocketLib.dir/depend
-	$(MAKE) -f CMakeFiles/ReadSocketLib.dir/build.make CMakeFiles/ReadSocketLib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=12,13 "Built target ReadSocketLib"
-.PHONY : CMakeFiles/ReadSocketLib.dir/all
-
-# Include target in all.
-all: CMakeFiles/ReadSocketLib.dir/all
-
-.PHONY : all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/ReadSocketLib.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/ReadSocketLib.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
-.PHONY : CMakeFiles/ReadSocketLib.dir/rule
-
-# Convenience name for target.
-ReadSocketLib: CMakeFiles/ReadSocketLib.dir/rule
-
-.PHONY : ReadSocketLib
-
-# clean rule for target.
-CMakeFiles/ReadSocketLib.dir/clean:
-	$(MAKE) -f CMakeFiles/ReadSocketLib.dir/build.make CMakeFiles/ReadSocketLib.dir/clean
-.PHONY : CMakeFiles/ReadSocketLib.dir/clean
-
-# clean rule for target.
-clean: CMakeFiles/ReadSocketLib.dir/clean
-
-.PHONY : clean
-
-#=============================================================================
 # Target rules for target CMakeFiles/ReadSocket.dir
 
 # All Build rule for target.
-CMakeFiles/ReadSocket.dir/all:
+CMakeFiles/ReadSocket.dir/all: CMakeFiles/SamLib.dir/all
 	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/depend
 	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=8,9,10,11 "Built target ReadSocket"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=3,4 "Built target ReadSocket"
 .PHONY : CMakeFiles/ReadSocket.dir/all
 
 # Include target in all.
@@ -187,7 +261,7 @@ all: CMakeFiles/ReadSocket.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/ReadSocket.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 8
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/ReadSocket.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
 .PHONY : CMakeFiles/ReadSocket.dir/rule

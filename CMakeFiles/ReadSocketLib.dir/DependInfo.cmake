@@ -12,6 +12,7 @@ set(CMAKE_CXX_COMPILER_ID "Clang")
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/Users/elgood/libraries/boost_1_62_0"
   "ReadSocketSrc"
+  "NetflowSrc"
   )
 
 # Targets to which this target links.

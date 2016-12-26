@@ -4,20 +4,26 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/ReadSocket.dir/ReadSocketSrc/ReadSocket.cpp.o"
-  "/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/TestNCSpeed.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/ReadSocket.dir/ReadSocketSrc/TestNCSpeed.cpp.o"
-  "/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ZeroMqPushPull.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/ReadSocket.dir/ReadSocketSrc/ZeroMqPushPull.cpp.o"
+  "/Users/elgood/Code/eclipse/Streaming-c++/SAM/ExecutableSrc/TestNCSpeed.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "Clang")
 
+# Preprocessor definitions for this target.
+set(CMAKE_TARGET_DEFINITIONS_CXX
+  "BOOST_TEST_DYN_LINK"
+  )
+
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
+  "/usr/include/dummy/.."
+  "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/dummy/.."
   "/Users/elgood/libraries/boost_1_62_0"
-  "ReadSocketSrc"
+  "SamSrc"
   )
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
+  "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/SamLib.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

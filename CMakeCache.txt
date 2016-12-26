@@ -14,12 +14,60 @@
 # EXTERNAL cache entries
 ########################
 
+//Boost atomic library (debug)
+Boost_ATOMIC_LIBRARY_DEBUG:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_atomic.dylib
+
+//Boost atomic library (release)
+Boost_ATOMIC_LIBRARY_RELEASE:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_atomic.dylib
+
+//Boost chrono library (debug)
+Boost_CHRONO_LIBRARY_DEBUG:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_chrono.dylib
+
+//Boost chrono library (release)
+Boost_CHRONO_LIBRARY_RELEASE:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_chrono.dylib
+
+//Boost date_time library (debug)
+Boost_DATE_TIME_LIBRARY_DEBUG:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_date_time.dylib
+
+//Boost date_time library (release)
+Boost_DATE_TIME_LIBRARY_RELEASE:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_date_time.dylib
+
+//The directory containing a CMake configuration file for Boost.
+Boost_DIR:PATH=Boost_DIR-NOTFOUND
+
+//Path to a file.
+Boost_INCLUDE_DIR:PATH=/Users/elgood/libraries/boost_1_62_0
+
+//Boost library directory DEBUG
+Boost_LIBRARY_DIR_DEBUG:PATH=/Users/elgood/libraries/boost_1_62_0/stage/lib
+
+//Boost library directory RELEASE
+Boost_LIBRARY_DIR_RELEASE:PATH=/Users/elgood/libraries/boost_1_62_0/stage/lib
+
+//Boost program_options library (debug)
+Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_program_options.dylib
+
+//Boost program_options library (release)
+Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_program_options.dylib
+
+//Boost system library (debug)
+Boost_SYSTEM_LIBRARY_DEBUG:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_system.dylib
+
+//Boost system library (release)
+Boost_SYSTEM_LIBRARY_RELEASE:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_system.dylib
+
+//Boost thread library (debug)
+Boost_THREAD_LIBRARY_DEBUG:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_thread.dylib
+
+//Boost thread library (release)
+Boost_THREAD_LIBRARY_RELEASE:FILEPATH=/Users/elgood/libraries/boost_1_62_0/stage/lib/libboost_thread.dylib
+
 //Path to a program.
 CMAKE_AR:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar
 
 //Choose the type of build, options are: None(CMAKE_CXX_FLAGS or
 // CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.
-CMAKE_BUILD_TYPE:STRING=
+CMAKE_BUILD_TYPE:STRING=Debug
 
 //Enable/Disable color output during build.
 CMAKE_COLOR_MAKEFILE:BOOL=ON
@@ -61,6 +109,9 @@ CMAKE_C_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 
 //Flags used by the compiler during release builds with debug info.
 CMAKE_C_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
+
+//No help, variable specified on the command line.
+CMAKE_ECLIPSE_VERSION:UNINITIALIZED=4.6.1
 
 //Flags used by the linker.
 CMAKE_EXE_LINKER_FLAGS:STRING=
@@ -128,7 +179,7 @@ CMAKE_OSX_DEPLOYMENT_TARGET:STRING=
 CMAKE_OSX_SYSROOT:STRING=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=NetflowLib
+CMAKE_PROJECT_NAME:STATIC=Project
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib
@@ -189,10 +240,28 @@ NetflowLib_LIB_DEPENDS:STATIC=general;boost_program_options;
 NetflowLib_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 
 //Value Computed by CMake
+Project_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
+//Value Computed by CMake
+Project_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
+//Value Computed by CMake
+PushPull1_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
+//Value Computed by CMake
+PushPull1_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
+//Value Computed by CMake
 PushPull_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 
 //Value Computed by CMake
 PushPull_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
+//Value Computed by CMake
+ReadSocket1_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
+//Value Computed by CMake
+ReadSocket1_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 
 //Value Computed by CMake
 ReadSocketLib_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
@@ -215,6 +284,21 @@ SAM_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 //Value Computed by CMake
 SAM_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 
+//Path to a file.
+STDIO_INCLUDE_PATH:PATH=/usr/include
+
+//Path to a file.
+STRING_INCLUDE_PATH:PATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
+
+//Value Computed by CMake
+SamLib_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
+//Dependencies for the target
+SamLib_LIB_DEPENDS:STATIC=general;boost_program_options;general;boost_thread;general;boost_system;
+
+//Value Computed by CMake
+SamLib_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
 //Value Computed by CMake
 Sam_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 
@@ -226,6 +310,38 @@ Sam_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 # INTERNAL cache entries
 ########################
 
+//ADVANCED property for variable: Boost_ATOMIC_LIBRARY_DEBUG
+Boost_ATOMIC_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_ATOMIC_LIBRARY_RELEASE
+Boost_ATOMIC_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_CHRONO_LIBRARY_DEBUG
+Boost_CHRONO_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_CHRONO_LIBRARY_RELEASE
+Boost_CHRONO_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_DATE_TIME_LIBRARY_DEBUG
+Boost_DATE_TIME_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_DATE_TIME_LIBRARY_RELEASE
+Boost_DATE_TIME_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_DIR
+Boost_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_INCLUDE_DIR
+Boost_INCLUDE_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_LIBRARY_DIR_DEBUG
+Boost_LIBRARY_DIR_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_LIBRARY_DIR_RELEASE
+Boost_LIBRARY_DIR_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG
+Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE
+Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_SYSTEM_LIBRARY_DEBUG
+Boost_SYSTEM_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_SYSTEM_LIBRARY_RELEASE
+Boost_SYSTEM_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_THREAD_LIBRARY_DEBUG
+Boost_THREAD_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Boost_THREAD_LIBRARY_RELEASE
+Boost_THREAD_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_AR
 CMAKE_AR-ADVANCED:INTERNAL=1
 //This is the directory where this CMakeCache.txt was created
@@ -292,6 +408,10 @@ CMAKE_GENERATOR:INTERNAL=Unix Makefiles
 CMAKE_GENERATOR_PLATFORM:INTERNAL=
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
+//Have symbol pthread_create
+CMAKE_HAVE_LIBC_CREATE:INTERNAL=1
+//Have include pthread.h
+CMAKE_HAVE_PTHREAD_H:INTERNAL=1
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=/Users/elgood/Code/eclipse/Streaming-c++/SAM
@@ -353,4 +473,20 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding Threads
+FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
+//Last used BOOST_ROOT value.
+_BOOST_ROOT_LAST:INTERNAL=/Users/elgood/libraries/boost_1_62_0
+//Components requested for this build tree.
+_Boost_COMPONENTS_SEARCHED:INTERNAL=atomic;chrono;date_time;program_options;system;thread
+//Last used Boost_INCLUDE_DIR value.
+_Boost_INCLUDE_DIR_LAST:INTERNAL=/Users/elgood/libraries/boost_1_62_0
+//Last used Boost_LIBRARY_DIR_DEBUG value.
+_Boost_LIBRARY_DIR_DEBUG_LAST:INTERNAL=/Users/elgood/libraries/boost_1_62_0/stage/lib
+//Last used Boost_LIBRARY_DIR_RELEASE value.
+_Boost_LIBRARY_DIR_RELEASE_LAST:INTERNAL=/Users/elgood/libraries/boost_1_62_0/stage/lib
+//Last used Boost_NAMESPACE value.
+_Boost_NAMESPACE_LAST:INTERNAL=boost
+//Last used Boost_USE_MULTITHREADED value.
+_Boost_USE_MULTITHREADED_LAST:INTERNAL=TRUE
 

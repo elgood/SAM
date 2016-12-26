@@ -6,5 +6,5 @@ CXX_FLAGS =  -std=c++11
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/Users/elgood/libraries/boost_1_62_0 -I/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc 
+CXX_INCLUDES = -I/Users/elgood/libraries/boost_1_62_0 -I/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc -I/Users/elgood/Code/eclipse/Streaming-c++/SAM/NetflowSrc 
 

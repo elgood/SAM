@@ -6,33 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.cpp
-ReadSocket.h
-/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.h
-iostream
--
-algorithm
--
-sys/types.h
--
-sys/socket.h
--
-unistd.h
--
-
-/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.h
-string
--
-sys/socket.h
--
-netinet/in.h
--
-netdb.h
--
-arpa/inet.h
--
-
-/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/TestNCSpeed.cpp
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/ExecutableSrc/TestNCSpeed.cpp
 iostream
 -
 string
@@ -42,17 +16,7 @@ boost/program_options.hpp
 time.h
 -
 ReadSocket.h
-/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ReadSocket.h
-
-/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ZeroMqPushPull.cpp
-ZeroMqPushPull.h
-/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ZeroMqPushPull.h
-
-/Users/elgood/Code/eclipse/Streaming-c++/SAM/ReadSocketSrc/ZeroMqPushPull.h
-list
--
-thread
--
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/ExecutableSrc/ReadSocket.h
 
 /Users/elgood/libraries/boost_1_62_0/boost/any.hpp
 algorithm
@@ -8685,4 +8649,32 @@ boost/type_traits/function_traits.hpp
 -
 
 /Users/elgood/libraries/boost_1_62_0/boost/version.hpp
+
+SamSrc/AbstractConsumer.h
+string
+-
+
+SamSrc/BaseProducer.h
+vector
+-
+string
+-
+BaseProducer.h
+SamSrc/BaseProducer.h
+AbstractConsumer.h
+SamSrc/AbstractConsumer.h
+
+SamSrc/ReadSocket.h
+string
+-
+sys/socket.h
+-
+netinet/in.h
+-
+netdb.h
+-
+arpa/inet.h
+-
+BaseProducer.h
+SamSrc/BaseProducer.h
 
