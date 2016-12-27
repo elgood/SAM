@@ -69,6 +69,8 @@ public:
   string getSourceIP() const;
   string getDestIP() const; 
 
+  string getField(size_t field) const;
+
 };
 
 }

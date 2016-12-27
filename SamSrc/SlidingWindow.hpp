@@ -12,6 +12,8 @@
 #include "ActiveWindow.hpp"
 #include "DormantWindow.hpp"
 
+namespace sam {
+
 template <typename K>
 class SlidingWindow
 {
@@ -149,5 +151,6 @@ private:
 
 };
 
+}
 
 #endif

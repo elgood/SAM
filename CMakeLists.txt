@@ -39,9 +39,9 @@ target_link_libraries(ReadSocket SamLib)
 
 ############# The SAM Library ################
 
-file (GLOB NETFLOW_SOURCES "SamSrc/*.cpp")
+file (GLOB SAM_SOURCES "SamSrc/*.cpp")
 
-add_library(SamLib ${NETFLOW_SOURCES})
+add_library(SamLib ${SAM_SOURCES})
 set_target_properties(SamLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY "lib")
 
 target_link_libraries(SamLib boost_program_options)
@@ -58,6 +58,17 @@ set_target_properties(PushPull PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 target_link_libraries(PushPull ${BOOST_PROGRAM_OPTIONS_LIBRARY})
 target_link_libraries(PushPull ZMQ)
 target_link_libraries(PushPull SamLib)
+
+############### TopK #####################
+
+file (GLOB TOPK_SOURCES "ExecutableSrc/TestTopK.cpp")
+
+add_executable(TopK ${TOPK_SOURCES})
+set_target_properties(TopK PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+
+target_link_libraries(TopK ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(TopK ZMQ)
+target_link_libraries(TopK SamLib)
 
 ############ Test Active Window #######################
 

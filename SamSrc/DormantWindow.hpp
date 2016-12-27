@@ -8,6 +8,8 @@
 
 using std::string;
 
+namespace sam {
+
 template <typename K>
 class DormantWindow
 {
@@ -47,5 +49,7 @@ public:
   }
 
 };
+
+}
 
 #endif

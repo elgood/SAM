@@ -2,6 +2,8 @@
 #include <boost/test/unit_test.hpp>
 #include "ActiveWindow.hpp"
 
+using namespace sam;
+
 struct SetUp {
   ActiveWindow<size_t> aw;
  

@@ -43,5 +43,31 @@ Netflow::Netflow(string s)
 string Netflow::getSourceIP() const { return sourceIP; }
 string Netflow::getDestIP() const { return destIP; }
 
+string Netflow::getField(size_t field) const
+{
+    switch (field) {
+    case 0: return timeSeconds;
+    case 1: return parsedDate;
+    case 2: return dateTimeStr;
+    case 3: return ipLayerProtocol;
+    case 4: return ipLayerProtocolCode;
+    case 5: return sourceIP;
+    case 6: return destIP;
+    case 7: return boost::lexical_cast<string>(sourcePort);
+    case 8: return boost::lexical_cast<string>(destPort);
+    case 9: return moreFragments;
+    case 10: return contFragments;
+    case 11: return durationSeconds;
+    case 12: return firstSeenSrcPayloadBytes;
+    case 13: return firstSeenDestPayloadBytes;
+    case 14: return firstSeenSrcTotalBytes;
+    case 15: return firstSeenDestTotalBytes;
+    case 16: return firstSeenSrcPacketCount;
+    case 17: return firstSeenDestPacketCount;
+    case 18: return recordForceOut;
+    }
+    throw std::out_of_range("Unknown field id" + 
+                            boost::lexical_cast<string>(field));
+}
 
 }

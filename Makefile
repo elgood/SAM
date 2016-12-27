@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named TestDormantWindow
+
+# Build rule for target.
+TestDormantWindow: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 TestDormantWindow
+.PHONY : TestDormantWindow
+
+# fast build rule for target.
+TestDormantWindow/fast:
+	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/build
+.PHONY : TestDormantWindow/fast
+
+#=============================================================================
 # Target rules for targets named TestActiveWindow
 
 # Build rule for target.
@@ -122,6 +135,19 @@ TestActiveWindow: cmake_check_build_system
 TestActiveWindow/fast:
 	$(MAKE) -f CMakeFiles/TestActiveWindow.dir/build.make CMakeFiles/TestActiveWindow.dir/build
 .PHONY : TestActiveWindow/fast
+
+#=============================================================================
+# Target rules for targets named TopK
+
+# Build rule for target.
+TopK: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 TopK
+.PHONY : TopK
+
+# fast build rule for target.
+TopK/fast:
+	$(MAKE) -f CMakeFiles/TopK.dir/build.make CMakeFiles/TopK.dir/build
+.PHONY : TopK/fast
 
 #=============================================================================
 # Target rules for targets named TestSlidingWindow
@@ -148,19 +174,6 @@ SamLib: cmake_check_build_system
 SamLib/fast:
 	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/build
 .PHONY : SamLib/fast
-
-#=============================================================================
-# Target rules for targets named TestDormantWindow
-
-# Build rule for target.
-TestDormantWindow: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 TestDormantWindow
-.PHONY : TestDormantWindow
-
-# fast build rule for target.
-TestDormantWindow/fast:
-	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/build
-.PHONY : TestDormantWindow/fast
 
 #=============================================================================
 # Target rules for targets named PushPull
@@ -241,6 +254,33 @@ ExecutableSrc/TestPushPull.s: ExecutableSrc/TestPushPull.cpp.s
 ExecutableSrc/TestPushPull.cpp.s:
 	$(MAKE) -f CMakeFiles/PushPull.dir/build.make CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.s
 .PHONY : ExecutableSrc/TestPushPull.cpp.s
+
+ExecutableSrc/TestTopK.o: ExecutableSrc/TestTopK.cpp.o
+
+.PHONY : ExecutableSrc/TestTopK.o
+
+# target to build an object file
+ExecutableSrc/TestTopK.cpp.o:
+	$(MAKE) -f CMakeFiles/TopK.dir/build.make CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o
+.PHONY : ExecutableSrc/TestTopK.cpp.o
+
+ExecutableSrc/TestTopK.i: ExecutableSrc/TestTopK.cpp.i
+
+.PHONY : ExecutableSrc/TestTopK.i
+
+# target to preprocess a source file
+ExecutableSrc/TestTopK.cpp.i:
+	$(MAKE) -f CMakeFiles/TopK.dir/build.make CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.i
+.PHONY : ExecutableSrc/TestTopK.cpp.i
+
+ExecutableSrc/TestTopK.s: ExecutableSrc/TestTopK.cpp.s
+
+.PHONY : ExecutableSrc/TestTopK.s
+
+# target to generate assembly for a file
+ExecutableSrc/TestTopK.cpp.s:
+	$(MAKE) -f CMakeFiles/TopK.dir/build.make CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.s
+.PHONY : ExecutableSrc/TestTopK.cpp.s
 
 SamSrc/AbstractConsumer.o: SamSrc/AbstractConsumer.cpp.o
 
@@ -349,6 +389,33 @@ SamSrc/ReadSocket.s: SamSrc/ReadSocket.cpp.s
 SamSrc/ReadSocket.cpp.s:
 	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.s
 .PHONY : SamSrc/ReadSocket.cpp.s
+
+SamSrc/TopK.o: SamSrc/TopK.cpp.o
+
+.PHONY : SamSrc/TopK.o
+
+# target to build an object file
+SamSrc/TopK.cpp.o:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o
+.PHONY : SamSrc/TopK.cpp.o
+
+SamSrc/TopK.i: SamSrc/TopK.cpp.i
+
+.PHONY : SamSrc/TopK.i
+
+# target to preprocess a source file
+SamSrc/TopK.cpp.i:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.i
+.PHONY : SamSrc/TopK.cpp.i
+
+SamSrc/TopK.s: SamSrc/TopK.cpp.s
+
+.PHONY : SamSrc/TopK.s
+
+# target to generate assembly for a file
+SamSrc/TopK.cpp.s:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.s
+.PHONY : SamSrc/TopK.cpp.s
 
 SamSrc/ZeroMQPushPull.o: SamSrc/ZeroMQPushPull.cpp.o
 
@@ -465,11 +532,12 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... TestDormantWindow"
 	@echo "... TestActiveWindow"
+	@echo "... TopK"
 	@echo "... rebuild_cache"
 	@echo "... TestSlidingWindow"
 	@echo "... SamLib"
-	@echo "... TestDormantWindow"
 	@echo "... PushPull"
 	@echo "... ReadSocket"
 	@echo "... ExecutableSrc/TestNCSpeed.o"
@@ -478,6 +546,9 @@ help:
 	@echo "... ExecutableSrc/TestPushPull.o"
 	@echo "... ExecutableSrc/TestPushPull.i"
 	@echo "... ExecutableSrc/TestPushPull.s"
+	@echo "... ExecutableSrc/TestTopK.o"
+	@echo "... ExecutableSrc/TestTopK.i"
+	@echo "... ExecutableSrc/TestTopK.s"
 	@echo "... SamSrc/AbstractConsumer.o"
 	@echo "... SamSrc/AbstractConsumer.i"
 	@echo "... SamSrc/AbstractConsumer.s"
@@ -490,6 +561,9 @@ help:
 	@echo "... SamSrc/ReadSocket.o"
 	@echo "... SamSrc/ReadSocket.i"
 	@echo "... SamSrc/ReadSocket.s"
+	@echo "... SamSrc/TopK.o"
+	@echo "... SamSrc/TopK.i"
+	@echo "... SamSrc/TopK.s"
 	@echo "... SamSrc/ZeroMQPushPull.o"
 	@echo "... SamSrc/ZeroMQPushPull.i"
 	@echo "... SamSrc/ZeroMQPushPull.s"

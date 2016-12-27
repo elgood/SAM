@@ -5,6 +5,8 @@
 #include "ActiveWindow.hpp"
 #include "SlidingWindow.hpp"
 
+using namespace sam;
+
 BOOST_AUTO_TEST_CASE( test_zero_dormant ) 
 {
   BOOST_CHECK_THROW( SlidingWindow<size_t>(1, 2, 2), std::invalid_argument);

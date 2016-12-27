@@ -8,6 +8,8 @@
 
 using std::map;
 
+namespace sam {
+
 template <typename K>
 class ActiveWindow
 {
@@ -86,4 +88,5 @@ public:
 
 };
 
+}
 #endif

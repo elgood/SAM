@@ -4,6 +4,8 @@
 #include "DormantWindow.hpp"
 #include "ActiveWindow.hpp"
 
+using namespace sam;
+
 // This is the fixture that is setup before each test case.
 struct SetUp {
   ActiveWindow<size_t> aw;
