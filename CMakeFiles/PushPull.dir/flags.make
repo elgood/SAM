@@ -6,5 +6,5 @@ CXX_FLAGS =  -std=c++11 -g
 
 CXX_DEFINES = -DBOOST_TEST_DYN_LINK
 
-CXX_INCLUDES = -I/usr/include/dummy/.. -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/dummy/.. -I/Users/elgood/libraries/boost_1_62_0 -I/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc 
+CXX_INCLUDES = -I/usr/include/dummy/.. -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/dummy/.. -I/Users/elgood/libraries/boost_1_62_0 -I/usr/local/include -I/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc 
 

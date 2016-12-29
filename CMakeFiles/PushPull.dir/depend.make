@@ -806,6 +806,8 @@ CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: /Users/elgood/librarie
 CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/utility/enable_if.hpp
 CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/utility/identity_type.hpp
 CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/version.hpp
+CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: /usr/local/include/zmq.h
+CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: /usr/local/include/zmq.hpp
 CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: SamSrc/AbstractConsumer.h
 CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: SamSrc/BaseProducer.h
 CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o: SamSrc/ReadSocket.h

@@ -92,6 +92,7 @@ bin/PushPull: CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.o
 bin/PushPull: CMakeFiles/PushPull.dir/build.make
 bin/PushPull: /usr/local/lib/libzmq.dylib
 bin/PushPull: lib/libSamLib.a
+bin/PushPull: /usr/local/lib/libzmq.dylib
 bin/PushPull: CMakeFiles/PushPull.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/PushPull"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/PushPull.dir/link.txt --verbose=$(VERBOSE)

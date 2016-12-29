@@ -2727,4 +2727,6 @@ CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o: /Users/elgood/libraries/boost
 CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/utility/enable_if.hpp
 CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/utility/identity_type.hpp
 CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/version.hpp
+CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o: /usr/local/include/zmq.h
+CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o: /usr/local/include/zmq.hpp
 

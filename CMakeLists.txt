@@ -21,6 +21,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 ###################### ZMQ ##########################
 
+find_path(ZMQ_INCLUDE_PATH zmq.hpp)
+include_directories("${ZMQ_INCLUDE_PATH}")
 add_library(ZMQ STATIC IMPORTED)
 set_target_properties(ZMQ PROPERTIES IMPORTED_LOCATION "/usr/local/lib/libzmq.dylib")
 
@@ -44,6 +46,7 @@ file (GLOB SAM_SOURCES "SamSrc/*.cpp")
 add_library(SamLib ${SAM_SOURCES})
 set_target_properties(SamLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY "lib")
 
+target_link_libraries(SamLib ZMQ)
 target_link_libraries(SamLib boost_program_options)
 target_link_libraries(SamLib boost_thread)
 target_link_libraries(SamLib boost_system)
@@ -58,6 +61,7 @@ set_target_properties(PushPull PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 target_link_libraries(PushPull ${BOOST_PROGRAM_OPTIONS_LIBRARY})
 target_link_libraries(PushPull ZMQ)
 target_link_libraries(PushPull SamLib)
+target_link_libraries(PushPull pthread)
 
 ############### TopK #####################
 
@@ -69,6 +73,7 @@ set_target_properties(TopK PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 target_link_libraries(TopK ${BOOST_PROGRAM_OPTIONS_LIBRARY})
 target_link_libraries(TopK ZMQ)
 target_link_libraries(TopK SamLib)
+target_link_libraries(TopK pthread)
 
 ############ Test Active Window #######################
 

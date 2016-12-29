@@ -18,6 +18,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/usr/include/dummy/.."
   "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/dummy/.."
   "/Users/elgood/libraries/boost_1_62_0"
+  "/usr/local/include"
   "SamSrc"
   )
 

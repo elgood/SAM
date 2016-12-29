@@ -11,6 +11,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <iostream>
+#include <chrono>
 
 #include <boost/program_options.hpp>
 
@@ -26,6 +27,7 @@ using std::endl;
 namespace po = boost::program_options;
 
 using namespace sam;
+using namespace std::chrono;
 
 int main(int argc, char** argv) {
 
@@ -164,10 +166,16 @@ int main(int argc, char** argv) {
     std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;
     return -1;
   }
-	time(&timestamp_sec1);
+
+  milliseconds ms1 = duration_cast<milliseconds>(
+    system_clock::now().time_since_epoch()
+  );
   receiver.receive();
-	time(&timestamp_sec2);
-	std::cout << "Seconds " << timestamp_sec2 - timestamp_sec1 << std::endl;
+  milliseconds ms2 = duration_cast<milliseconds>(
+    system_clock::now().time_since_epoch()
+  );
+	std::cout << "Seconds " 
+    << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
 
 
 }

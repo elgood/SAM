@@ -806,6 +806,8 @@ CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: /Users/elgood/libraries/boost_
 CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/utility/enable_if.hpp
 CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/utility/identity_type.hpp
 CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: /Users/elgood/libraries/boost_1_62_0/boost/version.hpp
+CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: /usr/local/include/zmq.h
+CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: /usr/local/include/zmq.hpp
 CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: SamSrc/AbstractConsumer.h
 CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: SamSrc/ActiveWindow.hpp
 CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o: SamSrc/BaseProducer.h

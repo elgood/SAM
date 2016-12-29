@@ -92,6 +92,7 @@ bin/TopK: CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o
 bin/TopK: CMakeFiles/TopK.dir/build.make
 bin/TopK: /usr/local/lib/libzmq.dylib
 bin/TopK: lib/libSamLib.a
+bin/TopK: /usr/local/lib/libzmq.dylib
 bin/TopK: CMakeFiles/TopK.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/TopK"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/TopK.dir/link.txt --verbose=$(VERBOSE)

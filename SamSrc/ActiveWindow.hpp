@@ -57,7 +57,7 @@ public:
         
     // Sort the vector of pairs 
     std::sort(pairs.begin(), pairs.end(), 
-          [=](std::pair<K, size_t>& a, std::pair<K, size_t>& b)
+          [=](std::pair<K, size_t> const & a, std::pair<K, size_t> const & b)
          {
                return a.second > b.second;
          }

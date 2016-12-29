@@ -91,6 +91,7 @@ ReadSocket_EXTERNAL_OBJECTS =
 bin/ReadSocket: CMakeFiles/ReadSocket.dir/ExecutableSrc/TestNCSpeed.cpp.o
 bin/ReadSocket: CMakeFiles/ReadSocket.dir/build.make
 bin/ReadSocket: lib/libSamLib.a
+bin/ReadSocket: /usr/local/lib/libzmq.dylib
 bin/ReadSocket: CMakeFiles/ReadSocket.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/ReadSocket"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ReadSocket.dir/link.txt --verbose=$(VERBOSE)

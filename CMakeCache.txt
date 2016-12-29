@@ -294,7 +294,7 @@ STRING_INCLUDE_PATH:PATH=/Applications/Xcode.app/Contents/Developer/Toolchains/X
 SamLib_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 
 //Dependencies for the target
-SamLib_LIB_DEPENDS:STATIC=general;boost_program_options;general;boost_thread;general;boost_system;
+SamLib_LIB_DEPENDS:STATIC=general;ZMQ;general;boost_program_options;general;boost_thread;general;boost_system;
 
 //Value Computed by CMake
 SamLib_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
@@ -304,6 +304,9 @@ Sam_BINARY_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
 
 //Value Computed by CMake
 Sam_SOURCE_DIR:STATIC=/Users/elgood/Code/eclipse/Streaming-c++/SAM
+
+//Path to a file.
+ZMQ_INCLUDE_PATH:PATH=/usr/local/include
 
 
 ########################

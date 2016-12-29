@@ -79,6 +79,8 @@ sys/socket.h
 -
 unistd.h
 -
+strings.h
+-
 
 /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ReadSocket.h
 string
@@ -10499,4 +10501,40 @@ boost/type_traits/function_traits.hpp
 /Users/elgood/libraries/boost_1_62_0/boost/version.hpp
 
 /Users/elgood/libraries/boost_1_62_0/boost/visit_each.hpp
+
+/usr/local/include/zmq.h
+errno.h
+-
+stddef.h
+-
+stdio.h
+-
+winsock2.h
+-
+inttypes.h
+-
+stdint.h
+-
+
+/usr/local/include/zmq.hpp
+zmq.h
+-
+algorithm
+-
+cassert
+-
+cstring
+-
+string
+-
+exception
+-
+vector
+-
+iterator
+-
+chrono
+-
+tuple
+-
 
