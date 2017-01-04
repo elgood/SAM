@@ -5,6 +5,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
   "/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o"
+  "/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o"
   "/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseProducer.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o"
   "/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/Netflow.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o"
   "/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ReadSocket.cpp" "/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o"

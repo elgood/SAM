@@ -8708,6 +8708,14 @@ iostream
 numeric
 -
 
+SamSrc/BaseComputation.h
+vector
+-
+string
+-
+Netflow.h
+SamSrc/Netflow.h
+
 SamSrc/BaseProducer.h
 vector
 -
@@ -8727,6 +8735,10 @@ boost/lexical_cast.hpp
 -
 ActiveWindow.hpp
 SamSrc/ActiveWindow.hpp
+
+SamSrc/Netflow.h
+string
+-
 
 SamSrc/ReadSocket.h
 string
@@ -8771,6 +8783,8 @@ SlidingWindow.hpp
 SamSrc/SlidingWindow.hpp
 AbstractConsumer.h
 SamSrc/AbstractConsumer.h
+BaseComputation.h
+SamSrc/BaseComputation.h
 
 SamSrc/ZeroMQPushPull.h
 string

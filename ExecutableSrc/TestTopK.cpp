@@ -154,9 +154,8 @@ int main(int argc, char** argv) {
   vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;
-  string delimiter = ",";
   for (int i = 0; i < ntopk; i++) {
-    TopK* topk = new TopK(N, b, k, keyFields, valueField, delimiter, nodeId);
+    TopK* topk = new TopK(N, b, k, keyFields, valueField, nodeId);
     consumer.registerConsumer(topk); 
   }
 

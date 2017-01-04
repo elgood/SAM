@@ -24,6 +24,18 @@ iostream
 numeric
 -
 
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.cpp
+BaseComputation.h
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.h
+
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.h
+vector
+-
+string
+-
+Netflow.h
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/Netflow.h
+
 /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseProducer.cpp
 BaseProducer.h
 /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseProducer.h
@@ -133,6 +145,8 @@ SlidingWindow.hpp
 /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/SlidingWindow.hpp
 AbstractConsumer.h
 /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.h
+BaseComputation.h
+/Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.h
 
 /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ZeroMQPushPull.cpp
 ZeroMQPushPull.h

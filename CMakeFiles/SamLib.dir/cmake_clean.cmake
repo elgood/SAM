@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o"
+  "CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o"
   "CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o"
   "CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o"
   "CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o"

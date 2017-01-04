@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named TestSimpleSum
+
+# Build rule for target.
+TestSimpleSum: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 TestSimpleSum
+.PHONY : TestSimpleSum
+
+# fast build rule for target.
+TestSimpleSum/fast:
+	$(MAKE) -f CMakeFiles/TestSimpleSum.dir/build.make CMakeFiles/TestSimpleSum.dir/build
+.PHONY : TestSimpleSum/fast
+
+#=============================================================================
 # Target rules for targets named TestDormantWindow
 
 # Build rule for target.
@@ -174,6 +187,19 @@ SamLib: cmake_check_build_system
 SamLib/fast:
 	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/build
 .PHONY : SamLib/fast
+
+#=============================================================================
+# Target rules for targets named SimpleSum
+
+# Build rule for target.
+SimpleSum: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 SimpleSum
+.PHONY : SimpleSum
+
+# fast build rule for target.
+SimpleSum/fast:
+	$(MAKE) -f CMakeFiles/SimpleSum.dir/build.make CMakeFiles/SimpleSum.dir/build
+.PHONY : SimpleSum/fast
 
 #=============================================================================
 # Target rules for targets named PushPull
@@ -255,6 +281,33 @@ ExecutableSrc/TestPushPull.cpp.s:
 	$(MAKE) -f CMakeFiles/PushPull.dir/build.make CMakeFiles/PushPull.dir/ExecutableSrc/TestPushPull.cpp.s
 .PHONY : ExecutableSrc/TestPushPull.cpp.s
 
+ExecutableSrc/TestSimpleSum.o: ExecutableSrc/TestSimpleSum.cpp.o
+
+.PHONY : ExecutableSrc/TestSimpleSum.o
+
+# target to build an object file
+ExecutableSrc/TestSimpleSum.cpp.o:
+	$(MAKE) -f CMakeFiles/SimpleSum.dir/build.make CMakeFiles/SimpleSum.dir/ExecutableSrc/TestSimpleSum.cpp.o
+.PHONY : ExecutableSrc/TestSimpleSum.cpp.o
+
+ExecutableSrc/TestSimpleSum.i: ExecutableSrc/TestSimpleSum.cpp.i
+
+.PHONY : ExecutableSrc/TestSimpleSum.i
+
+# target to preprocess a source file
+ExecutableSrc/TestSimpleSum.cpp.i:
+	$(MAKE) -f CMakeFiles/SimpleSum.dir/build.make CMakeFiles/SimpleSum.dir/ExecutableSrc/TestSimpleSum.cpp.i
+.PHONY : ExecutableSrc/TestSimpleSum.cpp.i
+
+ExecutableSrc/TestSimpleSum.s: ExecutableSrc/TestSimpleSum.cpp.s
+
+.PHONY : ExecutableSrc/TestSimpleSum.s
+
+# target to generate assembly for a file
+ExecutableSrc/TestSimpleSum.cpp.s:
+	$(MAKE) -f CMakeFiles/SimpleSum.dir/build.make CMakeFiles/SimpleSum.dir/ExecutableSrc/TestSimpleSum.cpp.s
+.PHONY : ExecutableSrc/TestSimpleSum.cpp.s
+
 ExecutableSrc/TestTopK.o: ExecutableSrc/TestTopK.cpp.o
 
 .PHONY : ExecutableSrc/TestTopK.o
@@ -308,6 +361,33 @@ SamSrc/AbstractConsumer.s: SamSrc/AbstractConsumer.cpp.s
 SamSrc/AbstractConsumer.cpp.s:
 	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.s
 .PHONY : SamSrc/AbstractConsumer.cpp.s
+
+SamSrc/BaseComputation.o: SamSrc/BaseComputation.cpp.o
+
+.PHONY : SamSrc/BaseComputation.o
+
+# target to build an object file
+SamSrc/BaseComputation.cpp.o:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o
+.PHONY : SamSrc/BaseComputation.cpp.o
+
+SamSrc/BaseComputation.i: SamSrc/BaseComputation.cpp.i
+
+.PHONY : SamSrc/BaseComputation.i
+
+# target to preprocess a source file
+SamSrc/BaseComputation.cpp.i:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.i
+.PHONY : SamSrc/BaseComputation.cpp.i
+
+SamSrc/BaseComputation.s: SamSrc/BaseComputation.cpp.s
+
+.PHONY : SamSrc/BaseComputation.s
+
+# target to generate assembly for a file
+SamSrc/BaseComputation.cpp.s:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.s
+.PHONY : SamSrc/BaseComputation.cpp.s
 
 SamSrc/BaseProducer.o: SamSrc/BaseProducer.cpp.o
 
@@ -498,6 +578,33 @@ TestSrc/TestDormantWindow.cpp.s:
 	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/TestSrc/TestDormantWindow.cpp.s
 .PHONY : TestSrc/TestDormantWindow.cpp.s
 
+TestSrc/TestSimpleSum.o: TestSrc/TestSimpleSum.cpp.o
+
+.PHONY : TestSrc/TestSimpleSum.o
+
+# target to build an object file
+TestSrc/TestSimpleSum.cpp.o:
+	$(MAKE) -f CMakeFiles/TestSimpleSum.dir/build.make CMakeFiles/TestSimpleSum.dir/TestSrc/TestSimpleSum.cpp.o
+.PHONY : TestSrc/TestSimpleSum.cpp.o
+
+TestSrc/TestSimpleSum.i: TestSrc/TestSimpleSum.cpp.i
+
+.PHONY : TestSrc/TestSimpleSum.i
+
+# target to preprocess a source file
+TestSrc/TestSimpleSum.cpp.i:
+	$(MAKE) -f CMakeFiles/TestSimpleSum.dir/build.make CMakeFiles/TestSimpleSum.dir/TestSrc/TestSimpleSum.cpp.i
+.PHONY : TestSrc/TestSimpleSum.cpp.i
+
+TestSrc/TestSimpleSum.s: TestSrc/TestSimpleSum.cpp.s
+
+.PHONY : TestSrc/TestSimpleSum.s
+
+# target to generate assembly for a file
+TestSrc/TestSimpleSum.cpp.s:
+	$(MAKE) -f CMakeFiles/TestSimpleSum.dir/build.make CMakeFiles/TestSimpleSum.dir/TestSrc/TestSimpleSum.cpp.s
+.PHONY : TestSrc/TestSimpleSum.cpp.s
+
 TestSrc/TestSlidingWindow.o: TestSrc/TestSlidingWindow.cpp.o
 
 .PHONY : TestSrc/TestSlidingWindow.o
@@ -532,12 +639,14 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... TestSimpleSum"
 	@echo "... TestDormantWindow"
 	@echo "... TestActiveWindow"
 	@echo "... TopK"
 	@echo "... rebuild_cache"
 	@echo "... TestSlidingWindow"
 	@echo "... SamLib"
+	@echo "... SimpleSum"
 	@echo "... PushPull"
 	@echo "... ReadSocket"
 	@echo "... ExecutableSrc/TestNCSpeed.o"
@@ -546,12 +655,18 @@ help:
 	@echo "... ExecutableSrc/TestPushPull.o"
 	@echo "... ExecutableSrc/TestPushPull.i"
 	@echo "... ExecutableSrc/TestPushPull.s"
+	@echo "... ExecutableSrc/TestSimpleSum.o"
+	@echo "... ExecutableSrc/TestSimpleSum.i"
+	@echo "... ExecutableSrc/TestSimpleSum.s"
 	@echo "... ExecutableSrc/TestTopK.o"
 	@echo "... ExecutableSrc/TestTopK.i"
 	@echo "... ExecutableSrc/TestTopK.s"
 	@echo "... SamSrc/AbstractConsumer.o"
 	@echo "... SamSrc/AbstractConsumer.i"
 	@echo "... SamSrc/AbstractConsumer.s"
+	@echo "... SamSrc/BaseComputation.o"
+	@echo "... SamSrc/BaseComputation.i"
+	@echo "... SamSrc/BaseComputation.s"
 	@echo "... SamSrc/BaseProducer.o"
 	@echo "... SamSrc/BaseProducer.i"
 	@echo "... SamSrc/BaseProducer.s"
@@ -573,6 +688,9 @@ help:
 	@echo "... TestSrc/TestDormantWindow.o"
 	@echo "... TestSrc/TestDormantWindow.i"
 	@echo "... TestSrc/TestDormantWindow.s"
+	@echo "... TestSrc/TestSimpleSum.o"
+	@echo "... TestSrc/TestSimpleSum.i"
+	@echo "... TestSrc/TestSimpleSum.s"
 	@echo "... TestSrc/TestSlidingWindow.o"
 	@echo "... TestSrc/TestSlidingWindow.i"
 	@echo "... TestSrc/TestSlidingWindow.s"

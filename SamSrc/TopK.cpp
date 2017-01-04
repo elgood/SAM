@@ -7,19 +7,12 @@ namespace sam {
 TopK::TopK(size_t N, size_t b, size_t k,
        vector<size_t> keyFields,
        size_t valueField,
-       string delimiter,
-       size_t nodeId)
+       size_t nodeId) :
+       BaseComputation(keyFields, valueField, nodeId)
 {
   this->N = N;
   this->b = b;
   this->k = k;
-  this->keyFields = keyFields;
-  this->valueField = valueField;
-  this->delimiter = delimiter;
-  this->nodeId = nodeId;
-
-  auto result = std::max_element(keyFields.begin(), keyFields.end());
-  maxField = *result;
 }
 
 bool TopK::consume(string s) 
@@ -32,11 +25,7 @@ bool TopK::consume(string s)
   Netflow netflow(s);
 
   // Creating a hopefully unique key from the key fields
-  string key = "";
-  for (auto i : keyFields) {
-    key = key + netflow.getField(i);
-  }
-
+  string key = generateKey(netflow);
   
   if (allWindows.count(key) == 0) {
     auto sw = shared_ptr<SlidingWindow<size_t>>(

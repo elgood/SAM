@@ -811,8 +811,10 @@ CMakeFiles/TopK.dir/ExecutableSrc/TestTopK.cpp.o
  /usr/local/include/zmq.hpp
  SamSrc/AbstractConsumer.h
  SamSrc/ActiveWindow.hpp
+ SamSrc/BaseComputation.h
  SamSrc/BaseProducer.h
  SamSrc/DormantWindow.hpp
+ SamSrc/Netflow.h
  SamSrc/ReadSocket.h
  SamSrc/SlidingWindow.hpp
  SamSrc/TopK.h

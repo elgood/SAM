@@ -4,6 +4,10 @@
 CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.cpp
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.h
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o
+ /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.cpp
+ /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.h
+ /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/Netflow.h
 CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.h
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseProducer.cpp
@@ -1349,6 +1353,7 @@ CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/AbstractConsumer.h
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ActiveWindow.hpp
+ /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.h
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/DormantWindow.hpp
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/Netflow.h
  /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/SlidingWindow.hpp

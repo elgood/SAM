@@ -81,9 +81,33 @@ CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o.provides: CMakeFiles/SamLib.
 CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o.provides.build: CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o
 
 
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o: CMakeFiles/SamLib.dir/flags.make
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o: SamSrc/BaseComputation.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.cpp
+
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.cpp > CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.i
+
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseComputation.cpp -o CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.s
+
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o.requires:
+
+.PHONY : CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o.requires
+
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o.provides: CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o.requires
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o.provides.build
+.PHONY : CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o.provides
+
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o.provides.build: CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o
+
+
 CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o: CMakeFiles/SamLib.dir/flags.make
 CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o: SamSrc/BaseProducer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/BaseProducer.cpp
 
 CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.i: cmake_force
@@ -107,7 +131,7 @@ CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o.provides.build: CMakeFiles/SamLi
 
 CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o: CMakeFiles/SamLib.dir/flags.make
 CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o: SamSrc/Netflow.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/Netflow.cpp
 
 CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.i: cmake_force
@@ -131,7 +155,7 @@ CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o.provides.build: CMakeFiles/SamLib.dir
 
 CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o: CMakeFiles/SamLib.dir/flags.make
 CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o: SamSrc/ReadSocket.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ReadSocket.cpp
 
 CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.i: cmake_force
@@ -155,7 +179,7 @@ CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o.provides.build: CMakeFiles/SamLib.
 
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o: CMakeFiles/SamLib.dir/flags.make
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o: SamSrc/TopK.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/TopK.cpp
 
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.i: cmake_force
@@ -179,7 +203,7 @@ CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o.provides.build: CMakeFiles/SamLib.dir/Sa
 
 CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o: CMakeFiles/SamLib.dir/flags.make
 CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o: SamSrc/ZeroMQPushPull.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o -c /Users/elgood/Code/eclipse/Streaming-c++/SAM/SamSrc/ZeroMQPushPull.cpp
 
 CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.i: cmake_force
@@ -204,6 +228,7 @@ CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o.provides.build: CMakeFiles/Sam
 # Object files for target SamLib
 SamLib_OBJECTS = \
 "CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o" \
+"CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o" \
 "CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o" \
 "CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o" \
 "CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o" \
@@ -214,6 +239,7 @@ SamLib_OBJECTS = \
 SamLib_EXTERNAL_OBJECTS =
 
 lib/libSamLib.a: CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o
+lib/libSamLib.a: CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o
 lib/libSamLib.a: CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o
 lib/libSamLib.a: CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o
 lib/libSamLib.a: CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o
@@ -221,7 +247,7 @@ lib/libSamLib.a: CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o
 lib/libSamLib.a: CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o
 lib/libSamLib.a: CMakeFiles/SamLib.dir/build.make
 lib/libSamLib.a: CMakeFiles/SamLib.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX static library lib/libSamLib.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX static library lib/libSamLib.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/SamLib.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/SamLib.dir/link.txt --verbose=$(VERBOSE)
 
@@ -231,6 +257,7 @@ CMakeFiles/SamLib.dir/build: lib/libSamLib.a
 .PHONY : CMakeFiles/SamLib.dir/build
 
 CMakeFiles/SamLib.dir/requires: CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o.requires
+CMakeFiles/SamLib.dir/requires: CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o.requires
 CMakeFiles/SamLib.dir/requires: CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o.requires
 CMakeFiles/SamLib.dir/requires: CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o.requires
 CMakeFiles/SamLib.dir/requires: CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o.requires

@@ -18,6 +18,8 @@ using std::string;
 namespace sam {
 
 class AbstractConsumer {
+protected:
+  size_t feedCount = 0;
 
 public:
 	AbstractConsumer();

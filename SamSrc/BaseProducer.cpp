@@ -56,7 +56,7 @@ void BaseProducer::parallelFeed(string s) {
         {
 
           for (int j = 0; j < this->queueLength; j++) {
-            this->consumers[i]->consume(s);
+            this->consumers[i]->consume(inputQueue[j]);
             
           }
         }

@@ -75,6 +75,19 @@ target_link_libraries(TopK ZMQ)
 target_link_libraries(TopK SamLib)
 target_link_libraries(TopK pthread)
 
+############### SimpleSum #####################
+
+file (GLOB SIMPLE_SUM_SOURCES "ExecutableSrc/TestSimpleSum.cpp")
+
+add_executable(SimpleSum ${SIMPLE_SUM_SOURCES})
+set_target_properties(SimpleSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+
+target_link_libraries(SimpleSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(SimpleSum ZMQ)
+target_link_libraries(SimpleSum SamLib)
+target_link_libraries(SimpleSum pthread)
+
+
 ############ Test Active Window #######################
 
 file (GLOB TEST_ACTIVE_WINDOW_SOURCES "TestSrc/TestActiveWindow.cpp")
@@ -108,3 +121,12 @@ set_target_properties(TestSlidingWindow PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tes
 
 target_link_libraries(TestSlidingWindow boost_unit_test_framework)
 
+############ Test SimpleSum #############################
+
+file (GLOB TEST_SIMPLE_SUM_SOURCES "TestSrc/TestSimpleSum.cpp")
+
+add_executable(TestSimpleSum ${TEST_SIMPLE_SUM_SOURCES})
+set_target_properties(TestSimpleSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
+
+target_link_libraries(TestSimpleSum boost_unit_test_framework)
+target_link_libraries(TestSimpleSum SamLib)

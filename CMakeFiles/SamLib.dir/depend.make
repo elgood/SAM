@@ -4,6 +4,10 @@
 CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o: SamSrc/AbstractConsumer.cpp
 CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o: SamSrc/AbstractConsumer.h
 
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o: SamSrc/BaseComputation.cpp
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o: SamSrc/BaseComputation.h
+CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o: SamSrc/Netflow.h
+
 CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o: SamSrc/AbstractConsumer.h
 CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o: SamSrc/BaseProducer.cpp
 CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o: SamSrc/BaseProducer.h
@@ -1348,6 +1352,7 @@ CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o: SamSrc/ReadSocket.h
 
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o: SamSrc/AbstractConsumer.h
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o: SamSrc/ActiveWindow.hpp
+CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o: SamSrc/BaseComputation.h
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o: SamSrc/DormantWindow.hpp
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o: SamSrc/Netflow.h
 CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o: SamSrc/SlidingWindow.hpp
