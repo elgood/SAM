@@ -14,6 +14,8 @@
 
 using std::map;
 using std::shared_ptr;
+using std::cerr;
+using std::endl;
 
 namespace sam 
 {
@@ -99,14 +101,23 @@ public:
     Netflow netflow(s);
     
     string key = generateKey(netflow);
-    std::cout << "key " << key << std::endl;
+    //std::cout << "key " << key << std::endl;
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N); 
       allWindows[key] = value;
     }
 
     string sValue = netflow.getField(valueField);
-    T value = boost::lexical_cast<T>(sValue);
+    T value;
+    try {
+      value = boost::lexical_cast<T>(sValue);
+    } catch (std::exception e) {
+      cerr << "Netflow::consume Caught exception trying to cast string "
+                << "value of " << sValue << endl;
+      cerr << e.what() << endl;
+      value = 0;
+    }
+
 
     allWindows[key]->insert(value);
 

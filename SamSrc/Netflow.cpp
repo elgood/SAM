@@ -3,6 +3,12 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <vector>
+#include <exception>
+#include <iostream>
+
+using std::exception;
+using std::cerr;
+using std::endl;
 
 namespace sam {
 
@@ -53,8 +59,22 @@ string Netflow::getField(size_t field) const
     case 4: return ipLayerProtocolCode;
     case 5: return sourceIP;
     case 6: return destIP;
-    case 7: return boost::lexical_cast<string>(sourcePort);
-    case 8: return boost::lexical_cast<string>(destPort);
+    case 7:
+      try {
+        return boost::lexical_cast<string>(sourcePort);
+      } catch (exception e) {
+        cerr << "Caught exception trying to cast sourcePort" << endl;
+        cerr << e.what() << endl;
+        return "";
+      }
+    case 8:
+      try {
+        return boost::lexical_cast<string>(destPort);
+      } catch (exception e) {
+        cerr << "Caught exception trying to cast destPort" << endl;
+        cerr << e.what() << endl;
+        return "";
+      }
     case 9: return moreFragments;
     case 10: return contFragments;
     case 11: return durationSeconds;

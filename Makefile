@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /Users/elgood/Code/eclipse/Streaming-c++/SAM
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/usr/local/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-
-.PHONY : edit_cache/fast
-
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
@@ -77,6 +66,17 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
+
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/usr/local/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -111,6 +111,32 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named TestExponentialHistogram
+
+# Build rule for target.
+TestExponentialHistogram: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 TestExponentialHistogram
+.PHONY : TestExponentialHistogram
+
+# fast build rule for target.
+TestExponentialHistogram/fast:
+	$(MAKE) -f CMakeFiles/TestExponentialHistogram.dir/build.make CMakeFiles/TestExponentialHistogram.dir/build
+.PHONY : TestExponentialHistogram/fast
+
+#=============================================================================
+# Target rules for targets named SamLib
+
+# Build rule for target.
+SamLib: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 SamLib
+.PHONY : SamLib
+
+# fast build rule for target.
+SamLib/fast:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/build
+.PHONY : SamLib/fast
+
+#=============================================================================
 # Target rules for targets named TestSimpleSum
 
 # Build rule for target.
@@ -135,6 +161,19 @@ TestDormantWindow: cmake_check_build_system
 TestDormantWindow/fast:
 	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/build
 .PHONY : TestDormantWindow/fast
+
+#=============================================================================
+# Target rules for targets named ExponentialHistogramSum
+
+# Build rule for target.
+ExponentialHistogramSum: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 ExponentialHistogramSum
+.PHONY : ExponentialHistogramSum
+
+# fast build rule for target.
+ExponentialHistogramSum/fast:
+	$(MAKE) -f CMakeFiles/ExponentialHistogramSum.dir/build.make CMakeFiles/ExponentialHistogramSum.dir/build
+.PHONY : ExponentialHistogramSum/fast
 
 #=============================================================================
 # Target rules for targets named TestActiveWindow
@@ -176,19 +215,6 @@ TestSlidingWindow/fast:
 .PHONY : TestSlidingWindow/fast
 
 #=============================================================================
-# Target rules for targets named SamLib
-
-# Build rule for target.
-SamLib: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 SamLib
-.PHONY : SamLib
-
-# fast build rule for target.
-SamLib/fast:
-	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/build
-.PHONY : SamLib/fast
-
-#=============================================================================
 # Target rules for targets named SimpleSum
 
 # Build rule for target.
@@ -226,6 +252,33 @@ ReadSocket: cmake_check_build_system
 ReadSocket/fast:
 	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/build
 .PHONY : ReadSocket/fast
+
+ExecutableSrc/TestExponentialHistogramSumOperator.o: ExecutableSrc/TestExponentialHistogramSumOperator.cpp.o
+
+.PHONY : ExecutableSrc/TestExponentialHistogramSumOperator.o
+
+# target to build an object file
+ExecutableSrc/TestExponentialHistogramSumOperator.cpp.o:
+	$(MAKE) -f CMakeFiles/ExponentialHistogramSum.dir/build.make CMakeFiles/ExponentialHistogramSum.dir/ExecutableSrc/TestExponentialHistogramSumOperator.cpp.o
+.PHONY : ExecutableSrc/TestExponentialHistogramSumOperator.cpp.o
+
+ExecutableSrc/TestExponentialHistogramSumOperator.i: ExecutableSrc/TestExponentialHistogramSumOperator.cpp.i
+
+.PHONY : ExecutableSrc/TestExponentialHistogramSumOperator.i
+
+# target to preprocess a source file
+ExecutableSrc/TestExponentialHistogramSumOperator.cpp.i:
+	$(MAKE) -f CMakeFiles/ExponentialHistogramSum.dir/build.make CMakeFiles/ExponentialHistogramSum.dir/ExecutableSrc/TestExponentialHistogramSumOperator.cpp.i
+.PHONY : ExecutableSrc/TestExponentialHistogramSumOperator.cpp.i
+
+ExecutableSrc/TestExponentialHistogramSumOperator.s: ExecutableSrc/TestExponentialHistogramSumOperator.cpp.s
+
+.PHONY : ExecutableSrc/TestExponentialHistogramSumOperator.s
+
+# target to generate assembly for a file
+ExecutableSrc/TestExponentialHistogramSumOperator.cpp.s:
+	$(MAKE) -f CMakeFiles/ExponentialHistogramSum.dir/build.make CMakeFiles/ExponentialHistogramSum.dir/ExecutableSrc/TestExponentialHistogramSumOperator.cpp.s
+.PHONY : ExecutableSrc/TestExponentialHistogramSumOperator.cpp.s
 
 ExecutableSrc/TestNCSpeed.o: ExecutableSrc/TestNCSpeed.cpp.o
 
@@ -578,6 +631,33 @@ TestSrc/TestDormantWindow.cpp.s:
 	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/TestSrc/TestDormantWindow.cpp.s
 .PHONY : TestSrc/TestDormantWindow.cpp.s
 
+TestSrc/TestExponentialHistogram.o: TestSrc/TestExponentialHistogram.cpp.o
+
+.PHONY : TestSrc/TestExponentialHistogram.o
+
+# target to build an object file
+TestSrc/TestExponentialHistogram.cpp.o:
+	$(MAKE) -f CMakeFiles/TestExponentialHistogram.dir/build.make CMakeFiles/TestExponentialHistogram.dir/TestSrc/TestExponentialHistogram.cpp.o
+.PHONY : TestSrc/TestExponentialHistogram.cpp.o
+
+TestSrc/TestExponentialHistogram.i: TestSrc/TestExponentialHistogram.cpp.i
+
+.PHONY : TestSrc/TestExponentialHistogram.i
+
+# target to preprocess a source file
+TestSrc/TestExponentialHistogram.cpp.i:
+	$(MAKE) -f CMakeFiles/TestExponentialHistogram.dir/build.make CMakeFiles/TestExponentialHistogram.dir/TestSrc/TestExponentialHistogram.cpp.i
+.PHONY : TestSrc/TestExponentialHistogram.cpp.i
+
+TestSrc/TestExponentialHistogram.s: TestSrc/TestExponentialHistogram.cpp.s
+
+.PHONY : TestSrc/TestExponentialHistogram.s
+
+# target to generate assembly for a file
+TestSrc/TestExponentialHistogram.cpp.s:
+	$(MAKE) -f CMakeFiles/TestExponentialHistogram.dir/build.make CMakeFiles/TestExponentialHistogram.dir/TestSrc/TestExponentialHistogram.cpp.s
+.PHONY : TestSrc/TestExponentialHistogram.cpp.s
+
 TestSrc/TestSimpleSum.o: TestSrc/TestSimpleSum.cpp.o
 
 .PHONY : TestSrc/TestSimpleSum.o
@@ -638,17 +718,22 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... edit_cache"
+	@echo "... TestExponentialHistogram"
+	@echo "... SamLib"
 	@echo "... TestSimpleSum"
 	@echo "... TestDormantWindow"
+	@echo "... ExponentialHistogramSum"
+	@echo "... rebuild_cache"
 	@echo "... TestActiveWindow"
 	@echo "... TopK"
-	@echo "... rebuild_cache"
 	@echo "... TestSlidingWindow"
-	@echo "... SamLib"
 	@echo "... SimpleSum"
+	@echo "... edit_cache"
 	@echo "... PushPull"
 	@echo "... ReadSocket"
+	@echo "... ExecutableSrc/TestExponentialHistogramSumOperator.o"
+	@echo "... ExecutableSrc/TestExponentialHistogramSumOperator.i"
+	@echo "... ExecutableSrc/TestExponentialHistogramSumOperator.s"
 	@echo "... ExecutableSrc/TestNCSpeed.o"
 	@echo "... ExecutableSrc/TestNCSpeed.i"
 	@echo "... ExecutableSrc/TestNCSpeed.s"
@@ -688,6 +773,9 @@ help:
 	@echo "... TestSrc/TestDormantWindow.o"
 	@echo "... TestSrc/TestDormantWindow.i"
 	@echo "... TestSrc/TestDormantWindow.s"
+	@echo "... TestSrc/TestExponentialHistogram.o"
+	@echo "... TestSrc/TestExponentialHistogram.i"
+	@echo "... TestSrc/TestExponentialHistogram.s"
 	@echo "... TestSrc/TestSimpleSum.o"
 	@echo "... TestSrc/TestSimpleSum.i"
 	@echo "... TestSrc/TestSimpleSum.s"

@@ -231,16 +231,16 @@ void ReadSocket::receive()
   int i = 0;
   while(true) {
     string s = readline();
+    if (s == "") {
+      std::cout << "total in ReadSocket receive " << i << std::endl;
+      return;
+    }
     i++;
     if (i % metricInterval == 0) {
       std::cout << "ReadSocket received " << i << std::endl;
     }
     for (auto consumer : consumers) {
       consumer->consume(s);
-    }
-    if (s == "") {
-      std::cout << "total in ReadSocket receive " << i << std::endl;
-      return;
     }
   }
 }

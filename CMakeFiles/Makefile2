@@ -60,13 +60,87 @@ CMAKE_SOURCE_DIR = /Users/elgood/Code/eclipse/Streaming-c++/SAM
 CMAKE_BINARY_DIR = /Users/elgood/Code/eclipse/Streaming-c++/SAM
 
 #=============================================================================
+# Target rules for target CMakeFiles/TestExponentialHistogram.dir
+
+# All Build rule for target.
+CMakeFiles/TestExponentialHistogram.dir/all: CMakeFiles/SamLib.dir/all
+	$(MAKE) -f CMakeFiles/TestExponentialHistogram.dir/build.make CMakeFiles/TestExponentialHistogram.dir/depend
+	$(MAKE) -f CMakeFiles/TestExponentialHistogram.dir/build.make CMakeFiles/TestExponentialHistogram.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=21,22 "Built target TestExponentialHistogram"
+.PHONY : CMakeFiles/TestExponentialHistogram.dir/all
+
+# Include target in all.
+all: CMakeFiles/TestExponentialHistogram.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/TestExponentialHistogram.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 10
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/TestExponentialHistogram.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
+.PHONY : CMakeFiles/TestExponentialHistogram.dir/rule
+
+# Convenience name for target.
+TestExponentialHistogram: CMakeFiles/TestExponentialHistogram.dir/rule
+
+.PHONY : TestExponentialHistogram
+
+# clean rule for target.
+CMakeFiles/TestExponentialHistogram.dir/clean:
+	$(MAKE) -f CMakeFiles/TestExponentialHistogram.dir/build.make CMakeFiles/TestExponentialHistogram.dir/clean
+.PHONY : CMakeFiles/TestExponentialHistogram.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/TestExponentialHistogram.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/SamLib.dir
+
+# All Build rule for target.
+CMakeFiles/SamLib.dir/all:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/depend
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=7,8,9,10,11,12,13,14 "Built target SamLib"
+.PHONY : CMakeFiles/SamLib.dir/all
+
+# Include target in all.
+all: CMakeFiles/SamLib.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/SamLib.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 8
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/SamLib.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
+.PHONY : CMakeFiles/SamLib.dir/rule
+
+# Convenience name for target.
+SamLib: CMakeFiles/SamLib.dir/rule
+
+.PHONY : SamLib
+
+# clean rule for target.
+CMakeFiles/SamLib.dir/clean:
+	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/clean
+.PHONY : CMakeFiles/SamLib.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/SamLib.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
 # Target rules for target CMakeFiles/TestSimpleSum.dir
 
 # All Build rule for target.
 CMakeFiles/TestSimpleSum.dir/all: CMakeFiles/SamLib.dir/all
 	$(MAKE) -f CMakeFiles/TestSimpleSum.dir/build.make CMakeFiles/TestSimpleSum.dir/depend
 	$(MAKE) -f CMakeFiles/TestSimpleSum.dir/build.make CMakeFiles/TestSimpleSum.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=19,20 "Built target TestSimpleSum"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=23,24 "Built target TestSimpleSum"
 .PHONY : CMakeFiles/TestSimpleSum.dir/all
 
 # Include target in all.
@@ -103,7 +177,7 @@ clean: CMakeFiles/TestSimpleSum.dir/clean
 CMakeFiles/TestDormantWindow.dir/all:
 	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/depend
 	$(MAKE) -f CMakeFiles/TestDormantWindow.dir/build.make CMakeFiles/TestDormantWindow.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=17,18 "Built target TestDormantWindow"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=19,20 "Built target TestDormantWindow"
 .PHONY : CMakeFiles/TestDormantWindow.dir/all
 
 # Include target in all.
@@ -134,13 +208,50 @@ clean: CMakeFiles/TestDormantWindow.dir/clean
 .PHONY : clean
 
 #=============================================================================
+# Target rules for target CMakeFiles/ExponentialHistogramSum.dir
+
+# All Build rule for target.
+CMakeFiles/ExponentialHistogramSum.dir/all: CMakeFiles/SamLib.dir/all
+	$(MAKE) -f CMakeFiles/ExponentialHistogramSum.dir/build.make CMakeFiles/ExponentialHistogramSum.dir/depend
+	$(MAKE) -f CMakeFiles/ExponentialHistogramSum.dir/build.make CMakeFiles/ExponentialHistogramSum.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=1,2 "Built target ExponentialHistogramSum"
+.PHONY : CMakeFiles/ExponentialHistogramSum.dir/all
+
+# Include target in all.
+all: CMakeFiles/ExponentialHistogramSum.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/ExponentialHistogramSum.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 10
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/ExponentialHistogramSum.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
+.PHONY : CMakeFiles/ExponentialHistogramSum.dir/rule
+
+# Convenience name for target.
+ExponentialHistogramSum: CMakeFiles/ExponentialHistogramSum.dir/rule
+
+.PHONY : ExponentialHistogramSum
+
+# clean rule for target.
+CMakeFiles/ExponentialHistogramSum.dir/clean:
+	$(MAKE) -f CMakeFiles/ExponentialHistogramSum.dir/build.make CMakeFiles/ExponentialHistogramSum.dir/clean
+.PHONY : CMakeFiles/ExponentialHistogramSum.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/ExponentialHistogramSum.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
 # Target rules for target CMakeFiles/TestActiveWindow.dir
 
 # All Build rule for target.
 CMakeFiles/TestActiveWindow.dir/all:
 	$(MAKE) -f CMakeFiles/TestActiveWindow.dir/build.make CMakeFiles/TestActiveWindow.dir/depend
 	$(MAKE) -f CMakeFiles/TestActiveWindow.dir/build.make CMakeFiles/TestActiveWindow.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=15,16 "Built target TestActiveWindow"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=17,18 "Built target TestActiveWindow"
 .PHONY : CMakeFiles/TestActiveWindow.dir/all
 
 # Include target in all.
@@ -177,7 +288,7 @@ clean: CMakeFiles/TestActiveWindow.dir/clean
 CMakeFiles/TopK.dir/all: CMakeFiles/SamLib.dir/all
 	$(MAKE) -f CMakeFiles/TopK.dir/build.make CMakeFiles/TopK.dir/depend
 	$(MAKE) -f CMakeFiles/TopK.dir/build.make CMakeFiles/TopK.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=23,24 "Built target TopK"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=27,28 "Built target TopK"
 .PHONY : CMakeFiles/TopK.dir/all
 
 # Include target in all.
@@ -214,7 +325,7 @@ clean: CMakeFiles/TopK.dir/clean
 CMakeFiles/TestSlidingWindow.dir/all:
 	$(MAKE) -f CMakeFiles/TestSlidingWindow.dir/build.make CMakeFiles/TestSlidingWindow.dir/depend
 	$(MAKE) -f CMakeFiles/TestSlidingWindow.dir/build.make CMakeFiles/TestSlidingWindow.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=21,22 "Built target TestSlidingWindow"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=25,26 "Built target TestSlidingWindow"
 .PHONY : CMakeFiles/TestSlidingWindow.dir/all
 
 # Include target in all.
@@ -245,50 +356,13 @@ clean: CMakeFiles/TestSlidingWindow.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/SamLib.dir
-
-# All Build rule for target.
-CMakeFiles/SamLib.dir/all:
-	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/depend
-	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=5,6,7,8,9,10,11,12 "Built target SamLib"
-.PHONY : CMakeFiles/SamLib.dir/all
-
-# Include target in all.
-all: CMakeFiles/SamLib.dir/all
-
-.PHONY : all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/SamLib.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 8
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/SamLib.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles 0
-.PHONY : CMakeFiles/SamLib.dir/rule
-
-# Convenience name for target.
-SamLib: CMakeFiles/SamLib.dir/rule
-
-.PHONY : SamLib
-
-# clean rule for target.
-CMakeFiles/SamLib.dir/clean:
-	$(MAKE) -f CMakeFiles/SamLib.dir/build.make CMakeFiles/SamLib.dir/clean
-.PHONY : CMakeFiles/SamLib.dir/clean
-
-# clean rule for target.
-clean: CMakeFiles/SamLib.dir/clean
-
-.PHONY : clean
-
-#=============================================================================
 # Target rules for target CMakeFiles/SimpleSum.dir
 
 # All Build rule for target.
 CMakeFiles/SimpleSum.dir/all: CMakeFiles/SamLib.dir/all
 	$(MAKE) -f CMakeFiles/SimpleSum.dir/build.make CMakeFiles/SimpleSum.dir/depend
 	$(MAKE) -f CMakeFiles/SimpleSum.dir/build.make CMakeFiles/SimpleSum.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=13,14 "Built target SimpleSum"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=15,16 "Built target SimpleSum"
 .PHONY : CMakeFiles/SimpleSum.dir/all
 
 # Include target in all.
@@ -325,7 +399,7 @@ clean: CMakeFiles/SimpleSum.dir/clean
 CMakeFiles/PushPull.dir/all: CMakeFiles/SamLib.dir/all
 	$(MAKE) -f CMakeFiles/PushPull.dir/build.make CMakeFiles/PushPull.dir/depend
 	$(MAKE) -f CMakeFiles/PushPull.dir/build.make CMakeFiles/PushPull.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=1,2 "Built target PushPull"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=3,4 "Built target PushPull"
 .PHONY : CMakeFiles/PushPull.dir/all
 
 # Include target in all.
@@ -362,7 +436,7 @@ clean: CMakeFiles/PushPull.dir/clean
 CMakeFiles/ReadSocket.dir/all: CMakeFiles/SamLib.dir/all
 	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/depend
 	$(MAKE) -f CMakeFiles/ReadSocket.dir/build.make CMakeFiles/ReadSocket.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=3,4 "Built target ReadSocket"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/elgood/Code/eclipse/Streaming-c++/SAM/CMakeFiles --progress-num=5,6 "Built target ReadSocket"
 .PHONY : CMakeFiles/ReadSocket.dir/all
 
 # Include target in all.

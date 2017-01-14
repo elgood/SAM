@@ -87,6 +87,18 @@ target_link_libraries(SimpleSum ZMQ)
 target_link_libraries(SimpleSum SamLib)
 target_link_libraries(SimpleSum pthread)
 
+############### ExponentialHistogramSum #####################
+
+file (GLOB EH_SUM_SOURCES "ExecutableSrc/TestExponentialHistogramSumOperator.cpp")
+
+add_executable(ExponentialHistogramSum ${EH_SUM_SOURCES})
+set_target_properties(ExponentialHistogramSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+
+target_link_libraries(ExponentialHistogramSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(ExponentialHistogramSum ZMQ)
+target_link_libraries(ExponentialHistogramSum SamLib)
+target_link_libraries(ExponentialHistogramSum pthread)
+
 
 ############ Test Active Window #######################
 
@@ -130,3 +142,13 @@ set_target_properties(TestSimpleSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
 
 target_link_libraries(TestSimpleSum boost_unit_test_framework)
 target_link_libraries(TestSimpleSum SamLib)
+
+############ Test ExponentialHistogram #################
+
+file (GLOB TEST_EH_SOURCES "TestSrc/TestExponentialHistogram.cpp")
+
+add_executable(TestExponentialHistogram ${TEST_EH_SOURCES})
+set_target_properties(TestExponentialHistogram PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
+
+target_link_libraries(TestExponentialHistogram boost_unit_test_framework)
+target_link_libraries(TestExponentialHistogram SamLib)

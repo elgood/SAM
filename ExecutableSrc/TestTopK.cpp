@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   int queueLength;
 
   // How many simultaneous topk operators
-  int ntopk;
+  int nop;
 
   // The total number of elements in a sliding window
   int N;
@@ -94,8 +94,8 @@ int main(int argc, char** argv) {
     ("queueLength", po::value<int>(&queueLength)->default_value(10000),
       "We fill a queue before sending things in parallel to all consumers."
       "  This controls the size of that queue.")
-    ("ntopk", po::value<int>(&ntopk)->default_value(1),
-      "The number of simultaneous topk operators")
+    ("nop", po::value<int>(&nop)->default_value(1),
+      "The number of simultaneous operators")
     ("N", po::value<int>(&N)->default_value(10000),
       "The total number of elements in a sliding window")
     ("b", po::value<int>(&b)->default_value(1000),
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
   vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;
-  for (int i = 0; i < ntopk; i++) {
+  for (int i = 0; i < nop; i++) {
     TopK* topk = new TopK(N, b, k, keyFields, valueField, nodeId);
     consumer.registerConsumer(topk); 
   }
