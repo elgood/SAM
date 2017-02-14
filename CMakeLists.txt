@@ -21,10 +21,15 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 ###################### ZMQ ##########################
 
-find_path(ZMQ_INCLUDE_PATH zmq.hpp)
-include_directories("${ZMQ_INCLUDE_PATH}")
-add_library(ZMQ STATIC IMPORTED)
-set_target_properties(ZMQ PROPERTIES IMPORTED_LOCATION "/usr/local/lib/libzmq.dylib")
+find_path(ZMQ_INCLUDE_DIR zmq.h)
+find_library(ZMQ_LIBRARY NAMES zmq)
+set (ZMQ_LIBRARIES ${ZMQ_LIBRARY})
+set (ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
+
+include ( FindPackageHandleStandardArgs )
+find_package_handle_standard_args(ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
+
+include_directories("${ZMQ_INCLUDE_DIRS}")
 
 ####################### Include directories #################
 include_directories(SamSrc)
@@ -46,7 +51,7 @@ file (GLOB SAM_SOURCES "SamSrc/*.cpp")
 add_library(SamLib ${SAM_SOURCES})
 set_target_properties(SamLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY "lib")
 
-target_link_libraries(SamLib ZMQ)
+target_link_libraries(SamLib ${ZMQ_LIBRARIES})
 target_link_libraries(SamLib boost_program_options)
 target_link_libraries(SamLib boost_thread)
 target_link_libraries(SamLib boost_system)
@@ -59,7 +64,7 @@ add_executable(PushPull ${PUSH_PULL_SOURCES} )
 set_target_properties(PushPull PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
 target_link_libraries(PushPull ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(PushPull ZMQ)
+target_link_libraries(PushPull ${ZMQ_LIBRARIES})
 target_link_libraries(PushPull SamLib)
 target_link_libraries(PushPull pthread)
 
@@ -71,7 +76,7 @@ add_executable(TopK ${TOPK_SOURCES})
 set_target_properties(TopK PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
 target_link_libraries(TopK ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(TopK ZMQ)
+target_link_libraries(TopK ${ZMQ_LIBRARIES})
 target_link_libraries(TopK SamLib)
 target_link_libraries(TopK pthread)
 
@@ -83,7 +88,7 @@ add_executable(SimpleSum ${SIMPLE_SUM_SOURCES})
 set_target_properties(SimpleSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
 target_link_libraries(SimpleSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(SimpleSum ZMQ)
+target_link_libraries(SimpleSum ${ZMQ_LIBRARIES})
 target_link_libraries(SimpleSum SamLib)
 target_link_libraries(SimpleSum pthread)
 
@@ -95,7 +100,7 @@ add_executable(ExponentialHistogramSum ${EH_SUM_SOURCES})
 set_target_properties(ExponentialHistogramSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
 target_link_libraries(ExponentialHistogramSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(ExponentialHistogramSum ZMQ)
+target_link_libraries(ExponentialHistogramSum ${ZMQ_LIBRARIES})
 target_link_libraries(ExponentialHistogramSum SamLib)
 target_link_libraries(ExponentialHistogramSum pthread)
 
@@ -107,7 +112,7 @@ add_executable(ExponentialHistogramVariance ${EH_VARIANCE_SOURCES})
 set_target_properties(ExponentialHistogramVariance PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
 target_link_libraries(ExponentialHistogramVariance ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(ExponentialHistogramVariance ZMQ)
+target_link_libraries(ExponentialHistogramVariance ${ZMQ_LIBRARIES})
 target_link_libraries(ExponentialHistogramVariance SamLib)
 target_link_libraries(ExponentialHistogramVariance pthread)
 
