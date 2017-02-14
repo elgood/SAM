@@ -1,1 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++    -std=c++11 -g -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/SimpleSum.dir/ExecutableSrc/TestSimpleSum.cpp.o  -o bin/SimpleSum  /usr/local/lib/libzmq.dylib lib/libSamLib.a -lpthread /usr/local/lib/libzmq.dylib -lboost_program_options -lboost_thread -lboost_system 

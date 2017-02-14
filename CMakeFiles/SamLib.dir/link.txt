@@ -1,2 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc lib/libSamLib.a  CMakeFiles/SamLib.dir/SamSrc/AbstractConsumer.cpp.o CMakeFiles/SamLib.dir/SamSrc/BaseComputation.cpp.o CMakeFiles/SamLib.dir/SamSrc/BaseProducer.cpp.o CMakeFiles/SamLib.dir/SamSrc/Netflow.cpp.o CMakeFiles/SamLib.dir/SamSrc/ReadSocket.cpp.o CMakeFiles/SamLib.dir/SamSrc/TopK.cpp.o CMakeFiles/SamLib.dir/SamSrc/ZeroMQPushPull.cpp.o
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib lib/libSamLib.a

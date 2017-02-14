@@ -19,7 +19,7 @@ using std::map;
 namespace sam {
 
 template <typename T>
-class ExponentialHistogramSum: public AbstractConsumer, public BaseComputation
+class ExponentialHistogramVariance : public AbstractConsumer, public BaseComputation
 {
 private:
 
@@ -31,11 +31,11 @@ private:
   // The size of the sliding window
   size_t N; 
 
-  map<string, shared_ptr<std::pair <ExponentialHistogram<T>>> sums;
-  map<string, shared_ptr<std::pair <ExponentialHistogram<T>>> squares;
+  map<string, shared_ptr<ExponentialHistogram<T>>> sums;
+  map<string, shared_ptr<ExponentialHistogram<T>>> squares;
 
 public:
-  ExponentialHistogramSum(size_t N, size_t k,
+  ExponentialHistogramVariance(size_t N, size_t k,
                           vector<size_t> keyFields,
                           size_t valueField,
                           size_t nodeId) :
@@ -49,7 +49,7 @@ public:
     feedCount++;
     if (feedCount % metricInterval == 0) {
       std::cout << "NodeId " << nodeId << " number of keys " 
-                << allWindows.size() << std::endl;
+                << sums.size() << std::endl;
     }
 
     Netflow netflow(s);
@@ -64,7 +64,7 @@ public:
 
       eh = shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
-      std::pair<string, shared_ptr<ExponentialHistogram<T>>> p(key, eh);
+      p = std::pair<string, shared_ptr<ExponentialHistogram<T>>>(key, eh);
       squares.insert(p);
     }
 

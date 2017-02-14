@@ -5,7 +5,7 @@ ENABLE_LANGUAGE(CXX)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
 
-set(GCC_COVERAGE_COMPILE_FLAGS "-std=c++11")
+set(GCC_COVERAGE_COMPILE_FLAGS "-std=c++11 -O3")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
 
 find_path(STDIO_INCLUDE_PATH stdio.h)
@@ -98,6 +98,18 @@ target_link_libraries(ExponentialHistogramSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
 target_link_libraries(ExponentialHistogramSum ZMQ)
 target_link_libraries(ExponentialHistogramSum SamLib)
 target_link_libraries(ExponentialHistogramSum pthread)
+
+############### ExponentialHistogramVariance #####################
+
+file (GLOB EH_VARIANCE_SOURCES "ExecutableSrc/TestExponentialHistogramVarianceOperator.cpp")
+
+add_executable(ExponentialHistogramVariance ${EH_VARIANCE_SOURCES})
+set_target_properties(ExponentialHistogramVariance PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+
+target_link_libraries(ExponentialHistogramVariance ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(ExponentialHistogramVariance ZMQ)
+target_link_libraries(ExponentialHistogramVariance SamLib)
+target_link_libraries(ExponentialHistogramVariance pthread)
 
 
 ############ Test Active Window #######################
