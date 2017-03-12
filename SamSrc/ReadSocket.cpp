@@ -14,6 +14,9 @@
 #include <unistd.h>
 #include <strings.h>
 
+using std::cout;
+using std::endl;
+
 namespace sam {
 
 ReadSocket::ReadSocket(string ip, int port) :
@@ -231,6 +234,7 @@ void ReadSocket::receive()
   int i = 0;
   while(true) {
     string s = readline();
+    //cout << "s in receive " << s << endl;
     if (s == "") {
       std::cout << "total in ReadSocket receive " << i << std::endl;
       return;

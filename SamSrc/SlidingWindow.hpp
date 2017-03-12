@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <map>
+#include <vector>
 #include <stdexcept>
 #include <string>
 #include <iostream>
@@ -11,6 +12,10 @@
 
 #include "ActiveWindow.hpp"
 #include "DormantWindow.hpp"
+
+using std::vector;
+using std::endl;
+using std::cout;
 
 namespace sam {
 
@@ -21,7 +26,7 @@ private:
   size_t N; ///> The total number of elements in the sliding window
   size_t b; ///> The number elements represented in a block
   size_t k; ///> The number of top elements to keep track of
-  size_t counter = 0; ///> Keeps track of how many elements have been processed
+  size_t counter = 0; ///>how many elements have been processed in active window
   ActiveWindow<K> active; ///> The active window
   std::queue<DormantWindow<K>> queue; ///> All the dormant windows
   std::map<K, size_t> globalInfo; ///> Global counts on frequent keys
@@ -84,7 +89,7 @@ public:
   std::pair<K, size_t> getIthElement(size_t i) {
 
     if (i >= globalInfo.size()) {
-      std::string message = "Size of global info: " + 
+      std::string message = "Error in GetIth Element: Size of global info: " + 
         boost::lexical_cast<std::string>(globalInfo.size()) +
         " Requested element " + boost::lexical_cast<std::string>(i);
       throw std::out_of_range(message);
@@ -102,11 +107,43 @@ public:
     );
 
     return pairs[i];
+  }
 
+  /**
+   * Returns a vector of the keys in string format in descending order.
+   */
+  vector<string> getKeys() {
+    vector<string> keys;
+    int limit = globalInfo.size();  
+    for (int i = 0; i < limit; i++) {
+      auto p = getIthElement(i);
+      string key = boost::lexical_cast<string>(p.first);
+      keys.push_back(key);
+    }
+    return keys;
+  }
 
+  vector<double> getFrequencies() {
+    vector<double> frequencies;
+    int limit = globalInfo.size();  
+    for (int i = 0; i < limit; i++) {
+      auto p = getIthElement(i);
+      double count = boost::lexical_cast<double>(p.second);
+      frequencies.push_back(count);
+    }
+
+    double total = static_cast<double>(getNumDormantElements()); 
+
+    std::transform(frequencies.begin(), 
+                  frequencies.end(),
+                  frequencies.begin(),
+                  [total](double &item){ return item / total; });
+
+    return frequencies;
   }
 
 private:
+
   /**
    * Addes the specified Dormant window's stats to the global stats.
    * \param newDormant
