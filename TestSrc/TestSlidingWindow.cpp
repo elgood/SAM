@@ -1,9 +1,13 @@
 #define BOOST_TEST_MAIN TestSlidingWindow
+#include <iostream>
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include "DormantWindow.hpp"
 #include "ActiveWindow.hpp"
 #include "SlidingWindow.hpp"
+
+using std::endl;
+using std::cout;
 
 using namespace sam;
 
@@ -44,6 +48,9 @@ BOOST_AUTO_TEST_CASE( test_add_dormant )
   sw.add(1);
   sw.add(1);
   sw.add(1);
+  auto freq = sw.getFrequencies();
+  BOOST_CHECK_EQUAL(0, sw.getFrequencies().size());
+  BOOST_CHECK_EQUAL(0, sw.getKeys().size());
   BOOST_CHECK_EQUAL(3, sw.getNumActiveElements());
   BOOST_CHECK_EQUAL(0, sw.getNumDormantElements());
   BOOST_CHECK_THROW( sw.getIthElement(0), std::out_of_range);
@@ -53,8 +60,17 @@ BOOST_AUTO_TEST_CASE( test_add_dormant )
   BOOST_CHECK_EQUAL(10, sw.getNumActiveElements());
   BOOST_CHECK_THROW(sw.getIthElement(0), std::out_of_range);
   
+  // The frequencies and keys are still zero because a dormant window
+  // has not been created.
+  BOOST_CHECK_EQUAL(0, sw.getFrequencies().size());
+  BOOST_CHECK_EQUAL(0, sw.getKeys().size());
+
   // Should create dormant window
   sw.add(1);
+  BOOST_CHECK_EQUAL(1, sw.getFrequencies().size());
+  BOOST_CHECK_EQUAL(1, sw.getKeys().size());
+  BOOST_CHECK_EQUAL(1, sw.getFrequencies()[0]);
+  BOOST_CHECK_EQUAL("1", sw.getKeys()[0]);
   BOOST_CHECK_EQUAL(1, sw.getNumActiveElements());
   BOOST_CHECK_EQUAL(10, sw.getNumDormantElements());
   BOOST_CHECK_EQUAL(1, sw.getIthElement(0).first);
@@ -68,7 +84,18 @@ BOOST_AUTO_TEST_CASE( test_add_dormant )
   BOOST_CHECK_EQUAL(10, sw.getNumActiveElements());
   
   // Should create dormant window number 2
+  BOOST_CHECK_EQUAL(1, sw.getFrequencies().size());
+  BOOST_CHECK_EQUAL(1, sw.getKeys().size());
+  BOOST_CHECK_EQUAL(1, sw.getFrequencies()[0]);
+  BOOST_CHECK_EQUAL("1", sw.getKeys()[0]);
   sw.add(3);
+  BOOST_CHECK_EQUAL(2, sw.getFrequencies().size());
+  BOOST_CHECK_EQUAL(2, sw.getKeys().size());
+  BOOST_CHECK_EQUAL(.75, sw.getFrequencies()[0]);
+  BOOST_CHECK_EQUAL("1", sw.getKeys()[0]);
+  BOOST_CHECK_EQUAL(.25, sw.getFrequencies()[1]);
+  BOOST_CHECK_EQUAL("2", sw.getKeys()[1]);
+  BOOST_CHECK_EQUAL(1, sw.getNumActiveElements());
   sw.add(4);
   BOOST_CHECK_EQUAL(2, sw.getNumActiveElements());
   BOOST_CHECK_EQUAL(20, sw.getNumDormantElements());
