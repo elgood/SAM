@@ -17,7 +17,8 @@
 
 #include "ReadSocket.h"
 #include "ZeroMQPushPull.h"
-#include "TopK.h"
+#include "TopK.hpp"
+#include "ImuxData.hpp"
 
 using std::string;
 using std::vector;
@@ -151,20 +152,27 @@ int main(int argc, char** argv) {
 
   receiver.registerConsumer(&consumer);
 
+  ImuxData imuxData;
+
   vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
-    TopK* topk = new TopK(N, b, k, keyFields, valueField, nodeId);
+    string identifier = "topk" + boost::lexical_cast<string>(i);
+    auto topk = new TopK<size_t>(N, b, k, keyFields, valueField, nodeId,
+                                 imuxData, identifier);
     consumer.registerConsumer(topk); 
   }
 
-  
 
   if (!receiver.connect()) {
     std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;
     return -1;
   }
+
+#ifdef DEBUG
+  cout << "DEBUG: connected to receiver " << endl;
+#endif
 
   milliseconds ms1 = duration_cast<milliseconds>(
     system_clock::now().time_since_epoch()
