@@ -141,13 +141,14 @@ int main(int argc, char** argv) {
 
   receiver.registerConsumer(&consumer);
 
+  ImuxData imuxData;
   vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 14;
-  auto sum = new SimpleSum<size_t>(N, keyFields, valueField, nodeId);
-  consumer.registerConsumer(sum);
-  for (int i = 0; nop > 0 && i < nop - 1; i++) {
-    auto sum = new SimpleSum<size_t>(N, keyFields, valueField, nodeId);
+  for (int i = 0; nop > 0 && i < nop; i++) {
+    string identifier = "simplesum" + boost::lexical_cast<string>(i);
+    auto sum = new SimpleSum<size_t>(N, keyFields, valueField, nodeId,
+                                     imuxData, identifier);
     consumer.registerConsumer(sum); 
   }
 
@@ -168,11 +169,6 @@ int main(int argc, char** argv) {
 	std::cout << nodeId << " Seconds " 
     << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
 
-  sleep(100);
-  std::cout << "key length " << sum->keys().size() << std::endl;
-  for (auto key : sum->keys()) {
-    std::cout << "key " << key << " " << sum->getSum(key) << std::endl; 
-  }
 
 }
 

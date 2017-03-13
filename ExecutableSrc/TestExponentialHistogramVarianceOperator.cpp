@@ -120,13 +120,16 @@ int main(int argc, char** argv)
 
   receiver.registerConsumer(&consumer);
 
+  ImuxData imuxData;
   vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
+    string identifier = "ehvar" + boost::lexical_cast<string>(i);
     auto op = new ExponentialHistogramVariance<size_t>(N, k, keyFields, 
-                                                  valueField, 
-                                                  nodeId);
+                                                  valueField, nodeId,
+                                                  imuxData, identifier);
+                                                  
     consumer.registerConsumer(op);
   }
 

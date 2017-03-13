@@ -57,7 +57,6 @@ private:
 
   map<string, shared_ptr<SlidingWindow<T>>> allWindows; 
   
-
 public:
   TopK(size_t N, size_t b, size_t k,
        vector<size_t> keyFields,
@@ -68,7 +67,6 @@ public:
      
 
   bool consume(string s);
-
      
 };
 

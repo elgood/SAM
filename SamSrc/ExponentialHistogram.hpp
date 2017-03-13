@@ -38,7 +38,13 @@ private:
 
   // Points to where data should be added
   size_t* ends;
+
+  // An array of booleans that keeps track of which levels need to be merged
   bool* needToMerge;
+
+  // If all the storage in one level has been used, this is set to true.
+  // There is different processing depending on if we have seen the entire level
+  // or not.
   bool* onePass;
 
   T total = 0;

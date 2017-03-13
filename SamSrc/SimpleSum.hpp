@@ -11,6 +11,7 @@
 #include <boost/lexical_cast.hpp>
 #include "AbstractConsumer.h"
 #include "BaseComputation.h"
+#include "Features.hpp"
 
 using std::map;
 using std::shared_ptr;
@@ -63,6 +64,7 @@ public:
 
 }
 
+
 template <typename T>
 class SimpleSum: public AbstractConsumer, public BaseComputation 
 {
@@ -70,6 +72,8 @@ private:
   size_t N; ///> Size of sliding window
   typedef SimpleSumDetails::SimpleSumDataStructure<T> value_t;
 
+  /// Mapping from the key (e.g. an ip field) to the simple sum 
+  /// data structure that is keeping track of the values seen.
   map<string, value_t*> allWindows; 
   
   // Where the most recent item is located in the array.
@@ -79,8 +83,10 @@ public:
   SimpleSum(size_t N,
             vector<size_t> keyFields,
             size_t valueField,
-            size_t nodeId) :
-    BaseComputation(keyFields, valueField, nodeId) 
+            size_t nodeId,
+            ImuxData& imuxData,
+            string identifier) :
+    BaseComputation(keyFields, valueField, nodeId, imuxData, identifier) 
   {
     this->N = N;
   }
@@ -99,9 +105,9 @@ public:
     }
 
     Netflow netflow(s);
-    
+   
+    // Generates unique key from key fields 
     string key = generateKey(netflow);
-    //std::cout << "key " << key << std::endl;
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N); 
       allWindows[key] = value;
@@ -118,8 +124,13 @@ public:
       value = 0;
     }
 
-
     allWindows[key]->insert(value);
+    
+    // Getting the current sum and providing that to the imux data structure.
+    T currentSum = allWindows[key]->getSum();
+    auto feature = shared_ptr<SingleFeature<T>>(
+                    new SingleFeature<T>(currentSum));
+    imuxData.addFeature(key, identifier, feature);
 
     return true;
   }
