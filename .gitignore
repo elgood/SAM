@@ -7,3 +7,4 @@ bin/*
 lib/*
 tests/*
 *.swp
+CTestTestfile.cmake

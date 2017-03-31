@@ -72,6 +72,8 @@ int main(int argc, char** argv) {
   // The number of elements to keep track of
   int k;
 
+  int nop; //not used
+
 	time_t timestamp_sec1, timestamp_sec2;
 
   po::options_description desc("Allowed options");
@@ -99,6 +101,8 @@ int main(int argc, char** argv) {
       "The total number of elements in a sliding window")
     ("b", po::value<int>(&b)->default_value(1000),
       "The number of elements per block (active or dynamic window)")
+    ("nop", po::value<int>(&nop)->default_value(1),
+      "The number of simultaneous operators")
   ;
 
   po::variables_map vm;
