@@ -80,6 +80,19 @@ target_link_libraries(TopK ${ZMQ_LIBRARIES})
 target_link_libraries(TopK SamLib)
 target_link_libraries(TopK pthread)
 
+############### Servers #####################
+
+file (GLOB SERVERS_SOURCES "ExecutableSrc/Servers.cpp")
+
+add_executable(ServersQuery ${SERVERS_SOURCES})
+set_target_properties(ServersQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+
+target_link_libraries(ServersQuery ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(ServersQuery ${ZMQ_LIBRARIES})
+target_link_libraries(ServersQuery SamLib)
+target_link_libraries(ServersQuery pthread)
+
+
 ############### SimpleSum #####################
 
 file (GLOB SIMPLE_SUM_SOURCES "ExecutableSrc/TestSimpleSum.cpp")
@@ -116,56 +129,34 @@ target_link_libraries(ExponentialHistogramVariance ${ZMQ_LIBRARIES})
 target_link_libraries(ExponentialHistogramVariance SamLib)
 target_link_libraries(ExponentialHistogramVariance pthread)
 
+################ FilterParser #############################
 
-############ Test Active Window #######################
+file (GLOB FILTER_PARSER_SOURCES "ExecutableSrc/FilterParser.cpp")
 
-file (GLOB TEST_ACTIVE_WINDOW_SOURCES "TestSrc/TestActiveWindow.cpp")
+add_executable(FilterParser ${FILTER_PARSER_SOURCES})
+set_target_properties(FilterParser PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-add_definitions(-DBOOST_TEST_DYN_LINK)
+target_link_libraries(FilterParser SamLib) 
 
-add_executable(TestActiveWindow ${TEST_ACTIVE_WINDOW_SOURCES})
-set_target_properties(TestActiveWindow PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
+############################## Testing ######################
+enable_testing()
 
-target_link_libraries(TestActiveWindow boost_unit_test_framework)
+file (GLOB TEST_SRCS TestSrc/*.cpp)
 
-############ Test Active Window #######################
+foreach(testSrc ${TEST_SRCS})
+  get_filename_component(testName ${testSrc} NAME_WE)
 
-file (GLOB TEST_DORMANT_WINDOW_SOURCES "TestSrc/TestDormantWindow.cpp")
+  add_definitions(-DBOOST_TEST_DYN_LINK)
+  add_executable(${testName} ${testSrc})
 
-add_definitions(-DBOOST_TEST_DYN_LINK)
+  target_link_libraries(${testName} SamLib)
+  target_link_libraries(${testName} boost_unit_test_framework)
 
-add_executable(TestDormantWindow ${TEST_DORMANT_WINDOW_SOURCES})
-set_target_properties(TestDormantWindow PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
+  set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
 
-target_link_libraries(TestDormantWindow boost_unit_test_framework)
+  add_test(NAME ${testName} 
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests
+           COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/${testName})
+endforeach(testSrc)
 
-############ Test Sliding Window #######################
 
-file (GLOB TEST_SLIDING_WINDOW_SOURCES "TestSrc/TestSlidingWindow.cpp")
-
-add_definitions(-DBOOST_TEST_DYN_LINK)
-
-add_executable(TestSlidingWindow ${TEST_SLIDING_WINDOW_SOURCES})
-set_target_properties(TestSlidingWindow PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
-
-target_link_libraries(TestSlidingWindow boost_unit_test_framework)
-
-############ Test SimpleSum #############################
-
-file (GLOB TEST_SIMPLE_SUM_SOURCES "TestSrc/TestSimpleSum.cpp")
-
-add_executable(TestSimpleSum ${TEST_SIMPLE_SUM_SOURCES})
-set_target_properties(TestSimpleSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
-
-target_link_libraries(TestSimpleSum boost_unit_test_framework)
-target_link_libraries(TestSimpleSum SamLib)
-
-############ Test ExponentialHistogram #################
-
-file (GLOB TEST_EH_SOURCES "TestSrc/TestExponentialHistogram.cpp")
-
-add_executable(TestExponentialHistogram ${TEST_EH_SOURCES})
-set_target_properties(TestExponentialHistogram PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
-
-target_link_libraries(TestExponentialHistogram boost_unit_test_framework)
-target_link_libraries(TestExponentialHistogram SamLib)

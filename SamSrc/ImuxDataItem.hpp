@@ -4,16 +4,10 @@
 #include <map>
 #include <iostream>
 
-using std::map;
-using std::shared_ptr;
-using std::cout;
-using std::endl;
+#include "Netflow.h"
+#include "Features.hpp"
 
 namespace sam {
-
-class AdditionalFeature {
-
-};
 
 /**
  * ImuxDataItem contains the original netflow from which additional
@@ -25,28 +19,43 @@ class ImuxDataItem
 {
 private:
   // The latest netflow
-  shared_ptr<Netflow> netflow;
+  std::shared_ptr<Netflow> netflow;
 
-  std::map<string, string> blah2;
+  // A map of additional features that have been added.  The string key
+  // is the identifier specified in the query (e.g top2)
+  std::map<std::string, std::shared_ptr<Feature>> additionalFeatures;
 
-  // A map of additional features that have been added
-  std::map<string, shared_ptr<AdditionalFeature>> additionalFeatures;
-
-  typedef std::map<string, shared_ptr<AdditionalFeature>>::value_type value_type;
+  typedef std::map<std::string, std::shared_ptr<Feature>>::value_type 
+    value_type;
 
 public:
 
   ImuxDataItem() {
 
   }
+
+  bool existsFeature(string key) {
+    if (additionalFeatures.count(key) > 0) {
+      return true;
+    }
+    return false;
+  }
   
-  void addFeature(string key, shared_ptr<AdditionalFeature> feature) {
-    value_type insertValue(key, feature);
-    additionalFeatures.insert(insertValue);
+  void addFeature(string key, std::shared_ptr<Feature> feature) {
+    additionalFeatures[key] = feature;
   }
 
-  void setNetflow(shared_ptr<Netflow> ntf) {
+  void updateFeature(string key, Feature const& feature)
+  {
+    additionalFeatures[key]->update(feature);
+  }
+
+  void setNetflow(std::shared_ptr<Netflow> ntf) {
     netflow = netflow;
+  }
+
+  std::shared_ptr<Feature> getFeature(string key) const {
+    return additionalFeatures.at(key);    
   }
   
 };

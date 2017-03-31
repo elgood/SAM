@@ -63,7 +63,7 @@ public:
       auto eh = shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
       std::pair<string, shared_ptr<ExponentialHistogram<T>>> p(key, eh);
-      allWindows.insert(p);
+      allWindows[key] = eh;
     }
 
     string sValue = netflow.getField(valueField);
@@ -74,8 +74,8 @@ public:
 
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getTotal();
-    auto feature = shared_ptr<SingleFeature<T>>(
-                    new SingleFeature<T>(currentSum));
+    auto feature = shared_ptr<SingleFeature>(
+                    new SingleFeature(currentSum));
     imuxData.addFeature(key, identifier, feature);
 
     return true;

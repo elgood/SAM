@@ -65,12 +65,12 @@ public:
       auto eh = shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
       std::pair<string, shared_ptr<ExponentialHistogram<T>>> p(key, eh);
-      sums.insert(p);
+      sums[key] = eh;
 
       eh = shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
       p = std::pair<string, shared_ptr<ExponentialHistogram<T>>>(key, eh);
-      squares.insert(p);
+      squares[key] = eh;
     }
 
     string sValue = netflow.getField(valueField);
@@ -85,8 +85,8 @@ public:
     T currentSum = sums[key]->getTotal();
     T currentSquares = squares[key]->getTotal();
     double currentVariance = calculateVariance(currentSquares, currentSum);
-    auto feature = shared_ptr<SingleFeature<double>>(
-                    new SingleFeature<double>(currentVariance));
+    auto feature = shared_ptr<SingleFeature>(
+                    new SingleFeature(currentVariance));
     imuxData.addFeature(key, identifier, feature);
 
 

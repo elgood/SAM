@@ -18,35 +18,6 @@ using std::endl;
 
 namespace sam {
 
-/**
- * This encapsulates a feature that is created after analyzing
- * a netflow.  It has two vectors, a list of keys and a list of 
- * frequencies.  
- *
- */
-class TopKFeature: public AdditionalFeature 
-{
-private:
-  vector<string> keys;
-  vector<double> frequencies;
-
-public:
-  TopKFeature(vector<string> keys,
-              vector<double> frequencies) 
-  {
-    this->keys   = keys;
-    this->frequencies = frequencies;
-  }
-  
-  string getKey(int i) {
-    return keys[i];
-  }
-
-  double getFrequency(int i) {
-    return frequencies[i];
-  }
-};
-
 template <typename T>
 class TopK: public AbstractConsumer, public BaseComputation
 {
@@ -101,7 +72,7 @@ bool TopK<T>::consume(string s)
     auto sw = shared_ptr<SlidingWindow<size_t>>(
                 new SlidingWindow<size_t>(N,b,k));
     std::pair<string, shared_ptr<SlidingWindow<size_t>>> p(key, sw);
-    allWindows.insert(p);    
+    allWindows[key] = sw;    
   }
   
   string sValue = netflow.getField(valueField);
@@ -114,10 +85,14 @@ bool TopK<T>::consume(string s)
   vector<string> keys        = sw->getKeys();
   vector<double> frequencies = sw->getFrequencies();
 
-  auto feature = shared_ptr<TopKFeature>(
+  if (!imuxData.existsFeature(key, identifier)) {
+    auto feature = shared_ptr<TopKFeature>(
                   new TopKFeature(keys, frequencies));
-                                                         
-  imuxData.addFeature(key, identifier, feature);
+    imuxData.addFeature(key, identifier, feature);
+  } else {
+    TopKFeature feature(keys, frequencies);
+    imuxData.updateFeature(key, identifier, feature);
+  }
 
   return true;
 }

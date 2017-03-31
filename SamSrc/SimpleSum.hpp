@@ -128,8 +128,8 @@ public:
     
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getSum();
-    auto feature = shared_ptr<SingleFeature<T>>(
-                    new SingleFeature<T>(currentSum));
+    auto feature = shared_ptr<SingleFeature>(
+                    new SingleFeature(currentSum));
     imuxData.addFeature(key, identifier, feature);
 
     return true;
