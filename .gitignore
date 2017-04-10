@@ -9,3 +9,4 @@ tests/*
 *.swp
 CTestTestfile.cmake
 *.log
+Testing
