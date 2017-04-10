@@ -1,8 +1,0 @@
-1:TestActiveWindow
-2:TestDormantWindow
-3:TestExponentialHistogram
-4:TestFeature
-5:TestFilterExpression
-6:TestFilterTokenizer
-7:TestSimpleSum
-8:TestSlidingWindow
