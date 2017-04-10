@@ -8,3 +8,4 @@ lib/*
 tests/*
 *.swp
 CTestTestfile.cmake
+*.log
