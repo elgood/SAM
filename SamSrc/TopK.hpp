@@ -9,13 +9,6 @@
 #include "AbstractConsumer.h"
 #include "BaseComputation.h"
 
-using std::string;
-using std::map;
-using std::vector;
-using std::shared_ptr;
-using std::cout;
-using std::endl;
-
 namespace sam {
 
 template <typename T>
@@ -26,14 +19,14 @@ private:
   size_t b; ///>Number of elements per window
   size_t k; ///>Top k elements managed
 
-  map<string, shared_ptr<SlidingWindow<T>>> allWindows; 
+  std::map<std::string, std::shared_ptr<SlidingWindow<T>>> allWindows; 
   
 public:
   TopK(size_t N, size_t b, size_t k,
        vector<size_t> keyFields,
        size_t valueField,
        size_t nodeId,
-       ImuxData& imuxData,
+       FeatureMap& featureMap,
        string identifier);
      
 
@@ -46,9 +39,9 @@ TopK<T>::TopK(size_t N, size_t b, size_t k,
        vector<size_t> keyFields,
        size_t valueField,
        size_t nodeId,
-       ImuxData& imuxData,
+       FeatureMap& featureMap,
        string identifier) :
-       BaseComputation(keyFields, valueField, nodeId, imuxData, identifier)
+       BaseComputation(keyFields, valueField, nodeId, featureMap, identifier)
 {
   this->N = N;
   this->b = b;
@@ -60,8 +53,8 @@ bool TopK<T>::consume(string s)
 {
   feedCount++;
   if (feedCount % metricInterval == 0) {
-    cout << "NodeId " << nodeId << " number of keys " 
-              << allWindows.size() << endl;
+    std::cout << "NodeId " << nodeId 
+              << allWindows.size() << std::endl;
   }
   Netflow netflow(s);
 
@@ -69,9 +62,9 @@ bool TopK<T>::consume(string s)
   string key = generateKey(netflow);
   
   if (allWindows.count(key) == 0) {
-    auto sw = shared_ptr<SlidingWindow<size_t>>(
+    auto sw = std::shared_ptr<SlidingWindow<size_t>>(
                 new SlidingWindow<size_t>(N,b,k));
-    std::pair<string, shared_ptr<SlidingWindow<size_t>>> p(key, sw);
+    std::pair<std::string, std::shared_ptr<SlidingWindow<size_t>>> p(key, sw);
     allWindows[key] = sw;    
   }
   
@@ -84,14 +77,10 @@ bool TopK<T>::consume(string s)
 
   vector<string> keys        = sw->getKeys();
   vector<double> frequencies = sw->getFrequencies();
-
-  if (!imuxData.existsFeature(key, identifier)) {
-    auto feature = shared_ptr<TopKFeature>(
-                  new TopKFeature(keys, frequencies));
-    imuxData.addFeature(key, identifier, feature);
-  } else {
+  
+  if (keys.size() > 0 && frequencies.size() > 0) {
     TopKFeature feature(keys, frequencies);
-    imuxData.updateFeature(key, identifier, feature);
+    featureMap.updateInsert(key, identifier, feature);
   }
 
   return true;

@@ -13,7 +13,7 @@
 #include <vector>
 #include <iostream>
 
-#include "ImuxDataItem.hpp"
+#include "FeatureMap.hpp"
 
 // I think this is somehow even though we don't reference it.
 namespace fusion = boost::fusion;
@@ -170,7 +170,8 @@ class FilterToken {
 public:
   virtual std::string toString() const = 0; 
   virtual bool isOperator() const = 0;
-  virtual double evaluate(ImuxDataItem const& item) const = 0;
+  virtual double evaluate(std::string const& key,
+                          FeatureMap const& featureMap) const = 0;
   virtual double evaluate(double d1, double d2) const = 0;
 };
 
@@ -200,7 +201,8 @@ public:
   double getParameter(int i) const { return parameters[i]; }
   std::string toString() const;
   bool isOperator() const { return false; }
-  double evaluate(ImuxDataItem const & item) const;
+  double evaluate(std::string const& key,
+                  FeatureMap const & featureMap) const;
   double evaluate(double d1, double d2) const;
 
 private:
@@ -219,10 +221,11 @@ std::string FunctionToken::toString() const
   return str;
 }
 
-double FunctionToken::evaluate(ImuxDataItem const & item) const
+double FunctionToken::evaluate(std::string const& key,
+                               FeatureMap const& featureMap) const
 {
-  std::shared_ptr<Feature> feature = item.getFeature(identifier);
-  return feature->evaluate(function, parameters);
+  std::shared_ptr<Feature const> feature = featureMap.at(key, identifier);
+  return feature->evaluate(function, parameters); 
 }
 
 double FunctionToken::evaluate(double d1, double d2) const
@@ -238,7 +241,8 @@ public:
   double getValue() const { return d; }
   std::string toString() const { return boost::lexical_cast<std::string>(d); }
   bool isOperator() const { return false; }
-  double evaluate(ImuxDataItem const & item) const;
+  double evaluate(std::string const& key,
+                  FeatureMap const& featureMap) const;
   double evaluate(double d1, double d2) const;
 private:
   double d;
@@ -249,7 +253,8 @@ double NumberToken::evaluate(double d1, double d2) const
   throw std::runtime_error("evaluate(d1, d2) not defined for NumberToken");
 }
 
-double NumberToken::evaluate(ImuxDataItem const & item) const
+double NumberToken::evaluate(std::string const& key,
+                             FeatureMap const& featureMap) const
 {
   return d;
 }
@@ -261,15 +266,17 @@ public:
   std::string getValue() const { return identifier; }
   std::string toString() const { return identifier; }
   bool isOperator() const { return false; }
-  double evaluate(ImuxDataItem const & item) const;
+  double evaluate(std::string const& key,
+                  FeatureMap  const& featureMap) const;
   double evaluate(double d1, double d2) const;
 private:
   std::string identifier;
 };
 
-double IdentifierToken::evaluate(ImuxDataItem const & item) const
+double IdentifierToken::evaluate(std::string const& key,
+                                 FeatureMap const& featureMap) const
 {
-  std::shared_ptr<Feature> feature = item.getFeature(identifier);
+  std::shared_ptr<Feature const> feature = featureMap.at(key, identifier);
   return feature->evaluate();
 }
 
@@ -291,7 +298,7 @@ public:
   bool isLeftAssociative() const { return associativity == LEFT_ASSOCIATIVE; }
   bool isRightAssociative() const { return associativity == RIGHT_ASSOCIATIVE; }
   int getPrecedence() const { return precedence; }
-  double evaluate(ImuxDataItem const& item) const;
+  double evaluate(std::string const& key, FeatureMap const& featureMap) const;
 public:
   OperatorToken(int associativity, int precedence) {
     this->associativity = associativity;
@@ -299,9 +306,10 @@ public:
   }
 };
 
-double OperatorToken::evaluate(ImuxDataItem const & item) const
+double OperatorToken::evaluate(std::string const& key,
+                               FeatureMap const& featureMap) const
 {
-  throw std::runtime_error("evaluate(ImuxDataItem) not defined for"
+  throw std::runtime_error("evaluate(string, FeatureMap) not defined for"
                            " NumberToken");
 }
 

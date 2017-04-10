@@ -10,8 +10,8 @@ BOOST_AUTO_TEST_CASE( simple_sum_test )
   keyFields.push_back(6);
   size_t valueField = 14;
   size_t nodeId = 0;
-  ImuxData data;
-  SimpleSum<size_t> sum(10, keyFields, valueField, nodeId, data, "sum0");
+  FeatureMap featureMap;
+  SimpleSum<size_t> sum(10, keyFields, valueField, nodeId, featureMap, "sum0");
 
   string netflowString1 = "1365582756.384094,2013-04-10 08:32:36," 
                          "20130410083236.384094,17,UDP,172.20.2.18," 

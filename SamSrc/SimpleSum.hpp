@@ -84,9 +84,9 @@ public:
             vector<size_t> keyFields,
             size_t valueField,
             size_t nodeId,
-            ImuxData& imuxData,
+            FeatureMap& featureMap,
             string identifier) :
-    BaseComputation(keyFields, valueField, nodeId, imuxData, identifier) 
+    BaseComputation(keyFields, valueField, nodeId, featureMap, identifier) 
   {
     this->N = N;
   }
@@ -128,9 +128,8 @@ public:
     
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getSum();
-    auto feature = shared_ptr<SingleFeature>(
-                    new SingleFeature(currentSum));
-    imuxData.addFeature(key, identifier, feature);
+    SingleFeature feature(currentSum);
+    featureMap.updateInsert(key, identifier, feature);
 
     return true;
   }

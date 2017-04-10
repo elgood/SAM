@@ -16,9 +16,6 @@ using std::endl;
 namespace sam {
 
 BaseProducer::BaseProducer(int queueLength) {
-#ifdef DEBUG
-  cout << "DEBUG: Entering BaseProducer constructor" << endl;
-#endif
 	this->queueLength = queueLength;
 	inputQueue = new string[queueLength];
   numItems = 0;
@@ -42,9 +39,6 @@ bool BaseProducer::deregisterConsumer(AbstractConsumer * consumer)
 size_t BaseProducer::getNumConsumers() const { return consumers.size(); }
 
 void BaseProducer::parallelFeed(string s) {
-  //cout << "string s " << s << endl;
-  //cout << "numItems " << numItems << endl;
-  //cout << "queueLength " << queueLength << endl;
   inputQueue[numItems] = s;
   numItems++;
   if (numItems >= queueLength) {

@@ -18,7 +18,6 @@
 #include "ReadSocket.h"
 #include "ZeroMQPushPull.h"
 #include "TopK.hpp"
-#include "ImuxData.hpp"
 
 using std::string;
 using std::vector;
@@ -152,7 +151,7 @@ int main(int argc, char** argv) {
 
   receiver.registerConsumer(&consumer);
 
-  ImuxData imuxData;
+  FeatureMap featureMap;
 
   vector<size_t> keyFields;
   keyFields.push_back(6);
@@ -160,7 +159,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < nop; i++) {
     string identifier = "topk" + boost::lexical_cast<string>(i);
     auto topk = new TopK<size_t>(N, b, k, keyFields, valueField, nodeId,
-                                 imuxData, identifier);
+                                 featureMap, identifier);
     consumer.registerConsumer(topk); 
   }
 

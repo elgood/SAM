@@ -14,19 +14,15 @@
 #include "BaseProducer.h"
 #include "AbstractConsumer.h"
 
-using std::vector;
-using std::string;
-using std::size_t;
-
 namespace sam {
 
 class BaseProducer {
 protected:
 	/// The list of consumers that consume from output from this producer
-	vector<AbstractConsumer *> consumers;
+	std::vector<AbstractConsumer *> consumers;
 
 	/// The producer has a queue of strings to send to the consumers
-	string* inputQueue;
+	std::string* inputQueue;
 
 	/// The length of the inputQueue
 	size_t queueLength;

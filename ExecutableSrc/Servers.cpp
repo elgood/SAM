@@ -17,7 +17,6 @@
 #include "ReadSocket.h"
 #include "ZeroMQPushPull.h"
 #include "TopK.hpp"
-#include "ImuxData.hpp"
 #include "FilterExpression.hpp"
 #include "Filter.hpp"
 
@@ -152,7 +151,7 @@ int main(int argc, char** argv) {
 
   receiver.registerConsumer(&consumer);
 
-  ImuxData imuxData;
+  FeatureMap featureMap;
 
   vector<size_t> keyFields;
   keyFields.push_back(6);
@@ -160,12 +159,12 @@ int main(int argc, char** argv) {
   string identifier = "top2";
   k = 2;
   auto topk = new TopK<size_t>(N, b, k, keyFields, valueField, nodeId,
-                               imuxData, identifier);
+                               featureMap, identifier);
   consumer.registerConsumer(topk); 
 
 
   FilterExpression filterExpression("top2.value(0) + top2.value(1) < 0.9");
-  Filter* filter = new Filter(filterExpression, keyFields, nodeId, imuxData, 
+  Filter* filter = new Filter(filterExpression, keyFields, nodeId, featureMap, 
                               "servers");
   consumer.registerConsumer(filter);
 
@@ -188,7 +187,6 @@ int main(int argc, char** argv) {
   );
 	std::cout << "Seconds " 
     << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
-
 
 }
 

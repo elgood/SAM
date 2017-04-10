@@ -9,9 +9,6 @@
 #include <functional>
 
 
-using std::cout;
-using std::endl;
-
 namespace sam {
 
 
@@ -19,8 +16,8 @@ ZeroMQPushPull::ZeroMQPushPull(
                  size_t queueLength,
                  size_t numNodes, 
                  size_t nodeId, 
-                 vector<string> hostnames, 
-                 vector<int> ports, 
+                 std::vector<std::string> hostnames, 
+                 std::vector<int> ports, 
                  uint32_t hwm)
   :
   BaseProducer(queueLength)
@@ -35,31 +32,29 @@ ZeroMQPushPull::ZeroMQPushPull(
   this->hwm       = hwm;
 
 
-  shared_ptr<zmq::pollitem_t> items( new zmq::pollitem_t[numNodes],
+  std::shared_ptr<zmq::pollitem_t> items( new zmq::pollitem_t[numNodes],
     []( zmq::pollitem_t* p) { delete[] p; });
  
   for (int i =0; i < numNodes; i++) 
   {
-    auto counter = shared_ptr<atomic<std::uint32_t> >(
-                    new atomic<std::uint32_t>(0));
+    auto counter = std::shared_ptr<std::atomic<std::uint32_t> >(
+                    new std::atomic<std::uint32_t>(0));
     pullCounters.push_back( counter );   
 
     /////////// Adding push sockets //////////////
-    auto pusher = shared_ptr<zmq::socket_t>(
+    auto pusher = std::shared_ptr<zmq::socket_t>(
                     new zmq::socket_t(*context, ZMQ_PUSH));
 
     std::string ip = getIpString(hostnames[nodeId]);
     std::string url = "tcp://" + ip + ":" + 
                       boost::lexical_cast<string>(ports[i]);
 
-    std::cout << "Adding push socket to " << url << std::endl;
-
     pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
     pusher->bind(url);
     pushers.push_back(pusher);
 
     //////////// Adding pull sockets //////////////
-    auto puller = shared_ptr<zmq::socket_t>(
+    auto puller = std::shared_ptr<zmq::socket_t>(
                     new zmq::socket_t(*context, ZMQ_PULL));
 
     ip = getIpString(hostnames[i]);
@@ -97,15 +92,15 @@ ZeroMQPushPull::ZeroMQPushPull(
           this->parallelFeed(sNetflow);
           int value = this->pullCounters[i]->fetch_add(1);
           if (value % metricInterval == 0) {
-            cout << "nodeid " << this->nodeId << " PullCount[" << i << "] " 
-                 << value << endl;
+            std::cout << "nodeid " << this->nodeId << " PullCount[" << i 
+                      << "] " << value << std::endl;
           }
         } 
       }
     }
   };
 
-  pullThread = thread(pullFunction); 
+  pullThread = std::thread(pullFunction); 
   
 }
 
@@ -126,7 +121,8 @@ bool ZeroMQPushPull::consume(string s)
 {
   consumeCount++;
   if (consumeCount % metricInterval == 0) {
-    cout << "NodeId " << nodeId << " consumeCount " << consumeCount << endl; 
+    std::cout << "NodeId " << nodeId << " consumeCount " << consumeCount 
+              << std::endl; 
   }
   Netflow n(s);
   string source = n.getSourceIP();

@@ -15,8 +15,6 @@
 #include "ExponentialHistogram.hpp"
 #include "Features.hpp"
 
-using std::map;
-
 namespace sam {
 
 template <typename T>
@@ -32,18 +30,18 @@ private:
   // The size of the sliding window
   size_t N; 
 
-  map<string, shared_ptr<ExponentialHistogram<T>>> sums;
-  map<string, shared_ptr<ExponentialHistogram<T>>> squares;
+  std::map<string, std::shared_ptr<ExponentialHistogram<T>>> sums;
+  std::map<string, std::shared_ptr<ExponentialHistogram<T>>> squares;
 
 public:
   ExponentialHistogramVariance(size_t N, size_t k,
-                          vector<size_t> keyFields,
+                          std::vector<size_t> keyFields,
                           size_t valueField,
                           size_t nodeId,
-                          ImuxData& imuxData,
-                          string identifier) :
+                          FeatureMap& featureMap,
+                          std::string identifier) :
                           BaseComputation(keyFields, valueField, nodeId,
-                                          imuxData, identifier) 
+                                          featureMap, identifier) 
   {
     this->N = N;
     this->k = k;
@@ -62,14 +60,16 @@ public:
     string key = generateKey(netflow);
 
     if (sums.count(key) == 0) {
-      auto eh = shared_ptr<ExponentialHistogram<T>>(
+      auto eh = std::shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
-      std::pair<string, shared_ptr<ExponentialHistogram<T>>> p(key, eh);
+      std::pair<std::string, 
+                std::shared_ptr<ExponentialHistogram<T>>> p(key, eh);
       sums[key] = eh;
 
-      eh = shared_ptr<ExponentialHistogram<T>>(
+      eh = std::shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
-      p = std::pair<string, shared_ptr<ExponentialHistogram<T>>>(key, eh);
+      p = std::pair<std::string, 
+                    std::shared_ptr<ExponentialHistogram<T>>>(key, eh);
       squares[key] = eh;
     }
 
@@ -85,9 +85,8 @@ public:
     T currentSum = sums[key]->getTotal();
     T currentSquares = squares[key]->getTotal();
     double currentVariance = calculateVariance(currentSquares, currentSum);
-    auto feature = shared_ptr<SingleFeature>(
-                    new SingleFeature(currentVariance));
-    imuxData.addFeature(key, identifier, feature);
+    SingleFeature feature(currentVariance);
+    featureMap.updateInsert(key, identifier, feature);
 
 
 

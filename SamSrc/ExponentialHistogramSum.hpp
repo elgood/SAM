@@ -13,8 +13,6 @@
 #include "ExponentialHistogram.hpp"
 #include "Features.hpp"
 
-using std::map;
-
 namespace sam {
 
 template <typename T>
@@ -30,17 +28,17 @@ private:
   // The size of the sliding window
   size_t N; 
 
-  map<string, shared_ptr<ExponentialHistogram<T>>> allWindows;
+  std::map<string, std::shared_ptr<ExponentialHistogram<T>>> allWindows;
 
 public:
   ExponentialHistogramSum(size_t N, size_t k,
                           vector<size_t> keyFields,
                           size_t valueField,
                           size_t nodeId,
-                          ImuxData& imuxData,
+                          FeatureMap& featureMap,
                           string identifier) :
                           BaseComputation(keyFields, valueField, nodeId,
-                                          imuxData, identifier) 
+                                          featureMap, identifier) 
   {
     this->N = N;
     this->k = k;
@@ -60,13 +58,14 @@ public:
 
     // Create an exponential histogram if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {
-      auto eh = shared_ptr<ExponentialHistogram<T>>(
+      auto eh = std::shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
-      std::pair<string, shared_ptr<ExponentialHistogram<T>>> p(key, eh);
+      std::pair<std::string, 
+                std::shared_ptr<ExponentialHistogram<T>>> p(key, eh);
       allWindows[key] = eh;
     }
 
-    string sValue = netflow.getField(valueField);
+    std::string sValue = netflow.getField(valueField);
 
     T value = boost::lexical_cast<T>(sValue);
 
@@ -74,9 +73,8 @@ public:
 
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getTotal();
-    auto feature = shared_ptr<SingleFeature>(
-                    new SingleFeature(currentSum));
-    imuxData.addFeature(key, identifier, feature);
+    SingleFeature feature(currentSum);
+    featureMap.updateInsert(key, identifier, feature);
 
     return true;
   }

@@ -16,9 +16,9 @@ public:
   Filter(FilterExpression const& _expression,
          vector<size_t> keyFields,
          size_t nodeId,
-         ImuxData& imuxData,
+         FeatureMap& featureMap,
          string identifier) :
-         BaseComputation(keyFields, 0, nodeId, imuxData, identifier), 
+         BaseComputation(keyFields, 0, nodeId, featureMap, identifier), 
          expression(_expression)
   {}
 
@@ -30,15 +30,16 @@ bool Filter::consume(string s)
 {
   Netflow netflow(s);
   string key = generateKey(netflow);
-  shared_ptr<ImuxDataItem> item = imuxData.getDataItem(key);
-  double result = expression.evaluate(*item); 
 
-  if (!imuxData.existsFeature(key, identifier)) {
-    std::shared_ptr<BooleanFeature> feature(new BooleanFeature(result));
-    imuxData.addFeature(key, identifier, feature);
-  } else {
+  try {
+    double result = expression.evaluate(key, featureMap); 
     BooleanFeature feature(result);
-    imuxData.updateFeature(key, identifier, feature); 
+    featureMap.updateInsert(key, identifier, feature); 
+  } catch (std::exception e) {
+    // If there was an exception, it means that some of the necessary 
+    // features weren't present, so the boolean feature is false.
+    BooleanFeature feature(0);
+    featureMap.updateInsert(key, identifier, feature);  
   }
   return true;
 }

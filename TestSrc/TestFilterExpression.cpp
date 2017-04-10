@@ -13,50 +13,40 @@ BOOST_AUTO_TEST_CASE( number_test )
 {
   string str = "1.0 + 2.5";
   FilterExpression expression(str);
-  ImuxDataItem item;
-  BOOST_CHECK_EQUAL(expression.evaluate(item), 3.5);
+  FeatureMap featureMap;
+  std::string key = "blah";
+  BOOST_CHECK_EQUAL(expression.evaluate(key, featureMap), 3.5);
 }
 
-BOOST_AUTO_TEST_CASE( compariton_test )
+BOOST_AUTO_TEST_CASE( comparison_test )
 {
-  string str = "top2.value(0) + top2.value(1) > 0.9";
-  FilterExpression expression(str);
-  ImuxDataItem item;
+  FeatureMap featureMap;
   std::vector<std::string> keys;
   keys.push_back("1");
   keys.push_back("2");
   std::vector<double> frequencies;
   frequencies.push_back(0.85);
   frequencies.push_back(0.1);
-  std::shared_ptr<TopKFeature> feature(new TopKFeature(keys, frequencies));
-  item.addFeature("top2", feature); 
-  BOOST_CHECK_EQUAL(expression.evaluate(item), 1);
+  TopKFeature feature(keys, frequencies);
+  std::string key = "blah";
+  std::string id  = "top2";
+  featureMap.updateInsert(key, id, feature);
+  string str = "top2.value(0) + top2.value(1) > 0.9";
+  FilterExpression expression(str);
+  BOOST_CHECK_EQUAL(expression.evaluate(key, featureMap), 1);
 }
 
-
-/*BOOST_AUTO_TEST_CASE( operator_associativity )
+/**
+ * This checks that expression.evaluate throws an exception when there
+ * is not the necessary data in the feature map.
+ */
+BOOST_AUTO_TEST_CASE ( empty_item )
 {
-  // Should throw an exception because the associativity is not valid.
-  BOOST_CHECK_THROW(Operator(3, 3), std::invalid_argument);
+  FeatureMap featureMap;
+  std::string key = "blah";
+  string str = "top2.value(0) + top2.value(1) > 0.9";
+  FilterExpression expression(str);
+  BOOST_CHECK_THROW(expression.evaluate(key, featureMap), std::logic_error);
+}
 
-  int prec1 = 0;
-  Operator op1(Operator::RIGHT_ASSOCIATIVE, prec1);
-  BOOST_CHECK_EQUAL(op1.getAssociativity(), Operator::RIGHT_ASSOCIATIVE);
-  BOOST_CHECK_EQUAL(op1.getPrecedence(), prec1);
-
-  int prec2 = 4;
-  Operator op2(Operator::LEFT_ASSOCIATIVE, prec2);
-  BOOST_CHECK_EQUAL(op2.getAssociativity(), Operator::LEFT_ASSOCIATIVE);
-  BOOST_CHECK_EQUAL(op2.getPrecedence(), prec2);
-}*/
-
-
-/*BOOST_AUTO_TEST_CASE( operator_precedence )
-{
-  BOOST_CHECK_EQUAL(Minus().getPrecedence(), 2);
-  BOOST_CHECK_EQUAL(Plus().getPrecedence(), 2);
-  BOOST_CHECK_EQUAL(Divide().getPrecedence(), 3);
-  BOOST_CHECK_EQUAL(Multiply().getPrecedence(), 3);
-  BOOST_CHECK_EQUAL(Power().getPrecedence(), 4);
-}*/
 

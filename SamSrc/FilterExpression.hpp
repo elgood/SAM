@@ -8,8 +8,8 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "ImuxDataItem.hpp"
 #include "FilterTokenizer.hpp"
+#include "FeatureMap.hpp"
 
 namespace sam {
 
@@ -21,7 +21,7 @@ private:
 public:  
   FilterExpression(std::string sExpression);
 
-  double evaluate(ImuxDataItem const & item) const;
+  double evaluate(std::string const& key, FeatureMap const& featureMap) const;
 private:
   void addOperator(std::shared_ptr<OperatorToken> o1);
 };
@@ -76,11 +76,10 @@ FilterExpression::FilterExpression(std::string sExpression)
     outputList.push_back(top);
     operatorStack.pop();
   }
-
 }
 
-
-double FilterExpression::evaluate(ImuxDataItem const & item) const
+double FilterExpression::evaluate(std::string const& key, 
+                                  FeatureMap const& featureMap) const
 {
   std::stack<double> mystack;
   for (auto token : outputList) {
@@ -92,14 +91,15 @@ double FilterExpression::evaluate(ImuxDataItem const & item) const
       double result = token->evaluate(o1, o2);
       mystack.push(result); 
     } else {
-      double result = token->evaluate(item);
+      double result = token->evaluate(key, featureMap);
       mystack.push(result);
     }
   }
   double result = mystack.top();
   return result;
+
 }
-  
+
 
 }
 

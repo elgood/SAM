@@ -14,6 +14,14 @@ public:
                           std::vector<double> const& parameters) const = 0;
   virtual double evaluate() const  = 0;
   virtual void update(Feature const& feature) = 0;
+  virtual std::shared_ptr<Feature> createCopy() const = 0;
+  virtual bool operator==(Feature const& other) const = 0;
+
+  bool operator!=(Feature const& other) const {
+    return !(*this == other);
+  }
+
+  virtual std::string toString() const = 0;
 };
 
 
@@ -47,7 +55,25 @@ public:
     value = static_cast<BooleanFeature const&>(feature).value;
   }
 
+  std::shared_ptr<Feature> createCopy() const {
+    std::shared_ptr<Feature> copy(new BooleanFeature(value));
+    return copy;
+  }
 
+  bool operator==(Feature const& other) const {
+    if (BooleanFeature const* f = dynamic_cast<BooleanFeature const*>(&other)) 
+    {
+      if (f->value == value)
+        return true;
+    }
+    return false;
+  }
+
+  std::string toString() const {
+    std::string rString = "BooleanFeature " + 
+      boost::lexical_cast<std::string>(value);
+    return rString;
+  }
 };
 
 
@@ -81,6 +107,25 @@ public:
     value = static_cast<SingleFeature const&>(feature).value;
   }
 
+  std::shared_ptr<Feature> createCopy() const {
+    std::shared_ptr<Feature> copy(new SingleFeature(value));
+    return copy;
+  }
+
+  bool operator==(Feature const& other) const {
+    if (SingleFeature const* f = dynamic_cast<SingleFeature const*>(&other)) 
+    {
+      if (f->value == value)
+        return true;
+    }
+    return false;
+  }
+
+  std::string toString() const {
+    std::string rString = "SingleFeature " + 
+      boost::lexical_cast<std::string>(value);
+    return rString;
+  }
 
 };
 
@@ -128,7 +173,43 @@ public:
     keys = static_cast<TopKFeature const&>(feature).keys;
     frequencies = static_cast<TopKFeature const&>(feature).frequencies;
   }
-  
+
+
+  std::shared_ptr<Feature> createCopy() const {
+    std::shared_ptr<Feature> copy(new TopKFeature(keys, frequencies));
+    return copy;
+  }
+
+  bool operator==(Feature const& other) const {
+    if (TopKFeature const* f = dynamic_cast<TopKFeature const*>(&other)) 
+    {
+      if (f->keys.size() != keys.size()) {
+        return false;
+      }
+      for (int i = 0; i < keys.size(); i++) {
+        if (f->keys[i].compare(keys[i]) != 0 )
+        {
+          return false;
+        }
+      }
+      if (f->frequencies.size() != frequencies.size()) {
+        return false;
+      }
+      for (int i = 0; i < frequencies.size(); i++) {
+        if (f->frequencies[i] != frequencies[i] )
+        {
+          return false;
+        }
+      }
+
+    }
+    return true;
+  }
+
+  std::string toString() const {
+    std::string rString = "TopKFeature";
+    return rString;
+  }
 };
 
 

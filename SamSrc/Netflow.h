@@ -1,6 +1,17 @@
 #ifndef NETFLOW_H
 #define NETFLOW_H
 
+#define TIME_SECONDS_FIELD            0
+#define PARSE_DATE_FIELD              1
+#define DATE_TIME_STR_FIELD           2
+#define IP_LAYER_PROTOCOL_FIELD       3
+#define IP_LAYER_PROTOCOL_CODE_FIELD  4
+#define SOURCE_IP_FIELD               5
+#define DEST_IP_FIELD                 6
+#define SOURCE_PORT_FIELD             7
+#define DEST_PORT_FIELD               8
+
+
 #include <string>
 
 using std::string;
