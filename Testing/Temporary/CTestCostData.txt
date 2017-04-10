@@ -1,0 +1,9 @@
+TestActiveWindow 1 0.0444589
+TestDormantWindow 1 0.0093751
+TestExponentialHistogram 1 14.4995
+TestFeature 1 0.00499487
+TestFilterExpression 1 0.00516486
+TestFilterTokenizer 1 0.00536513
+TestSimpleSum 1 0.00517583
+TestSlidingWindow 1 0.00527501
+---

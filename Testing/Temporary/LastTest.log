@@ -1,0 +1,147 @@
+Start testing: Mar 30 22:39 MDT
+----------------------------------------------------------
+1/8 Testing: TestActiveWindow
+1/8 Test: TestActiveWindow
+Command: "/Users/elgood/Code/eclipse/Streaming-c++/SAM/tests/TestActiveWindow"
+Directory: /Users/elgood/Code/eclipse/Streaming-c++/SAM/tests
+"TestActiveWindow" start time: Mar 30 22:39 MDT
+Output:
+----------------------------------------------------------
+Running 3 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"TestActiveWindow" end time: Mar 30 22:39 MDT
+"TestActiveWindow" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/8 Testing: TestDormantWindow
+2/8 Test: TestDormantWindow
+Command: "/Users/elgood/Code/eclipse/Streaming-c++/SAM/tests/TestDormantWindow"
+Directory: /Users/elgood/Code/eclipse/Streaming-c++/SAM/tests
+"TestDormantWindow" start time: Mar 30 22:39 MDT
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TestDormantWindow" end time: Mar 30 22:39 MDT
+"TestDormantWindow" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/8 Testing: TestExponentialHistogram
+3/8 Test: TestExponentialHistogram
+Command: "/Users/elgood/Code/eclipse/Streaming-c++/SAM/tests/TestExponentialHistogram"
+Directory: /Users/elgood/Code/eclipse/Streaming-c++/SAM/tests
+"TestExponentialHistogram" start time: Mar 30 22:39 MDT
+Output:
+----------------------------------------------------------
+Running 3 test cases...
+
+*** No errors detected
+<end of output>
+Test time =  14.50 sec
+----------------------------------------------------------
+Test Passed.
+"TestExponentialHistogram" end time: Mar 30 22:40 MDT
+"TestExponentialHistogram" time elapsed: 00:00:14
+----------------------------------------------------------
+
+4/8 Testing: TestFeature
+4/8 Test: TestFeature
+Command: "/Users/elgood/Code/eclipse/Streaming-c++/SAM/tests/TestFeature"
+Directory: /Users/elgood/Code/eclipse/Streaming-c++/SAM/tests
+"TestFeature" start time: Mar 30 22:40 MDT
+Output:
+----------------------------------------------------------
+Running 2 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"TestFeature" end time: Mar 30 22:40 MDT
+"TestFeature" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/8 Testing: TestFilterExpression
+5/8 Test: TestFilterExpression
+Command: "/Users/elgood/Code/eclipse/Streaming-c++/SAM/tests/TestFilterExpression"
+Directory: /Users/elgood/Code/eclipse/Streaming-c++/SAM/tests
+"TestFilterExpression" start time: Mar 30 22:40 MDT
+Output:
+----------------------------------------------------------
+Running 2 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TestFilterExpression" end time: Mar 30 22:40 MDT
+"TestFilterExpression" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/8 Testing: TestFilterTokenizer
+6/8 Test: TestFilterTokenizer
+Command: "/Users/elgood/Code/eclipse/Streaming-c++/SAM/tests/TestFilterTokenizer"
+Directory: /Users/elgood/Code/eclipse/Streaming-c++/SAM/tests
+"TestFilterTokenizer" start time: Mar 30 22:40 MDT
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TestFilterTokenizer" end time: Mar 30 22:40 MDT
+"TestFilterTokenizer" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/8 Testing: TestSimpleSum
+7/8 Test: TestSimpleSum
+Command: "/Users/elgood/Code/eclipse/Streaming-c++/SAM/tests/TestSimpleSum"
+Directory: /Users/elgood/Code/eclipse/Streaming-c++/SAM/tests
+"TestSimpleSum" start time: Mar 30 22:40 MDT
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TestSimpleSum" end time: Mar 30 22:40 MDT
+"TestSimpleSum" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/8 Testing: TestSlidingWindow
+8/8 Test: TestSlidingWindow
+Command: "/Users/elgood/Code/eclipse/Streaming-c++/SAM/tests/TestSlidingWindow"
+Directory: /Users/elgood/Code/eclipse/Streaming-c++/SAM/tests
+"TestSlidingWindow" start time: Mar 30 22:40 MDT
+Output:
+----------------------------------------------------------
+Running 6 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TestSlidingWindow" end time: Mar 30 22:40 MDT
+"TestSlidingWindow" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Mar 30 22:40 MDT
