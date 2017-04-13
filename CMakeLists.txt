@@ -151,6 +151,7 @@ foreach(testSrc ${TEST_SRCS})
 
   target_link_libraries(${testName} SamLib)
   target_link_libraries(${testName} boost_unit_test_framework)
+  target_link_libraries(${testName} pthread)
 
   set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
 

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <boost/lexical_cast.hpp>
+#include <map>
 #include "BaseProducer.h"
 #include "NetflowGenerators.hpp"
 #include "Netflow.h"

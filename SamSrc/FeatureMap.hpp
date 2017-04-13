@@ -23,7 +23,7 @@ private:
 
   // The flag keeps track of if a slot is empty, occupied, or in an
   // intermediate state.
-  std::atomic_int volatile * flag;
+  std::atomic<int> volatile * flag;
 
   // An array of keys.  This is the combination of the key for the imux
   // data structure and the name of the feature.
@@ -36,7 +36,7 @@ public:
   FeatureMap(int capacity = 1000) {
     this->capacity = capacity;  
     features = new std::shared_ptr<Feature>[capacity];
-    flag = new std::atomic_int[capacity];
+    flag = new std::atomic<int>[capacity];
     keys = new std::string[capacity];
 
     // TODO: Add parallel loop
