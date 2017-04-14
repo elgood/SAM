@@ -53,7 +53,7 @@ bool TopK<T>::consume(string s)
 {
   feedCount++;
   if (feedCount % metricInterval == 0) {
-    std::cout << "NodeId " << nodeId 
+    std::cout << "NodeId " << nodeId << " allWindows.size() " 
               << allWindows.size() << std::endl;
   }
   Netflow netflow(s);

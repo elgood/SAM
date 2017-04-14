@@ -29,7 +29,8 @@ BOOST_AUTO_TEST_CASE( test_topk )
   producer.registerConsumer(&top2);
 
   FilterExpression filterExpression("top2.value(0) + top2.value(1) < 0.9");
-  Filter filter(filterExpression, keyFields, 0, featureMap, "servers");
+  Filter filter(filterExpression, keyFields, 0, featureMap, "servers", 
+                queueLength);
 
   producer.registerConsumer(&filter);
 

@@ -1,5 +1,5 @@
-#ifndef EXPONENTIAL_HISTOGRAM_SUM_HPP
-#define EXPONENTIAL_HISTOGRAM_SUM_HPP
+#ifndef EXPONENTIAL_HISTOGRAM_VARIANCE_HPP
+#define EXPONENTIAL_HISTOGRAM_VARIANCE_HPP
 
 /**
  * This is based on Mayur Datar's work with exponential histograms.

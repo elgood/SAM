@@ -19,6 +19,8 @@
 #include "TopK.hpp"
 #include "FilterExpression.hpp"
 #include "Filter.hpp"
+#include "ExponentialHistogramSum.hpp"
+#include "ExponentialHistogramVariance.hpp"
 
 #define DEBUG 1
 
@@ -154,8 +156,8 @@ int main(int argc, char** argv) {
   FeatureMap featureMap;
 
   vector<size_t> keyFields;
-  keyFields.push_back(6);
-  int valueField = 8;
+  keyFields.push_back(DEST_IP_FIELD);
+  int valueField = DEST_PORT_FIELD;
   string identifier = "top2";
   k = 2;
   auto topk = new TopK<size_t>(N, b, k, keyFields, valueField, nodeId,
@@ -168,7 +170,30 @@ int main(int argc, char** argv) {
                               "servers", queueLength);
   consumer.registerConsumer(filter);
 
-
+  valueField = SRC_TOTAL_BYTES;
+  identifier = "serverSumIncomingFlowSize";
+  auto sumIncoming = new ExponentialHistogramSum<size_t>(N, 2, keyFields,
+                          valueField, nodeId, featureMap, identifier);
+  filter->registerConsumer(sumIncoming); 
+  
+  valueField = DEST_TOTAL_BYTES;
+  identifier = "serverSumOutgoingFlowSize";
+  auto sumOutgoing = new ExponentialHistogramSum<size_t>(N, 2, keyFields,
+                          valueField, nodeId, featureMap, identifier);
+  filter->registerConsumer(sumOutgoing);
+     
+  valueField = SRC_TOTAL_BYTES;
+  identifier = "serverVarianceIncomingFlowSize";
+  auto varianceIncoming = new ExponentialHistogramVariance<size_t>(N, 2, 
+                         keyFields, valueField, nodeId, featureMap, identifier);
+  filter->registerConsumer(varianceIncoming); 
+  
+  valueField = DEST_TOTAL_BYTES;
+  identifier = "serverVarianceOutgoingFlowSize";
+  auto varianceOutgoing = new ExponentialHistogramVariance<size_t>(N, 2, 
+                         keyFields, valueField, nodeId, featureMap, identifier);
+  filter->registerConsumer(varianceOutgoing);
+     
   if (!receiver.connect()) {
     std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;
     return -1;

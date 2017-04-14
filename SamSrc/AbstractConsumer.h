@@ -13,8 +13,6 @@
 
 using std::string;
 
-
-
 namespace sam {
 
 class AbstractConsumer {
@@ -26,6 +24,7 @@ public:
 	virtual ~AbstractConsumer();
 
 	virtual bool consume(string s) = 0;
+
 };
 
 } /* namespace sam */

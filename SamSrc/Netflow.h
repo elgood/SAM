@@ -10,6 +10,13 @@
 #define DEST_IP_FIELD                 6
 #define SOURCE_PORT_FIELD             7
 #define DEST_PORT_FIELD               8
+#define MORE_FRAGMENTS                9
+#define COUNT_FRAGMENTS               10
+#define DURATION_SECONDS              11
+#define SRC_PAYLOAD_BYTES             12
+#define DEST_PAYLOAD_BYTES            13
+#define SRC_TOTAL_BYTES               14
+#define DEST_TOTAL_BYTES              15
 
 
 #include <string>

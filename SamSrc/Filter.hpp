@@ -8,7 +8,8 @@ using std::string;
 
 namespace sam {
 
-class Filter: public AbstractConsumer, BaseComputation 
+class Filter: public AbstractConsumer, public BaseComputation, 
+              public BaseProducer
 {
 private:
   FilterExpression const& expression;
@@ -17,8 +18,10 @@ public:
          vector<size_t> keyFields,
          size_t nodeId,
          FeatureMap& featureMap,
-         string identifier) :
+         string identifier,
+         size_t queueLength) :
          BaseComputation(keyFields, 0, nodeId, featureMap, identifier), 
+         BaseProducer(queueLength),
          expression(_expression)
   {}
 
@@ -35,6 +38,9 @@ bool Filter::consume(string s)
     double result = expression.evaluate(key, featureMap); 
     BooleanFeature feature(result);
     featureMap.updateInsert(key, identifier, feature); 
+    if ( result ) {
+      this->parallelFeed(s);
+    }
   } catch (std::exception e) {
     // If there was an exception, it means that some of the necessary 
     // features weren't present, so the boolean feature is false.

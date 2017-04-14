@@ -92,6 +92,17 @@ target_link_libraries(ServersQuery ${ZMQ_LIBRARIES})
 target_link_libraries(ServersQuery SamLib)
 target_link_libraries(ServersQuery pthread)
 
+############### Disclosure #####################
+
+file (GLOB DISCLOSURE_SOURCES "ExecutableSrc/Disclosure.cpp")
+
+add_executable(Disclosure ${DISCLOSURE_SOURCES})
+set_target_properties(Disclosure PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+
+target_link_libraries(Disclosure ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(Disclosure ${ZMQ_LIBRARIES})
+target_link_libraries(Disclosure SamLib)
+target_link_libraries(Disclosure pthread)
 
 ############### SimpleSum #####################
 
@@ -156,8 +167,8 @@ foreach(testSrc ${TEST_SRCS})
   set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
 
   add_test(NAME ${testName} 
-           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests
-           COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/${testName})
+           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests
+           COMMAND ${CMAKE_BINARY_DIR}/tests/${testName})
 endforeach(testSrc)
 
 
