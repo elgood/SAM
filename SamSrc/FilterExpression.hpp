@@ -8,7 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "FilterTokenizer.hpp"
+#include "ExpressionTokenizer.hpp"
 #include "FeatureMap.hpp"
 
 namespace sam {
@@ -16,7 +16,7 @@ namespace sam {
 class FilterExpression {
 private:
   // This stores the expression in postfix form.
-  std::list<std::shared_ptr<FilterToken>> outputList;
+  std::list<std::shared_ptr<ExpressionToken>> outputList;
   std::stack<std::shared_ptr<OperatorToken>> operatorStack;
 public:  
   FilterExpression(std::string sExpression);
@@ -54,11 +54,13 @@ void FilterExpression::addOperator(std::shared_ptr<OperatorToken> o1)
 
 FilterExpression::FilterExpression(std::string sExpression)
 {
+  typedef ExpressionTokenizer<FilterGrammar<std::string::const_iterator>>
+    Tokenizer;
 
-  FilterTokenizer tok(sExpression);
+  Tokenizer tok(sExpression);
 
   // Shunting yard algorithm to get things into postfix
-  for (FilterTokenizer::iterator tok_iter = tok.begin();
+  for (Tokenizer::iterator tok_iter = tok.begin();
        tok_iter != tok.end(); ++tok_iter)
   {
     if ((*tok_iter)->isOperator()) {

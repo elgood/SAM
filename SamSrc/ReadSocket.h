@@ -14,7 +14,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
-#include "BaseProducer.h"
+#include "BaseProducer.hpp"
+#include "Netflow.h"
 
 #define BUFFER_SIZE 256
 
@@ -22,7 +23,7 @@ using std::string;
 
 namespace sam {
 
-class ReadSocket : public BaseProducer {
+class ReadSocket : public BaseProducer<Netflow> {
 private:
 	int port;
 	string ip;

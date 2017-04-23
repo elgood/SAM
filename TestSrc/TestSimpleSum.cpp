@@ -1,17 +1,19 @@
 #define BOOST_TEST_MAIN TestSimpleSum
 #include <boost/test/unit_test.hpp>
 #include "SimpleSum.hpp"
+#include "Netflow.h"
 
 using namespace sam;
 
 BOOST_AUTO_TEST_CASE( simple_sum_test )
 {
-  vector<size_t> keyFields;
+  std::vector<size_t> keyFields;
   keyFields.push_back(6);
   size_t valueField = 14;
   size_t nodeId = 0;
   FeatureMap featureMap;
-  SimpleSum<size_t> sum(10, keyFields, valueField, nodeId, featureMap, "sum0");
+  SimpleSum<size_t,Netflow> sum(10, keyFields, valueField, nodeId, 
+                                featureMap, "sum0");
 
   string netflowString1 = "1365582756.384094,2013-04-10 08:32:36," 
                          "20130410083236.384094,17,UDP,172.20.2.18," 

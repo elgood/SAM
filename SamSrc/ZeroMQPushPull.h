@@ -15,13 +15,15 @@
 
 #include <zmq.hpp>
 
-#include "AbstractConsumer.h"
-#include "BaseProducer.h"
+#include "AbstractConsumer.hpp"
+#include "BaseProducer.hpp"
+#include "Netflow.h"
 
 namespace sam {
 
 
-class ZeroMQPushPull : public AbstractConsumer, public BaseProducer
+class ZeroMQPushPull : public AbstractConsumer<Netflow>, 
+                       public BaseProducer<Netflow>
 {
 private:
   size_t numNodes; ///> How many total nodes there are
@@ -61,7 +63,7 @@ public:
 
   virtual ~ZeroMQPushPull();
 
-  virtual bool consume(std::string s);
+  virtual bool consume(Netflow const& netflow);
 
 private:
   std::string getIpString(std::string hostname) const;

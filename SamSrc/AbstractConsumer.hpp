@@ -5,8 +5,8 @@
  *      Author: elgood
  */
 
-#ifndef ABSTRACTCONSUMER_H_
-#define ABSTRACTCONSUMER_H_
+#ifndef ABSTRACTCONSUMER_HPP
+#define ABSTRACTCONSUMER_HPP
 
 #include <string>
 
@@ -15,17 +15,20 @@ using std::string;
 
 namespace sam {
 
+template <typename T>
 class AbstractConsumer {
 protected:
   size_t feedCount = 0;
 
 public:
-	AbstractConsumer();
-	virtual ~AbstractConsumer();
+	AbstractConsumer() {}
+	virtual ~AbstractConsumer() {}
 
-	virtual bool consume(string s) = 0;
+	virtual bool consume(T const& item) = 0;
 
 };
+
+
 
 } /* namespace sam */
 

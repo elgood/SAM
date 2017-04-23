@@ -1,22 +1,12 @@
-#ifndef FILTER_TOKENIZER_HPP
-#define FILTER_TOKENIZER_HPP
+#ifndef TOKENS_HPP
+#define TOKENS_HPP
 
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/qi_parse.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/phoenix_fusion.hpp>
-#include <boost/spirit/include/phoenix_stl.hpp>
-#include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/variant/recursive_variant.hpp>
 #include <boost/lexical_cast.hpp>
-#include <vector>
 #include <iostream>
+#include <vector>
 
 #include "FeatureMap.hpp"
-
-// I think this is somehow even though we don't reference it.
-namespace fusion = boost::fusion;
 
 namespace sam {
 
@@ -24,7 +14,7 @@ namespace sam {
 // a struct to wrap it.  In short, I've figure out a way to populate structs
 // using Spirit, so using that pattern for just about everything.  There's
 // probably a better way.
-struct parameter_structure {
+struct ParameterStructure {
   std::vector<double> parameters;
 };
 
@@ -32,19 +22,37 @@ struct parameter_structure {
 //  top2.value(1)
 // is an example of a function call.  It has an identifier, top2, a
 // function call, value, and a paramter list, 1.
-struct function_structure {
+struct FunctionStructure {
   std::string identifier;
   std::string function;
-  parameter_structure parameters;
+  ParameterStructure parameters;
 };
 
 // This is mostly for debugging.  Allows you to stream the boost::variant
-// OutputItem, defined below, to cout.  The function_structure is one of the
+// OutputItem, defined below, to cout.  The FunctionStructure is one of the
 // elements of the variant, so it needs operator << defined to be able to 
 // use that in debug cout statements. 
-std::ostream& operator<< (std::ostream& os, const function_structure& f)
+std::ostream& operator<< (std::ostream& os, const FunctionStructure& f)
 {
   os << "Identifier " << f.identifier << " Function: " << f.function;
+  return os;
+}
+
+/**
+ * Used for the prev token in transform expressions.
+ */
+struct PreviousStructure {
+  int index;
+  std::string field;
+};
+
+// This is mostly for debugging.  Allows you to stream the boost::variant
+// OutputItem, defined below, to cout.  The PreviousStructure is one of the
+// elements of the variant, so it needs operator << defined to be able to 
+// use that in debug cout statements. 
+std::ostream& operator<< (std::ostream& os, const PreviousStructure& p)
+{
+  os << "Identifier " << p.field << " Index: " << p.index;
   return os;
 }
 
@@ -53,7 +61,8 @@ std::ostream& operator<< (std::ostream& os, const function_structure& f)
 typedef
   boost::variant<
     std::string,
-    function_structure,
+    FunctionStructure,
+    PreviousStructure,
     double>
 OutputItem;
 
@@ -61,7 +70,7 @@ OutputItem;
 // Now how to populate a struct using Spirit, so wrapping the vector of tokens
 // in a struct.  Again, probably a better way to do this so we could use the
 // vector directly.
-struct parse_structure {
+struct ParseStructure {
   std::vector<OutputItem> tokens;
 };
 
@@ -70,7 +79,7 @@ struct parse_structure {
 // Spirit uses boost::fusion.  It allows us to access and populate elements 
 // using the at_c<index> syntax.
 BOOST_FUSION_ADAPT_STRUCT(
-  sam::parameter_structure,
+  sam::ParameterStructure,
   (std::vector<double>, parameters)
 )
 
@@ -78,107 +87,92 @@ BOOST_FUSION_ADAPT_STRUCT(
 // Again, registering the function structure with boost::fusion so we can use
 // the at_c<index> syntax in the grammar we define.
 BOOST_FUSION_ADAPT_STRUCT(
-  sam::function_structure,
+  sam::FunctionStructure,
   (std::string, identifier)
   (std::string, function)
-  (sam::parameter_structure, parameters)
+  (sam::ParameterStructure, parameters)
 )
 
 
-// Registering parse_structure with boost::fusion.
+// Registering ParseStructure with boost::fusion.
 BOOST_FUSION_ADAPT_STRUCT(
-  sam::parse_structure,
+  sam::ParseStructure,
   (std::vector<sam::OutputItem>, tokens)
 )
 
+BOOST_FUSION_ADAPT_STRUCT(
+  sam::PreviousStructure,
+  (int, index)
+  (std::string, field)
+)
+
+
 namespace sam {
 
-// This is the grammar for parsing filter expressions.
-template <typename Iterator>
-struct filter_grammar : boost::spirit::qi::grammar<Iterator, parse_structure(),
-                                 boost::spirit::ascii::space_type>
-{
-  filter_grammar() : filter_grammar::base_type(expr)
-  {
-    using boost::spirit::qi::lit;
-    using boost::spirit::qi::alnum;
-    using boost::spirit::qi::alpha;
-    using boost::spirit::qi::lexeme;
-    using boost::spirit::double_;
-    using boost::phoenix::at_c;
-    using boost::spirit::ascii::char_;
-    using namespace boost::spirit::qi::labels;
-    using boost::phoenix::push_back;
-
-    expr = (function [push_back(at_c<0>(_val), _1)] |
-           identifier [push_back(at_c<0>(_val), _1)] |
-           double_ [push_back(at_c<0>(_val), _1)]) >>
-           *(op [push_back(at_c<0>(_val), _1)] >>
-              (function [push_back(at_c<0>(_val), _1)]  |
-               identifier [push_back(at_c<0>(_val), _1)] |
-               double_ [push_back(at_c<0>(_val), _1)]
-              )
-            );
-    identifier = lexeme[alpha [_val += _1] >> +(alnum)  [_val += _1]];
-    //str_double = double_ [_val = _1]; 
-    function = identifier [at_c<0>(_val) = _1] >>
-               lit(".") >>
-               value_id [at_c<1>(_val) = _1] >>
-               (lit("(") >> parameters [at_c<2>(_val) = _1] >> lit(")")
-                | lit("(") >> lit(")"));
-
-    //parameters = (identifier [push_back(at_c<0>(_val), _1)] |
-    //              double_ [push_back(at_c<0>(_val), _1)]) >>
-    //                *(lit(",") >>
-    //                 (identifier [push_back(at_c<0>(_val), _1)]  |
-    //                  double_ [push_back(at_c<0>(_val), _1)]));
-    parameters = (double_ [push_back(at_c<0>(_val), _1)]) >>
-                    *(lit(",") >>
-                     (double_ [push_back(at_c<0>(_val), _1)]));
-                      
-
-    value_id = lit("value") [_val = "value"];
-    op = lit("+") [_val = "+"] |
-         lit("-") [_val = "-"] |
-         lit(">") [_val = ">"] |
-         lit("<") [_val = "<"] |
-         lit("<=") [_val = "<="] |
-         lit(">=") [_val = ">="] |
-         lit("*")  [_val = "*"] |
-         lit("/")  [_val = "/"] |
-         lit("^")  [_val = "^"];
-
-  }
-
-  boost::spirit::qi::rule<Iterator, parse_structure(), 
-                          boost::spirit::ascii::space_type> expr;
-  boost::spirit::qi::rule<Iterator, std::string(), 
-                          boost::spirit::ascii::space_type> identifier;
-  boost::spirit::qi::rule<Iterator, function_structure(), 
-                          boost::spirit::ascii::space_type> function;
-  boost::spirit::qi::rule<Iterator, std::string()> value_id;
-  boost::spirit::qi::rule<Iterator, parameter_structure(), 
-                          boost::spirit::ascii::space_type> parameters;
-  boost::spirit::qi::rule<Iterator, std::string()> op;
-  //boost::spirit::qi::rule<Iterator, std::string()> str_double;
-};
-
-
-
-// Base class representing a token in a filter expression.
-class FilterToken {
+// Base class representing a token in an expression.
+class ExpressionToken {
 public:
+  /**
+   * Returns a string representation of the token.  Mostly for debugging.
+   */
   virtual std::string toString() const = 0; 
+
+  /**
+   * Returns true if the token represents an operator.  Used to evaluate
+   * the expression.
+   */
   virtual bool isOperator() const = 0;
+
+  /**
+   * Used when the token needs access to an imux featuremap to discover
+   * the value of the token (e.g. FunctionToken)
+   */ 
   virtual double evaluate(std::string const& key,
                           FeatureMap const& featureMap) const = 0;
+  
+ 
+  /**
+   * Used by operators that take two values to evaluate.
+   */ 
   virtual double evaluate(double d1, double d2) const = 0;
 };
 
-std::ostream& operator<< (std::ostream& os, const FilterToken& f) 
+std::ostream& operator<< (std::ostream& os, const ExpressionToken& f) 
 {
   os << f.toString();
   return os;
+}
+
+/** 
+ * A token in a transform expression that looks like 
+ * prev(1).FieldName
+ */
+class PreviousToken : public ExpressionToken
+{
+public:
+  PreviousToken(int _index, std::string _identifier)
+    : index(_index), identifier(_identifier) {}
+  
+  bool isOperator() const { return false; }
+  
+  double evaluate(std::string const& key, FeatureMap const& featureMap) const
+  {
+    return 0; 
+  }
+
+  double evaluate(double d1, double d2) const {
+    return 0;
+  }
+   
+  std::string toString() const;
+private:
+  int index;
+  std::string identifier;
+};
+
+std::string PreviousToken::toString() const 
+{
+  return "Previous Token";
 }
 
 
@@ -187,7 +181,7 @@ std::ostream& operator<< (std::ostream& os, const FilterToken& f)
  *  top2.value(1)
  * It has an identifier (variable name), a function name, and a parameter list
  */
-class FunctionToken : public FilterToken
+class FunctionToken : public ExpressionToken
 {
 public:
   FunctionToken(std::string _identifier,
@@ -230,11 +224,11 @@ double FunctionToken::evaluate(std::string const& key,
 
 double FunctionToken::evaluate(double d1, double d2) const
 {
-  throw std::runtime_error("evaluate(d1, d2) not defined for FilterToken");
+  throw std::runtime_error("evaluate(d1, d2) not defined for ExpressionToken");
 }
 
 
-class NumberToken : public FilterToken
+class NumberToken : public ExpressionToken
 {
 public:
   NumberToken(double _d) : d(_d) {}
@@ -259,7 +253,7 @@ double NumberToken::evaluate(std::string const& key,
   return d;
 }
 
-class IdentifierToken : public FilterToken
+class IdentifierToken : public ExpressionToken
 {
 public:
   IdentifierToken(std::string str) : identifier(str) {}
@@ -285,7 +279,7 @@ double IdentifierToken::evaluate(double d1, double d2) const
   throw std::runtime_error("evaluate(d1, d2) not defined for IdentifierToken");
 }
 
-class OperatorToken : public FilterToken 
+class OperatorToken : public ExpressionToken 
 {
 private:
   int precedence;
@@ -385,100 +379,67 @@ public:
 
 
 /**
- * A class that tokenizes a filter expression e.g. 
- *  top2.value(0) + top2.value(1) < 0.9
- */
-class FilterTokenizer
-{
-private:
-  typedef std::vector<std::shared_ptr<FilterToken>> TokenList;
-  TokenList tokens; 
-public:
-  typedef TokenList::iterator iterator;
-  typedef TokenList::const_iterator const_iterator;
-  
-  FilterTokenizer(std::string filterExpression);
-  
-  iterator begin() { return tokens.begin(); }
-  iterator end() { return tokens.end(); }
-
-  std::shared_ptr<FilterToken> get(int i) { return tokens[i]; }
-
-private:
-  void populateDataStructure(parse_structure & result); 
-
-};
-
-FilterTokenizer::FilterTokenizer(std::string filterExpression)
-{
-  using boost::spirit::ascii::space;
-
-  parse_structure result;
-  sam::filter_grammar<std::string::const_iterator> grammar;
-  std::string::const_iterator iter = filterExpression.begin();
-  std::string::const_iterator end  = filterExpression.end(); 
-  bool r = phrase_parse(iter, end, grammar, space, result);
-  if (r && iter == end) {
-    populateDataStructure(result);
-  } else {
-    throw std::runtime_error("Couldn't not parse filter expression");
-  }
-}
-
+ * We make a translation from OutputItems to ExpressionTokens.  There is 
+ * probably a better way to do this.  OutputItems is a boost::variant, because
+ * I know how to use boost::spirit to populate boost::variant, and
+ * we translate that into a class hierarchy, probably because I know how to 
+ * deal with that better for all other situations.
+ */  
 class TokenVisitor : public boost::static_visitor<>
 {
 public:
 
-  TokenVisitor(std::vector<std::shared_ptr<FilterToken>> & _tokens) : 
+  TokenVisitor(std::vector<std::shared_ptr<ExpressionToken>> & _tokens) : 
     tokens(_tokens) {}
 
   void operator()(std::string & str) const
   {
     if (str.compare("+") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new PlusToken()));    
+      tokens.push_back(std::shared_ptr<ExpressionToken>(new PlusToken()));    
     } else if (str.compare("-") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new MinusToken()));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(new MinusToken()));
     } else if (str.compare("*") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new MultToken()));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(new MultToken()));
     } else if (str.compare("/") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new DivideToken()));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(new DivideToken()));
     } else if (str.compare("^") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new PowerToken()));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(new PowerToken()));
     } else if (str.compare("<") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new LessToken()));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(new LessToken()));
     } else if (str.compare(">") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new GreaterToken()));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(new GreaterToken()));
     } else if (str.compare("<=") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new LessOrEqualToken()));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(new LessOrEqualToken()));
     } else if (str.compare(">=") == 0) {
-      tokens.push_back(std::shared_ptr<FilterToken>(new GreaterOrEqualToken()));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(
+        new GreaterOrEqualToken()));
     } else {
-      tokens.push_back(std::shared_ptr<FilterToken>(new IdentifierToken(str)));
+      tokens.push_back(std::shared_ptr<ExpressionToken>(
+        new IdentifierToken(str)));
     } 
   }
 
-  void operator()(function_structure & f) const
+  void operator()(FunctionStructure & f) const
   {
-    tokens.push_back(std::shared_ptr<FilterToken>(new 
+    tokens.push_back(std::shared_ptr<ExpressionToken>(new 
                     FunctionToken(f.identifier, f.function, 
                                   f.parameters.parameters)));
   }
 
   void operator()(double & d) const
   {
-    tokens.push_back(std::shared_ptr<FilterToken>(new NumberToken(d)));
+    tokens.push_back(std::shared_ptr<ExpressionToken>(new NumberToken(d)));
+  }
+
+  void operator()(PreviousStructure & p) const
+  {
+    tokens.push_back(std::shared_ptr<ExpressionToken>(new
+                      PreviousToken(p.index, p.field)));
   }
 
 private:
-  std::vector<std::shared_ptr<FilterToken>> & tokens;
+  std::vector<std::shared_ptr<ExpressionToken>> & tokens;
 };
-
-void FilterTokenizer::populateDataStructure(parse_structure & result)
-{
-  TokenVisitor visitor(tokens);
-  std::for_each(result.tokens.begin(), result.tokens.end(), 
-                boost::apply_visitor( visitor));
-}
 
 }
 

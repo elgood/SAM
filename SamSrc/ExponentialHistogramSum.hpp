@@ -8,15 +8,16 @@
 #include <iostream>
 #include <map>
 
-#include "AbstractConsumer.h"
-#include "BaseComputation.h"
+#include "AbstractConsumer.hpp"
+#include "BaseComputation.hpp"
 #include "ExponentialHistogram.hpp"
 #include "Features.hpp"
 
 namespace sam {
 
 template <typename T>
-class ExponentialHistogramSum: public AbstractConsumer, public BaseComputation
+class ExponentialHistogramSum: public AbstractConsumer<Netflow>, 
+                               public BaseComputation
 {
 private:
 
@@ -32,7 +33,7 @@ private:
 
 public:
   ExponentialHistogramSum(size_t N, size_t k,
-                          vector<size_t> keyFields,
+                          std::vector<size_t> keyFields,
                           size_t valueField,
                           size_t nodeId,
                           FeatureMap& featureMap,
@@ -44,14 +45,12 @@ public:
     this->k = k;
   }
 
-  bool consume(string s) {
+  bool consume(Netflow const& netflow) {
     feedCount++;
     if (feedCount % metricInterval == 0) {
       std::cout << "NodeId " << nodeId << " number of keys " 
                 << allWindows.size() << std::endl;
     }
-
-    Netflow netflow(s);
 
     // Generates unique key from key fields
     string key = generateKey(netflow);

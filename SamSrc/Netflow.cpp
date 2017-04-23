@@ -12,14 +12,23 @@ using std::endl;
 
 namespace sam {
 
-Netflow::Netflow(string s) 
+Netflow::Netflow() {
+  originalString = "";
+}
+
+Netflow::Netflow(Netflow const& other) : Netflow(other.toString()) 
 {
+}
+
+Netflow::Netflow(std::string s) 
+{
+  originalString = s;
   boost::char_separator<char> sep(",");
   boost::tokenizer<boost::char_separator<char>> tok(s, sep);
 
 
   int i = 0;
-  BOOST_FOREACH(string const &t, tok) {
+  BOOST_FOREACH(std::string const &t, tok) {
     switch (i) {
     case 0: timeSeconds = t;                          break;
     case 1: parsedDate = t;                           break;
@@ -46,10 +55,7 @@ Netflow::Netflow(string s)
   
 }
 
-string Netflow::getSourceIP() const { return sourceIP; }
-string Netflow::getDestIP() const { return destIP; }
-
-string Netflow::getField(size_t field) const
+std::string Netflow::getField(size_t field) const
 {
     switch (field) {
     case 0: return timeSeconds;
@@ -61,7 +67,7 @@ string Netflow::getField(size_t field) const
     case 6: return destIP;
     case 7:
       try {
-        return boost::lexical_cast<string>(sourcePort);
+        return boost::lexical_cast<std::string>(sourcePort);
       } catch (exception e) {
         cerr << "Caught exception trying to cast sourcePort" << endl;
         cerr << e.what() << endl;
@@ -69,7 +75,7 @@ string Netflow::getField(size_t field) const
       }
     case 8:
       try {
-        return boost::lexical_cast<string>(destPort);
+        return boost::lexical_cast<std::string>(destPort);
       } catch (exception e) {
         cerr << "Caught exception trying to cast destPort" << endl;
         cerr << e.what() << endl;
@@ -87,7 +93,7 @@ string Netflow::getField(size_t field) const
     case 18: return recordForceOut;
     }
     throw std::out_of_range("Unknown field id" + 
-                            boost::lexical_cast<string>(field));
+                            boost::lexical_cast<std::string>(field));
 }
 
 }

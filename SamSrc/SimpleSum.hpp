@@ -9,14 +9,9 @@
 #include <iostream>
 #include <map>
 #include <boost/lexical_cast.hpp>
-#include "AbstractConsumer.h"
-#include "BaseComputation.h"
+#include "AbstractConsumer.hpp"
+#include "BaseComputation.hpp"
 #include "Features.hpp"
-
-using std::map;
-using std::shared_ptr;
-using std::cerr;
-using std::endl;
 
 namespace sam 
 {
@@ -65,8 +60,8 @@ public:
 }
 
 
-template <typename T>
-class SimpleSum: public AbstractConsumer, public BaseComputation 
+template <typename T, typename TupleType>
+class SimpleSum: public AbstractConsumer<TupleType>, public BaseComputation 
 {
 private:
   size_t N; ///> Size of sliding window
@@ -74,14 +69,14 @@ private:
 
   /// Mapping from the key (e.g. an ip field) to the simple sum 
   /// data structure that is keeping track of the values seen.
-  map<string, value_t*> allWindows; 
+  std::map<string, value_t*> allWindows; 
   
   // Where the most recent item is located in the array.
   size_t top = 0;
   
 public:
   SimpleSum(size_t N,
-            vector<size_t> keyFields,
+            std::vector<size_t> keyFields,
             size_t valueField,
             size_t nodeId,
             FeatureMap& featureMap,
@@ -97,30 +92,28 @@ public:
     }
   }
 
-  bool consume(string s) {
-    feedCount++;
-    if (feedCount % metricInterval == 0) {
+  bool consume(TupleType const& tuple) {
+    this->feedCount++;
+    if (this->feedCount % metricInterval == 0) {
       std::cout << "SimpleSum: NodeId " << nodeId << " feedCount " 
-                << feedCount << std::endl;
+                << this->feedCount << std::endl;
     }
 
-    Netflow netflow(s);
-   
     // Generates unique key from key fields 
-    string key = generateKey(netflow);
+    string key = generateKey(tuple);
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N); 
       allWindows[key] = value;
     }
 
-    string sValue = netflow.getField(valueField);
+    string sValue = tuple.getField(valueField);
     T value;
     try {
       value = boost::lexical_cast<T>(sValue);
     } catch (std::exception e) {
-      cerr << "Netflow::consume Caught exception trying to cast string "
-                << "value of " << sValue << endl;
-      cerr << e.what() << endl;
+      std::cerr << "SimpleSum::consume Caught exception trying to cast string "
+                << "value of " << sValue << std::endl;
+      std::cerr << e.what() << std::endl;
       value = 0;
     }
 
@@ -138,8 +131,8 @@ public:
     return allWindows[key]->getSum();
   }
 
-  vector<string> keys() const {
-    vector<string> theKeys;
+  std::vector<string> keys() const {
+    std::vector<string> theKeys;
     for (auto p : allWindows) {
       theKeys.push_back(p.first);
     }

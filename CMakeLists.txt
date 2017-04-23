@@ -36,13 +36,13 @@ include_directories(SamSrc)
 
 ################ ReadSocket ################
 
-file(GLOB READ_SOCKET_SOURCES "ExecutableSrc/TestNCSpeed.cpp")
+#file(GLOB READ_SOCKET_SOURCES "ExecutableSrc/TestNCSpeed.cpp")
 
-add_executable(ReadSocket ${READ_SOCKET_SOURCES} )
-set_target_properties(ReadSocket PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(ReadSocket ${READ_SOCKET_SOURCES} )
+#set_target_properties(ReadSocket PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(ReadSocket ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(ReadSocket SamLib)
+#target_link_libraries(ReadSocket ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+#target_link_libraries(ReadSocket SamLib)
 
 ############# The SAM Library ################
 
@@ -58,96 +58,113 @@ target_link_libraries(SamLib boost_system)
 
 ############# PushPull ###################
 
-file (GLOB PUSH_PULL_SOURCES "ExecutableSrc/TestPushPull.cpp")
+#file (GLOB PUSH_PULL_SOURCES "ExecutableSrc/TestPushPull.cpp")
 
-add_executable(PushPull ${PUSH_PULL_SOURCES} )
-set_target_properties(PushPull PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(PushPull ${PUSH_PULL_SOURCES} )
+#set_target_properties(PushPull PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(PushPull ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(PushPull ${ZMQ_LIBRARIES})
-target_link_libraries(PushPull SamLib)
-target_link_libraries(PushPull pthread)
+#target_link_libraries(PushPull ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+#target_link_libraries(PushPull ${ZMQ_LIBRARIES})
+#target_link_libraries(PushPull SamLib)
+#target_link_libraries(PushPull pthread)
 
 ############### TopK #####################
 
-file (GLOB TOPK_SOURCES "ExecutableSrc/TestTopK.cpp")
+#file (GLOB TOPK_SOURCES "ExecutableSrc/TestTopK.cpp")
 
-add_executable(TopK ${TOPK_SOURCES})
-set_target_properties(TopK PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(TopK ${TOPK_SOURCES})
+#set_target_properties(TopK PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(TopK ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(TopK ${ZMQ_LIBRARIES})
-target_link_libraries(TopK SamLib)
-target_link_libraries(TopK pthread)
+#target_link_libraries(TopK ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+#target_link_libraries(TopK ${ZMQ_LIBRARIES})
+#target_link_libraries(TopK SamLib)
+#target_link_libraries(TopK pthread)
 
 ############### Servers #####################
 
-file (GLOB SERVERS_SOURCES "ExecutableSrc/Servers.cpp")
+#file (GLOB SERVERS_SOURCES "ExecutableSrc/Servers.cpp")
 
-add_executable(ServersQuery ${SERVERS_SOURCES})
-set_target_properties(ServersQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(ServersQuery ${SERVERS_SOURCES})
+#set_target_properties(ServersQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(ServersQuery ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(ServersQuery ${ZMQ_LIBRARIES})
-target_link_libraries(ServersQuery SamLib)
-target_link_libraries(ServersQuery pthread)
+#target_link_libraries(ServersQuery ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+#target_link_libraries(ServersQuery ${ZMQ_LIBRARIES})
+#target_link_libraries(ServersQuery SamLib)
+#target_link_libraries(ServersQuery pthread)
 
 ############### Disclosure #####################
 
-file (GLOB DISCLOSURE_SOURCES "ExecutableSrc/Disclosure.cpp")
+#file (GLOB DISCLOSURE_SOURCES "ExecutableSrc/Disclosure.cpp")
 
-add_executable(Disclosure ${DISCLOSURE_SOURCES})
-set_target_properties(Disclosure PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(Disclosure ${DISCLOSURE_SOURCES})
+#set_target_properties(Disclosure PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(Disclosure ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(Disclosure ${ZMQ_LIBRARIES})
-target_link_libraries(Disclosure SamLib)
-target_link_libraries(Disclosure pthread)
+#target_link_libraries(Disclosure ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+#target_link_libraries(Disclosure ${ZMQ_LIBRARIES})
+#target_link_libraries(Disclosure SamLib)
+#target_link_libraries(Disclosure pthread)
 
 ############### SimpleSum #####################
 
-file (GLOB SIMPLE_SUM_SOURCES "ExecutableSrc/TestSimpleSum.cpp")
+#file (GLOB SIMPLE_SUM_SOURCES "ExecutableSrc/TestSimpleSum.cpp")
 
-add_executable(SimpleSum ${SIMPLE_SUM_SOURCES})
-set_target_properties(SimpleSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(SimpleSum ${SIMPLE_SUM_SOURCES})
+#set_target_properties(SimpleSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(SimpleSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(SimpleSum ${ZMQ_LIBRARIES})
-target_link_libraries(SimpleSum SamLib)
-target_link_libraries(SimpleSum pthread)
+#target_link_libraries(SimpleSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+#target_link_libraries(SimpleSum ${ZMQ_LIBRARIES})
+#target_link_libraries(SimpleSum SamLib)
+#target_link_libraries(SimpleSum pthread)
 
 ############### ExponentialHistogramSum #####################
 
-file (GLOB EH_SUM_SOURCES "ExecutableSrc/TestExponentialHistogramSumOperator.cpp")
+#file (GLOB EH_SUM_SOURCES "ExecutableSrc/TestExponentialHistogramSumOperator.cpp")
 
-add_executable(ExponentialHistogramSum ${EH_SUM_SOURCES})
-set_target_properties(ExponentialHistogramSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(ExponentialHistogramSum ${EH_SUM_SOURCES})
+#set_target_properties(ExponentialHistogramSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(ExponentialHistogramSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(ExponentialHistogramSum ${ZMQ_LIBRARIES})
-target_link_libraries(ExponentialHistogramSum SamLib)
-target_link_libraries(ExponentialHistogramSum pthread)
+#target_link_libraries(ExponentialHistogramSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+#target_link_libraries(ExponentialHistogramSum ${ZMQ_LIBRARIES})
+#target_link_libraries(ExponentialHistogramSum SamLib)
+#target_link_libraries(ExponentialHistogramSum pthread)
 
 ############### ExponentialHistogramVariance #####################
 
-file (GLOB EH_VARIANCE_SOURCES "ExecutableSrc/TestExponentialHistogramVarianceOperator.cpp")
+#file (GLOB EH_VARIANCE_SOURCES "ExecutableSrc/TestExponentialHistogramVarianceOperator.cpp")
 
-add_executable(ExponentialHistogramVariance ${EH_VARIANCE_SOURCES})
-set_target_properties(ExponentialHistogramVariance PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(ExponentialHistogramVariance ${EH_VARIANCE_SOURCES})
+#set_target_properties(ExponentialHistogramVariance PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(ExponentialHistogramVariance ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries(ExponentialHistogramVariance ${ZMQ_LIBRARIES})
-target_link_libraries(ExponentialHistogramVariance SamLib)
-target_link_libraries(ExponentialHistogramVariance pthread)
+#target_link_libraries(ExponentialHistogramVariance ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+#target_link_libraries(ExponentialHistogramVariance ${ZMQ_LIBRARIES})
+#target_link_libraries(ExponentialHistogramVariance SamLib)
+#target_link_libraries(ExponentialHistogramVariance pthread)
 
 ################ FilterParser #############################
 
-file (GLOB FILTER_PARSER_SOURCES "ExecutableSrc/FilterParser.cpp")
+#file (GLOB FILTER_PARSER_SOURCES "ExecutableSrc/FilterParser.cpp")
 
-add_executable(FilterParser ${FILTER_PARSER_SOURCES})
-set_target_properties(FilterParser PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+#add_executable(FilterParser ${FILTER_PARSER_SOURCES})
+#set_target_properties(FilterParser PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 
-target_link_libraries(FilterParser SamLib) 
+#target_link_libraries(FilterParser SamLib) 
+
+################# Executables ###############################
+file (GLOB EXE_SRCS ExecutableSrc/*.cpp)
+
+foreach(exeSrc ${EXE_SRCS})
+  get_filename_component(exeName ${exeSrc} NAME_WE)
+
+  add_executable(${exeName} ${exeSrc})
+
+  target_link_libraries(${exeName} SamLib)
+  target_link_libraries(${exeName} pthread)
+  target_link_libraries(${exeName} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+  target_link_libraries(${exeName} ${ZMQ_LIBRARIES})
+
+  set_target_properties(${exeName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
+endforeach(exeSrc)
+
 
 ############################## Testing ######################
 enable_testing()

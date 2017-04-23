@@ -20,8 +20,7 @@
 
 
 #include <string>
-
-using std::string;
+#include "Tuple.hpp"
 
 namespace sam {
 
@@ -54,40 +53,49 @@ namespace sam {
  *
  */
 
-class Netflow {
+class Netflow : public Tuple 
+{
  
 private: 
-  string timeSeconds;
-  string parsedDate; 
-  string dateTimeStr;
-  string ipLayerProtocol;
-  string ipLayerProtocolCode;
-  string sourceIP; 
-  string destIP;
+  std::string timeSeconds;
+  std::string parsedDate; 
+  std::string dateTimeStr;
+  std::string ipLayerProtocol;
+  std::string ipLayerProtocolCode;
+  std::string sourceIP; 
+  std::string destIP;
   int    sourcePort;
   int    destPort;
-  string moreFragments;
-  string contFragments;
-  string durationSeconds;
-  string firstSeenSrcPayloadBytes;
-  string firstSeenDestPayloadBytes;
-  string firstSeenSrcTotalBytes;
-  string firstSeenDestTotalBytes;
-  string firstSeenSrcPacketCount;
-  string firstSeenDestPacketCount;
-  string recordForceOut; 
+  std::string moreFragments;
+  std::string contFragments;
+  std::string durationSeconds;
+  std::string firstSeenSrcPayloadBytes;
+  std::string firstSeenDestPayloadBytes;
+  std::string firstSeenSrcTotalBytes;
+  std::string firstSeenDestTotalBytes;
+  std::string firstSeenSrcPacketCount;
+  std::string firstSeenDestPacketCount;
+  std::string recordForceOut; 
+
+  /// The original string used in construction.
+  std::string originalString;
  
 public:
+
+  Netflow();
+  Netflow(Netflow const& other);
+
   /**
    * Constructor that expects a comma delimitted string with all the fields.
    * \param s The string with all the fields.
    */
-  Netflow(string s); 
+  Netflow(std::string s); 
 
-  string getSourceIP() const;
-  string getDestIP() const; 
+  std::string getField(size_t field) const;
 
-  string getField(size_t field) const;
+  std::string toString() const {
+    return originalString;
+  }
 
 };
 

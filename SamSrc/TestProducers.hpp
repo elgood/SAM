@@ -4,7 +4,7 @@
 #include <vector>
 #include <boost/lexical_cast.hpp>
 #include <map>
-#include "BaseProducer.h"
+#include "BaseProducer.hpp"
 #include "NetflowGenerators.hpp"
 #include "Netflow.h"
 
@@ -17,7 +17,7 @@ namespace sam {
  
 /**
  */
-class TopKProducer : public BaseProducer
+class TopKProducer : public BaseProducer<Netflow>
 {
 private:
   int numExamples;
@@ -92,6 +92,7 @@ void TopKProducer::run() {
   for (int i = 0; i < numExamples; i++) {
     for (auto g : servers) {
       std::string s = g->generate();
+      printf("Generated string %s\n", s.c_str());
 
       // Obtaining metrics on the netflows generated
       Netflow netflow(s);

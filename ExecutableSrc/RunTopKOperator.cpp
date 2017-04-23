@@ -1,10 +1,11 @@
 /*
- * Servers.cpp
- * This does the server query as described in Disclosure.
+ * TestTopK.cpp
  *
- *  Created on: March 15, 2017
+ *  Created on: Dec 25, 2016
  *      Author: elgood
  */
+
+#define DEBUG 1
 
 #include <string>
 #include <vector>
@@ -17,10 +18,7 @@
 #include "ReadSocket.h"
 #include "ZeroMQPushPull.h"
 #include "TopK.hpp"
-#include "FilterExpression.hpp"
-#include "Filter.hpp"
-
-#define DEBUG 1
+#include "Netflow.h"
 
 using std::string;
 using std::vector;
@@ -38,29 +36,32 @@ int main(int argc, char** argv) {
   cout << "DEBUG: At the beginning of main" << endl;
 #endif
 
-  // The ip to read the nc data from.
-  string ip;
+	// The ip to read the nc data from.
+	string ip;
 
-  // The port to read the nc data from.
-  int ncPort;
+	// The port to read the nc data from.
+	int ncPort;
 
-  // The number of nodes in the cluster
-  int numNodes;
+	// The number of nodes in the cluster
+	int numNodes;
 
-  // The node id of this node
-  int nodeId;
+	// The node id of this node
+	int nodeId;
 
-  // The prefix to the nodes
-  string prefix;
+	// The prefix to the nodes
+	string prefix;
 
-  // The starting port number
-  int startingPort;
+	// The starting port number
+	int startingPort;
 
-  // The high-water mark
-  long hwm;
+	// The high-water mark
+	long hwm;
 
   // The length of the input queue
   int queueLength;
+
+  // How many simultaneous topk operators
+  int nop;
 
   // The total number of elements in a sliding window
   int N;
@@ -71,9 +72,7 @@ int main(int argc, char** argv) {
   // The number of elements to keep track of
   int k;
 
-  int nop; //not used
-
-  time_t timestamp_sec1, timestamp_sec2;
+	time_t timestamp_sec1, timestamp_sec2;
 
   po::options_description desc("Allowed options");
   desc.add_options()
@@ -96,12 +95,14 @@ int main(int argc, char** argv) {
     ("queueLength", po::value<int>(&queueLength)->default_value(10000),
       "We fill a queue before sending things in parallel to all consumers."
       "  This controls the size of that queue.")
+    ("nop", po::value<int>(&nop)->default_value(1),
+      "The number of simultaneous operators")
     ("N", po::value<int>(&N)->default_value(10000),
       "The total number of elements in a sliding window")
     ("b", po::value<int>(&b)->default_value(1000),
       "The number of elements per block (active or dynamic window)")
-    ("nop", po::value<int>(&nop)->default_value(1),
-      "The number of simultaneous operators")
+    ("k", po::value<int>(&k)->default_value(2),
+      "The number of top elements to keep track of per block.")
   ;
 
   po::variables_map vm;
@@ -120,7 +121,7 @@ int main(int argc, char** argv) {
 #endif
 
 
-  ReadSocket receiver(ip, ncPort);
+	ReadSocket receiver(ip, ncPort);
 #ifdef DEBUG
   cout << "DEBUG: main created receiver " << endl;
 #endif
@@ -156,17 +157,12 @@ int main(int argc, char** argv) {
   vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;
-  string identifier = "top2";
-  k = 2;
-  auto topk = new TopK<size_t>(N, b, k, keyFields, valueField, nodeId,
-                               featureMap, identifier);
-  consumer.registerConsumer(topk); 
-
-
-  FilterExpression filterExpression("top2.value(0) + top2.value(1) < 0.9");
-  Filter* filter = new Filter(filterExpression, keyFields, nodeId, featureMap, 
-                              "servers", queueLength);
-  consumer.registerConsumer(filter);
+  for (int i = 0; i < nop; i++) {
+    string identifier = "topk" + boost::lexical_cast<string>(i);
+    auto topk = new TopK<size_t, Netflow>(N, b, k, keyFields, valueField, 
+                                          nodeId, featureMap, identifier);
+    consumer.registerConsumer(topk); 
+  }
 
 
   if (!receiver.connect()) {
@@ -185,8 +181,9 @@ int main(int argc, char** argv) {
   milliseconds ms2 = duration_cast<milliseconds>(
     system_clock::now().time_since_epoch()
   );
-  std::cout << "Seconds for Node" << nodeId << ": "  
+	std::cout << "Seconds " 
     << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
+
 
 }
 

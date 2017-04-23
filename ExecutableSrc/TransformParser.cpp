@@ -1,12 +1,12 @@
 /*******************************************************************/
 // This files allows you to type in lines and it will return whether or
-// not the line passes the filter grammar parser.
+// not the line passes the transform grammar parser.
 /*******************************************************************/
 
 #include <boost/spirit/include/qi_parse.hpp>
 #include <string>
-
 #include "Grammars.hpp"
+#include "Tokens.hpp"
 
 using boost::spirit::ascii::space;
 
@@ -17,7 +17,7 @@ main()
     std::cout << "\t\t...\n\n";
     std::cout << "////////////////////////////////////////////////////////\n\n";
 
-    std::cout << "Type in a line that is a filter expression.\n";
+    std::cout << "Type in a line that is a transform expression.\n";
     std::cout << "Type [q or Q] to quit\n\n";
 
     std::string str;
@@ -27,7 +27,7 @@ main()
             break;
 
         sam::ParseStructure result;
-        sam::FilterGrammar<std::string::const_iterator> 
+        sam::TransformGrammar<std::string::const_iterator> 
           grammar;
         std::string::const_iterator iter = str.begin();
         std::string::const_iterator end = str.end();

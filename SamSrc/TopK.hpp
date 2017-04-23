@@ -6,13 +6,13 @@
 #include <map>
 
 #include "SlidingWindow.hpp"
-#include "AbstractConsumer.h"
-#include "BaseComputation.h"
+#include "AbstractConsumer.hpp"
+#include "BaseComputation.hpp"
 
 namespace sam {
 
-template <typename T>
-class TopK: public AbstractConsumer, public BaseComputation
+template <typename T, typename TupleType>
+class TopK: public AbstractConsumer<TupleType>, public BaseComputation
 {
 private:
   size_t N; ///>Total number of elements
@@ -30,12 +30,12 @@ public:
        string identifier);
      
 
-  bool consume(string s);
+  bool consume(TupleType const& tuple);
      
 };
 
-template <typename T>
-TopK<T>::TopK(size_t N, size_t b, size_t k,
+template <typename T, typename TupleType>
+TopK<T, TupleType>::TopK(size_t N, size_t b, size_t k,
        vector<size_t> keyFields,
        size_t valueField,
        size_t nodeId,
@@ -48,18 +48,17 @@ TopK<T>::TopK(size_t N, size_t b, size_t k,
   this->k = k;
 }
 
-template <typename T>
-bool TopK<T>::consume(string s) 
+template <typename T, typename TupleType>
+bool TopK<T, TupleType>::consume(TupleType const& tuple) 
 {
-  feedCount++;
-  if (feedCount % metricInterval == 0) {
+  this->feedCount++;
+  if (this->feedCount % metricInterval == 0) {
     std::cout << "NodeId " << nodeId << " allWindows.size() " 
               << allWindows.size() << std::endl;
   }
-  Netflow netflow(s);
 
   // Creating a hopefully unique key from the key fields
-  string key = generateKey(netflow);
+  string key = generateKey(tuple);
   
   if (allWindows.count(key) == 0) {
     auto sw = std::shared_ptr<SlidingWindow<size_t>>(
@@ -68,7 +67,7 @@ bool TopK<T>::consume(string s)
     allWindows[key] = sw;    
   }
   
-  string sValue = netflow.getField(valueField);
+  string sValue = tuple.getField(valueField);
   
   T value = boost::lexical_cast<T>(sValue);
   

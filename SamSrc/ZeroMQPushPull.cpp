@@ -117,18 +117,19 @@ std::string ZeroMQPushPull::getIpString(std::string hostname) const
     return ip;
 }
 
-bool ZeroMQPushPull::consume(string s)
+bool ZeroMQPushPull::consume(Netflow const& n)
 {
   consumeCount++;
   if (consumeCount % metricInterval == 0) {
     std::cout << "NodeId " << nodeId << " consumeCount " << consumeCount 
               << std::endl; 
   }
-  Netflow n(s);
-  string source = n.getSourceIP();
-  string dest = n.getDestIP();
+  string source = n.getField(SOURCE_IP_FIELD);
+  string dest = n.getField(DEST_IP_FIELD);
   size_t node1 = std::hash<string>{}(source) % numNodes;
   size_t node2 = std::hash<string>{}(dest) % numNodes;
+
+  std::string s = n.toString();
   size_t lengthString = s.size();
   zmq::message_t message1(lengthString + 1);
   snprintf ((char *) message1.data(), lengthString + 1 ,

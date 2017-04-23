@@ -8,8 +8,8 @@ using std::string;
 
 namespace sam {
 
-class Filter: public AbstractConsumer, public BaseComputation, 
-              public BaseProducer
+class Filter: public AbstractConsumer<Netflow>, public BaseComputation, 
+              public BaseProducer<Netflow>
 {
 private:
   FilterExpression const& expression;
@@ -25,13 +25,12 @@ public:
          expression(_expression)
   {}
 
-  bool consume(string s);
+  bool consume(Netflow const& netflow);
 
 };
 
-bool Filter::consume(string s) 
+bool Filter::consume(Netflow const& netflow) 
 {
-  Netflow netflow(s);
   string key = generateKey(netflow);
 
   try {
@@ -39,7 +38,7 @@ bool Filter::consume(string s)
     BooleanFeature feature(result);
     featureMap.updateInsert(key, identifier, feature); 
     if ( result ) {
-      this->parallelFeed(s);
+      this->parallelFeed(netflow);
     }
   } catch (std::exception e) {
     // If there was an exception, it means that some of the necessary 

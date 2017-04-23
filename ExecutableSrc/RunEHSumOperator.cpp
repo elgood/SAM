@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 {
 
   // The ip to read the nc data from.
-  string ip;
+  std::string ip;
 
   // The port to read the nc data from.
   int ncPort;
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
   int nodeId;
 
   // The prefix to the nodes
-  string prefix;
+  std::string prefix;
 
   // The starting port number
   int startingPort;
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "help message")
-    ("ip", po::value<string>(&ip)->default_value("localhost"),
+    ("ip", po::value<std::string>(&ip)->default_value("localhost"),
       "The ip to receive the data from nc")
     ("ncPort", po::value<int>(&ncPort)->default_value(9999),
       "The port to receive the data from nc")
@@ -62,7 +62,7 @@ int main(int argc, char** argv)
       "The number of nodes involved in the computation")
     ("nodeId", po::value<int>(&nodeId)->default_value(0),
       "The node id of this node")
-    ("prefix", po::value<string>(&prefix)->default_value("node"),
+    ("prefix", po::value<std::string>(&prefix)->default_value("node"),
       "The prefix common to all nodes")
     ("startingPort", po::value<int>(&startingPort)->default_value(10000),
       "The starting port for the zeromq communications")
@@ -94,15 +94,15 @@ int main(int argc, char** argv)
   cout << "DEBUG: main created receiver " << endl;
 #endif
 
-  vector<string> hostnames(numNodes);
-  vector<int> ports(numNodes);
+  std::vector<std::string> hostnames(numNodes);
+  std::vector<int> ports(numNodes);
 
   if (numNodes == 1) {
     hostnames[0] = "127.0.0.1";
     ports[0] = startingPort;
   } else {
     for (int i = 0; i < numNodes; i++) {
-      hostnames[i] = prefix + boost::lexical_cast<string>(i);
+      hostnames[i] = prefix + boost::lexical_cast<std::string>(i);
       ports[i] = (startingPort + i);
     }
   }
@@ -121,11 +121,11 @@ int main(int argc, char** argv)
   receiver.registerConsumer(&consumer);
 
   FeatureMap featureMap;
-  vector<size_t> keyFields;
+  std::vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
-    string identifier = "ehsum" + boost::lexical_cast<string>(i);
+    std::string identifier = "ehsum" + boost::lexical_cast<std::string>(i);
     auto op = new ExponentialHistogramSum<size_t>(N, k, keyFields, valueField, 
                                                 nodeId, featureMap, identifier);
     consumer.registerConsumer(op);
