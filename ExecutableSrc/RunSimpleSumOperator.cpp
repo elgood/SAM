@@ -18,7 +18,7 @@
 #include "ReadSocket.h"
 #include "ZeroMQPushPull.h"
 #include "SimpleSum.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 using std::string;
 using std::vector;
@@ -143,13 +143,10 @@ int main(int argc, char** argv) {
   receiver.registerConsumer(&consumer);
 
   FeatureMap featureMap;
-  vector<size_t> keyFields;
-  keyFields.push_back(6);
-  int valueField = 14;
   for (int i = 0; nop > 0 && i < nop; i++) {
     string identifier = "simplesum" + boost::lexical_cast<string>(i);
-    auto sum = new SimpleSum<size_t, Netflow>(N, keyFields, valueField, nodeId,
-                                     featureMap, identifier);
+    auto sum = new SimpleSum<size_t, Netflow, 14, DEST_IP_FIELD>
+                    (N, nodeId, featureMap, identifier);
     consumer.registerConsumer(sum); 
   }
 

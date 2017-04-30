@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include "BaseComputation.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 using namespace sam;
 
@@ -20,9 +20,11 @@ BOOST_AUTO_TEST_CASE( test_generate_key )
   FeatureMap featureMap;
   size_t nodeId = 0;
   std::string id = "blah";
-  BaseComputation computation(keyFields, valueField, nodeId, featureMap, id);
+  BaseComputation<SRC_PAYLOAD_BYTES, SOURCE_IP_FIELD> computation(nodeId, 
+                                                               featureMap, 
+                                                               id);
 
-  Netflow netflow(netflowString1);
+  Netflow netflow = makeNetflow(netflowString1);
   std::string key = computation.generateKey(netflow);
 
   BOOST_CHECK_EQUAL(key.compare("172.20.2.18"), 0);

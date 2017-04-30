@@ -60,8 +60,10 @@ public:
 }
 
 
-template <typename T, typename TupleType>
-class SimpleSum: public AbstractConsumer<TupleType>, public BaseComputation 
+template <typename T, typename TupleType, size_t valueField, 
+          size_t... keyFields>
+class SimpleSum: public AbstractConsumer<TupleType>, 
+                 public BaseComputation<valueField, keyFields...>
 {
 private:
   size_t N; ///> Size of sliding window
@@ -76,12 +78,10 @@ private:
   
 public:
   SimpleSum(size_t N,
-            std::vector<size_t> keyFields,
-            size_t valueField,
             size_t nodeId,
             FeatureMap& featureMap,
             string identifier) :
-    BaseComputation(keyFields, valueField, nodeId, featureMap, identifier) 
+    BaseComputation<valueField, keyFields...>(nodeId, featureMap, identifier) 
   {
     this->N = N;
   }
@@ -94,19 +94,20 @@ public:
 
   bool consume(TupleType const& tuple) {
     this->feedCount++;
-    if (this->feedCount % metricInterval == 0) {
-      std::cout << "SimpleSum: NodeId " << nodeId << " feedCount " 
+    if (this->feedCount % this->metricInterval == 0) {
+      std::cout << "SimpleSum: NodeId " << this->nodeId << " feedCount " 
                 << this->feedCount << std::endl;
     }
 
     // Generates unique key from key fields 
-    string key = generateKey(tuple);
+    string key = this->generateKey(tuple);
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N); 
       allWindows[key] = value;
     }
 
-    string sValue = tuple.getField(valueField);
+    std::string sValue = 
+      boost::lexical_cast<std::string>(std::get<valueField>(tuple));
     T value;
     try {
       value = boost::lexical_cast<T>(sValue);
@@ -122,7 +123,7 @@ public:
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getSum();
     SingleFeature feature(currentSum);
-    featureMap.updateInsert(key, identifier, feature);
+    this->featureMap.updateInsert(key, this->identifier, feature);
 
     return true;
   }

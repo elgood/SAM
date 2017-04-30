@@ -6,7 +6,7 @@
 #include <map>
 #include "BaseProducer.hpp"
 #include "NetflowGenerators.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 /******************************************************************
  * Producers used to create repeatable and understandable scenarios
@@ -95,23 +95,24 @@ void TopKProducer::run() {
       printf("Generated string %s\n", s.c_str());
 
       // Obtaining metrics on the netflows generated
-      Netflow netflow(s);
-      auto ipPort = std::pair<std::string, int>(netflow.getField(DEST_IP_FIELD),
-        boost::lexical_cast<int>(netflow.getField(DEST_PORT_FIELD)));
+      Netflow netflow = makeNetflow(s);
+      auto ipPort = std::pair<std::string, int>(
+        std::get<DEST_IP_FIELD>(netflow),
+        std::get<DEST_PORT_FIELD>(netflow));
       ipPortMap[ipPort] += 1;
       
       // Doing the parallel feed
-      parallelFeed(s);
+      parallelFeed(netflow);
     }
     for (auto g : nonservers) {
       std::string s = g->generate();
 
       // Obtaining metrics on the netflows generated
-      Netflow netflow(s);
-      ipPortMap[std::pair<std::string, int>(netflow.getField(DEST_IP_FIELD),
-        boost::lexical_cast<int>(netflow.getField(DEST_PORT_FIELD)))] += 1;
+      Netflow netflow = makeNetflow(s);
+      ipPortMap[std::pair<std::string, int>(std::get<DEST_IP_FIELD>(netflow),
+        std::get<DEST_PORT_FIELD>(netflow))] += 1;
  
-      parallelFeed(s);
+      parallelFeed(netflow);
     }
   }
 }

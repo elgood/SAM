@@ -17,7 +17,7 @@
 
 #include "AbstractConsumer.hpp"
 #include "BaseProducer.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 namespace sam {
 

@@ -13,22 +13,34 @@
 
 namespace sam {
 
-class FilterExpression {
+template <typename Grammar>
+class Expression {
 private:
   // This stores the expression in postfix form.
   std::list<std::shared_ptr<ExpressionToken>> outputList;
-  std::stack<std::shared_ptr<OperatorToken>> operatorStack;
 public:  
-  FilterExpression(std::string sExpression);
+  Expression(std::string sExpression);
 
   double evaluate(std::string const& key, FeatureMap const& featureMap) const;
+
+  typedef std::list<std::shared_ptr<ExpressionToken>>::iterator iterator;
+  typedef std::list<std::shared_ptr<ExpressionToken>>::const_iterator 
+          const_iterator;
+
+  iterator begin() { return outputList.begin(); }
+  iterator end() { return outputList.end(); }
 private:
-  void addOperator(std::shared_ptr<OperatorToken> o1);
+  /**
+   * Adds operator to the operator stack.
+   * See shunting yard algorithm for more details.
+   */
+  void addOperator(std::shared_ptr<OperatorToken> o1,
+    std::stack<std::shared_ptr<OperatorToken>> & operatorStack);
 };
 
-
-// See shunting yard algorithm for more details.
-void FilterExpression::addOperator(std::shared_ptr<OperatorToken> o1)
+template <typename Grammar>
+void Expression<Grammar>::addOperator(std::shared_ptr<OperatorToken> o1,
+             std::stack<std::shared_ptr<OperatorToken>> & operatorStack)
 {
   if (operatorStack.size() > 0) {
     auto top = operatorStack.top();
@@ -52,19 +64,21 @@ void FilterExpression::addOperator(std::shared_ptr<OperatorToken> o1)
   operatorStack.push(o1);
 }
 
-FilterExpression::FilterExpression(std::string sExpression)
+template <typename Grammar>
+Expression<Grammar>::Expression(std::string sExpression)
 {
-  typedef ExpressionTokenizer<FilterGrammar<std::string::const_iterator>>
-    Tokenizer;
-
+  typedef ExpressionTokenizer<Grammar> Tokenizer;
+    
   Tokenizer tok(sExpression);
+  std::stack<std::shared_ptr<OperatorToken>> operatorStack;
 
   // Shunting yard algorithm to get things into postfix
-  for (Tokenizer::iterator tok_iter = tok.begin();
+  for (typename Tokenizer::iterator tok_iter = tok.begin();
        tok_iter != tok.end(); ++tok_iter)
   {
     if ((*tok_iter)->isOperator()) {
-      addOperator(std::static_pointer_cast<OperatorToken>(*tok_iter));
+      addOperator(std::static_pointer_cast<OperatorToken>(*tok_iter),
+                  operatorStack);
     } else
     {
       outputList.push_back(*tok_iter);
@@ -80,7 +94,8 @@ FilterExpression::FilterExpression(std::string sExpression)
   }
 }
 
-double FilterExpression::evaluate(std::string const& key, 
+template <typename Grammar>
+double Expression<Grammar>::evaluate(std::string const& key, 
                                   FeatureMap const& featureMap) const
 {
   std::stack<double> mystack;

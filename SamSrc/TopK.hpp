@@ -11,8 +11,12 @@
 
 namespace sam {
 
-template <typename T, typename TupleType>
-class TopK: public AbstractConsumer<TupleType>, public BaseComputation
+template <typename T, 
+          typename TupleType, 
+          size_t valueField,
+          size_t... keyFields>
+class TopK: public AbstractConsumer<TupleType>, 
+            public BaseComputation<valueField, keyFields...>
 {
 private:
   size_t N; ///>Total number of elements
@@ -23,8 +27,6 @@ private:
   
 public:
   TopK(size_t N, size_t b, size_t k,
-       vector<size_t> keyFields,
-       size_t valueField,
        size_t nodeId,
        FeatureMap& featureMap,
        string identifier);
@@ -34,31 +36,35 @@ public:
      
 };
 
-template <typename T, typename TupleType>
-TopK<T, TupleType>::TopK(size_t N, size_t b, size_t k,
-       vector<size_t> keyFields,
-       size_t valueField,
-       size_t nodeId,
-       FeatureMap& featureMap,
-       string identifier) :
-       BaseComputation(keyFields, valueField, nodeId, featureMap, identifier)
+template <typename T, typename TupleType, size_t valueField, 
+          size_t... keyFields>
+TopK<T, TupleType, valueField, keyFields...>::TopK(
+      size_t N, 
+      size_t b, 
+      size_t k,
+      size_t nodeId,
+      FeatureMap& featureMap,
+      string identifier) :
+      BaseComputation<valueField, keyFields...>(nodeId, featureMap, identifier)
 {
   this->N = N;
   this->b = b;
   this->k = k;
 }
 
-template <typename T, typename TupleType>
-bool TopK<T, TupleType>::consume(TupleType const& tuple) 
+template <typename T, typename TupleType, size_t valueField,
+          size_t... keyFields>
+bool TopK<T, TupleType, valueField, keyFields...>::consume(
+  TupleType const& tuple) 
 {
   this->feedCount++;
-  if (this->feedCount % metricInterval == 0) {
-    std::cout << "NodeId " << nodeId << " allWindows.size() " 
+  if (this->feedCount % this->metricInterval == 0) {
+    std::cout << "NodeId " << this->nodeId << " allWindows.size() " 
               << allWindows.size() << std::endl;
   }
 
   // Creating a hopefully unique key from the key fields
-  string key = generateKey(tuple);
+  string key = this->generateKey(tuple);
   
   if (allWindows.count(key) == 0) {
     auto sw = std::shared_ptr<SlidingWindow<size_t>>(
@@ -67,7 +73,7 @@ bool TopK<T, TupleType>::consume(TupleType const& tuple)
     allWindows[key] = sw;    
   }
   
-  string sValue = tuple.getField(valueField);
+  string sValue = boost::lexical_cast<std::string>(std::get<valueField>(tuple));
   
   T value = boost::lexical_cast<T>(sValue);
   
@@ -79,7 +85,7 @@ bool TopK<T, TupleType>::consume(TupleType const& tuple)
   
   if (keys.size() > 0 && frequencies.size() > 0) {
     TopKFeature feature(keys, frequencies);
-    featureMap.updateInsert(key, identifier, feature);
+    this->featureMap.updateInsert(key, this->identifier, feature);
   }
 
   return true;

@@ -18,7 +18,7 @@
 #include "ReadSocket.h"
 #include "ZeroMQPushPull.h"
 #include "TopK.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 using std::string;
 using std::vector;
@@ -159,8 +159,9 @@ int main(int argc, char** argv) {
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     string identifier = "topk" + boost::lexical_cast<string>(i);
-    auto topk = new TopK<size_t, Netflow>(N, b, k, keyFields, valueField, 
-                                          nodeId, featureMap, identifier);
+    auto topk = new TopK<size_t, Netflow, DEST_PORT_FIELD, DEST_IP_FIELD>(
+                                     N, b, k, nodeId, featureMap, identifier);
+                                          
     consumer.registerConsumer(topk); 
   }
 

@@ -24,6 +24,28 @@ public:
   virtual std::string toString() const = 0;
 };
 
+/*template <typename TupleType> 
+class TupleFeature : public Feature
+{
+  TupleType tuple;
+public:
+
+  TupleFeature( TupleType const& t ) : tuple(t) {
+    
+  }
+
+  double evaluate(std::string const& functionName,
+                  std::vector<double> const& parameters) {
+    throw std::runtime_error("Evaluate with function " + functionName + 
+      " is not defined for class TupleFeature");
+  }
+
+  double evaluate() const;
+  std::shared_ptr<Feature> createCopy() const;
+
+  
+
+};*/
 
 /**
  * A boolean feature.  

@@ -14,13 +14,13 @@
 #include "BaseComputation.hpp"
 #include "ExponentialHistogram.hpp"
 #include "Features.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 namespace sam {
 
-template <typename T>
+template <typename T, size_t valueField, size_t... keyFields>
 class ExponentialHistogramVariance : public AbstractConsumer<Netflow>, 
-                                     public BaseComputation
+                            public BaseComputation<valueField, keyFields...>
 {
 private:
 
@@ -37,13 +37,12 @@ private:
 
 public:
   ExponentialHistogramVariance(size_t N, size_t k,
-                          std::vector<size_t> keyFields,
-                          size_t valueField,
                           size_t nodeId,
                           FeatureMap& featureMap,
                           std::string identifier) :
-                          BaseComputation(keyFields, valueField, nodeId,
-                                          featureMap, identifier) 
+                          BaseComputation<valueField, keyFields...>(
+                            nodeId,featureMap, identifier) 
+                                          
   {
     this->N = N;
     this->k = k;
@@ -51,13 +50,13 @@ public:
 
   bool consume(Netflow const& netflow) {
     feedCount++;
-    if (feedCount % metricInterval == 0) {
-      std::cout << "NodeId " << nodeId << " number of keys " 
+    if (feedCount % this->metricInterval == 0) {
+      std::cout << "NodeId " << this->nodeId << " number of keys " 
                 << sums.size() << std::endl;
     }
 
     // Generates unique key from key fields
-    string key = generateKey(netflow);
+    string key = this->generateKey(netflow);
 
     if (sums.count(key) == 0) {
       auto eh = std::shared_ptr<ExponentialHistogram<T>>(
@@ -73,7 +72,8 @@ public:
       squares[key] = eh;
     }
 
-    string sValue = netflow.getField(valueField);
+    string sValue = boost::lexical_cast<std::string>(
+                      std::get<valueField>(netflow));
 
     T value = boost::lexical_cast<T>(sValue);
 
@@ -86,7 +86,7 @@ public:
     T currentSquares = squares[key]->getTotal();
     double currentVariance = calculateVariance(currentSquares, currentSum);
     SingleFeature feature(currentVariance);
-    featureMap.updateInsert(key, identifier, feature);
+    this->featureMap.updateInsert(key, this->identifier, feature);
 
 
 

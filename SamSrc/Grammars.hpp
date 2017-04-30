@@ -90,6 +90,7 @@ struct TransformGrammar : boost::spirit::qi::grammar<Iterator,
     using boost::spirit::int_;
     using boost::phoenix::at_c;
     using boost::spirit::ascii::char_;
+    using boost::spirit::ascii::no_case;
     using namespace boost::spirit::qi::labels;
     using boost::phoenix::push_back;
     using boost::spirit::qi::labels::_1;
@@ -103,7 +104,7 @@ struct TransformGrammar : boost::spirit::qi::grammar<Iterator,
               double_ [push_back(at_c<0>(_val), _1)])
             );
     identifier = lexeme[alpha [_val += _1] >> +(alnum)  [_val += _1]]; 
-    prev = lit("prev") >> lit("(") >> int_ [at_c<0>(_val), _1] >>
+    prev = no_case[lit("prev")] >> lit("(") >> int_ [at_c<0>(_val), _1] >>
            lit(")") >> lit(".") >> 
            identifier [at_c<1>(_val), _1];
            

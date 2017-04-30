@@ -5,8 +5,8 @@
 #include "TestProducers.hpp"
 #include "TopK.hpp"
 #include "Filter.hpp"
-#include "FilterExpression.hpp"
-#include "Netflow.h"
+#include "Expression.hpp"
+#include "Netflow.hpp"
 
 using namespace sam;
 
@@ -25,14 +25,16 @@ BOOST_AUTO_TEST_CASE( test_topk )
   int N = 10000; 
   int b = 1000;
   int k = 3;
-  TopK<size_t, Netflow> top2(N, b, k, keyFields, valueField, 0, featureMap, 
-                              identifier);
+  TopK<size_t, Netflow, 8, 6> top2(N, b, k, 0, featureMap, identifier);
+                              
 
   producer.registerConsumer(&top2);
 
-  FilterExpression filterExpression("top2.value(0) + top2.value(1) < 0.9");
-  Filter filter(filterExpression, keyFields, 0, featureMap, "servers", 
-                queueLength);
+  Expression<FilterGrammar<std::string::const_iterator>> 
+    filterExpression("top2.value(0) + top2.value(1) < 0.9");
+  Filter<Netflow, 6> filter(filterExpression, 0, featureMap, "servers", 
+                            queueLength);
+                
 
   producer.registerConsumer(&filter);
 

@@ -8,7 +8,7 @@
 #include <map>
 #include <vector>
 #include "NetflowGenerators.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 using namespace sam;
 
@@ -39,6 +39,21 @@ BOOST_AUTO_TEST_CASE( test_generate_random_ip )
   }
 }
 
+template<int I = 0, typename... Tp>
+inline typename std::enable_if<I == sizeof...(Tp), void>::type
+checkTokens(std::tuple<Tp...> const&, std::vector<std::string> const&)
+{}
+
+template<int I = 0, typename... Tp>
+inline typename std::enable_if<I < sizeof...(Tp), void>::type
+checkTokens(std::tuple<Tp...> const& t, std::vector<std::string> const& v)
+{
+  std::string s1 = v[I];
+  std::string s2 = boost::lexical_cast<std::string>(std::get<I>(t));
+  BOOST_CHECK_EQUAL(s1.compare(boost::lexical_cast<std::string>(s2)), 0);
+}
+
+
 BOOST_AUTO_TEST_CASE( test_netflow_conversion )
 {
   std::string destIp = "192.168.0.1";
@@ -47,10 +62,14 @@ BOOST_AUTO_TEST_CASE( test_netflow_conversion )
   for(int i = 0; i < 10000; i++) {
     std::string str = generator.generate();
     std::vector<std::string> v = convertToTokens(str);
-    Netflow n(str);
+    Netflow n = makeNetflow(str);
+
+    checkTokens(n, v);
+
+    /*for_each(n, f); 
     for (int i = 0; i < v.size(); i++) {
       BOOST_CHECK_EQUAL(v[i].compare(n.getField(i)), 0);      
-    }
+    }*/
   }
 }
 

@@ -17,9 +17,9 @@
 #include "ReadSocket.h"
 #include "ZeroMQPushPull.h"
 #include "TopK.hpp"
-#include "FilterExpression.hpp"
+#include "Expression.hpp"
 #include "Filter.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 #define DEBUG 1
 
@@ -159,14 +159,16 @@ int main(int argc, char** argv) {
   int valueField = 8;
   string identifier = "top2";
   k = 2;
-  auto topk = new TopK<size_t, Netflow>(N, b, k, keyFields, valueField, nodeId,
+  auto topk = new TopK<size_t, Netflow, DEST_PORT_FIELD, DEST_IP_FIELD>(
+                               N, b, k, nodeId,
                                featureMap, identifier);
   consumer.registerConsumer(topk); 
 
 
-  FilterExpression filterExpression("top2.value(0) + top2.value(1) < 0.9");
-  Filter* filter = new Filter(filterExpression, keyFields, nodeId, featureMap, 
-                              "servers", queueLength);
+  Expression<FilterGrammar<std::string::const_iterator>> 
+    filterExpression("top2.value(0) + top2.value(1) < 0.9");
+  Filter<Netflow, DEST_IP_FIELD>* filter = new Filter<Netflow, DEST_IP_FIELD>(
+                 filterExpression, nodeId, featureMap, "servers", queueLength);
   consumer.registerConsumer(filter);
 
 

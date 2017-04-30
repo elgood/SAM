@@ -143,6 +143,15 @@ std::ostream& operator<< (std::ostream& os, const ExpressionToken& f)
   return os;
 }
 
+
+inline std::string generateHistoryIdentifier(int i)
+{
+  if (i < 1) {
+    throw std::runtime_error("Integer must be positive");
+  }
+  return "history" + boost::lexical_cast<std::string>(i);
+}
+
 /** 
  * A token in a transform expression that looks like 
  * prev(1).FieldName
@@ -150,24 +159,34 @@ std::ostream& operator<< (std::ostream& os, const ExpressionToken& f)
 class PreviousToken : public ExpressionToken
 {
 public:
-  PreviousToken(int _index, std::string _identifier)
-    : index(_index), identifier(_identifier) {}
+  PreviousToken(int _index, std::string _fieldName)
+    : index(_index), fieldName(_fieldName) {}
   
   bool isOperator() const { return false; }
   
   double evaluate(std::string const& key, FeatureMap const& featureMap) const
   {
-    return 0; 
+    // The identifier we need is the history index combined with the field name
+    std::string featureName = generateHistoryIdentifier(index) + fieldName;
+     
+    std::shared_ptr<Feature const> feature = featureMap.at(key, featureName);
+
+    return feature->evaluate(); 
   }
 
   double evaluate(double d1, double d2) const {
-    return 0;
+    throw std::runtime_error("evaluate(double,double) not defined for "
+                             "PreviousToken"); 
   }
    
   std::string toString() const;
 private:
-  int index;
-  std::string identifier;
+  /// How far in the past.  e.g. index=1 means the previous item.  index=2
+  /// means two items previous.
+  int index; 
+
+  /// The field that we are grabbing, e.g. for netflows, TimeSeconds
+  std::string fieldName;
 };
 
 std::string PreviousToken::toString() const 

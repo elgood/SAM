@@ -80,11 +80,11 @@ public:
     result = result + boost::lexical_cast<std::string>(generateRandomPort());
     result = result + ",";
     result = result + boost::lexical_cast<std::string>(ports[iter]) + ",";
-    result = result + "moreFragments,contFragments,durationSeconds,";
-    result = result + "firstSeenSrcPayloadBytes,firstSeenDestPayloadBytes,";
-    result = result + "firstSeenSrcTotalBytes,firstSeenDestTotalBytes,";
-    result = result + "firstSeenSrcPacketCoutn,firstSeenDestPacketCount,";
-    result = result + "recordForceOut";
+    result = result + "1,1,1,";
+    result = result + "1,1,";
+    result = result + "1,1,";
+    result = result + "1,1,";
+    result = result + "1";
     iter = (iter + 1) % numPorts;
     return result;
   }

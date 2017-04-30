@@ -1,8 +1,8 @@
-#define BOOST_TEST_MAIN TestFilterExpression
+#define BOOST_TEST_MAIN TestExpression
 #include <string>
 #include <vector>
 #include <boost/test/unit_test.hpp>
-#include "FilterExpression.hpp"
+#include "Expression.hpp"
 
 using std::string;
 using std::vector;
@@ -12,7 +12,7 @@ using namespace sam;
 BOOST_AUTO_TEST_CASE( number_test )
 {
   string str = "1.0 + 2.5";
-  FilterExpression expression(str);
+  Expression<FilterGrammar<std::string::const_iterator>> expression(str);
   FeatureMap featureMap;
   std::string key = "blah";
   BOOST_CHECK_EQUAL(expression.evaluate(key, featureMap), 3.5);
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE( comparison_test )
   std::string id  = "top2";
   featureMap.updateInsert(key, id, feature);
   string str = "top2.value(0) + top2.value(1) > 0.9";
-  FilterExpression expression(str);
+  Expression<FilterGrammar<std::string::const_iterator>> expression(str);
   BOOST_CHECK_EQUAL(expression.evaluate(key, featureMap), 1);
 }
 
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE ( empty_item )
   FeatureMap featureMap;
   std::string key = "blah";
   string str = "top2.value(0) + top2.value(1) > 0.9";
-  FilterExpression expression(str);
+  Expression<FilterGrammar<std::string::const_iterator>> expression(str);
   BOOST_CHECK_THROW(expression.evaluate(key, featureMap), std::logic_error);
 }
 

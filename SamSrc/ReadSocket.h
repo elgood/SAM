@@ -15,7 +15,7 @@
 #include <arpa/inet.h>
 
 #include "BaseProducer.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 #define BUFFER_SIZE 256
 

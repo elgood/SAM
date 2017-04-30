@@ -17,11 +17,11 @@
 #include "ReadSocket.h"
 #include "ZeroMQPushPull.h"
 #include "TopK.hpp"
-#include "FilterExpression.hpp"
+#include "Expression.hpp"
 #include "Filter.hpp"
 #include "ExponentialHistogramSum.hpp"
 #include "ExponentialHistogramVariance.hpp"
-#include "Netflow.h"
+#include "Netflow.hpp"
 
 #define DEBUG 1
 
@@ -156,45 +156,47 @@ int main(int argc, char** argv) {
 
   FeatureMap destIpFeatureMap;
 
-  vector<size_t> keyFields;
-  keyFields.push_back(DEST_IP_FIELD);
   int valueField = DEST_PORT_FIELD;
   string identifier = "top2";
   k = 2;
-  auto topk = new TopK<size_t, Netflow>(N, b, k, keyFields, valueField, nodeId,
-                               destIpFeatureMap, identifier);
+  auto topk = new TopK<size_t, Netflow, DEST_PORT_FIELD, DEST_IP_FIELD>
+                              (N, b, k, nodeId, destIpFeatureMap, identifier);
+                               
   consumer.registerConsumer(topk); 
 
 
-  FilterExpression filterExpression("top2.value(0) + top2.value(1) < 0.9");
-  Filter* filter = new Filter(filterExpression, keyFields, nodeId, 
-                              destIpFeatureMap, "servers", queueLength);
+  Expression<FilterGrammar<std::string::const_iterator>>
+    filterExpression("top2.value(0) + top2.value(1) < 0.9");
+  auto filter = new Filter<Netflow, DEST_IP_FIELD>(filterExpression, 
+                    nodeId, destIpFeatureMap, "servers", queueLength);
   consumer.registerConsumer(filter);
 
   valueField = SRC_TOTAL_BYTES;
   identifier = "serverSumIncomingFlowSize";
-  auto sumIncoming = new ExponentialHistogramSum<size_t>(N, 2, keyFields,
-                          valueField, nodeId, destIpFeatureMap, identifier);
+  auto sumIncoming = new ExponentialHistogramSum<size_t, SRC_TOTAL_BYTES,
+                                                 DEST_IP_FIELD>
+                          (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(sumIncoming); 
   
   valueField = DEST_TOTAL_BYTES;
   identifier = "serverSumOutgoingFlowSize";
-  auto sumOutgoing = new ExponentialHistogramSum<size_t>(N, 2, keyFields,
-                          valueField, nodeId, destIpFeatureMap, identifier);
+  auto sumOutgoing = new ExponentialHistogramSum<size_t, DEST_TOTAL_BYTES,
+                                                  DEST_IP_FIELD>
+                          (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(sumOutgoing);
      
   valueField = SRC_TOTAL_BYTES;
   identifier = "serverVarianceIncomingFlowSize";
-  auto varianceIncoming = new ExponentialHistogramVariance<size_t>(N, 2, 
-                         keyFields, valueField, nodeId, destIpFeatureMap, 
-                         identifier);
+  auto varianceIncoming = new ExponentialHistogramVariance<size_t, 
+                                                SRC_TOTAL_BYTES, DEST_IP_FIELD>
+                          (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(varianceIncoming); 
   
   valueField = DEST_TOTAL_BYTES;
   identifier = "serverVarianceOutgoingFlowSize";
-  auto varianceOutgoing = new ExponentialHistogramVariance<size_t>(N, 2, 
-                         keyFields, valueField, nodeId, destIpFeatureMap, 
-                         identifier);
+  auto varianceOutgoing = new ExponentialHistogramVariance<size_t,
+                                              DEST_TOTAL_BYTES, DEST_IP_FIELD>
+                              (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(varianceOutgoing);
      
   if (!receiver.connect()) {
@@ -202,15 +204,8 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  vector<size_t> keyFieldsDestSrc;
-  keyFields.push_back(DEST_IP_FIELD);
-  keyFields.push_back(SOURCE_IP_FIELD);
   FeatureMap destSrcFeatureMap;
-
-  class TimeTuple : public Tuple {
-    
-  };
-
+  
 
 #ifdef DEBUG
   cout << "DEBUG: connected to receiver " << endl;

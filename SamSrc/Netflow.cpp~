@@ -6,10 +6,6 @@
 #include <exception>
 #include <iostream>
 
-using std::exception;
-using std::cerr;
-using std::endl;
-
 namespace sam {
 
 Netflow::Netflow() {
@@ -53,6 +49,12 @@ Netflow::Netflow(std::string s)
     i++;
   }
   
+}
+
+template <typename T>
+void Netflow::setField(size_t field, T value) {
+  std::get<field>(myTuple) = value;
+
 }
 
 std::string Netflow::getField(size_t field) const

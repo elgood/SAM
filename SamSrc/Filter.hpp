@@ -2,49 +2,52 @@
 #define FILTER_HPP
 
 #include <string>
-#include "FilterExpression.hpp"
+#include "Expression.hpp"
+#include "Grammars.hpp"
 
 using std::string;
 
 namespace sam {
 
-class Filter: public AbstractConsumer<Netflow>, public BaseComputation, 
-              public BaseProducer<Netflow>
+template <typename TupleType, size_t... keyFields>
+class Filter: public AbstractConsumer<TupleType>, 
+              public BaseComputation<0, keyFields...>, 
+              public BaseProducer<TupleType>
 {
 private:
-  FilterExpression const& expression;
+  Expression<FilterGrammar<std::string::const_iterator>> const& expression;
 public:
-  Filter(FilterExpression const& _expression,
-         vector<size_t> keyFields,
+  Filter(Expression<FilterGrammar<std::string::const_iterator>> const& _exp,
          size_t nodeId,
          FeatureMap& featureMap,
          string identifier,
          size_t queueLength) :
-         BaseComputation(keyFields, 0, nodeId, featureMap, identifier), 
-         BaseProducer(queueLength),
-         expression(_expression)
+         BaseComputation<0, keyFields...>(nodeId, featureMap, identifier), 
+         BaseProducer<TupleType>(queueLength),
+         expression(_exp)
   {}
 
-  bool consume(Netflow const& netflow);
+  bool consume(TupleType const& t);
 
 };
 
-bool Filter::consume(Netflow const& netflow) 
+template <typename TupleType, size_t... keyFields>
+bool Filter<TupleType, keyFields...>::consume(TupleType const& t) 
 {
-  string key = generateKey(netflow);
+  string key = this->generateKey(t);
 
   try {
-    double result = expression.evaluate(key, featureMap); 
+    double result = expression.evaluate(key, this->featureMap); 
     BooleanFeature feature(result);
-    featureMap.updateInsert(key, identifier, feature); 
+    this->featureMap.updateInsert(key, this->identifier, feature); 
     if ( result ) {
-      this->parallelFeed(netflow);
+      this->parallelFeed(t);
     }
   } catch (std::exception e) {
     // If there was an exception, it means that some of the necessary 
     // features weren't present, so the boolean feature is false.
     BooleanFeature feature(0);
-    featureMap.updateInsert(key, identifier, feature);  
+    this->featureMap.updateInsert(key, this->identifier, feature);  
   }
   return true;
 }

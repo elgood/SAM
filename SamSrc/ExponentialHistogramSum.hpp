@@ -15,9 +15,9 @@
 
 namespace sam {
 
-template <typename T>
+template <typename T, size_t valueField, size_t... keyFields>
 class ExponentialHistogramSum: public AbstractConsumer<Netflow>, 
-                               public BaseComputation
+                               public BaseComputation<valueField, keyFields...>
 {
 private:
 
@@ -33,12 +33,10 @@ private:
 
 public:
   ExponentialHistogramSum(size_t N, size_t k,
-                          std::vector<size_t> keyFields,
-                          size_t valueField,
                           size_t nodeId,
                           FeatureMap& featureMap,
                           string identifier) :
-                          BaseComputation(keyFields, valueField, nodeId,
+                          BaseComputation<valueField, keyFields...>(nodeId,
                                           featureMap, identifier) 
   {
     this->N = N;
@@ -47,13 +45,13 @@ public:
 
   bool consume(Netflow const& netflow) {
     feedCount++;
-    if (feedCount % metricInterval == 0) {
-      std::cout << "NodeId " << nodeId << " number of keys " 
+    if (feedCount % this->metricInterval == 0) {
+      std::cout << "NodeId " << this->nodeId << " number of keys " 
                 << allWindows.size() << std::endl;
     }
 
     // Generates unique key from key fields
-    string key = generateKey(netflow);
+    string key = this->generateKey(netflow);
 
     // Create an exponential histogram if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {
@@ -64,16 +62,14 @@ public:
       allWindows[key] = eh;
     }
 
-    std::string sValue = netflow.getField(valueField);
-
-    T value = boost::lexical_cast<T>(sValue);
+    T value = std::get<valueField>(netflow);
 
     allWindows[key]->add(value);
 
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getTotal();
     SingleFeature feature(currentSum);
-    featureMap.updateInsert(key, identifier, feature);
+    this->featureMap.updateInsert(key, this->identifier, feature);
 
     return true;
   }

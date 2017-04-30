@@ -243,8 +243,9 @@ void ReadSocket::receive()
     if (i % metricInterval == 0) {
       std::cout << "ReadSocket received " << i << std::endl;
     }
+    Netflow netflow = makeNetflow(s);
     for (auto consumer : consumers) {
-      consumer->consume(s);
+      consumer->consume(netflow);
     }
   }
 }

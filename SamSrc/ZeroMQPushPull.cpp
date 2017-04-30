@@ -1,5 +1,5 @@
 #include "ZeroMQPushPull.h"
-#include "Netflow.h"
+#include "Netflow.hpp"
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -89,7 +89,8 @@ ZeroMQPushPull::ZeroMQPushPull(
           // Is this null terminated?
           char *buff = static_cast<char*>(message.data());
           string sNetflow(buff); 
-          this->parallelFeed(sNetflow);
+          Netflow netflow = makeNetflow(sNetflow);
+          this->parallelFeed(netflow);
           int value = this->pullCounters[i]->fetch_add(1);
           if (value % metricInterval == 0) {
             std::cout << "nodeid " << this->nodeId << " PullCount[" << i 
@@ -124,12 +125,12 @@ bool ZeroMQPushPull::consume(Netflow const& n)
     std::cout << "NodeId " << nodeId << " consumeCount " << consumeCount 
               << std::endl; 
   }
-  string source = n.getField(SOURCE_IP_FIELD);
-  string dest = n.getField(DEST_IP_FIELD);
+  string source = std::get<SOURCE_IP_FIELD>(n);
+  string dest = std::get<DEST_IP_FIELD>(n);
   size_t node1 = std::hash<string>{}(source) % numNodes;
   size_t node2 = std::hash<string>{}(dest) % numNodes;
 
-  std::string s = n.toString();
+  std::string s = toString(n);
   size_t lengthString = s.size();
   zmq::message_t message1(lengthString + 1);
   snprintf ((char *) message1.data(), lengthString + 1 ,
