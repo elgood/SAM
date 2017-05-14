@@ -3,7 +3,6 @@
 
 #include <string>
 #include "Expression.hpp"
-#include "Grammars.hpp"
 
 using std::string;
 
@@ -15,9 +14,9 @@ class Filter: public AbstractConsumer<TupleType>,
               public BaseProducer<TupleType>
 {
 private:
-  Expression<FilterGrammar<std::string::const_iterator>> const& expression;
+  Expression<TupleType> const& expression;
 public:
-  Filter(Expression<FilterGrammar<std::string::const_iterator>> const& _exp,
+  Filter(Expression<TupleType> const& _exp,
          size_t nodeId,
          FeatureMap& featureMap,
          string identifier,
@@ -36,18 +35,17 @@ bool Filter<TupleType, keyFields...>::consume(TupleType const& t)
 {
   string key = this->generateKey(t);
 
-  try {
-    double result = expression.evaluate(key, this->featureMap); 
+  double result = 0;
+  bool b = expression.evaluate(key, t, result); 
+  if (b) {
     BooleanFeature feature(result);
     this->featureMap.updateInsert(key, this->identifier, feature); 
     if ( result ) {
       this->parallelFeed(t);
+    } else {
+      BooleanFeature feature(0);
+      this->featureMap.updateInsert(key, this->identifier, feature);  
     }
-  } catch (std::exception e) {
-    // If there was an exception, it means that some of the necessary 
-    // features weren't present, so the boolean feature is false.
-    BooleanFeature feature(0);
-    this->featureMap.updateInsert(key, this->identifier, feature);  
   }
   return true;
 }

@@ -7,12 +7,93 @@
 #include <string>
 #include <iostream>
 #include <stdexcept>
-
-#include "ExpressionTokenizer.hpp"
+#include <tuple>
 #include "FeatureMap.hpp"
+#include "Tokens.hpp"
 
 namespace sam {
 
+template <typename... Ts>
+class Expression 
+{};
+
+template <typename... Ts>
+class Expression<std::tuple<Ts...>> 
+{
+  
+private:
+  // Stores the expression in postfix form.
+  std::list<std::shared_ptr<ExpressionToken<std::tuple<Ts...>>>> postfixList;
+
+public:
+  /**
+   * Constructor for expression.  It expects a list of tokens in 
+   * infix form.
+   */
+  Expression(std::list<std::shared_ptr<ExpressionToken<std::tuple<Ts...>>>> 
+             infixList)
+  {
+    std::stack<std::shared_ptr<OperatorToken<std::tuple<Ts...>>>> operatorStack;
+    for (auto token : infixList)
+    {
+      if (token->isOperator()) {
+        addOperator(std::static_pointer_cast<OperatorToken<std::tuple<Ts...>>>(
+                    token),
+                    operatorStack);
+      } else {
+        postfixList.push_back(token);
+      }
+    }
+
+    while (operatorStack.size() > 0) {
+      auto top = operatorStack.top();
+      postfixList.push_back(top);
+      operatorStack.pop();
+    }
+  }
+
+  void addOperator(std::shared_ptr<OperatorToken<std::tuple<Ts...>>> o1,
+  std::stack<std::shared_ptr<OperatorToken<std::tuple<Ts...>>>> & operatorStack)
+  {
+    if (operatorStack.size() > 0) {
+      auto top = operatorStack.top();
+      bool foundQualifyingTopElement = false;
+      do {
+        foundQualifyingTopElement = false;
+        if (
+            (o1->isLeftAssociative() &&
+              (o1->getPrecedence() <= top->getPrecedence()))
+            ||
+            (o1->isRightAssociative() &&
+              (o1->getPrecedence() < top->getPrecedence()))
+           )
+        {
+          foundQualifyingTopElement = true;
+          operatorStack.pop();
+          postfixList.push_back(top);
+        }
+       } while (operatorStack.size() > 0 && foundQualifyingTopElement);
+    }
+    operatorStack.push(o1);
+  }
+
+
+  bool evaluate(std::string const& key, 
+                std::tuple<Ts...> const& input, 
+                double& result) const 
+  {
+    std::stack<double> mystack;
+    for (auto token : postfixList) {
+      if (!token->evaluate(mystack, key, input)) {
+        return false;
+      }
+    }
+    result = mystack.top();
+    return true;
+  }
+};
+
+/*
 template <typename Grammar>
 class Expression {
 private:
@@ -21,7 +102,10 @@ private:
 public:  
   Expression(std::string sExpression);
 
-  double evaluate(std::string const& key, FeatureMap const& featureMap) const;
+  template <typename InputType>
+  double evaluate(std::string const& key, 
+                  FeatureMap const& featureMap,
+                  InputType const& input) const;
 
   typedef std::list<std::shared_ptr<ExpressionToken>>::iterator iterator;
   typedef std::list<std::shared_ptr<ExpressionToken>>::const_iterator 
@@ -29,12 +113,12 @@ public:
 
   iterator begin() { return outputList.begin(); }
   iterator end() { return outputList.end(); }
-private:
+private:*/
   /**
    * Adds operator to the operator stack.
    * See shunting yard algorithm for more details.
    */
-  void addOperator(std::shared_ptr<OperatorToken> o1,
+/*  void addOperator(std::shared_ptr<OperatorToken> o1,
     std::stack<std::shared_ptr<OperatorToken>> & operatorStack);
 };
 
@@ -95,8 +179,10 @@ Expression<Grammar>::Expression(std::string sExpression)
 }
 
 template <typename Grammar>
+template <typename InputType>
 double Expression<Grammar>::evaluate(std::string const& key, 
-                                  FeatureMap const& featureMap) const
+                                  FeatureMap const& featureMap,
+                                  InputType const& input) const
 {
   std::stack<double> mystack;
   for (auto token : outputList) {
@@ -108,15 +194,14 @@ double Expression<Grammar>::evaluate(std::string const& key,
       double result = token->evaluate(o1, o2);
       mystack.push(result); 
     } else {
-      double result = token->evaluate(key, featureMap);
+      double result = token->evaluate(key, featureMap, input);
       mystack.push(result);
     }
   }
   double result = mystack.top();
   return result;
-
 }
-
+*/
 
 }
 

@@ -30,10 +30,42 @@ BOOST_AUTO_TEST_CASE( test_topk )
 
   producer.registerConsumer(&top2);
 
-  Expression<FilterGrammar<std::string::const_iterator>> 
-    filterExpression("top2.value(0) + top2.value(1) < 0.9");
-  Filter<Netflow, 6> filter(filterExpression, 0, featureMap, "servers", 
-                            queueLength);
+  // Five tokens for the 
+  // First function token
+  std::string function1 = "value";
+  std::vector<double> parameters1;
+  parameters1.push_back(0);
+  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, identifier,
+                                                        function1, parameters1);
+
+  // Addition token
+  auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
+
+  // Second function token
+  std::string function2 = "value";
+  std::vector<double> parameters2;
+  parameters2.push_back(1);
+  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, identifier,
+                                                        function2, parameters2);
+
+  // Lessthan token
+  auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(featureMap);
+  
+  // Number token
+  auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 0.9);
+
+  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
+  infixList.push_back(funcToken1);
+  infixList.push_back(addOper);
+  infixList.push_back(funcToken2);
+  infixList.push_back(lessThanToken);
+  infixList.push_back(numberToken);
+
+
+
+  Expression<Netflow> filterExpression(infixList);
+  Filter<Netflow, DEST_IP_FIELD> filter(filterExpression, 0, featureMap, 
+                                        "servers", queueLength);
                 
 
   producer.registerConsumer(&filter);

@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <stdlib.h>
 #include <iostream>
 #include <chrono>
@@ -164,13 +165,42 @@ int main(int argc, char** argv) {
                                featureMap, identifier);
   consumer.registerConsumer(topk); 
 
+  // Five tokens for the 
+  // First function token
+  std::string function1 = "value";
+  std::vector<double> parameters1;
+  parameters1.push_back(0);
+  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, identifier,
+                                                        function1, parameters1);
 
-  Expression<FilterGrammar<std::string::const_iterator>> 
-    filterExpression("top2.value(0) + top2.value(1) < 0.9");
+  // Addition token
+  auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
+
+  // Second function token
+  std::string function2 = "value";
+  std::vector<double> parameters2;
+  parameters2.push_back(1);
+  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, identifier,
+                                                        function2, parameters2);
+
+  // Lessthan token
+  auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(featureMap);
+  
+  // Number token
+  auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 0.9);
+
+  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
+  infixList.push_back(funcToken1);
+  infixList.push_back(addOper);
+  infixList.push_back(funcToken2);
+  infixList.push_back(lessThanToken);
+  infixList.push_back(numberToken);
+
+  Expression<Netflow> filterExpression(infixList);
+    
   Filter<Netflow, DEST_IP_FIELD>* filter = new Filter<Netflow, DEST_IP_FIELD>(
                  filterExpression, nodeId, featureMap, "servers", queueLength);
   consumer.registerConsumer(filter);
-
 
   if (!receiver.connect()) {
     std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;

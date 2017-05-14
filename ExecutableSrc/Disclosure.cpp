@@ -18,10 +18,12 @@
 #include "ZeroMQPushPull.h"
 #include "TopK.hpp"
 #include "Expression.hpp"
+#include "TupleExpression.hpp"
 #include "Filter.hpp"
 #include "ExponentialHistogramSum.hpp"
 #include "ExponentialHistogramVariance.hpp"
 #include "Netflow.hpp"
+#include "TransformProducer.hpp"
 
 #define DEBUG 1
 
@@ -156,7 +158,6 @@ int main(int argc, char** argv) {
 
   FeatureMap destIpFeatureMap;
 
-  int valueField = DEST_PORT_FIELD;
   string identifier = "top2";
   k = 2;
   auto topk = new TopK<size_t, Netflow, DEST_PORT_FIELD, DEST_IP_FIELD>
@@ -164,35 +165,69 @@ int main(int argc, char** argv) {
                                
   consumer.registerConsumer(topk); 
 
+  // Five tokens for the 
+  // First function token
+  std::string function1 = "value";
+  std::vector<double> parameters1;
+  parameters1.push_back(0);
+  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(destIpFeatureMap, 
+                                                        identifier,
+                                                        function1, 
+                                                        parameters1);
 
-  Expression<FilterGrammar<std::string::const_iterator>>
-    filterExpression("top2.value(0) + top2.value(1) < 0.9");
-  auto filter = new Filter<Netflow, DEST_IP_FIELD>(filterExpression, 
-                    nodeId, destIpFeatureMap, "servers", queueLength);
+  // Addition token
+  auto addOper = std::make_shared<AddOperator<Netflow>>(destIpFeatureMap);
+
+  // Second function token
+  std::string function2 = "value";
+  std::vector<double> parameters2;
+  parameters2.push_back(1);
+  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(destIpFeatureMap, 
+                                                         identifier,
+                                                         function2, 
+                                                         parameters2);
+
+  // Lessthan token
+  auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(
+                        destIpFeatureMap);
+  
+  // Number token
+  auto numberToken = std::make_shared<NumberToken<Netflow>>(destIpFeatureMap, 
+                                                            0.9);
+
+  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
+  infixList.push_back(funcToken1);
+  infixList.push_back(addOper);
+  infixList.push_back(funcToken2);
+  infixList.push_back(lessThanToken);
+  infixList.push_back(numberToken);
+
+  Expression<Netflow> filterExpression(infixList);
+    
+  auto filter = new Filter<Netflow, DEST_IP_FIELD>(filterExpression, nodeId, 
+                                    destIpFeatureMap, "servers", queueLength);
+
+
   consumer.registerConsumer(filter);
 
-  valueField = SRC_TOTAL_BYTES;
   identifier = "serverSumIncomingFlowSize";
   auto sumIncoming = new ExponentialHistogramSum<size_t, SRC_TOTAL_BYTES,
                                                  DEST_IP_FIELD>
                           (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(sumIncoming); 
   
-  valueField = DEST_TOTAL_BYTES;
   identifier = "serverSumOutgoingFlowSize";
   auto sumOutgoing = new ExponentialHistogramSum<size_t, DEST_TOTAL_BYTES,
                                                   DEST_IP_FIELD>
                           (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(sumOutgoing);
      
-  valueField = SRC_TOTAL_BYTES;
   identifier = "serverVarianceIncomingFlowSize";
   auto varianceIncoming = new ExponentialHistogramVariance<size_t, 
                                                 SRC_TOTAL_BYTES, DEST_IP_FIELD>
                           (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(varianceIncoming); 
   
-  valueField = DEST_TOTAL_BYTES;
   identifier = "serverVarianceOutgoingFlowSize";
   auto varianceOutgoing = new ExponentialHistogramVariance<size_t,
                                               DEST_TOTAL_BYTES, DEST_IP_FIELD>
@@ -206,6 +241,46 @@ int main(int argc, char** argv) {
 
   FeatureMap destSrcFeatureMap;
   
+  #define DestIp_TimeLapseSeries    0
+  #define SrcIp_TimeLapseSeries     1
+  #define TimeDiff_TimeLapseSeries  2 
+  typedef std::tuple<std::string, std::string, double> TimeLapseSeries;
+ 
+  std::vector<Expression<Netflow>> expressions;
+  std::vector<std::string> names;
+  std::string name = "TimeLapseSeries_TimeDiff";
+  names.push_back(name);
+  
+  // Expression TimeSeconds - Prev.TimeSeconds
+  // 
+  // TimeSeconds field token 
+  std::shared_ptr<ExpressionToken<Netflow>> fieldToken = std::make_shared<
+    FieldToken<TIME_SECONDS_FIELD, Netflow>>(destSrcFeatureMap);
+  // Sub operator token
+  std::shared_ptr<ExpressionToken<Netflow>> subToken = std::make_shared<
+    SubOperator<Netflow>>(destSrcFeatureMap);
+  // Prev.TimeSeconds
+  std::shared_ptr<ExpressionToken<Netflow>> prevToken = std::make_shared<
+    PrevToken<TIME_SECONDS_FIELD, Netflow>>(destSrcFeatureMap);
+    
+  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList2;
+  infixList2.push_back(fieldToken);
+  infixList2.push_back(subToken);
+  infixList2.push_back(prevToken);
+    
+  Expression<Netflow> expression(infixList2);
+  expressions.push_back(expression); 
+   
+  TupleExpression<Netflow> tupleExpression(expressions, names);
+  identifier = "destsrc_timelapseseries";
+
+  auto timeLapseSeries = new TransformProducer<Netflow, TimeLapseSeries, 
+                                               DEST_IP_FIELD, SOURCE_IP_FIELD>
+                             (tupleExpression,
+                              nodeId,
+                              destSrcFeatureMap,
+                              identifier,
+                              queueLength);  
 
 #ifdef DEBUG
   cout << "DEBUG: connected to receiver " << endl;

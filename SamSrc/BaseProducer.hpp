@@ -94,6 +94,12 @@ void BaseProducer<T>::parallelFeed(T const& item) {
       );
       
     }
+    //REMOVE
+    //for (int j = 0; j < this->queueLength; j++) {
+    //  for (int i = 0; i < consumers.size(); i++) {
+    //    this->consumers[i]->consume(inputQueue[j]);
+    //  }
+    //} //END REMOVE
     numItems = 0;
     threads.join_all();
 

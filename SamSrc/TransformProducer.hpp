@@ -5,84 +5,95 @@
 #include "TupleExpression.hpp"
 #include "FeatureMap.hpp"
 #include "Tokens.hpp"
+#include "AbstractConsumer.hpp"
+#include "BaseComputation.hpp"
+#include "BaseProducer.hpp"
+#include "Util.hpp"
 
 namespace sam {
 
 
-template <typename InputType, typename OutputType>
+template <typename InputType, typename OutputType, size_t... keyFields>
 class TransformProducer : public AbstractConsumer<InputType>,
-                          public BaseComputation,
+                          public BaseComputation<0, keyFields...>,
                           public BaseProducer<OutputType>
 {
 private:
-  TupleExpression const& expression;
+  TupleExpression<InputType> const& transformExpressions;
 
-  // How many previous values we need to keep
-  size_t historyLength;
-
-  // An fixed-size array that holds a history of the inputs.
-  InputType *inputHistory;
-
-  // The index to the most recent entry in the inputHistory
-  size_t index;
 public:
-  TransformProducer(TupleExpression const& _expression,
-                      vector<size_t> keyFields,
+  TransformProducer(TupleExpression<InputType> const& _expression,
                       size_t nodeId,
                       FeatureMap& featureMap,
-                      string identifier, 
-                      size_t queueLength,
-                      size_t historyLength);
+                      string identifier,
+                      size_t queueLength);
+                      //size_t historyLength);
   virtual ~TransformProducer();
 
   virtual bool consume(InputType const& input);
 
-private:
-  void updateHistory(InputType const& input);
- 
-  std::string generateHistoryIdentifier(size_t i);
 };
 
-template <typename InputType, typename OutputType>
-TransformProducer<InputType, OutputType>::TransformProducer(
-  TupleExpression const& _expression,
-  vector<size_t> keyFields,
+template <typename InputType, typename OutputType, size_t... keyFields>
+TransformProducer<InputType, OutputType, keyFields...>::TransformProducer(
+  TupleExpression<InputType> const& expression,
   size_t nodeId,
   FeatureMap& featureMap,
-  string identifier, 
-  size_t queueLength,
-  size_t historyLength) 
+  string identifier,
+  size_t queueLength)
   :
-  TupleExpression(_expression), 
-  BaseComputation(keyFields, 0, nodeId, featureMap, identifier),
-  BaseProducer(queueLength)
+  BaseComputation<0, keyFields...>(nodeId, featureMap, identifier),
+  BaseProducer<OutputType>(queueLength),
+  transformExpressions(expression) 
 {
-  this->historyLegnth = historyLength;
-  inputHistory = new InputType[historyLength];
-  index = 0;
 }
 
-template <typename InputType, typename OutputType>
-TransformProducer<InputType, OutputType>::~TransformProducer()
+template <typename InputType, typename OutputType, size_t... keyFields>
+TransformProducer<InputType, OutputType, keyFields...>::~TransformProducer()
 {
-  delete[] inputHistory;
 }
 
-template <typename InputType, typename OutputType>
-bool TransformProducer<InputType, OutputType>::consume(InputType const& input)
+template <typename InputType, typename OutputType, size_t... keyFields>
+bool TransformProducer<InputType, OutputType, keyFields...>::consume(
+  InputType const& input)
 {
-  string key = generateKey(t);
+  string key = this->generateKey(input);
 
-  OutputType result = expression.evaluate(key, featureMap); 
-   
-  updateHistory(input); 
+  // Generate a subtuple with just the key fields
+  std::index_sequence<keyFields...> sequence;
+  auto outTuple = subtuple(input, sequence);
+
+ 
+
+  // Add the new fields from the transform expressions. 
+  //TupleExpression::const_iterator iterator = transformExpressions.begin(); 
+  for ( auto expression : transformExpressions ) {
+
+    double result = 0;
+    bool b = expression.evaluate(key, input, result);
+  }
+
+  return true;
 }
 
-template <typename InputType, typename OutputType>
+/*
 void TransformProducer<InputType, OutputType>::updateHistory(
   InputType const& input)
 {
   std::string key = generateKey(t);
+
+  try {
+    OutputType tuple;
+
+    //std::get<
+
+    for ( auto expression : TupleExpression )
+    {
+      double result = expression.evaluate(key, this->featureMap);
+
+    }
+
+  }
 
   for (int i = 0; i < historyLength - 1; i++) {
     std::string featureName = generateHistoryIdentifier(i+1);
@@ -94,7 +105,7 @@ void TransformProducer<InputType, OutputType>::updateHistory(
   TupleFeature tupleFeature( input ); 
   featureMap.updateInsert( key, generateKey(1), input );
 }
-
+*/
 
 
 }

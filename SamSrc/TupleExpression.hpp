@@ -3,39 +3,50 @@
 
 #include <vector>
 #include <string>
+#include <typeinfo>
 
 #include "Expression.hpp"
 
 namespace sam {
 
+template <typename... Ts>
 class TupleExpression
-{
-public:
-  typedef Expression<TransformGrammar<std::string::const_iterator>>
-          ExpressionType;
-private:
-  std::vector<ExpressionType> expressions;
-  std::vector<std::string> names;  
-public:
-  TupleExpression(std::vector<std::string> const& expressions,
-                  std::vector<std::string> const& names);
+{};
 
+template <typename... Ts>
+class TupleExpression<std::tuple<Ts...>>
+{
+private:
+  std::vector<Expression<std::tuple<Ts...>>> expressions;
+  std::vector<std::string> names;
+  std::vector<std::string> types;  
+public:
+  TupleExpression(std::vector<Expression<std::tuple<Ts...>>> const& expressions,
+                  std::vector<std::string> const& names)
+  {
+    this->expressions = std::vector<Expression<std::tuple<Ts...>>>(expressions);
+    this->names = std::vector<std::string>(names);
+
+  }
+                  
+
+  // For iterating over the expressions
+  typedef typename std::vector<Expression<std::tuple<Ts...>>>::iterator 
+    iterator;
+  typedef typename std::vector<Expression<std::tuple<Ts...>>>::const_iterator 
+    const_iterator;
+          
+
+  iterator begin() { return expressions.begin(); }
+  iterator end() { return expressions.end(); }
+  const_iterator begin() const { return expressions.begin(); }
+  const_iterator end() const { return expressions.end(); }
 
 
 };
 
-TupleExpression::TupleExpression(std::vector<std::string> const& expressions,
-                                 std::vector<std::string> const& names)
-{
-  for (auto expression : expressions) {
-    this->expressions.push_back(ExpressionType(expression));
-  }
-  this->names(names);
-
 }
 
-
-}
 
 
 #endif

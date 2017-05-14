@@ -6,14 +6,14 @@
 #include <boost/spirit/include/qi_parse.hpp>
 #include <string>
 
-#include "Grammars.hpp"
+//#include "Grammars.hpp"
 
-using boost::spirit::ascii::space;
+//using boost::spirit::ascii::space;
 
 int
 main()
 {
-    std::cout << "////////////////////////////////////////////////////////\n\n";
+/*   std::cout << "////////////////////////////////////////////////////////\n\n";
     std::cout << "\t\t...\n\n";
     std::cout << "////////////////////////////////////////////////////////\n\n";
 
@@ -50,6 +50,6 @@ main()
         }
     }
 
-    std::cout << "Bye... :-) \n\n";
+    std::cout << "Bye... :-) \n\n";*/
     return 0;
 }

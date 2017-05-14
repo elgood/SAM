@@ -92,7 +92,6 @@ void TopKProducer::run() {
   for (int i = 0; i < numExamples; i++) {
     for (auto g : servers) {
       std::string s = g->generate();
-      printf("Generated string %s\n", s.c_str());
 
       // Obtaining metrics on the netflows generated
       Netflow netflow = makeNetflow(s);

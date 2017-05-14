@@ -65,12 +65,16 @@ public:
    * \return Returns true if the update took place.  False if there is no room
    *         in the table.
    */
-  bool updateInsert(std::string key, 
-                     std::string featureName,  
+  bool updateInsert(std::string const& key, 
+                     std::string const& featureName,  
                      Feature const& f);
   
-  std::shared_ptr<const Feature> at(std::string key,
-                               std::string featureName) const; 
+  std::shared_ptr<const Feature> at(std::string const& key,
+                               std::string const& featureName) const; 
+
+ 
+  bool exists(std::string const& key,
+              std::string const& featureName) const; 
 
 private:
   /**
@@ -78,12 +82,12 @@ private:
    * \param key The combined key-featureName combo.
    * \returns Returns the int hash.
    */
-  unsigned int hashFunction(std::string key) const;
+  unsigned int hashFunction(std::string const& key) const;
 
 };
 
 inline
-unsigned int FeatureMap::hashFunction(std::string key) const
+unsigned int FeatureMap::hashFunction(std::string const& key) const
 {
   unsigned int hash = 0;
   
@@ -95,8 +99,8 @@ unsigned int FeatureMap::hashFunction(std::string key) const
 }
 
 inline
-std::shared_ptr<Feature const> FeatureMap::at(std::string key, 
-                                          std::string featureName) const
+bool FeatureMap::exists(std::string const& key,
+                        std::string const& featureName) const
 {
   std::string combinedKey = key + featureName;
   unsigned int hash = hashFunction(combinedKey);
@@ -107,18 +111,43 @@ std::shared_ptr<Feature const> FeatureMap::at(std::string key,
     if (flag[i] == MAP_OCCUPIED) {
       if (keys[i].compare(combinedKey) == 0)
       {
+        return true;
+      }
+    }
+
+    i = (i + 1) % capacity;
+  } while (i != index && flag[i] != MAP_EMPTY);
+  return false;
+
+}
+
+inline
+std::shared_ptr<Feature const> FeatureMap::at(std::string const& key, 
+                                          std::string const& featureName) const
+{
+  std::string combinedKey = key + featureName;
+  unsigned int hash = hashFunction(combinedKey);
+  int i = hash % capacity;
+  int index = i;
+  do
+  {
+    if (flag[i] != MAP_EMPTY) {
+      if (keys[i].compare(combinedKey) == 0)
+      {
         return std::static_pointer_cast<Feature const>( features[i] );
       }
     }
 
     i = (i + 1) % capacity;
   } while (i != index && flag[i] != MAP_EMPTY);
-  throw std::out_of_range("No value found for key " + key + ":" + featureName);
+  throw std::out_of_range("No value found for key " + key + ":" + 
+                          featureName + "\n");
+                          
 }
 
 inline
-bool FeatureMap::updateInsert(std::string key, 
-                               std::string featureName,  
+bool FeatureMap::updateInsert(std::string const& key, 
+                               std::string const& featureName,  
                                Feature const& f) 
 {
   std::string combinedKey = key + featureName;

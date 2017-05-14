@@ -8,7 +8,7 @@
 #define SOURCE_PORT 2
 
 
-template <int I = 0, typename... Tp>
+/*template <int I = 0, typename... Tp>
 inline typename std::enable_if<I == sizeof...(Tp), std::string>::type
 toString(std::tuple<Tp...> const&)
 {
@@ -22,9 +22,8 @@ toString(std::tuple<Tp...> const& t)
   std::string result = boost::lexical_cast<std::string>(std::get<I>(t));
   result = result + "," + 
   std::string end = toString<I + 1, Tp...>(t);
-  if 
   return result;
-}
+}*/
 
 int main(int argc, char** argv)
 {
@@ -36,6 +35,8 @@ int main(int argc, char** argv)
 
   std::cout << std::get<0>(t) << std::endl;
 
-  std::string s = toString(t);
-  std::cout << s << std::endl;
+  //std::string s = toString(t);
+  //std::cout << s << std::endl;
+
+  double d = std::get<0>(t);
 }
