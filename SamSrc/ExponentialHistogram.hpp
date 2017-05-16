@@ -121,6 +121,10 @@ public:
     return total;
   }
 
+  /**
+   * Returns the total number of numbers that can be represented by
+   * the histogram.
+   */
   size_t getNumSlots() {
     int size = 1;
     int total = 0;

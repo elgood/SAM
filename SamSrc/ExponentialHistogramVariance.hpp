@@ -18,8 +18,9 @@
 
 namespace sam {
 
-template <typename T, size_t valueField, size_t... keyFields>
-class ExponentialHistogramVariance : public AbstractConsumer<Netflow>, 
+template <typename T, typename InputType, 
+          size_t valueField, size_t... keyFields>
+class ExponentialHistogramVariance : public AbstractConsumer<InputType>, 
                             public BaseComputation<valueField, keyFields...>
 {
 private:
@@ -48,15 +49,15 @@ public:
     this->k = k;
   }
 
-  bool consume(Netflow const& netflow) {
-    feedCount++;
-    if (feedCount % this->metricInterval == 0) {
+  bool consume(InputType const& input) {
+    this->feedCount++;
+    if (this->feedCount % this->metricInterval == 0) {
       std::cout << "NodeId " << this->nodeId << " number of keys " 
                 << sums.size() << std::endl;
     }
 
     // Generates unique key from key fields
-    string key = this->generateKey(netflow);
+    string key = this->generateKey(input);
 
     if (sums.count(key) == 0) {
       auto eh = std::shared_ptr<ExponentialHistogram<T>>(
@@ -73,7 +74,7 @@ public:
     }
 
     string sValue = boost::lexical_cast<std::string>(
-                      std::get<valueField>(netflow));
+                      std::get<valueField>(input));
 
     T value = boost::lexical_cast<T>(sValue);
 

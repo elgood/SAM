@@ -94,7 +94,7 @@ void BaseProducer<T>::parallelFeed(T const& item) {
       );
       
     }
-    //REMOVE
+    //REMOVE serial implementation for debugging
     //for (int j = 0; j < this->queueLength; j++) {
     //  for (int i = 0; i < consumers.size(); i++) {
     //    this->consumers[i]->consume(inputQueue[j]);

@@ -211,25 +211,27 @@ int main(int argc, char** argv) {
   consumer.registerConsumer(filter);
 
   identifier = "serverSumIncomingFlowSize";
-  auto sumIncoming = new ExponentialHistogramSum<size_t, SRC_TOTAL_BYTES,
+  auto sumIncoming = new ExponentialHistogramSum<size_t, Netflow,
+                                                 SRC_TOTAL_BYTES,
                                                  DEST_IP_FIELD>
                           (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(sumIncoming); 
   
   identifier = "serverSumOutgoingFlowSize";
-  auto sumOutgoing = new ExponentialHistogramSum<size_t, DEST_TOTAL_BYTES,
+  auto sumOutgoing = new ExponentialHistogramSum<size_t, Netflow,
+                                                  DEST_TOTAL_BYTES,
                                                   DEST_IP_FIELD>
                           (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(sumOutgoing);
      
   identifier = "serverVarianceIncomingFlowSize";
-  auto varianceIncoming = new ExponentialHistogramVariance<size_t, 
+  auto varianceIncoming = new ExponentialHistogramVariance<size_t, Netflow,
                                                 SRC_TOTAL_BYTES, DEST_IP_FIELD>
                           (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(varianceIncoming); 
   
   identifier = "serverVarianceOutgoingFlowSize";
-  auto varianceOutgoing = new ExponentialHistogramVariance<size_t,
+  auto varianceOutgoing = new ExponentialHistogramVariance<size_t, Netflow,
                                               DEST_TOTAL_BYTES, DEST_IP_FIELD>
                               (N, 2, nodeId, destIpFeatureMap, identifier);
   filter->registerConsumer(varianceOutgoing);
@@ -239,6 +241,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
+  ////////////////// Creating Time Lapse Series ///////////////////////
   FeatureMap destSrcFeatureMap;
   
   #define DestIp_TimeLapseSeries    0
@@ -281,6 +284,16 @@ int main(int argc, char** argv) {
                               destSrcFeatureMap,
                               identifier,
                               queueLength);  
+
+  filter->registerConsumer(timeLapseSeries);
+
+  identifier = "destSourceTimeDiffAverage";
+  auto destSourceTimeDiffAve = 
+    new ExponentialHistogramAve<size_t, TimeLapseSeries, 
+                           TimeDiff_TimeLapseSeries, 
+                           DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>
+                          (N, 2, nodeId, destIpFeatureMap, identifier);
+  timeLapseSeries->registerConsumer(destSourceTimeDiffAve); 
 
 #ifdef DEBUG
   cout << "DEBUG: connected to receiver " << endl;

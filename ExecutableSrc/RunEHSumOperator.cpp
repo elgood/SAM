@@ -126,7 +126,8 @@ int main(int argc, char** argv)
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     std::string identifier = "ehsum" + boost::lexical_cast<std::string>(i);
-    auto op = new ExponentialHistogramSum<size_t, 8, 6>(
+    auto op = new ExponentialHistogramSum<size_t, Netflow, DEST_PORT_FIELD, 
+                                         DEST_IP_FIELD>(
                                          N, k, nodeId, featureMap, identifier);
                                                 
     consumer.registerConsumer(op);
