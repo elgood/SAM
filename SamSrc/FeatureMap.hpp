@@ -72,7 +72,10 @@ public:
   std::shared_ptr<const Feature> at(std::string const& key,
                                std::string const& featureName) const; 
 
- 
+
+  /**
+   * Checks if the key/featureName combo exists.
+   */ 
   bool exists(std::string const& key,
               std::string const& featureName) const; 
 

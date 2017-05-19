@@ -15,7 +15,12 @@ public:
                           std::vector<double> const& parameters) const = 0;
   virtual double evaluate() const  = 0;
   virtual void update(Feature const& feature) = 0;
+  
+  /**
+   * Creates a deep copy (I think) of this feature and returns it.
+   */
   virtual std::shared_ptr<Feature> createCopy() const = 0;
+  
   virtual bool operator==(Feature const& other) const = 0;
 
   bool operator!=(Feature const& other) const {

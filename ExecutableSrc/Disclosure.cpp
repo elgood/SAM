@@ -287,13 +287,26 @@ int main(int argc, char** argv) {
 
   filter->registerConsumer(timeLapseSeries);
 
+  std::list<std::string> destSrcIdentifiers;
+
   identifier = "destSourceTimeDiffAverage";
-  auto destSourceTimeDiffAve = 
-    new ExponentialHistogramAve<size_t, TimeLapseSeries, 
+  destSrcIdentifiers.push_back(identifier);
+  auto destSourceTimeDiffVar = 
+    new ExponentialHistogramVariance<size_t, TimeLapseSeries, 
                            TimeDiff_TimeLapseSeries, 
                            DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>
                           (N, 2, nodeId, destIpFeatureMap, identifier);
-  timeLapseSeries->registerConsumer(destSourceTimeDiffAve); 
+  timeLapseSeries->registerConsumer(destSourceTimeDiffVar); 
+
+
+  auto projectToDest = 
+    new Project<TimeLapseSeries, DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries,
+                DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>
+                (destIpFeatureMap, destSrcIdentifiers);
+               
+  timeLapseSeries-registerConsumer(projectToDest);
+  
+     
 
 #ifdef DEBUG
   cout << "DEBUG: connected to receiver " << endl;

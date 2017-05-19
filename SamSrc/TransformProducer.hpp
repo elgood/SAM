@@ -25,7 +25,7 @@ public:
   TransformProducer(TupleExpression<InputType> const& _expression,
                       size_t nodeId,
                       FeatureMap& featureMap,
-                      string identifier,
+                      std::string identifier,
                       size_t queueLength);
                       //size_t historyLength);
   virtual ~TransformProducer();
@@ -39,7 +39,7 @@ TransformProducer<InputType, OutputType, keyFields...>::TransformProducer(
   TupleExpression<InputType> const& expression,
   size_t nodeId,
   FeatureMap& featureMap,
-  string identifier,
+  std::string identifier,
   size_t queueLength)
   :
   BaseComputation<0, keyFields...>(nodeId, featureMap, identifier),
@@ -57,7 +57,7 @@ template <typename InputType, typename OutputType, size_t... keyFields>
 bool TransformProducer<InputType, OutputType, keyFields...>::consume(
   InputType const& input)
 {
-  string key = this->generateKey(input);
+  std::string key = this->generateKey(input);
 
   // Generate a subtuple with just the key fields
   std::index_sequence<keyFields...> sequence;
@@ -66,7 +66,6 @@ bool TransformProducer<InputType, OutputType, keyFields...>::consume(
  
 
   // Add the new fields from the transform expressions. 
-  //TupleExpression::const_iterator iterator = transformExpressions.begin(); 
   for ( auto expression : transformExpressions ) {
 
     double result = 0;
@@ -75,38 +74,6 @@ bool TransformProducer<InputType, OutputType, keyFields...>::consume(
 
   return true;
 }
-
-/*
-void TransformProducer<InputType, OutputType>::updateHistory(
-  InputType const& input)
-{
-  std::string key = generateKey(t);
-
-  try {
-    OutputType tuple;
-
-    //std::get<
-
-    for ( auto expression : TupleExpression )
-    {
-      double result = expression.evaluate(key, this->featureMap);
-
-    }
-
-  }
-
-  for (int i = 0; i < historyLength - 1; i++) {
-    std::string featureName = generateHistoryIdentifier(i+1);
-    auto feature = featureMap.at( key, featureName );
-    featureName = generateHistoryIdentifier(i+2);
-    featureMap.updateInsert( key, featureName, *feature );
-  }
- 
-  TupleFeature tupleFeature( input ); 
-  featureMap.updateInsert( key, generateKey(1), input );
-}
-*/
-
 
 }
 #endif
