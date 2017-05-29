@@ -14,14 +14,14 @@
 #include "BaseComputation.hpp"
 #include "ExponentialHistogram.hpp"
 #include "Features.hpp"
-#include "Netflow.hpp"
+#include "Util.hpp"
 
 namespace sam {
 
 template <typename T, typename InputType, 
           size_t valueField, size_t... keyFields>
 class ExponentialHistogramVariance : public AbstractConsumer<InputType>, 
-                            public BaseComputation<valueField, keyFields...>
+                                     public BaseComputation
 {
 private:
 
@@ -41,7 +41,7 @@ public:
                           size_t nodeId,
                           FeatureMap& featureMap,
                           std::string identifier) :
-                          BaseComputation<valueField, keyFields...>(
+                          BaseComputation(
                             nodeId,featureMap, identifier) 
                                           
   {
@@ -57,7 +57,7 @@ public:
     }
 
     // Generates unique key from key fields
-    string key = this->generateKey(input);
+    string key = generateKey<keyFields...>(input);
 
     if (sums.count(key) == 0) {
       auto eh = std::shared_ptr<ExponentialHistogram<T>>(

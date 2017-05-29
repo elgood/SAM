@@ -8,6 +8,7 @@
 #include "SlidingWindow.hpp"
 #include "AbstractConsumer.hpp"
 #include "BaseComputation.hpp"
+#include "Util.hpp"
 
 namespace sam {
 
@@ -16,7 +17,7 @@ template <typename T,
           size_t valueField,
           size_t... keyFields>
 class TopK: public AbstractConsumer<TupleType>, 
-            public BaseComputation<valueField, keyFields...>
+            public BaseComputation
 {
 private:
   size_t N; ///>Total number of elements
@@ -44,8 +45,8 @@ TopK<T, TupleType, valueField, keyFields...>::TopK(
       size_t k,
       size_t nodeId,
       FeatureMap& featureMap,
-      string identifier) :
-      BaseComputation<valueField, keyFields...>(nodeId, featureMap, identifier)
+      std::string identifier) :
+      BaseComputation(nodeId, featureMap, identifier)
 {
   this->N = N;
   this->b = b;
@@ -64,7 +65,7 @@ bool TopK<T, TupleType, valueField, keyFields...>::consume(
   }
 
   // Creating a hopefully unique key from the key fields
-  string key = this->generateKey(tuple);
+  std::string key = generateKey<keyFields...>(tuple);
   
   if (allWindows.count(key) == 0) {
     auto sw = std::shared_ptr<SlidingWindow<size_t>>(
@@ -73,7 +74,8 @@ bool TopK<T, TupleType, valueField, keyFields...>::consume(
     allWindows[key] = sw;    
   }
   
-  string sValue = boost::lexical_cast<std::string>(std::get<valueField>(tuple));
+  std::string sValue = 
+    boost::lexical_cast<std::string>(std::get<valueField>(tuple));
   
   T value = boost::lexical_cast<T>(sValue);
   

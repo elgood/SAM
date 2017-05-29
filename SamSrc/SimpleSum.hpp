@@ -12,6 +12,7 @@
 #include "AbstractConsumer.hpp"
 #include "BaseComputation.hpp"
 #include "Features.hpp"
+#include "Util.hpp"
 
 namespace sam 
 {
@@ -63,7 +64,7 @@ public:
 template <typename T, typename TupleType, size_t valueField, 
           size_t... keyFields>
 class SimpleSum: public AbstractConsumer<TupleType>, 
-                 public BaseComputation<valueField, keyFields...>
+                 public BaseComputation
 {
 private:
   size_t N; ///> Size of sliding window
@@ -81,7 +82,7 @@ public:
             size_t nodeId,
             FeatureMap& featureMap,
             string identifier) :
-    BaseComputation<valueField, keyFields...>(nodeId, featureMap, identifier) 
+    BaseComputation(nodeId, featureMap, identifier) 
   {
     this->N = N;
   }
@@ -100,7 +101,7 @@ public:
     }
 
     // Generates unique key from key fields 
-    string key = this->generateKey(tuple);
+    string key = generateKey<keyFields...>(tuple);
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N); 
       allWindows[key] = value;

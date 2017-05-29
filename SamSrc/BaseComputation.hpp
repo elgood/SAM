@@ -10,7 +10,7 @@
 namespace sam
 {
 
-template <size_t... keyFields>
+//template <size_t... keyFields>
 class BaseComputation
 {
 protected:
@@ -36,32 +36,6 @@ public:
   }
 
 
-  template<typename... Ts>
-  std::string generateKey(std::tuple<Ts...> const& t) const {
-    return "";
-  }
-};
-
-template <size_t valueField, size_t keyField, size_t... keyFields>
-class BaseComputation<valueField, keyField, keyFields...> 
-  : public BaseComputation<keyFields...>
-{
-public:
-
-  BaseComputation(size_t nodeId, 
-                  FeatureMap& featureMap, 
-                  std::string identifier) 
-  : BaseComputation<keyFields...>(nodeId, featureMap, identifier)
-  {
-
-  }
-
-  template<typename... Ts>
-  std::string generateKey(std::tuple<Ts...> const& t) const
-  {
-    std::string key = boost::lexical_cast<std::string>(std::get<keyField>(t));
-    return key + BaseComputation<keyFields...>::generateKey(t);
-  }
 };
 
 

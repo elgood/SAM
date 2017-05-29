@@ -15,7 +15,7 @@ namespace sam {
 
 template <typename InputType, typename OutputType, size_t... keyFields>
 class TransformProducer : public AbstractConsumer<InputType>,
-                          public BaseComputation<0, keyFields...>,
+                          public BaseComputation,
                           public BaseProducer<OutputType>
 {
 private:
@@ -42,7 +42,7 @@ TransformProducer<InputType, OutputType, keyFields...>::TransformProducer(
   std::string identifier,
   size_t queueLength)
   :
-  BaseComputation<0, keyFields...>(nodeId, featureMap, identifier),
+  BaseComputation(nodeId, featureMap, identifier),
   BaseProducer<OutputType>(queueLength),
   transformExpressions(expression) 
 {
@@ -57,12 +57,11 @@ template <typename InputType, typename OutputType, size_t... keyFields>
 bool TransformProducer<InputType, OutputType, keyFields...>::consume(
   InputType const& input)
 {
-  std::string key = this->generateKey(input);
+  std::string key = generateKey<keyFields...>(input);
 
   // Generate a subtuple with just the key fields
   std::index_sequence<keyFields...> sequence;
   auto outTuple = subtuple(input, sequence);
-
  
 
   // Add the new fields from the transform expressions. 

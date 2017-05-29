@@ -24,6 +24,8 @@
 #include "ExponentialHistogramVariance.hpp"
 #include "Netflow.hpp"
 #include "TransformProducer.hpp"
+#include "Project.hpp"
+#include "CollapsedConsumer.hpp"
 
 #define DEBUG 1
 
@@ -289,25 +291,48 @@ int main(int argc, char** argv) {
 
   std::list<std::string> destSrcIdentifiers;
 
-  identifier = "destSourceTimeDiffAverage";
+  identifier = "destSourceTimeDiffVariance";
   destSrcIdentifiers.push_back(identifier);
   auto destSourceTimeDiffVar = 
     new ExponentialHistogramVariance<size_t, TimeLapseSeries, 
                            TimeDiff_TimeLapseSeries, 
                            DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>
-                          (N, 2, nodeId, destIpFeatureMap, identifier);
+                          (N, 2, nodeId, destSrcFeatureMap, identifier);
   timeLapseSeries->registerConsumer(destSourceTimeDiffVar); 
 
+  CollapsedFeatureMap collapsedDestFeatureMap;
 
+  identifier = "projectOutSource";
   auto projectToDest = 
     new Project<TimeLapseSeries, DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries,
                 DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>
-                (destIpFeatureMap, destSrcIdentifiers);
+                (destSrcIdentifiers, 
+                collapsedDestFeatureMap,
+                nodeId,
+                destIpFeatureMap, 
+                identifier);
                
-  timeLapseSeries-registerConsumer(projectToDest);
-  
-     
+  timeLapseSeries->registerConsumer(projectToDest);
+ 
+  identifier = "serverAveClientsTimeDiffVar";
+  auto aveFunction = [](std::list<std::shared_ptr<Feature>> myList)->double {
+    double sum = 0;
+    for (auto feature : myList) {
+      sum = sum + feature->evaluate(); 
+    }
+    return sum / myList.size();
+  };
 
+  auto destTimeDiffVar = 
+    new CollapsedConsumer<Netflow, DEST_IP_FIELD>(
+                                               collapsedDestFeatureMap,
+                                               aveFunction,
+                                               nodeId, 
+                                               destIpFeatureMap, 
+                                               identifier); 
+  
+  filter->registerConsumer(destTimeDiffVar);
+  
 #ifdef DEBUG
   cout << "DEBUG: connected to receiver " << endl;
 #endif

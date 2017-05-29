@@ -28,20 +28,35 @@ BOOST_AUTO_TEST_CASE( map_test_updateInsert )
 
 BOOST_AUTO_TEST_CASE( map_test_multi_threads )
 {
+  // The capacity of the map.  It doesn't resize right now.
   int capacity = 1000;
-  int numInserts = 1000;
+
+  // The number of inserts to perform per thread
+  int numInserts = 10000;
+
+  // The feature map under test
   FeatureMap mymap( capacity );
+
+  // The identifier of the feature that we are inserting.
   std::string featureName = "testbooleanfeature";
 
-  int numThreads = 1;
+  // The number of concurrent threads
+  int numThreads = 10;
   std::vector<std::thread> threads;
+
+  
   for (int i = 0; i < numThreads; i++) 
   {
     threads.push_back(std::thread([i, numInserts, featureName, &mymap]() {
       for (int j = 0; j < numInserts; j++) {
         std::string ip = "192.168.0." + boost::lexical_cast<std::string>(i);
-        BooleanFeature bf(false);  
-        mymap.updateInsert(ip, featureName, bf); 
+        if (i % 2 == 0) {
+          BooleanFeature bf(false);  
+          mymap.updateInsert(ip, featureName, bf); 
+        } else {
+          BooleanFeature bf(true);  
+          mymap.updateInsert(ip, featureName, bf); 
+        }
       }
     }));
   }
@@ -50,12 +65,17 @@ BOOST_AUTO_TEST_CASE( map_test_multi_threads )
     threads[i].join();
   }
 
-  BooleanFeature expected(false);
 
   for (int i = 0; i < numThreads; i++) 
   {
     std::string ip = "192.168.0." + boost::lexical_cast<std::string>(i);
     std::shared_ptr<Feature const> bf = mymap.at(ip, featureName);
-    BOOST_CHECK( expected == *bf.get() );
+    if (i % 2 == 0) {
+      BooleanFeature expected(false);
+      BOOST_CHECK( expected == *bf.get() );
+    } else {
+      BooleanFeature expected(true);
+      BOOST_CHECK( expected == *bf.get() );
+    }
   }
 }

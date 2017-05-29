@@ -10,7 +10,7 @@ namespace sam {
 
 template <typename TupleType, size_t... keyFields>
 class Filter: public AbstractConsumer<TupleType>, 
-              public BaseComputation<0, keyFields...>, 
+              public BaseComputation,
               public BaseProducer<TupleType>
 {
 private:
@@ -21,7 +21,7 @@ public:
          FeatureMap& featureMap,
          string identifier,
          size_t queueLength) :
-         BaseComputation<0, keyFields...>(nodeId, featureMap, identifier), 
+         BaseComputation(nodeId, featureMap, identifier), 
          BaseProducer<TupleType>(queueLength),
          expression(_exp)
   {}
@@ -33,7 +33,7 @@ public:
 template <typename TupleType, size_t... keyFields>
 bool Filter<TupleType, keyFields...>::consume(TupleType const& t) 
 {
-  string key = this->generateKey(t);
+  string key = generateKey<keyFields...>(t);
 
   double result = 0;
   bool b = expression.evaluate(key, t, result); 

@@ -12,13 +12,14 @@
 #include "BaseComputation.hpp"
 #include "ExponentialHistogram.hpp"
 #include "Features.hpp"
+#include "Util.hpp"
 
 namespace sam {
 
 template <typename T, typename InputType,  
           size_t valueField, size_t... keyFields>
 class ExponentialHistogramSum: public AbstractConsumer<InputType>, 
-                               public BaseComputation<valueField, keyFields...>
+                               public BaseComputation
 {
 private:
 
@@ -37,8 +38,8 @@ public:
                           size_t nodeId,
                           FeatureMap& featureMap,
                           string identifier) :
-                          BaseComputation<valueField, keyFields...>(nodeId,
-                                          featureMap, identifier) 
+                          BaseComputation(nodeId, featureMap, identifier) 
+                                          
   {
     this->N = N;
     this->k = k;
@@ -52,7 +53,7 @@ public:
     }
 
     // Generates unique key from key fields
-    string key = this->generateKey(input);
+    string key = generateKey<keyFields...>(input);
 
     // Create an exponential histogram if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {
@@ -82,7 +83,7 @@ public:
 template <typename T, typename InputType,
           size_t valueField, size_t... keyFields>
 class ExponentialHistogramAve: public AbstractConsumer<InputType>, 
-                               public BaseComputation<valueField, keyFields...>
+                               public BaseComputation
 {
 private:
 
@@ -101,8 +102,8 @@ public:
                           size_t nodeId,
                           FeatureMap& featureMap,
                           string identifier) :
-                          BaseComputation<valueField, keyFields...>(nodeId,
-                                          featureMap, identifier) 
+                          BaseComputation(nodeId, featureMap, identifier) 
+                                          
   {
     this->N = N;
     this->k = k;
@@ -116,7 +117,7 @@ public:
     }
 
     // Generates unique key from key fields
-    string key = this->generateKey(input);
+    string key = generateKey<keyFields...>(input);
 
     // Create an exponential histogram if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {
