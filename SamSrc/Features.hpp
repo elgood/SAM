@@ -10,10 +10,24 @@
 namespace sam {
 
 class Feature {
+protected:
+  double value;
+
 public:
-  virtual double evaluate(std::string const& functionName,
-                          std::vector<double> const& parameters) const = 0;
-  virtual double evaluate() const  = 0;
+  Feature() {
+    value = 0;
+  }
+
+  Feature(double value) {
+    this->value = value;
+  }
+
+  //virtual double evaluate(std::string const& functionName,
+  //                        std::vector<double> const& parameters) const = 0;
+  //virtual double evaluate() const  = 0;
+  double evaluate(std::function<double(Feature const *)> func) const  {
+    return func(this);
+  }
   virtual void update(Feature const& feature) = 0;
   
   /**
@@ -28,33 +42,45 @@ public:
   }
 
   virtual std::string toString() const = 0;
+
+  virtual double getValue() const { return value; }
 };
+
+auto valueFunc = [](Feature const * feature)->double {
+  return feature->getValue();
+};
+
+/**
+ * A feature that is a map of features
+ */
+/*class MapFeature {
+private:
+  std::map<std::shared_ptr<Feature>> localFeatureMap;
+public:
+  double evaluate(std::string const& functionName,
+                  std::vector<double> const& parameters)
+  {
+    throw std::runtime_error("Evaluate with function " + functionName + 
+      " is not defined for class MapFeature");
+  }
+
+  void update(Feature const& feature) {
+    auto otherFeatureMap = 
+      static_cast<MapFeature const&>(feature).localFeatureMap;
+    for(auto& it : sourceMap)
+    {
+      localFeatureMap[it.first] = it.second;
+    }
+  }
+
+};*/
 
 /**
  * A boolean feature.  
  */
 class BooleanFeature: public Feature {
-private:
-  bool value;
-
 public:
-  BooleanFeature(bool value) {
-    this->value = value;
-  }
-
-  double evaluate(std::string const& functionName,
-                std::vector<double> const& parameters) const 
-  {
-    if (functionName.compare(VALUE_FUNCTION) == 0) {
-      return value;
-    }
-    throw std::runtime_error("Evaluate with function " + functionName + 
-      " is not defined for class BooleanFeature");
-  }
-
-  double evaluate() const {
-    return value;
-  }
+  BooleanFeature(bool value) : Feature(static_cast<double>(value)) {}
 
   void update(Feature const& feature) {
     value = static_cast<BooleanFeature const&>(feature).value;
@@ -88,25 +114,8 @@ public:
  */
 class SingleFeature: public Feature
 {
-private:
-  double value;
-
 public:
-  SingleFeature(double _value): value(_value) {}
-
-  double evaluate(std::string const& functionName,
-                  std::vector<double> const& parameters) const 
-  {
-    if (functionName.compare(VALUE_FUNCTION) == 0) {
-      return value;
-    }
-    throw std::runtime_error("Evaluate with function " + functionName + 
-      " is not defined for class SingleFeature");
-  }
-
-  double evaluate() const {
-    return value;
-  }
+  SingleFeature(double value): Feature(value) {}
 
   void update(Feature const& feature) {
     value = static_cast<SingleFeature const&>(feature).value;
@@ -154,24 +163,8 @@ public:
     this->frequencies = frequencies;
   }
 
-  double evaluate(std::string const& functionName, 
-                  std::vector<double> const& parameters) const 
-  {
-    if (functionName.compare(VALUE_FUNCTION) == 0) {
-      if (parameters.size() != 1) {
-        throw std::runtime_error("Expected there to be one parameter, found " +
-                      boost::lexical_cast<std::string>(parameters.size())); 
-      }
-      int index = boost::lexical_cast<int>(parameters[0]);
-      return frequencies[index];
-    }
-    throw std::runtime_error("Evaluate with function " + functionName + 
-      " is not defined for class TopKFeature");
-  }
-
-  double evaluate() const {
-    throw std::runtime_error("Evaluate with no parameters is not defined for" 
-                             " class TopKFeature");
+  std::vector<double> const& getFrequencies() const {
+    return frequencies;
   }
 
   void update(Feature const& feature) {
@@ -216,6 +209,7 @@ public:
     return rString;
   }
 };
+
 
 
 }

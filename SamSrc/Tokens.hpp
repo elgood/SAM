@@ -311,18 +311,21 @@ class FuncToken<std::tuple<Ts...>> :
 {
 private:
   std::string identifier; ///> The name of the variable, e.g. top2
-  std::string function; ///> The name of the function e.g. value
-  std::vector<double> parameters; ///> The parameters to the function
+  //std::string function; ///> The name of the function e.g. value
+  //std::vector<double> parameters; ///> The parameters to the function
+  std::function<double(Feature const *)> function;
 public:
   FuncToken(FeatureMap &featureMap,
-            std::string identifier,
-            std::string function,
-            std::vector<double> parameters) : 
+            std::function<double(Feature const *)> function,
+            std::string identifier)
+            :
+            //std::string function,
+            //std::vector<double> parameters) : 
             ExpressionToken<std::tuple<Ts...>>(featureMap) 
   {
     this->identifier = identifier;
     this->function = function;
-    this->parameters = parameters;  
+    //this->parameters = parameters;  
   }
 
   bool evaluate(std::stack<double> & mystack,
@@ -331,8 +334,7 @@ public:
   {
     if (this->featureMap.exists(key, identifier)) {
       try {
-        double d = this->featureMap.at(key, identifier)->evaluate(
-                  function, parameters);
+        double d = this->featureMap.at(key, identifier)->evaluate(function);
         mystack.push(d);
       } catch (std::exception e) {
         printf("Caught exception %s\n", e.what());
@@ -377,7 +379,12 @@ public:
     if (this->featureMap.exists(key, identifier)) { 
       exists = true;
       auto feature = this->featureMap.at(key, identifier);
-      double result = feature->evaluate(); 
+      
+      auto valueFunc = [](Feature const * feature)->double { 
+        return feature->getValue(); 
+      };
+
+      double result = feature->evaluate(valueFunc); 
       mystack.push(result);
     } 
 
