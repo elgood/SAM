@@ -103,10 +103,27 @@ BOOST_FIXTURE_TEST_CASE( test_func_token, F )
   std::vector<double> parameters;
   parameters.push_back(1);
 
+  auto func = [&function, &parameters](Feature const * feature)->double {
+    auto topkFeature = static_cast<TopKFeature const *>(feature);
+    if (function.compare(VALUE_FUNCTION) == 0) {
+      if (parameters.size() != 1) {
+        throw std::runtime_error("Expected there to be one parameter," 
+                    " found " +
+                    boost::lexical_cast<std::string>(parameters.size())); 
+      }
+      int index = boost::lexical_cast<int>(parameters[0]);
+      return topkFeature->getFrequencies()[index];
+    }
+    throw std::runtime_error("Evaluate with function " + function + 
+      " is not defined for class TopKFeature");
+
+  };
+
+
+
   FuncToken<Netflow> funcToken(featureMap,
-                               identifier,
-                               function,
-                               parameters );
+                               func,
+                               identifier);
 
   // Nothing in featureMap, so should return false.
   bool b = funcToken.evaluate(mystack, key, netflow);

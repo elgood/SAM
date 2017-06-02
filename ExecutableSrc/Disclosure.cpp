@@ -169,25 +169,27 @@ int main(int argc, char** argv) {
 
   // Five tokens for the 
   // First function token
-  std::string function1 = "value";
-  std::vector<double> parameters1;
-  parameters1.push_back(0);
+  int index1 = 0;
+  auto function1 = [&index1](Feature const * feature)->double {
+    auto topKFeature = static_cast<TopKFeature const *>(feature);
+    return topKFeature->getFrequencies()[index1];    
+  };
   auto funcToken1 = std::make_shared<FuncToken<Netflow>>(destIpFeatureMap, 
-                                                        identifier,
-                                                        function1, 
-                                                        parameters1);
+                                                        function1,
+                                                        identifier);
 
   // Addition token
   auto addOper = std::make_shared<AddOperator<Netflow>>(destIpFeatureMap);
 
   // Second function token
-  std::string function2 = "value";
-  std::vector<double> parameters2;
-  parameters2.push_back(1);
+  int index2 = 1;
+  auto function2 = [&index2](Feature const * feature)->double {
+    auto topKFeature = static_cast<TopKFeature const *>(feature);
+    return topKFeature->getFrequencies()[index2];    
+  };
   auto funcToken2 = std::make_shared<FuncToken<Netflow>>(destIpFeatureMap, 
-                                                         identifier,
-                                                         function2, 
-                                                         parameters2);
+                                                         function2,
+                                                         identifier);
 
   // Lessthan token
   auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(
@@ -318,7 +320,7 @@ int main(int argc, char** argv) {
   auto aveFunction = [](std::list<std::shared_ptr<Feature>> myList)->double {
     double sum = 0;
     for (auto feature : myList) {
-      sum = sum + feature->evaluate(); 
+      sum = sum + feature->evaluate(valueFunc); 
     }
     return sum / myList.size();
   };

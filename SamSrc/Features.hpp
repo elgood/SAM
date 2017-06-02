@@ -53,7 +53,8 @@ auto valueFunc = [](Feature const * feature)->double {
 /**
  * A feature that is a map of features
  */
-/*class MapFeature {
+/* 
+class MapFeature {
 private:
   std::map<std::shared_ptr<Feature>> localFeatureMap;
 public:
@@ -73,8 +74,8 @@ public:
     }
   }
 
-};*/
-
+};
+*/
 /**
  * A boolean feature.  
  */

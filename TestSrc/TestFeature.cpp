@@ -8,11 +8,7 @@ using namespace sam;
 BOOST_AUTO_TEST_CASE( single_feature )
 {
   SingleFeature feature(10.5);
-  BOOST_CHECK_EQUAL(feature.evaluate(), 10.5);
-  BOOST_CHECK_EQUAL(feature.evaluate(VALUE_FUNCTION, 
-                    std::vector<double>()), 10.5);
-  BOOST_CHECK_THROW(feature.evaluate("blah", std::vector<double>()),
-                    std::runtime_error);
+  BOOST_CHECK_EQUAL(feature.evaluate(valueFunc), 10.5);
    
 }
 
@@ -26,12 +22,16 @@ BOOST_AUTO_TEST_CASE( topk_feature )
   frequencies.push_back(0.2);
   TopKFeature top2(keys, frequencies);
   
-  std::vector<double> parameters;
-  parameters.push_back(0);
-  BOOST_CHECK_EQUAL(top2.evaluate(VALUE_FUNCTION,
-                    parameters), 0.4);
+  int index = 0;
+
+  auto topkValueFunction = [index](Feature const * feature)->double
+  {
+    auto topkFeature = static_cast<TopKFeature const *>(feature);
+    return topkFeature->getFrequencies()[0];
+  };
   
-  BOOST_CHECK_THROW(top2.evaluate(), std::runtime_error); 
+  BOOST_CHECK_EQUAL(top2.evaluate(topkValueFunction),0.4);
+  
 }
 
 BOOST_AUTO_TEST_CASE( test_equality )

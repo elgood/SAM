@@ -32,21 +32,21 @@ BOOST_AUTO_TEST_CASE( test_topk )
 
   // Five tokens for the 
   // First function token
-  std::string function1 = "value";
-  std::vector<double> parameters1;
-  parameters1.push_back(0);
-  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, identifier,
-                                                        function1, parameters1);
+  int index1 = 0;
+  auto function1 = [&index1](Feature const * feature)->double {
+    auto topKFeature = static_cast<TopKFeature const *>(feature);
+    return topKFeature->getFrequencies()[index1];  
+  };
+  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, function1,
+                                                         identifier);
 
   // Addition token
   auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
 
   // Second function token
-  std::string function2 = "value";
-  std::vector<double> parameters2;
-  parameters2.push_back(1);
-  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, identifier,
-                                                        function2, parameters2);
+  index1 = 1;
+  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, function1,
+                                                         identifier);
 
   // Lessthan token
   auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(featureMap);
@@ -74,12 +74,17 @@ BOOST_AUTO_TEST_CASE( test_topk )
   for (std::string ip : producer.getServerIps()) {
     std::cout << "server ip " << ip << std::endl;
     std::shared_ptr<Feature const> feature = featureMap.at(ip, identifier);
-    std::vector<double> parameters;
-    parameters.push_back(0);
-    double value = feature->evaluate(VALUE_FUNCTION, parameters);
+    int index1 = 0;
+    auto function1 = [&index1](Feature const * feature)->double {
+      auto topKFeature = static_cast<TopKFeature const *>(feature);
+      return topKFeature->getFrequencies()[index1];    
+    };
+
+    double value = feature->evaluate(function1);
     BOOST_CHECK_CLOSE(value, 0.5, 0.01);
-    parameters[0] = 1;
-    value = feature->evaluate(VALUE_FUNCTION, parameters);
+    
+    index1 = 1; 
+    value = feature->evaluate(function1);
     BOOST_CHECK_CLOSE(value, 0.5, 0.01);
   }
   for (std::string ip : producer.getNonserverIps()) {
@@ -87,15 +92,24 @@ BOOST_AUTO_TEST_CASE( test_topk )
     std::shared_ptr<Feature const> feature = featureMap.at(ip, identifier);
     std::vector<double> parameters;
     parameters.push_back(0);
-    double value = feature->evaluate(VALUE_FUNCTION, parameters);
+
+    int index1 = 0;
+    auto function1 = [&index1](Feature const * feature)->double {
+      auto topKFeature = static_cast<TopKFeature const *>(feature);
+      return topKFeature->getFrequencies()[index1];    
+    };
+
+
+
+    double value = feature->evaluate(function1);
     BOOST_CHECK_CLOSE(value, 0.333333, 0.01);
     
-    parameters[0] = 1;
-    value = feature->evaluate(VALUE_FUNCTION, parameters);
+    index1 = 1;
+    value = feature->evaluate(function1);
     BOOST_CHECK_CLOSE(value, 0.333333, 0.01);
 
-    parameters[0] = 2;
-    value = feature->evaluate(VALUE_FUNCTION, parameters);
+    index1 = 2;
+    value = feature->evaluate(function1);
     BOOST_CHECK_CLOSE(value, 0.333333, 0.01);
   }
 }

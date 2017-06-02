@@ -19,7 +19,8 @@ BOOST_AUTO_TEST_CASE( single_feature )
   auto sumFunction = [](std::list<std::shared_ptr<Feature>> mylist)->double {
     double sum = 0;
     for (auto feature : mylist) {
-      double d = feature->evaluate();
+
+      double d = feature->evaluate(valueFunc);
       sum = sum + d;
     }
     return sum;
