@@ -13,19 +13,19 @@ class CollapsedConsumer : public BaseComputation,
                           public AbstractConsumer<TupleType>
 {
 private:
-  CollapsedFeatureMap const& collapsedFeatureMap;
-  
   std::function<double(std::list<std::shared_ptr<Feature>>)> func;
+  std::string oldIdentifier;
 
 public:
-  CollapsedConsumer(CollapsedFeatureMap const& _collapsedFeatureMap,
+  CollapsedConsumer(
             std::function<double(std::list<std::shared_ptr<Feature>>)> _func,
+            std::string _oldIdentifier,
             size_t nodeId,
             FeatureMap& featureMap,
-            std::string identifier) :
-            collapsedFeatureMap(_collapsedFeatureMap),
+            std::string newIdentifier) :
             func(_func),
-            BaseComputation(nodeId, featureMap, identifier)
+            oldIdentifier(_oldIdentifier),
+            BaseComputation(nodeId, featureMap, newIdentifier)
   {
     
   }
@@ -34,17 +34,20 @@ public:
   {
     std::string key = generateKey<keyFields...>(tuple);
 
-    double result = 0;
-    bool b = this->collapsedFeatureMap.applyAggregate(key, 
-                                                      identifier, 
-                                                      func, 
-                                                      result);
-    if (b) {
+    if (featureMap.exists(key, oldIdentifier))
+    {
+      auto mapFeature = std::static_pointer_cast<const MapFeature>(
+                          this->featureMap.at(key, oldIdentifier));
+      double result = mapFeature->evaluate(func);
+       
       SingleFeature feature(result);
       this->featureMap.updateInsert(key, this->identifier, feature);
-    } 
+  
+      return true;   
+    }
 
-    return b;
+    return false;
+
   }
   
 };

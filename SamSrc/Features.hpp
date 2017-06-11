@@ -22,16 +22,21 @@ public:
     this->value = value;
   }
 
-  //virtual double evaluate(std::string const& functionName,
-  //                        std::vector<double> const& parameters) const = 0;
-  //virtual double evaluate() const  = 0;
+  /**
+   * Applies a function to this feature and returns the result.
+   */
   double evaluate(std::function<double(Feature const *)> func) const  {
     return func(this);
   }
+
+  /**
+   * Updates the current feature given another feature (usually of the same
+   * type).
+   */
   virtual void update(Feature const& feature) = 0;
   
   /**
-   * Creates a deep copy (I think) of this feature and returns it.
+   * Creates a deep copy of this feature and returns it.
    */
   virtual std::shared_ptr<Feature> createCopy() const = 0;
   
@@ -53,29 +58,94 @@ auto valueFunc = [](Feature const * feature)->double {
 /**
  * A feature that is a map of features
  */
-/* 
-class MapFeature {
+class MapFeature : public Feature {
 private:
-  std::map<std::shared_ptr<Feature>> localFeatureMap;
+  std::map<std::string, std::shared_ptr<Feature>> localFeatureMap;
 public:
-  double evaluate(std::string const& functionName,
-                  std::vector<double> const& parameters)
+
+  /**
+   * Takes a reference to a const feature map and populates the localFeatureMap
+   * of this object.
+   */
+  MapFeature(std::map<std::string, std::shared_ptr<Feature>> const& featureMap)
   {
-    throw std::runtime_error("Evaluate with function " + functionName + 
-      " is not defined for class MapFeature");
+    for (auto const& it : featureMap) {
+      localFeatureMap[it.first] = it.second;
+    }
   }
 
+  double evaluate(
+    std::function<double(std::list<std::shared_ptr<Feature>>)> func) const
+  {
+    std::list<std::shared_ptr<Feature>> mylist;
+    for (auto const& k : localFeatureMap) {
+      auto feature = k.second;
+      mylist.push_back(feature);
+    }
+    double result = func(mylist);
+    return result;
+  }
+
+  /**
+   * This takes the feature passed as a parameter, grabs the items in that
+   * map, and updates this feature's localFeatureMap with those items.
+   */
   void update(Feature const& feature) {
+    // Cast it to be the feature type we expect.
     auto otherFeatureMap = 
       static_cast<MapFeature const&>(feature).localFeatureMap;
-    for(auto& it : sourceMap)
+
+    // We iterate over the items in the other map.  Generally this should
+    // only be one item. 
+    for(auto& it : otherFeatureMap)
     {
       localFeatureMap[it.first] = it.second;
     }
   }
 
+  /**
+   *
+   */
+  std::shared_ptr<Feature> createCopy() const {
+    std::shared_ptr<Feature> feature = 
+      std::make_shared<MapFeature>(localFeatureMap);
+    return feature;
+  }
+
+  std::string toString() const {
+    std::string rString = "MapFeature "; 
+    return rString;
+  }
+
+  /**
+   * This is expensive and not thread safe.  Is it called?
+   */
+  bool operator==(Feature const& other) const
+  {
+    // Cast it to be the feature type we expect.
+    auto otherFeatureMap = 
+      static_cast<MapFeature const&>(other).localFeatureMap;
+
+    if (otherFeatureMap.size() != localFeatureMap.size()) {
+      return false;
+    }
+
+    for (auto& it : otherFeatureMap) {
+      if (localFeatureMap.count(it.first) > 0) {
+        if (it.second != localFeatureMap.at(it.first)) {
+          return false;
+        }
+      }
+      else {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
 };
-*/
+
 /**
  * A boolean feature.  
  */

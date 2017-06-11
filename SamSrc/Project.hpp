@@ -4,7 +4,6 @@
 #include "AbstractConsumer.hpp"
 #include "BaseComputation.hpp"
 #include "FeatureMap.hpp"
-#include "CollapsedFeatureMap.hpp"
 #include "Util.hpp"
 
 namespace sam {
@@ -22,15 +21,12 @@ private:
   // A list of identifiers of the features we want to collect.
   std::list<std::string> identifiers;
   
-  CollapsedFeatureMap& projectedFeatureMap;
 public:
   Project(std::list<std::string> const& _identifiers,
-          CollapsedFeatureMap& _projectedFeatureMap,
           size_t nodeId,
           FeatureMap& featureMap,
           std::string identifier) :
           identifiers(_identifiers),
-          projectedFeatureMap(_projectedFeatureMap),
           BaseComputation(nodeId, featureMap, identifier)
   {} 
 
@@ -45,8 +41,11 @@ public:
     // add them to the CollapsedFeatureMap
     for (auto id : identifiers) {
       if (featureMap.exists(origKey, id)) {
-        auto feature = featureMap.at(origKey, id);
-        projectedFeatureMap.updateInsert(newKey, projectKey, id, *feature); 
+        std::shared_ptr<const Feature> origFeature = featureMap.at(origKey, id);
+        std::map<std::string, std::shared_ptr<Feature>> localFeatureMap;
+        localFeatureMap[projectKey] = origFeature->createCopy();
+        MapFeature mapFeature(localFeatureMap);
+        this->featureMap.updateInsert(newKey, id, mapFeature);
       }
     }
     return true;
