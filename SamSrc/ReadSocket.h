@@ -19,28 +19,26 @@
 
 #define BUFFER_SIZE 256
 
-using std::string;
-
 namespace sam {
 
 class ReadSocket : public BaseProducer<Netflow> {
 private:
 	int port;
-	string ip;
+	std::string ip;
 	int sockfd;
 	char buffer[BUFFER_SIZE];
 	char buffer2[2048];
-	string bufferStr;
+	std::string bufferStr;
 	int readCount;
-	string previous;
+	std::string previous;
   int metricInterval = 100000;
 
 public:
-	ReadSocket(string ip, int port);
+	ReadSocket(std::string ip, int port);
 	virtual ~ReadSocket();
 
 	bool connect();
-	string readline();
+	std::string readline();
   void receive();
 	/*string readline2();
 	string readline3();

@@ -20,6 +20,29 @@
 #define FIRST_SEEN_SRC_PACKET_COUNT   16
 #define FIRST_SEEN_DEST_PACKET_COUNT  17
 #define RECORD_FORCE_OUT              18
+#define LABEL                         19
+
+#define TimeSeconds                   0
+#define ParseDate                     1
+#define DateTime                      2
+#define IpLayerProtocol               3
+#define IpLayerProtocolCode           4
+#define SourceIp                      5
+#define DestIp                        6
+#define SourcePort                    7
+#define DestPort                      8
+#define MoreFragments                 9
+#define CountFragments                10
+//#define DURATION_SECONDS              11
+//#define SRC_PAYLOAD_BYTES             12
+//#define DEST_PAYLOAD_BYTES            13
+//#define SRC_TOTAL_BYTES               14
+//#define DEST_TOTAL_BYTES              15
+//#define FIRST_SEEN_SRC_PACKET_COUNT   16
+//#define FIRST_SEEN_DEST_PACKET_COUNT  17
+//#define RECORD_FORCE_OUT              18
+#define Label                         19
+
 
 
 #include <string>
@@ -60,6 +83,9 @@ tupleToString(std::tuple<Tp...>const& t)
 {
   std::string result = boost::lexical_cast<std::string>(std::get<I>(t));
   result = result + "," + tupleToString<I + 1, Tp...>(t);
+  if (result[result.size() - 1] == ',') {
+    result = result.substr(0, result.size()-1);
+  }
   return result;
 }
 
@@ -68,9 +94,6 @@ std::string toString(std::tuple<Tp...>const& t) {
   std::string result = tupleToString(t);
   return result.substr(0, result.size()-1);
 }
-
-
-
 
 typedef std::tuple<double,       //TIME_SECONDS_FIELD
                      std::string,  //PARSE_DATE_FIELD
@@ -90,58 +113,11 @@ typedef std::tuple<double,       //TIME_SECONDS_FIELD
                      int,          //DEST_TOTAL_BYTES
                      int,          //FIRST_SEEN_SRC_PACKET_COUNT
                      int,          //FIRST_SEEN_DEST_PACKET_COUNT
-                     int           //RECORD_FORCE_OUT
+                     int,          //RECORD_FORCE_OUT
+                     int           //LABEL
                      >
                      Netflow;
 
-/*std::string toString(Netflow const& netflow)
-{
-  using std::string;
-  using namespace boost::fusion;
-
-  string result;
-  for_each(netflow, [&result](auto &s) {
-    result += boost::lexical_cast<string>(s) + ",";
-  });
-  return result;
-}*/
-/*std::string toString(Netflow const& n)
-{
-  std::string result = "";
-  auto function = [&result] (auto a) {
-    return result + boost::lexical_cast<std::string>(a);
-  };
-
-  for_blah(n, function);
-}*/
-
-/*
-// There's got to be a better way to do this.
-std::string toString(Netflow const& n)
-{
-  std::string result = boost::lexical_cast<std::string>(std::get<0>(n)) + "," +
-                      boost::lexical_cast<std::string>(std::get<1>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<2>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<3>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<4>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<5>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<6>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<7>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<8>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<9>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<10>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<11>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<12>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<13>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<14>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<15>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<16>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<17>(n)) + "," + 
-                      boost::lexical_cast<std::string>(std::get<18>(n)); 
-  
-  return result;
-}
-*/
 inline
 Netflow makeNetflow(std::string s) {
 
@@ -164,6 +140,7 @@ Netflow makeNetflow(std::string s) {
   int firstSeenSrcPacketCount;
   int firstSeenDestPacketCount;
   int recordForceOut; 
+  int label = -1;
 
   boost::char_separator<char> sep(",");
   boost::tokenizer<boost::char_separator<char>> tok(s, sep);
@@ -171,16 +148,16 @@ Netflow makeNetflow(std::string s) {
   int i = 0;
   BOOST_FOREACH(std::string const &t, tok) {
     switch (i) {
-    case 0: timeSeconds = boost::lexical_cast<double>(t); break;
-    case 1: parsedDate = t;                           break;
-    case 2: dateTimeStr = t;                          break;
-    case 3: ipLayerProtocol = t;                      break;
-    case 4: ipLayerProtocolCode = t;                  break;
-    case 5: sourceIP = t;                             break;
-    case 6: destIP = t;                               break;
-    case 7: sourcePort = boost::lexical_cast<int>(t); break;
-    case 8: destPort = boost::lexical_cast<int>(t);   break;
-    case 9: moreFragments = t;                        break;
+    case 0: timeSeconds = boost::lexical_cast<double>(t);             break;
+    case 1: parsedDate = t;                                           break;
+    case 2: dateTimeStr = t;                                          break;
+    case 3: ipLayerProtocol = t;                                      break;
+    case 4: ipLayerProtocolCode = t;                                  break;
+    case 5: sourceIP = t;                                             break;
+    case 6: destIP = t;                                               break;
+    case 7: sourcePort = boost::lexical_cast<int>(t);                 break;
+    case 8: destPort = boost::lexical_cast<int>(t);                   break;
+    case 9: moreFragments = t;                                        break;
     case 10: contFragments = boost::lexical_cast<int>(t);             break;
     case 11: durationSeconds = boost::lexical_cast<int>(t);           break;
     case 12: firstSeenSrcPayloadBytes = boost::lexical_cast<int>(t);  break;
@@ -189,7 +166,8 @@ Netflow makeNetflow(std::string s) {
     case 15: firstSeenDestTotalBytes = boost::lexical_cast<int>(t);   break;
     case 16: firstSeenSrcPacketCount = boost::lexical_cast<int>(t);   break;
     case 17: firstSeenDestPacketCount = boost::lexical_cast<int>(t);  break;
-    case 18: recordForceOut = boost::lexical_cast<int>(t);            break;  
+    case 18: recordForceOut = boost::lexical_cast<int>(t);            break; 
+    case 19: label = boost::lexical_cast<int>(t);                     break; 
     }
     i++;
   }
@@ -212,7 +190,8 @@ Netflow makeNetflow(std::string s) {
                            firstSeenDestTotalBytes,
                            firstSeenSrcPacketCount,
                            firstSeenDestPacketCount,
-                           recordForceOut);
+                           recordForceOut,
+                           label);
 
 
 }

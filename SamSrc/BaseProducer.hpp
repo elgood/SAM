@@ -32,17 +32,27 @@ protected:
   size_t numItems;
 
 public:
+  //BaseProducer();
 	BaseProducer(int queueLength);
 	virtual ~BaseProducer();
 
+  /**
+   * Registers a consumer that will consume the output of this producer.
+   * \param consumer The object that consumes the output of this producer.
+   */
 	void registerConsumer(AbstractConsumer<T> * consumer);
+  
   bool deregisterConsumer(AbstractConsumer<T> * consumer);
+  
   size_t getNumConsumers() const;
   AbstractConsumer<T> const * getConsumer(size_t i);
 
   void parallelFeed(T const& s);
 
 };
+
+//template <typename T>
+//BaseProducer<T>::BaseProducer() : BaseProducer(1) {}
 
 template <typename T>
 BaseProducer<T>::BaseProducer(int queueLength) {

@@ -19,7 +19,7 @@ using std::endl;
 
 namespace sam {
 
-ReadSocket::ReadSocket(string ip, int port) :
+ReadSocket::ReadSocket(std::string ip, int port) :
   BaseProducer(1)
 {
 	this->ip = ip;
@@ -29,7 +29,6 @@ ReadSocket::ReadSocket(string ip, int port) :
 }
 
 ReadSocket::~ReadSocket() {
-	// TODO Auto-generated destructor stub
 }
 
 bool ReadSocket::connect()
@@ -181,7 +180,7 @@ string ReadSocket::readline5()
 
 
 */
-string ReadSocket::readline()
+std::string ReadSocket::readline()
 {
 	readCount++;
 	int numRead;
@@ -189,7 +188,7 @@ string ReadSocket::readline()
 	if (previous.size() > 0) {
 		int pos = previous.find("\n");
 		if (pos > 0) {
-			string rString = previous.substr(0, pos);
+			std::string rString = previous.substr(0, pos);
 			if (rString[rString.size()-1] == '\r') {
 				rString = rString.substr(0, rString.size()-1);
 			}
@@ -208,11 +207,11 @@ string ReadSocket::readline()
 
 		while (true) {
 			buffer[numRead] = '\0';
-			string temp(buffer);
+			std::string temp(buffer);
 			previous = previous + temp;
 			int pos = previous.find("\n");
 			if (pos > 0) {
-				string rString = previous.substr(0, pos);
+				std::string rString = previous.substr(0, pos);
 				if (rString[rString.size()-1] == '\r') {
 					rString = rString.substr(0, rString.size()-1);
 				}
@@ -233,7 +232,7 @@ void ReadSocket::receive()
 {
   int i = 0;
   while(true) {
-    string s = readline();
+    std::string s = readline();
     //cout << "s in receive " << s << endl;
     if (s == "") {
       std::cout << "total in ReadSocket receive " << i << std::endl;

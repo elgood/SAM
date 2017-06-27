@@ -16,7 +16,7 @@ include_directories("${STRING_INCLUDE_PATH}/dummy/../")
 ######################## Boost ######################
 
 SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_62_0")
-find_package(Boost REQUIRED system thread program_options)
+find_package(Boost REQUIRED system thread program_options serialization)
 include_directories(${Boost_INCLUDE_DIRS})
 
 ###################### ZMQ ##########################
@@ -30,6 +30,15 @@ include ( FindPackageHandleStandardArgs )
 find_package_handle_standard_args(ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
 
 include_directories("${ZMQ_INCLUDE_DIRS}")
+
+###################### Armadillo ##############################
+
+find_package(Armadillo REQUIRED)
+include_directories(${ARMADILLO_INCLUDE_DIRS})
+
+####################### MLPACK #########################
+find_library(MLPACK_LIBRARY NAMES mlpack)
+set (MLPACK_LIBRARIES ${MLPACK_LIBRARY})
 
 ####################### Include directories #################
 include_directories(SamSrc)
@@ -56,98 +65,6 @@ target_link_libraries(SamLib boost_program_options)
 target_link_libraries(SamLib boost_thread)
 target_link_libraries(SamLib boost_system)
 
-############# PushPull ###################
-
-#file (GLOB PUSH_PULL_SOURCES "ExecutableSrc/TestPushPull.cpp")
-
-#add_executable(PushPull ${PUSH_PULL_SOURCES} )
-#set_target_properties(PushPull PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(PushPull ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-#target_link_libraries(PushPull ${ZMQ_LIBRARIES})
-#target_link_libraries(PushPull SamLib)
-#target_link_libraries(PushPull pthread)
-
-############### TopK #####################
-
-#file (GLOB TOPK_SOURCES "ExecutableSrc/TestTopK.cpp")
-
-#add_executable(TopK ${TOPK_SOURCES})
-#set_target_properties(TopK PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(TopK ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-#target_link_libraries(TopK ${ZMQ_LIBRARIES})
-#target_link_libraries(TopK SamLib)
-#target_link_libraries(TopK pthread)
-
-############### Servers #####################
-
-#file (GLOB SERVERS_SOURCES "ExecutableSrc/Servers.cpp")
-
-#add_executable(ServersQuery ${SERVERS_SOURCES})
-#set_target_properties(ServersQuery PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(ServersQuery ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-#target_link_libraries(ServersQuery ${ZMQ_LIBRARIES})
-#target_link_libraries(ServersQuery SamLib)
-#target_link_libraries(ServersQuery pthread)
-
-############### Disclosure #####################
-
-#file (GLOB DISCLOSURE_SOURCES "ExecutableSrc/Disclosure.cpp")
-
-#add_executable(Disclosure ${DISCLOSURE_SOURCES})
-#set_target_properties(Disclosure PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(Disclosure ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-#target_link_libraries(Disclosure ${ZMQ_LIBRARIES})
-#target_link_libraries(Disclosure SamLib)
-#target_link_libraries(Disclosure pthread)
-
-############### SimpleSum #####################
-
-#file (GLOB SIMPLE_SUM_SOURCES "ExecutableSrc/TestSimpleSum.cpp")
-
-#add_executable(SimpleSum ${SIMPLE_SUM_SOURCES})
-#set_target_properties(SimpleSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(SimpleSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-#target_link_libraries(SimpleSum ${ZMQ_LIBRARIES})
-#target_link_libraries(SimpleSum SamLib)
-#target_link_libraries(SimpleSum pthread)
-
-############### ExponentialHistogramSum #####################
-
-#file (GLOB EH_SUM_SOURCES "ExecutableSrc/TestExponentialHistogramSumOperator.cpp")
-
-#add_executable(ExponentialHistogramSum ${EH_SUM_SOURCES})
-#set_target_properties(ExponentialHistogramSum PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(ExponentialHistogramSum ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-#target_link_libraries(ExponentialHistogramSum ${ZMQ_LIBRARIES})
-#target_link_libraries(ExponentialHistogramSum SamLib)
-#target_link_libraries(ExponentialHistogramSum pthread)
-
-############### ExponentialHistogramVariance #####################
-
-#file (GLOB EH_VARIANCE_SOURCES "ExecutableSrc/TestExponentialHistogramVarianceOperator.cpp")
-
-#add_executable(ExponentialHistogramVariance ${EH_VARIANCE_SOURCES})
-#set_target_properties(ExponentialHistogramVariance PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(ExponentialHistogramVariance ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-#target_link_libraries(ExponentialHistogramVariance ${ZMQ_LIBRARIES})
-#target_link_libraries(ExponentialHistogramVariance SamLib)
-#target_link_libraries(ExponentialHistogramVariance pthread)
-
-################ FilterParser #############################
-
-#file (GLOB FILTER_PARSER_SOURCES "ExecutableSrc/FilterParser.cpp")
-
-#add_executable(FilterParser ${FILTER_PARSER_SOURCES})
-#set_target_properties(FilterParser PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(FilterParser SamLib) 
 
 ################# Executables ###############################
 file (GLOB EXE_SRCS ExecutableSrc/*.cpp)
@@ -159,8 +76,11 @@ foreach(exeSrc ${EXE_SRCS})
 
   target_link_libraries(${exeName} SamLib)
   target_link_libraries(${exeName} pthread)
-  target_link_libraries(${exeName} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
+  #target_link_libraries(${exeName} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
   target_link_libraries(${exeName} ${ZMQ_LIBRARIES})
+  target_link_libraries(${exeName} ${ARMADILLO_LIBRARIES})
+  target_link_libraries(${exeName} ${MLPACK_LIBRARIES})
+  target_link_libraries(${exeName} ${Boost_LIBRARIES})
 
   set_target_properties(${exeName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 endforeach(exeSrc)
