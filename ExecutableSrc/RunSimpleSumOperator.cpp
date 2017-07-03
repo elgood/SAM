@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  ZeroMQPushPull consumer(queueLength,
+  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
                                numNodes, 
                                nodeId, 
                                hostnames, 
@@ -140,14 +140,14 @@ int main(int argc, char** argv) {
   cout << "DEBUG: main created consumer " << endl;
 #endif
 
-  receiver.registerConsumer(&consumer);
+  receiver.registerConsumer(consumer);
 
   FeatureMap featureMap;
   for (int i = 0; nop > 0 && i < nop; i++) {
     string identifier = "simplesum" + boost::lexical_cast<string>(i);
-    auto sum = new SimpleSum<size_t, Netflow, 14, DEST_IP_FIELD>
+    auto sum = std::make_shared<SimpleSum<size_t, Netflow, 14, DestIp>>
                     (N, nodeId, featureMap, identifier);
-    consumer.registerConsumer(sum); 
+    consumer->registerConsumer(sum); 
   }
 
   

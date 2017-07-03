@@ -16,7 +16,7 @@ struct F {
   std::string key;
 
   F() {
-    std::string s = "1365582756.384094,2013-04-10 08:32:36,"
+    std::string s = "1,1,1365582756.384094,2013-04-10 08:32:36,"
                     "20130410083236.384094,17,UDP,172.20.2.18,"
                     "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
     netflow = makeNetflow(s);
@@ -30,11 +30,11 @@ struct F {
 
 BOOST_FIXTURE_TEST_CASE( test_number_token, F )
 {
-  NumberToken<Netflow> number(featureMap, 6);
+  NumberToken<Netflow> number(featureMap, DestIp);
 
   bool b = number.evaluate(mystack, key, netflow);
   BOOST_CHECK_EQUAL(b, true);
-  BOOST_CHECK_EQUAL(mystack.top(), 6);
+  BOOST_CHECK_EQUAL(mystack.top(), DestIp);
 
 }
  
@@ -89,7 +89,7 @@ BOOST_FIXTURE_TEST_CASE( test_mult_token, F )
 BOOST_FIXTURE_TEST_CASE( test_field_token, F )
 {
 
-  FieldToken<0, Netflow> fieldToken(featureMap);
+  FieldToken<TimeSeconds, Netflow> fieldToken(featureMap);
 
   bool b = fieldToken.evaluate(mystack, key, netflow);
   BOOST_CHECK_EQUAL(b, true);
@@ -148,7 +148,7 @@ BOOST_FIXTURE_TEST_CASE( test_func_token, F )
 
 BOOST_FIXTURE_TEST_CASE( test_prev_token, F )
 {
-  PrevToken<TIME_SECONDS_FIELD, Netflow> prevToken(featureMap);
+  PrevToken<TimeSeconds, Netflow> prevToken(featureMap);
 
   // First pass should have no previous value, so fails.
   bool b = prevToken.evaluate(mystack, key, netflow); 

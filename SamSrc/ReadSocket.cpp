@@ -14,9 +14,6 @@
 #include <unistd.h>
 #include <strings.h>
 
-using std::cout;
-using std::endl;
-
 namespace sam {
 
 ReadSocket::ReadSocket(std::string ip, int port) :
@@ -242,7 +239,9 @@ void ReadSocket::receive()
     if (i % metricInterval == 0) {
       std::cout << "ReadSocket received " << i << std::endl;
     }
-    Netflow netflow = makeNetflow(s);
+    // This will generate a netflow with i as the sam generate id.
+    // This label is thrown away later after the zeromq phase.
+    Netflow netflow = makeNetflow(i, s);
     for (auto consumer : consumers) {
       consumer->consume(netflow);
     }

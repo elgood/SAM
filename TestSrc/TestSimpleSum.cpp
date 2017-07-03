@@ -4,13 +4,15 @@
 #include "Netflow.hpp"
 
 using namespace sam;
+using std::string;
 
 BOOST_AUTO_TEST_CASE( simple_sum_test )
 {
   std::vector<size_t> keyFields;
   size_t nodeId = 0;
   FeatureMap featureMap;
-  SimpleSum<size_t,Netflow, 14, 6> sum(10, nodeId, featureMap, "sum0");
+  SimpleSum<size_t,Netflow, SrcTotalBytes, DestIp> 
+    sum(10, nodeId, featureMap, "sum0");
                                 
 
   string netflowString1 = "1365582756.384094,2013-04-10 08:32:36," 
@@ -19,8 +21,8 @@ BOOST_AUTO_TEST_CASE( simple_sum_test )
   string netflowString2 = "1365582756.384094,2013-04-10 08:32:36," 
                          "20130410083236.384094,17,UDP,172.20.2.18," 
                          "239.255.255.250,29986,1900,0,0,0,133,0,2,0,1,0,0";
-  Netflow n1 = makeNetflow(netflowString1);
-  Netflow n2 = makeNetflow(netflowString2);
+  Netflow n1 = makeNetflow(1,netflowString1);
+  Netflow n2 = makeNetflow(2,netflowString2);
 
   sum.consume(n1);
   size_t total = sum.getSum("239.255.255.250");

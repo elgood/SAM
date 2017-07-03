@@ -25,6 +25,9 @@ std::vector<std::string> convertToTokens(std::string netflowString) {
   return v;
 }
 
+/**
+ * Tests the utility function of generating random ips.
+ */ 
 BOOST_AUTO_TEST_CASE( test_generate_random_ip )
 { 
   for(int i = 0; i < 100000; i++) {
@@ -39,11 +42,20 @@ BOOST_AUTO_TEST_CASE( test_generate_random_ip )
   }
 }
 
+/**
+ * Since netflows are defined as tuples, interacting with them requires
+ * metaprogramming.  checkTokens takes a tuple and vector and recursively
+ * checks that each field in the tuple equals the corresponding element in
+ * the vector.  This is the base case.
+ */
 template<int I = 0, typename... Tp>
 inline typename std::enable_if<I == sizeof...(Tp), void>::type
 checkTokens(std::tuple<Tp...> const&, std::vector<std::string> const&)
 {}
 
+/**
+ * The recursive case for checkTokens.
+ */
 template<int I = 0, typename... Tp>
 inline typename std::enable_if<I < sizeof...(Tp), void>::type
 checkTokens(std::tuple<Tp...> const& t, std::vector<std::string> const& v)
@@ -61,15 +73,17 @@ BOOST_AUTO_TEST_CASE( test_netflow_conversion )
   UniformDestPort generator(destIp, numPorts);
   for(int i = 0; i < 10000; i++) {
     std::string str = generator.generate();
-    std::vector<std::string> v = convertToTokens(str);
-    Netflow n = makeNetflow(str);
+    // makeNetflow(i, str) will add two fields, so we add them manually
+    // to create the vector against which everything is checked.
+    std::string addedMissing = boost::lexical_cast<std::string>(i) + "," + 
+          boost::lexical_cast<std::string>(DEFAULT_LABEL) + "," + str;
+    std::vector<std::string> v = convertToTokens(addedMissing);
+
+    // We'll use i as the SamGeneratedId.
+    Netflow n = makeNetflow(i, str);
 
     checkTokens(n, v);
 
-    /*for_each(n, f); 
-    for (int i = 0; i < v.size(); i++) {
-      BOOST_CHECK_EQUAL(v[i].compare(n.getField(i)), 0);      
-    }*/
   }
 }
 

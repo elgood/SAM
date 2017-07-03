@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  ZeroMQPushPull consumer(queueLength,
+  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
                                numNodes, 
                                nodeId, 
                                hostnames, 
@@ -156,16 +156,17 @@ int main(int argc, char** argv) {
   cout << "DEBUG: main created consumer " << endl;
 #endif
 
-  receiver.registerConsumer(&consumer);
+  receiver.registerConsumer(consumer);
 
   FeatureMap featureMap;
 
   string identifier = "top2";
   k = 2;
-  auto topk = new TopK<size_t, Netflow, DEST_PORT_FIELD, DEST_IP_FIELD>
+  auto topk = std::make_shared<TopK<size_t, Netflow, DestPort, 
+                              DestIp>>
                               (N, b, k, nodeId, featureMap, identifier);
                                
-  consumer.registerConsumer(topk); 
+  consumer->registerConsumer(topk); 
 
   // Five tokens for the 
   // First function token
@@ -208,35 +209,34 @@ int main(int argc, char** argv) {
 
   Expression<Netflow> filterExpression(infixList);
     
-  auto filter = new Filter<Netflow, DEST_IP_FIELD>(filterExpression, nodeId, 
-                                    featureMap, "servers", queueLength);
+  auto filter = std::make_shared<Filter<Netflow, DestIp>>(
+    filterExpression, nodeId, featureMap, "servers", queueLength);
 
-
-  consumer.registerConsumer(filter);
+  consumer->registerConsumer(filter);
 
   identifier = "serverSumIncomingFlowSize";
-  auto sumIncoming = new ExponentialHistogramSum<size_t, Netflow,
-                                                 SRC_TOTAL_BYTES,
-                                                 DEST_IP_FIELD>
+  auto sumIncoming = std::make_shared<ExponentialHistogramSum<size_t, Netflow,
+                                                 SrcTotalBytes,
+                                                 DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(sumIncoming); 
   
   identifier = "serverSumOutgoingFlowSize";
-  auto sumOutgoing = new ExponentialHistogramSum<size_t, Netflow,
-                                                  DEST_TOTAL_BYTES,
-                                                  DEST_IP_FIELD>
+  auto sumOutgoing = std::make_shared<ExponentialHistogramSum<size_t, Netflow,
+                                                  DestTotalBytes,
+                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(sumOutgoing);
      
   identifier = "serverVarianceIncomingFlowSize";
-  auto varianceIncoming = new ExponentialHistogramVariance<size_t, Netflow,
-                                                SRC_TOTAL_BYTES, DEST_IP_FIELD>
+  auto varianceIncoming = std::make_shared<ExponentialHistogramVariance<
+                               size_t, Netflow, SrcTotalBytes, DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(varianceIncoming); 
   
   identifier = "serverVarianceOutgoingFlowSize";
-  auto varianceOutgoing = new ExponentialHistogramVariance<size_t, Netflow,
-                                              DEST_TOTAL_BYTES, DEST_IP_FIELD>
+  auto varianceOutgoing = std::make_shared<ExponentialHistogramVariance<
+                            size_t, Netflow, DestTotalBytes, DestIp>>
                               (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(varianceOutgoing);
      
@@ -262,13 +262,13 @@ int main(int argc, char** argv) {
   // 
   // TimeSeconds field token 
   std::shared_ptr<ExpressionToken<Netflow>> fieldToken = std::make_shared<
-    FieldToken<TIME_SECONDS_FIELD, Netflow>>(featureMap);
+    FieldToken<TimeSeconds, Netflow>>(featureMap);
   // Sub operator token
   std::shared_ptr<ExpressionToken<Netflow>> subToken = std::make_shared<
     SubOperator<Netflow>>(featureMap);
   // Prev.TimeSeconds
   std::shared_ptr<ExpressionToken<Netflow>> prevToken = std::make_shared<
-    PrevToken<TIME_SECONDS_FIELD, Netflow>>(featureMap);
+    PrevToken<TimeSeconds, Netflow>>(featureMap);
     
   std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList2;
   infixList2.push_back(fieldToken);
@@ -281,8 +281,8 @@ int main(int argc, char** argv) {
   TupleExpression<Netflow> tupleExpression(expressions, names);
   identifier = "destsrc_timelapseseries";
 
-  auto timeLapseSeries = new TransformProducer<Netflow, TimeLapseSeries, 
-                                               DEST_IP_FIELD, SOURCE_IP_FIELD>
+  auto timeLapseSeries = std::make_shared<TransformProducer<
+                     Netflow, TimeLapseSeries, DestIp, SourceIp>>
                              (tupleExpression,
                               nodeId,
                               featureMap,
@@ -296,20 +296,18 @@ int main(int argc, char** argv) {
   identifier = "destSourceTimeDiffVariance";
   destSrcIdentifiers.push_back(identifier);
   auto destSourceTimeDiffVar = 
-    new ExponentialHistogramVariance<size_t, TimeLapseSeries, 
+    std::make_shared<ExponentialHistogramVariance<size_t, TimeLapseSeries, 
                            TimeDiff_TimeLapseSeries, 
-                           DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>
+                           DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>>
                           (N, 2, nodeId, featureMap, identifier);
   timeLapseSeries->registerConsumer(destSourceTimeDiffVar); 
 
-  //CollapsedFeatureMap collapsedDestFeatureMap;
-
   identifier = "projectOutSource";
   auto projectToDest = 
-    new Project<TimeLapseSeries, DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries,
-                DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>
+    std::make_shared<Project<TimeLapseSeries, DestIp_TimeLapseSeries, 
+                SrcIp_TimeLapseSeries,
+                DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>>
                 (destSrcIdentifiers, 
-                //collapsedDestFeatureMap,
                 nodeId,
                 featureMap, 
                 identifier);
@@ -326,7 +324,7 @@ int main(int argc, char** argv) {
   };
 
   auto destTimeDiffVar = 
-    new CollapsedConsumer<Netflow, DEST_IP_FIELD>(
+    std::make_shared<CollapsedConsumer<Netflow, DestIp>>(
                                                aveFunction,
                                                "destSourceTimeDiffVariance",
                                                nodeId, 

@@ -90,29 +90,35 @@ TopKProducer::TopKProducer(int queueLength,
 void TopKProducer::run() {
 
   for (int i = 0; i < numExamples; i++) {
+    int serverId = 0;
     for (auto g : servers) {
       std::string s = g->generate();
 
       // Obtaining metrics on the netflows generated
-      Netflow netflow = makeNetflow(s);
+      // Using i and serverId as the SamGeneratedId
+      Netflow netflow = makeNetflow(serverId * numExamples + i, s);
       auto ipPort = std::pair<std::string, int>(
-        std::get<DEST_IP_FIELD>(netflow),
-        std::get<DEST_PORT_FIELD>(netflow));
+        std::get<DestIp>(netflow),
+        std::get<DestPort>(netflow));
       ipPortMap[ipPort] += 1;
       
       // Doing the parallel feed
       parallelFeed(netflow);
+
+      serverId++;
     }
     for (auto g : nonservers) {
       std::string s = g->generate();
 
       // Obtaining metrics on the netflows generated
-      Netflow netflow = makeNetflow(s);
-      ipPortMap[std::pair<std::string, int>(std::get<DEST_IP_FIELD>(netflow),
-        std::get<DEST_PORT_FIELD>(netflow))] += 1;
- 
+      Netflow netflow = makeNetflow(serverId* numExamples + i, s);
+      ipPortMap[std::pair<std::string, int>(std::get<DestIp>(netflow),
+        std::get<DestPort>(netflow))] += 1;
+
       parallelFeed(netflow);
+      serverId++;
     }
+
   }
 }
 

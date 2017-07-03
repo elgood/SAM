@@ -107,7 +107,7 @@ int main(int argc, char** argv)
     }
   }
 
-  ZeroMQPushPull consumer(queueLength,
+  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
                                numNodes,
                                nodeId,
                                hostnames,
@@ -118,7 +118,7 @@ int main(int argc, char** argv)
   cout << "DEBUG: main created consumer " << endl;
 #endif
 
-  receiver.registerConsumer(&consumer);
+  receiver.registerConsumer(consumer);
 
   FeatureMap featureMap;
   std::vector<size_t> keyFields;
@@ -126,11 +126,11 @@ int main(int argc, char** argv)
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     std::string identifier = "ehsum" + boost::lexical_cast<std::string>(i);
-    auto op = new ExponentialHistogramSum<size_t, Netflow, DEST_PORT_FIELD, 
-                                         DEST_IP_FIELD>(
+    auto op = std::make_shared<ExponentialHistogramSum<size_t, Netflow, 
+                                      DestPort, DestIp>>(
                                          N, k, nodeId, featureMap, identifier);
                                                 
-    consumer.registerConsumer(op);
+    consumer->registerConsumer(op);
   }
 
 

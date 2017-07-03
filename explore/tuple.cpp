@@ -4,7 +4,7 @@
 #include <tuple>
 
 #define TIME_SECONDS_FIELD 0
-#define SOURCE_IP_FIELD 1
+#define SourceIp 1
 #define SOURCE_PORT 2
 
 

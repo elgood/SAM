@@ -52,8 +52,8 @@ BOOST_AUTO_TEST_CASE( test_readcsv )
 
   ReadCSV receiver(testfilename);
 
-  TestConsumer consumer(stringArray);
-  receiver.registerConsumer(&consumer);
+  auto consumer = std::make_shared<TestConsumer>(stringArray);
+  receiver.registerConsumer(consumer);
   
   receiver.receive(); 
 

@@ -57,7 +57,7 @@ public:
   ZeroMQPushPull(size_t queueLength,
                  size_t numNodes, 
                  size_t nodeId, 
-                 std::vector<string> hostnames, 
+                 std::vector<std::string> hostnames, 
                  std::vector<int> ports, 
                  uint32_t hwm);
 

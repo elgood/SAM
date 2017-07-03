@@ -10,9 +10,6 @@
 
 #include <string>
 
-
-using std::string;
-
 namespace sam {
 
 template <typename T>

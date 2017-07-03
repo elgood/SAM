@@ -3,22 +3,29 @@
 
 #include "BaseProducer.hpp"
 #include "Netflow.hpp"
+#include "AbstractDataSource.hpp"
 
 namespace sam {
 
-class ReadCSV : public BaseProducer<Netflow>
+class ReadCSV : public BaseProducer<Netflow>, public AbstractDataSource
 {
+  std::string filename;
   std::ifstream file;
 public:
   /**
    * \param filename The location of a CSV file.
    */
-  ReadCSV(std::string filename) : BaseProducer<Netflow>(1) {
-    file = std::ifstream(filename); 
+  ReadCSV(std::string _filename) : BaseProducer<Netflow>(1) {
+    filename = _filename;
   }
 
   ~ReadCSV() {
     file.close();
+  }
+
+  bool connect() {
+    file = std::ifstream(filename); 
+    return true;
   }
   
   void receive()
@@ -31,7 +38,6 @@ public:
         consumer->consume(netflow);
       }
     }
-
   }
 
 };

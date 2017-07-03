@@ -16,12 +16,14 @@
 
 #include "BaseProducer.hpp"
 #include "Netflow.hpp"
+#include "AbstractDataSource.hpp"
 
 #define BUFFER_SIZE 256
 
 namespace sam {
 
-class ReadSocket : public BaseProducer<Netflow> {
+class ReadSocket : public BaseProducer<Netflow>, public AbstractDataSource
+{
 private:
 	int port;
 	std::string ip;

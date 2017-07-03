@@ -8,10 +8,6 @@
 
 #include "BaseSlidingWindow.hpp"
 
-using std::string;
-using std::cout;
-using std::endl;
-
 namespace sam {
 
 template <typename T>
@@ -22,7 +18,6 @@ public:
 
 private:
   
-
   // Determines number of buckets.  If there are k/2 + 2 buckets
   // of the same size (k + 2 buckets if the bucket size equals 1), 
   // the oldest two buckets are combined. 
@@ -58,7 +53,7 @@ public:
 
     if (N >= MAX_SIZE) {
       throw std::out_of_range("Specified N > MAX_SIZE which is " +
-                              boost::lexical_cast<string>(MAX_SIZE));
+                              boost::lexical_cast<std::string>(MAX_SIZE));
     }
 
     this->k = k;
@@ -99,13 +94,11 @@ public:
    * the item at the end is dropped.
    */
   void add(T item) {
-    //cout << "adding item " << item << endl;
     //update the global total
     total = total + item;
 
     // Add the item to the data structure.
     add(item, 0);
-    //cout << "total " << total << endl;
   } 
 
   /**
@@ -139,16 +132,13 @@ public:
 private:
 
   void add(T item, size_t level) {
-    //cout << "Adding item " << item << " at level " << level << endl;
     if (level < numLevels) {
       // Going through the level for the first time.  
       // We can just add items without worrying about overwriting values 
       // or the need to merge. 
       if (!onePass[level]) 
       { 
-        //cout << "Adding item to data (one pass)" << endl;
         data[level][ends[level]] = item;
-        //cout << "Added item " << endl;
         incrementEnd(level);
         // we passed through the level once
         if (ends[level] == 0) {
@@ -170,7 +160,6 @@ private:
           size_t second = data[level][endPlusOne(level)]; 
           
           // Adding merged item to the next level
-          //cout << "Combining " << first << " " << second << endl;
           add(first + second, level + 1); 
           
           // Adding the new item to the now open space
@@ -193,8 +182,6 @@ private:
     // If there isn't another level, we update the total and drop the item.
     else 
     {
-      //cout << "level " << level << endl;
-      //cout << "Subtracting item " << item << endl;
       total = total - item;
     }
   }
@@ -217,13 +204,10 @@ private:
    * Increments the end index for the specified level.
    */
   void incrementEnd(size_t level) {
-    //cout << "incrementing end for level " << level << " from " 
-    //     << ends[level] << endl;
     ends[level]++;
     if (((level == 0) && (ends[level] >= (k + 2))) ||
         ((level > 0) && (ends[level] >= (k/2 + 2))))
     {
-      //cout << "resetting to zero for level " << level << endl;
       ends[level] = 0;
     }
   }

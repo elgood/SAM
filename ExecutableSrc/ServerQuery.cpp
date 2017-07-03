@@ -19,7 +19,7 @@
 #include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
 
 #include "ReadSocket.h"
-//#include "ReadCSV.hpp"
+#include "ReadCSV.hpp"
 #include "ZeroMQPushPull.h"
 #include "TopK.hpp"
 #include "Expression.hpp"
@@ -40,6 +40,69 @@ using namespace sam;
 using namespace std::chrono;
 using namespace mlpack;
 using namespace mlpack::naive_bayes;
+
+void createPipeline(std::shared_ptr<ZeroMQPushPull> consumer,
+                 FeatureMap& featureMap,
+                 int nodeId)
+{
+    vector<size_t> keyFields;
+    keyFields.push_back(6);
+    int valueField = 8;
+    string identifier = "top2";
+    int k = 2;
+    int N = 10000;
+    int b = 1000;
+    auto topk = std::make_shared<TopK<size_t, Netflow, 
+                                 DestPort, DestIp>>(
+                                 N, b, k, nodeId,
+                                 featureMap, identifier);
+    consumer->registerConsumer(topk); 
+
+    // Five tokens for the 
+    // First function token
+    int index1 = 0;
+    auto function1 = [&index1](Feature const * feature)->double {
+      auto topKFeature = static_cast<TopKFeature const *>(feature);
+      return topKFeature->getFrequencies()[index1];    
+    };
+    auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, 
+                                                      function1, identifier);
+
+    // Addition token
+    auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
+
+    // Second function token
+    int index2 = 0;
+    auto function2 = [&index2](Feature const * feature)->double {
+      auto topKFeature = static_cast<TopKFeature const *>(feature);
+      return topKFeature->getFrequencies()[index2];    
+    };
+
+    auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, 
+                                                      function2, identifier);
+
+    // Lessthan token
+    auto lessThanToken =std::make_shared<LessThanOperator<Netflow>>(featureMap);
+    
+    // Number token
+    auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 0.9);
+
+    auto infixList = std::make_shared<std::list<std::shared_ptr<
+                      ExpressionToken<Netflow>>>>();
+    infixList->push_back(funcToken1);
+    infixList->push_back(addOper);
+    infixList->push_back(funcToken2);
+    infixList->push_back(lessThanToken);
+    infixList->push_back(numberToken);
+
+    auto filterExpression = std::make_shared<Expression<Netflow>>(*infixList);
+     
+    int queueLength = 1000; 
+    auto filter = std::make_shared<Filter<Netflow, DestIp>>(
+      *filterExpression, nodeId, featureMap, "servers", queueLength);
+    consumer->registerConsumer(filter);
+
+}
 
 int main(int argc, char** argv) {
 
@@ -68,17 +131,11 @@ int main(int argc, char** argv) {
   // The high-water mark
   long hwm;
 
-  // The length of the input queue
-  int queueLength;
-
   // The total number of elements in a sliding window
   int N;
 
   // The number of elements in a dormant or active window
   int b;
-
-  // The number of elements to keep track of
-  int k;
 
   int nop; //not used
 
@@ -115,13 +172,6 @@ int main(int argc, char** argv) {
     ("hwm", po::value<long>(&hwm)->default_value(10000), 
       "The high water mark (how many items can queue up before we start "
       "dropping)")
-    ("queueLength", po::value<int>(&queueLength)->default_value(10000),
-      "We fill a queue before sending things in parallel to all consumers."
-      "  This controls the size of that queue.")
-    ("N", po::value<int>(&N)->default_value(10000),
-      "The total number of elements in a sliding window")
-    ("b", po::value<int>(&b)->default_value(1000),
-      "The number of elements per block (active or dynamic window)")
     ("nop", po::value<int>(&nop)->default_value(1),
       "The number of simultaneous operators")
     ("learn", po::value<string>(&learnfile)->default_value(""),
@@ -140,43 +190,6 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  /********************** Learning ******************************/
-  if (learnfile != "") {
-    // The true parameter transposes the data.  In mlpack, rows are features 
-    // and columns are observations, which makes things confusing.
-    //data::Load(learnfile, trainingData, true);
-
-    //arma::Row<size_t> labels;
-
-    //data::NormalizeLabels(trainingData.row(trainingData.n_rows - 1), labels,
-    //                      model.mappings);
-    // Remove the label row
-    //trainingData.shed_row(trainingData.n_rows - 1);
-
-    //ReadCSV receiver(learnfile);    
-
-    //Timer::Start("nbc_training");
-    //model.nbc = NaiveBayesClassifier<>(trainingData, labels,
-    //  model.mappings.n_elem, true);
-    //Timer::Stop("nbc_training");
-
-    //if (modelfile != "") {
-    //  data::Save(modelfile, "model", model);
-    //}
-  }
-
-#ifdef DEBUG
-  cout << "Options" << endl;
-  cout << "numNodes " << numNodes << endl;
-  cout << "nodeId " << nodeId << endl;
-#endif
-
-
-  ReadSocket receiver(ip, ncPort);
-#ifdef DEBUG
-  cout << "DEBUG: main created receiver " << endl;
-#endif
-
   vector<string> hostnames(numNodes);
   vector<int> ports(numNodes);
 
@@ -190,91 +203,80 @@ int main(int argc, char** argv) {
     }
   }
 
-  ZeroMQPushPull consumer(queueLength,
-                               numNodes, 
-                               nodeId, 
-                               hostnames, 
-                               ports, 
-                               hwm);
+  // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
+  // getting the data from the receiver (e.g. a socket or a file) and then
+  // publishing it in a load-balanced way to the cluster.
+  int queueLength = 1000;
+  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
+                                 numNodes, 
+                                 nodeId, 
+                                 hostnames, 
+                                 ports, 
+                                 hwm);
 
-#ifdef DEBUG
-  cout << "DEBUG: main created consumer " << endl;
-#endif
-
-  receiver.registerConsumer(&consumer);
-
+  // The global featureMap (global for all features generated for this node,
+  // each node has it's own featuremap.
   FeatureMap featureMap;
 
-  vector<size_t> keyFields;
-  keyFields.push_back(6);
-  int valueField = 8;
-  string identifier = "top2";
-  k = 2;
-  auto topk = new TopK<size_t, Netflow, DEST_PORT_FIELD, DEST_IP_FIELD>(
-                               N, b, k, nodeId,
-                               featureMap, identifier);
-  consumer.registerConsumer(topk); 
+  /********************** Learning ******************************/
+  if (learnfile != "") {
+    // The true parameter transposes the data.  In mlpack, rows are features 
+    // and columns are observations, which makes things confusing.
+    //data::Load(learnfile, trainingData, true);
 
-  // Five tokens for the 
-  // First function token
-  int index1 = 0;
-  auto function1 = [&index1](Feature const * feature)->double {
-    auto topKFeature = static_cast<TopKFeature const *>(feature);
-    return topKFeature->getFrequencies()[index1];    
-  };
-  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, function1,
-                                                         identifier);
+    //arma::Row<size_t> labels;
 
-  // Addition token
-  auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
+    //data::NormalizeLabels(trainingData.row(trainingData.n_rows - 1), labels,
+    //                      model.mappings);
+    // Remove the label row
+    //trainingData.shed_row(trainingData.n_rows - 1);
 
-  // Second function token
-  int index2 = 0;
-  auto function2 = [&index2](Feature const * feature)->double {
-    auto topKFeature = static_cast<TopKFeature const *>(feature);
-    return topKFeature->getFrequencies()[index2];    
-  };
+    ReadCSV receiver(learnfile);
+    receiver.registerConsumer(consumer);    
 
-  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, function2,
-                                                         identifier);
+    createPipeline(consumer, featureMap, nodeId);
 
-  // Lessthan token
-  auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(featureMap);
-  
-  // Number token
-  auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 0.9);
+    if (!receiver.connect()) {
+      std::cout << "Problems opening file " << learnfile << std::endl;
+      return -1;
+    }
 
-  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
-  infixList.push_back(funcToken1);
-  infixList.push_back(addOper);
-  infixList.push_back(funcToken2);
-  infixList.push_back(lessThanToken);
-  infixList.push_back(numberToken);
+    //Timer::Start("nbc_training");
+    //model.nbc = NaiveBayesClassifier<>(trainingData, labels,
+    //  model.mappings.n_elem, true);
+    //Timer::Stop("nbc_training");
 
-  Expression<Netflow> filterExpression(infixList);
-    
-  Filter<Netflow, DEST_IP_FIELD>* filter = new Filter<Netflow, DEST_IP_FIELD>(
-                 filterExpression, nodeId, featureMap, "servers", queueLength);
-  consumer.registerConsumer(filter);
-
-  if (!receiver.connect()) {
-    std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;
-    return -1;
+    //if (modelfile != "") {
+    //  data::Save(modelfile, "model", model);
+    //}
   }
+  /********************* Running pipeline *************************/ 
+  else 
+  {
 
-#ifdef DEBUG
-  cout << "DEBUG: connected to receiver " << endl;
-#endif
+    if (modelfile != "") {
+      //load model
+    }
 
-  milliseconds ms1 = duration_cast<milliseconds>(
-    system_clock::now().time_since_epoch()
-  );
-  receiver.receive();
-  milliseconds ms2 = duration_cast<milliseconds>(
-    system_clock::now().time_since_epoch()
-  );
-  std::cout << "Seconds for Node" << nodeId << ": "  
-    << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
+    ReadSocket receiver(ip, ncPort);
+    receiver.registerConsumer(consumer);
 
+    createPipeline(consumer, featureMap, nodeId);
+
+    if (!receiver.connect()) {
+      std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;
+      return -1;
+    }
+
+    milliseconds ms1 = duration_cast<milliseconds>(
+      system_clock::now().time_since_epoch()
+    );
+    receiver.receive();
+    milliseconds ms2 = duration_cast<milliseconds>(
+      system_clock::now().time_since_epoch()
+    );
+    std::cout << "Seconds for Node" << nodeId << ": "  
+      << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
+  }
 }
 

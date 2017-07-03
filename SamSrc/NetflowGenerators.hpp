@@ -11,6 +11,9 @@
 
 namespace sam {
 
+/**
+ * Generates strings that look like ip4 addresses.
+ */
 std::string generateRandomIp()
 {
   std::string result = "";
@@ -21,11 +24,18 @@ std::string generateRandomIp()
   return result;
 }
 
+/**
+ * Generates a random port in the range 0-65355
+ */
 int generateRandomPort()
 {
   return rand() % 65355;
 }
 
+/** 
+ * Provides a string that has the current seconds since epoch.  It 
+ * is a float in a string form.
+ */
 std::string secondsSinceEpoch() 
 {
   using namespace std::chrono;
@@ -46,7 +56,9 @@ public:
 };
 
 /**
- * Evenly spreads out the traffic to one IP along n destination ports
+ * Evenly spreads out the traffic to one IP along n destination ports.
+ * The strings generated are in VAST csv form.  There is no SamGenerateId
+ * and no label.
  */
 class UniformDestPort : public AbstractNetflowGenerator
 {

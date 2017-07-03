@@ -27,13 +27,13 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
   // 
   // TimeSeconds field token 
   std::shared_ptr<ExpressionToken<Netflow>> fieldToken = std::make_shared<
-    FieldToken<TIME_SECONDS_FIELD, Netflow>>(destSrcFeatureMap);
+    FieldToken<TimeSeconds, Netflow>>(destSrcFeatureMap);
   // Sub operator token
   std::shared_ptr<ExpressionToken<Netflow>> subToken = std::make_shared<
     SubOperator<Netflow>>(destSrcFeatureMap);
   // Prev.TimeSeconds
   std::shared_ptr<ExpressionToken<Netflow>> prevToken = std::make_shared<
-    PrevToken<TIME_SECONDS_FIELD, Netflow>>(destSrcFeatureMap);
+    PrevToken<TimeSeconds, Netflow>>(destSrcFeatureMap);
 
   std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
   infixList.push_back(fieldToken);
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
   int queueLength = 1000;
 
   auto timeLapseSerieis = new TransformProducer<Netflow, TimeLapseDestSrc, 
-                               DEST_IP_FIELD, SOURCE_IP_FIELD>
+                               DestIp, SourceIp>
                               (tupleExpression,
                                nodeId,
                                destSrcFeatureMap,

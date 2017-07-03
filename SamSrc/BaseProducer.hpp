@@ -20,7 +20,7 @@ template <typename T>
 class BaseProducer {
 protected:
 	/// The list of consumers that consume from output from this producer
-	std::vector<AbstractConsumer<T> *> consumers;
+	std::vector<std::shared_ptr<AbstractConsumer<T>>> consumers;
 
 	/// The producer has a queue of strings to send to the consumers
 	T* inputQueue;
@@ -40,12 +40,12 @@ public:
    * Registers a consumer that will consume the output of this producer.
    * \param consumer The object that consumes the output of this producer.
    */
-	void registerConsumer(AbstractConsumer<T> * consumer);
+	void registerConsumer(std::shared_ptr<AbstractConsumer<T>> consumer);
   
-  bool deregisterConsumer(AbstractConsumer<T> * consumer);
+  bool deregisterConsumer(std::shared_ptr<AbstractConsumer<T>> consumer);
   
   size_t getNumConsumers() const;
-  AbstractConsumer<T> const * getConsumer(size_t i);
+  std::shared_ptr<const AbstractConsumer<T>> getConsumer(size_t i);
 
   void parallelFeed(T const& s);
 
@@ -67,14 +67,15 @@ BaseProducer<T>::~BaseProducer() {
 }
 
 template <typename T>
-void BaseProducer<T>::registerConsumer(AbstractConsumer<T> * consumer)
+void BaseProducer<T>::registerConsumer(
+  std::shared_ptr<AbstractConsumer<T>> consumer)
 {
 	consumers.push_back(consumer);
-
 }
 
 template <typename T>
-bool BaseProducer<T>::deregisterConsumer(AbstractConsumer<T> * consumer)
+bool BaseProducer<T>::deregisterConsumer(
+  std::shared_ptr<AbstractConsumer<T>> consumer)
 {
   return false;
 }

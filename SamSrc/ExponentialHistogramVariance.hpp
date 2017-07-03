@@ -33,8 +33,8 @@ private:
   // The size of the sliding window
   size_t N; 
 
-  std::map<string, std::shared_ptr<ExponentialHistogram<T>>> sums;
-  std::map<string, std::shared_ptr<ExponentialHistogram<T>>> squares;
+  std::map<std::string, std::shared_ptr<ExponentialHistogram<T>>> sums;
+  std::map<std::string, std::shared_ptr<ExponentialHistogram<T>>> squares;
 
 public:
   ExponentialHistogramVariance(size_t N, size_t k,
@@ -57,7 +57,7 @@ public:
     }
 
     // Generates unique key from key fields
-    string key = generateKey<keyFields...>(input);
+    std::string key = generateKey<keyFields...>(input);
 
     if (sums.count(key) == 0) {
       auto eh = std::shared_ptr<ExponentialHistogram<T>>(
@@ -73,7 +73,7 @@ public:
       squares[key] = eh;
     }
 
-    string sValue = boost::lexical_cast<std::string>(
+    std::string sValue = boost::lexical_cast<std::string>(
                       std::get<valueField>(input));
 
     T value = boost::lexical_cast<T>(sValue);

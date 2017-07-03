@@ -1,49 +1,29 @@
 #ifndef NETFLOW_HPP
 #define NETFLOW_HPP
 
-#define TIME_SECONDS_FIELD            0
-#define PARSE_DATE_FIELD              1
-#define DATE_TIME_STR_FIELD           2
-#define IP_LAYER_PROTOCOL_FIELD       3
-#define IP_LAYER_PROTOCOL_CODE_FIELD  4
-#define SOURCE_IP_FIELD               5
-#define DEST_IP_FIELD                 6
-#define SOURCE_PORT_FIELD             7
-#define DEST_PORT_FIELD               8
-#define MORE_FRAGMENTS                9
-#define COUNT_FRAGMENTS               10
-#define DURATION_SECONDS              11
-#define SRC_PAYLOAD_BYTES             12
-#define DEST_PAYLOAD_BYTES            13
-#define SRC_TOTAL_BYTES               14
-#define DEST_TOTAL_BYTES              15
-#define FIRST_SEEN_SRC_PACKET_COUNT   16
-#define FIRST_SEEN_DEST_PACKET_COUNT  17
-#define RECORD_FORCE_OUT              18
-#define LABEL                         19
+#define SamGeneratedId                0 
+#define Label                         1 
+#define TimeSeconds                   2
+#define ParseDate                     3
+#define DateTime                      4
+#define IpLayerProtocol               5
+#define IpLayerProtocolCode           6
+#define SourceIp                      7
+#define DestIp                        8
+#define SourcePort                    9
+#define DestPort                      10
+#define MoreFragments                 11
+#define CountFragments                12
+#define DurationSeconds               13
+#define SrcPayloadBytes               14
+#define DestPayloadBytes              15
+#define SrcTotalBytes                 16
+#define DestTotalBytes                17
+#define FirstSeenSrcPacketCount       18
+#define FirstSeenDestPacketCount      19
+#define RecordForceOut                20
 
-#define TimeSeconds                   0
-#define ParseDate                     1
-#define DateTime                      2
-#define IpLayerProtocol               3
-#define IpLayerProtocolCode           4
-#define SourceIp                      5
-#define DestIp                        6
-#define SourcePort                    7
-#define DestPort                      8
-#define MoreFragments                 9
-#define CountFragments                10
-//#define DURATION_SECONDS              11
-//#define SRC_PAYLOAD_BYTES             12
-//#define DEST_PAYLOAD_BYTES            13
-//#define SRC_TOTAL_BYTES               14
-//#define DEST_TOTAL_BYTES              15
-//#define FIRST_SEEN_SRC_PACKET_COUNT   16
-//#define FIRST_SEEN_DEST_PACKET_COUNT  17
-//#define RECORD_FORCE_OUT              18
-#define Label                         19
-
-
+#define DEFAULT_LABEL -1
 
 #include <string>
 #include <tuple>
@@ -54,8 +34,11 @@
 
 #include <boost/fusion/algorithm/iteration/for_each.hpp>
 
+#include "Util.hpp"
+
 namespace sam {
 
+/*
 template <int I = 0, typename FuncT, typename... Tp>
 inline typename std::enable_if<I == sizeof...(Tp), void>::type
 for_each(std::tuple<Tp...> const&, FuncT)
@@ -69,57 +52,60 @@ for_each(std::tuple<Tp...> const& t, FuncT f)
   f(std::get<I>(t));
   for_each<I + 1, FuncT, Tp...>(t, f);  
 }
+*/
 
-template <int I = 0, typename... Tp>
-inline typename std::enable_if<I == sizeof...(Tp), std::string>::type
-tupleToString(std::tuple<Tp...> const&)
+/**
+ * Removes the first element of a csv string. 
+ */
+inline std::string removeFirstElement(std::string s) 
 {
-  return "";
+  int pos = s.find(",") + 1;
+  std::string withoutLabel = s.substr(pos, s.size() - pos);
+  return withoutLabel; 
 }
 
-template<int I = 0, typename... Tp>
-inline typename std::enable_if<I < sizeof...(Tp), std::string>::type
-tupleToString(std::tuple<Tp...>const& t)
+/**
+ * Gets the first element in a csv string.
+ */
+inline std::string getFirstElement(std::string s)
 {
-  std::string result = boost::lexical_cast<std::string>(std::get<I>(t));
-  result = result + "," + tupleToString<I + 1, Tp...>(t);
-  if (result[result.size() - 1] == ',') {
-    result = result.substr(0, result.size()-1);
-  }
-  return result;
+  int pos = s.find(",") + 1;
+  std::string firstElement = s.substr(0, pos -1);
+  return firstElement;
 }
 
-template<typename... Tp>
-std::string toString(std::tuple<Tp...>const& t) {
-  std::string result = tupleToString(t);
-  return result.substr(0, result.size()-1);
-}
 
-typedef std::tuple<double,       //TIME_SECONDS_FIELD
-                     std::string,  //PARSE_DATE_FIELD
-                     std::string,  //DATE_TIME_STR_FIELD
-                     std::string,  //IP_LAYER_PROTOCOL_FIELD
-                     std::string,  //IP_LAYER_PROTOCOL_CODE_FIELD
-                     std::string,  //SOURCE_IP_FIELD
-                     std::string,  //DEST_IP_FIELD
-                     int,          //SOURCE_PORT_FIELD
-                     int,          //DEST_PORT_FIELD
-                     std::string,  //MORE_FRAGMENTS
-                     int,          //COUNT_FRAGMENTS
-                     int,          //DURATION_SECONDS
-                     int,          //SRC_PAYLOAD_BYTES
-                     int,          //DEST_PAYLOAD_BYTES
-                     int,          //SOURCE_TOTAL_BYTES
-                     int,          //DEST_TOTAL_BYTES
-                     int,          //FIRST_SEEN_SRC_PACKET_COUNT
-                     int,          //FIRST_SEEN_DEST_PACKET_COUNT
-                     int,          //RECORD_FORCE_OUT
-                     int           //LABEL
-                     >
-                     Netflow;
+typedef std::tuple<int,          //SamGeneratedId
+                   int,          //Label
+                   double,       //TimeSeconds
+                   std::string,  //PARSE_DATE_FIELD
+                   std::string,  //DATE_TIME_STR_FIELD
+                   std::string,  //IP_LAYER_PROTOCOL_FIELD
+                   std::string,  //IP_LAYER_PROTOCOL_CODE_FIELD
+                   std::string,  //SourceIp
+                   std::string,  //DestIp
+                   int,          //SourcePort
+                   int,          //DestPort
+                   std::string,  //MORE_FRAGMENTS
+                   int,          //COUNT_FRAGMENTS
+                   int,          //DURATION_SECONDS
+                   int,          //SRC_PAYLOAD_BYTES
+                   int,          //DEST_PAYLOAD_BYTES
+                   int,          //SOURCE_TOTAL_BYTES
+                   int,          //DEST_TOTAL_BYTES
+                   int,          //FIRST_SEEN_SRC_PACKET_COUNT
+                   int,          //FIRST_SEEN_DEST_PACKET_COUNT
+                   int          //RECORD_FORCE_OUT
+                   >
+                   Netflow;
 
+/**
+ * This version is the original VAST format.  The generatedId and the label
+ * have to be provided.
+ */
 inline
-Netflow makeNetflow(std::string s) {
+Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s) 
+{
 
   double timeSeconds;
   std::string parsedDate; 
@@ -131,7 +117,7 @@ Netflow makeNetflow(std::string s) {
   int sourcePort;
   int destPort;
   std::string moreFragments;
-  int contFragments;
+  int countFragments;
   int durationSeconds;
   int firstSeenSrcPayloadBytes;
   int firstSeenDestPayloadBytes;
@@ -140,39 +126,47 @@ Netflow makeNetflow(std::string s) {
   int firstSeenSrcPacketCount;
   int firstSeenDestPacketCount;
   int recordForceOut; 
-  int label = -1;
 
   boost::char_separator<char> sep(",");
   boost::tokenizer<boost::char_separator<char>> tok(s, sep);
 
-  int i = 0;
+  // The first two items, samGeneratedId and label, are not provided in the
+  // string, so we start at 2.
+  int i = 2; 
   BOOST_FOREACH(std::string const &t, tok) {
     switch (i) {
-    case 0: timeSeconds = boost::lexical_cast<double>(t);             break;
-    case 1: parsedDate = t;                                           break;
-    case 2: dateTimeStr = t;                                          break;
-    case 3: ipLayerProtocol = t;                                      break;
-    case 4: ipLayerProtocolCode = t;                                  break;
-    case 5: sourceIP = t;                                             break;
-    case 6: destIP = t;                                               break;
-    case 7: sourcePort = boost::lexical_cast<int>(t);                 break;
-    case 8: destPort = boost::lexical_cast<int>(t);                   break;
-    case 9: moreFragments = t;                                        break;
-    case 10: contFragments = boost::lexical_cast<int>(t);             break;
-    case 11: durationSeconds = boost::lexical_cast<int>(t);           break;
-    case 12: firstSeenSrcPayloadBytes = boost::lexical_cast<int>(t);  break;
-    case 13: firstSeenDestPayloadBytes = boost::lexical_cast<int>(t); break;
-    case 14: firstSeenSrcTotalBytes = boost::lexical_cast<int>(t);    break;
-    case 15: firstSeenDestTotalBytes = boost::lexical_cast<int>(t);   break;
-    case 16: firstSeenSrcPacketCount = boost::lexical_cast<int>(t);   break;
-    case 17: firstSeenDestPacketCount = boost::lexical_cast<int>(t);  break;
-    case 18: recordForceOut = boost::lexical_cast<int>(t);            break; 
-    case 19: label = boost::lexical_cast<int>(t);                     break; 
+    case TimeSeconds: timeSeconds = boost::lexical_cast<double>(t);       break;
+    case ParseDate: parsedDate = t;                                       break;
+    case DateTime: dateTimeStr = t;                                       break;
+    case IpLayerProtocol: ipLayerProtocol = t;                            break;
+    case IpLayerProtocolCode: ipLayerProtocolCode = t;                    break;
+    case SourceIp: sourceIP = t;                                          break;
+    case DestIp: destIP = t;                                              break;
+    case SourcePort: sourcePort = boost::lexical_cast<int>(t);            break;
+    case DestPort: destPort = boost::lexical_cast<int>(t);                break;
+    case MoreFragments: moreFragments = t;                                break;
+    case CountFragments: countFragments = boost::lexical_cast<int>(t);    break;
+    case DurationSeconds: durationSeconds = boost::lexical_cast<int>(t);  break;
+    case SrcPayloadBytes: 
+      firstSeenSrcPayloadBytes = boost::lexical_cast<int>(t);             break;
+    case DestPayloadBytes: 
+      firstSeenDestPayloadBytes = boost::lexical_cast<int>(t);            break;
+    case SrcTotalBytes: 
+      firstSeenSrcTotalBytes = boost::lexical_cast<int>(t);               break;
+    case DestTotalBytes: 
+      firstSeenDestTotalBytes = boost::lexical_cast<int>(t);              break;
+    case FirstSeenSrcPacketCount: 
+      firstSeenSrcPacketCount = boost::lexical_cast<int>(t);              break;
+    case FirstSeenDestPacketCount: 
+      firstSeenDestPacketCount = boost::lexical_cast<int>(t);             break;
+    case RecordForceOut: recordForceOut = boost::lexical_cast<int>(t);    break;
     }
     i++;
   }
 
-  return std::make_tuple(  timeSeconds,
+  return std::make_tuple(  samGeneratedId,
+                           label,
+                           timeSeconds,
                            parsedDate, 
                            dateTimeStr,
                            ipLayerProtocol,
@@ -182,7 +176,7 @@ Netflow makeNetflow(std::string s) {
                            sourcePort,
                            destPort,
                            moreFragments,
-                           contFragments,
+                           countFragments,
                            durationSeconds,
                            firstSeenSrcPayloadBytes,
                            firstSeenDestPayloadBytes,
@@ -190,87 +184,71 @@ Netflow makeNetflow(std::string s) {
                            firstSeenDestTotalBytes,
                            firstSeenSrcPacketCount,
                            firstSeenDestPacketCount,
-                           recordForceOut,
-                           label);
+                           recordForceOut
+                           );
 
 
 }
 
-/**
- * Right now we are assuming the VAST format of netflows, 
- * which has the following format:
- * Netflows have the following fields (from VAST dataset).  More
- *      detail can be found in "Week 1 Data Descriptions Final" of 
- *      VAST dataset.
- *      0) TimeSeconds (e.g 1365582756.3842709)
- *      1) parsedDate (2013-04-10 08:32:36) 
- *      2) dateTimeStr (20130410083236.384271)
- *      3) ipLayerProtocol (17)
- *      4) ipLayerProtocolCode (UDP)
- *      5) firstSeenSrcIp 
- *      6) firstSeenDestIp
- *      7) firstSeenSrcPort
- *      8) firstSeenDestPort
- *      9) moreFragments (non-zero means more records for this flow)
- *      10) contFragments (non-zero means no the first record in the flow)
- *      11) durationSeconds (integer)
- *      12) firstSeenSrcPayloadBytes
- *      13) firstSeenDestPayloadBytes
- *      14) firstSeenSrcTotalBytes
- *      15) firstSeenDestTotalBytes
- *      16) firstSeenSrcPacketCount
- *      17) firstSeenDestPacketCount
- *      18) recordForceOut
- * @author elgood
- *
- */
-/*
-class Netflow : public Tuple 
+
+// This version has the label at the beginning.
+inline 
+Netflow makeNetflowWithLabel(int samGeneratedId, std::string s)
 {
- 
-private: 
-  std::string timeSeconds;
-  std::string parsedDate; 
-  std::string dateTimeStr;
-  std::string ipLayerProtocol;
-  std::string ipLayerProtocolCode;
-  std::string sourceIP; 
-  std::string destIP;
-  int    sourcePort;
-  int    destPort;
-  std::string moreFragments;
-  std::string contFragments;
-  std::string durationSeconds;
-  std::string firstSeenSrcPayloadBytes;
-  std::string firstSeenDestPayloadBytes;
-  std::string firstSeenSrcTotalBytes;
-  std::string firstSeenDestTotalBytes;
-  std::string firstSeenSrcPacketCount;
-  std::string firstSeenDestPacketCount;
-  std::string recordForceOut; 
+  // Grab the label
+  int label = boost::lexical_cast<int>(getFirstElement(s));
+  std::string withoutLabel = removeFirstElement(s);
+  return makeNetflowWithoutLabel(samGeneratedId, label, withoutLabel);
+}
 
-  /// The original string used in construction.
-  std::string originalString;
- 
-public:
+/**
+ * Expects a netflow string without the generated id but may have a label.
+ */
+inline
+Netflow makeNetflow(int samGeneratedId, std::string s)
+{
+  // Determine the number of elements in the csv string to know which method
+  // to call.
+  boost::char_separator<char> sep(",");
+  boost::tokenizer<boost::char_separator<char>> tok(s, sep);
+  int numTokens = std::distance(tok.begin(), tok.end());
 
-  Netflow();
-  Netflow(Netflow const& other);
-*/
-  /**
-   * Constructor that expects a comma delimitted string with all the fields.
-   * \param s The string with all the fields.
-   */
-/*  Netflow(std::string s); 
-
-  std::string getField(size_t field) const;
-
-  std::string toString() const {
-    return originalString;
+  if (numTokens == RecordForceOut) { // Has a label
+    return makeNetflowWithLabel(samGeneratedId, s);
+  } else if (numTokens == RecordForceOut - 1) { // No label
+    return makeNetflowWithoutLabel(samGeneratedId, DEFAULT_LABEL, s);
+  } else {
+    throw std::invalid_argument("String provided to makeNetflow did not "
+                               " have the proper number of elements.");
   }
 
-};
+}
 
-*/
+/**
+ * Method to use when the netflow string has all fields, including 
+ * SamGeneratedId and Label.
+ */
+inline
+Netflow makeNetflow(std::string s)
+{
+
+  boost::char_separator<char> sep(",");
+  boost::tokenizer<boost::char_separator<char>> tok(s, sep);
+  int numTokens = std::distance(tok.begin(), tok.end());
+
+  // Check that we have the proper number of tokens.  RecordForceOut is the last
+  // field index, so the total number of expected tokens is RecordForceOut +1.
+  if (numTokens != RecordForceOut + 1) {
+    throw std::invalid_argument("String provided to makeNetflow did not "
+                               " have the proper number of elements.");
+  }
+
+  // Utilizing other methods
+  // Get the id
+  int id = boost::lexical_cast<int>(getFirstElement(s));
+  std::string withoutId = removeFirstElement(s);
+  return makeNetflow(id, withoutId);
+}
+
 }
 #endif

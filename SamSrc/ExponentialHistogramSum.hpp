@@ -31,13 +31,13 @@ private:
   // The size of the sliding window
   size_t N; 
 
-  std::map<string, std::shared_ptr<ExponentialHistogram<T>>> allWindows;
+  std::map<std::string, std::shared_ptr<ExponentialHistogram<T>>> allWindows;
 
 public:
   ExponentialHistogramSum(size_t N, size_t k,
                           size_t nodeId,
                           FeatureMap& featureMap,
-                          string identifier) :
+                          std::string identifier) :
                           BaseComputation(nodeId, featureMap, identifier) 
                                           
   {
@@ -53,7 +53,7 @@ public:
     }
 
     // Generates unique key from key fields
-    string key = generateKey<keyFields...>(input);
+    std::string key = generateKey<keyFields...>(input);
 
     // Create an exponential histogram if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {
@@ -95,13 +95,13 @@ private:
   // The size of the sliding window
   size_t N; 
 
-  std::map<string, std::shared_ptr<ExponentialHistogram<T>>> allWindows;
+  std::map<std::string, std::shared_ptr<ExponentialHistogram<T>>> allWindows;
 
 public:
   ExponentialHistogramAve(size_t N, size_t k,
                           size_t nodeId,
                           FeatureMap& featureMap,
-                          string identifier) :
+                          std::string identifier) :
                           BaseComputation(nodeId, featureMap, identifier) 
                                           
   {
@@ -117,7 +117,7 @@ public:
     }
 
     // Generates unique key from key fields
-    string key = generateKey<keyFields...>(input);
+    std::string key = generateKey<keyFields...>(input);
 
     // Create an exponential histogram if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {

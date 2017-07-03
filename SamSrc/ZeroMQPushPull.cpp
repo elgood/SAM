@@ -31,6 +31,7 @@ ZeroMQPushPull::ZeroMQPushPull(
   this->ports     = ports;
   this->hwm       = hwm;
 
+  
 
   std::shared_ptr<zmq::pollitem_t> items( new zmq::pollitem_t[numNodes],
     []( zmq::pollitem_t* p) { delete[] p; });
@@ -47,7 +48,7 @@ ZeroMQPushPull::ZeroMQPushPull(
 
     std::string ip = getIpString(hostnames[nodeId]);
     std::string url = "tcp://" + ip + ":" + 
-                      boost::lexical_cast<string>(ports[i]);
+                      boost::lexical_cast<std::string>(ports[i]);
 
     pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
     pusher->bind(url);
@@ -58,7 +59,7 @@ ZeroMQPushPull::ZeroMQPushPull(
                     new zmq::socket_t(*context, ZMQ_PULL));
 
     ip = getIpString(hostnames[i]);
-    url = "tcp://" + ip + ":" + boost::lexical_cast<string>(ports[nodeId]);
+    url = "tcp://" + ip + ":" + boost::lexical_cast<std::string>(ports[nodeId]);
     puller->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
     puller->connect(url);
 
@@ -85,16 +86,17 @@ ZeroMQPushPull::ZeroMQPushPull(
       zmq::poll(pollItems, this->numNodes, -1);
       for (int i = 0; i < this->numNodes; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
+
+          int pullCount = this->pullCounters[i]->fetch_add(1);
           this->pullers[i]->recv(&message);
           // Is this null terminated?
           char *buff = static_cast<char*>(message.data());
-          string sNetflow(buff); 
-          Netflow netflow = makeNetflow(sNetflow);
+          std::string sNetflow(buff); 
+          Netflow netflow = makeNetflow(pullCount, sNetflow);
           this->parallelFeed(netflow);
-          int value = this->pullCounters[i]->fetch_add(1);
-          if (value % metricInterval == 0) {
+          if (pullCount % metricInterval == 0) {
             std::cout << "nodeid " << this->nodeId << " PullCount[" << i 
-                      << "] " << value << std::endl;
+                      << "] " << pullCount << std::endl;
           }
         } 
       }
@@ -120,17 +122,32 @@ std::string ZeroMQPushPull::getIpString(std::string hostname) const
 
 bool ZeroMQPushPull::consume(Netflow const& n)
 {
+  // Keep track how many netflows have come through this method.
   consumeCount++;
   if (consumeCount % metricInterval == 0) {
     std::cout << "NodeId " << nodeId << " consumeCount " << consumeCount 
               << std::endl; 
   }
-  string source = std::get<SOURCE_IP_FIELD>(n);
-  string dest = std::get<DEST_IP_FIELD>(n);
-  size_t node1 = std::hash<string>{}(source) % numNodes;
-  size_t node2 = std::hash<string>{}(dest) % numNodes;
 
+  // Get the source and dest ips.  We send the netflow twice, once to each
+  // node responsible for the found ips.
+  std::string source = std::get<SourceIp>(n);
+  std::string dest = std::get<DestIp>(n);
+  size_t node1 = std::hash<std::string>{}(source) % numNodes;
+  size_t node2 = std::hash<std::string>{}(dest) % numNodes;
+
+  // Convert the netflow to a string to send over the network via zeromq.
   std::string s = toString(n);
+
+  // The netflow was assigned a id from the previous producer.  However, we
+  // want a new id to be assigned by the receiving node.  So we remove the
+  // id.
+  s = removeFirstElement(s);
+
+  // We want to use the consumeCount as the generated id (so it is a unique
+  // id for the given node).
+  s = boost::lexical_cast<std::string>(consumeCount) + "," + s;
+
   size_t lengthString = s.size();
   zmq::message_t message1(lengthString + 1);
   snprintf ((char *) message1.data(), lengthString + 1 ,

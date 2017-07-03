@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  ZeroMQPushPull consumer(queueLength,
+  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
                                numNodes, 
                                nodeId, 
                                hostnames, 
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
   cout << "DEBUG: main created consumer " << endl;
 #endif
 
-  receiver.registerConsumer(&consumer);
+  receiver.registerConsumer(consumer);
 
   FeatureMap featureMap;
 
@@ -159,10 +159,11 @@ int main(int argc, char** argv) {
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     string identifier = "topk" + boost::lexical_cast<string>(i);
-    auto topk = new TopK<size_t, Netflow, DEST_PORT_FIELD, DEST_IP_FIELD>(
+    auto topk = std::make_shared<TopK<size_t, Netflow, DestPort, 
+                                     DestIp>>(
                                      N, b, k, nodeId, featureMap, identifier);
                                           
-    consumer.registerConsumer(topk); 
+    consumer->registerConsumer(topk); 
   }
 
 

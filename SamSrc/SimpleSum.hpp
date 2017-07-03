@@ -72,7 +72,7 @@ private:
 
   /// Mapping from the key (e.g. an ip field) to the simple sum 
   /// data structure that is keeping track of the values seen.
-  std::map<string, value_t*> allWindows; 
+  std::map<std::string, value_t*> allWindows; 
   
   // Where the most recent item is located in the array.
   size_t top = 0;
@@ -81,7 +81,7 @@ public:
   SimpleSum(size_t N,
             size_t nodeId,
             FeatureMap& featureMap,
-            string identifier) :
+            std::string identifier) :
     BaseComputation(nodeId, featureMap, identifier) 
   {
     this->N = N;
@@ -101,7 +101,7 @@ public:
     }
 
     // Generates unique key from key fields 
-    string key = generateKey<keyFields...>(tuple);
+    std::string key = generateKey<keyFields...>(tuple);
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N); 
       allWindows[key] = value;
@@ -129,12 +129,12 @@ public:
     return true;
   }
 
-  T getSum(string key) {
+  T getSum(std::string key) {
     return allWindows[key]->getSum();
   }
 
-  std::vector<string> keys() const {
-    std::vector<string> theKeys;
+  std::vector<std::string> keys() const {
+    std::vector<std::string> theKeys;
     for (auto p : allWindows) {
       theKeys.push_back(p.first);
     }

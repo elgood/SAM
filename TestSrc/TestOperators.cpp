@@ -25,10 +25,11 @@ BOOST_AUTO_TEST_CASE( test_topk )
   int N = 10000; 
   int b = 1000;
   int k = 3;
-  TopK<size_t, Netflow, 8, 6> top2(N, b, k, 0, featureMap, identifier);
+  auto top2 = std::make_shared<TopK<size_t, Netflow, DestPort, DestIp>>
+    (N, b, k, 0, featureMap, identifier);
                               
 
-  producer.registerConsumer(&top2);
+  producer.registerConsumer(top2);
 
   // Five tokens for the 
   // First function token
@@ -64,15 +65,14 @@ BOOST_AUTO_TEST_CASE( test_topk )
 
 
   Expression<Netflow> filterExpression(infixList);
-  Filter<Netflow, DEST_IP_FIELD> filter(filterExpression, 0, featureMap, 
-                                        "servers", queueLength);
+  auto filter = std::make_shared<Filter<Netflow, DestIp>>(
+    filterExpression, 0, featureMap, "servers", queueLength);
                 
 
-  producer.registerConsumer(&filter);
+  producer.registerConsumer(filter);
 
   producer.run();
   for (std::string ip : producer.getServerIps()) {
-    std::cout << "server ip " << ip << std::endl;
     std::shared_ptr<Feature const> feature = featureMap.at(ip, identifier);
     int index1 = 0;
     auto function1 = [&index1](Feature const * feature)->double {
@@ -88,7 +88,6 @@ BOOST_AUTO_TEST_CASE( test_topk )
     BOOST_CHECK_CLOSE(value, 0.5, 0.01);
   }
   for (std::string ip : producer.getNonserverIps()) {
-    std::cout << "nonserver ip " << ip << std::endl;
     std::shared_ptr<Feature const> feature = featureMap.at(ip, identifier);
     std::vector<double> parameters;
     parameters.push_back(0);

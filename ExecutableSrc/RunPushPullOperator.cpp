@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  sam::ZeroMQPushPull consumer(queueLength,
+  auto consumer = std::make_shared<sam::ZeroMQPushPull>(queueLength,
                                numNodes, 
                                nodeId, 
                                hostnames, 
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
   cout << "DEBUG: main created consumer " << endl;
 #endif
 
-  receiver.registerConsumer(&consumer);
+  receiver.registerConsumer(consumer);
 
   if (!receiver.connect()) {
     std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;
