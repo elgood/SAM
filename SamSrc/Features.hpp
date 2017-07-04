@@ -56,7 +56,8 @@ auto valueFunc = [](Feature const * feature)->double {
 };
 
 /**
- * A feature that is a map of features
+ * A feature that is a map of features.  This is used when we project out a 
+ * field and 
  */
 class MapFeature : public Feature {
 private:

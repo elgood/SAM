@@ -90,6 +90,7 @@ bool TopK<T, TupleType, valueField, keyFields...>::consume(
     this->featureMap.updateInsert(key, this->identifier, feature);
   }
 
+
   return true;
 }
 
