@@ -15,13 +15,15 @@
 #include "ExponentialHistogram.hpp"
 #include "Features.hpp"
 #include "Util.hpp"
+#include "FeatureProducer.hpp"
 
 namespace sam {
 
 template <typename T, typename InputType, 
           size_t valueField, size_t... keyFields>
 class ExponentialHistogramVariance : public AbstractConsumer<InputType>, 
-                                     public BaseComputation
+                                     public BaseComputation,
+                                     public FeatureProducer
 {
 private:
 
@@ -89,6 +91,7 @@ public:
     SingleFeature feature(currentVariance);
     this->featureMap.updateInsert(key, this->identifier, feature);
 
+    
 
 
     return true;
