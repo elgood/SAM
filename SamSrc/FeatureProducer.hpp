@@ -16,6 +16,17 @@ protected:
 public:
   void registerSubscriber(std::shared_ptr<FeatureSubscriber> subscriber,
                           std::string name);
+
+  /**
+   * This should be called within the consume method.  Probably there exists
+   * a better way to structure this code so that we can ensure it gets
+   * called.
+   */
+  void notifySubscribers(std::string const& id, double value) {
+    for (int i = 0; i < subscribers.size(); i++) {
+      subscribers[i]->update(id, names[i], value);
+    }
+  }
    
 };
 

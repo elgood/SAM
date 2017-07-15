@@ -16,6 +16,10 @@ BOOST_AUTO_TEST_CASE( test_topk )
   int numExamples = 100000;
   int numServers = 2;
   int numNonservers = 2;
+
+  // The TopKProducer creates a situation where there are numServers servers
+  // and numNonservers non-servers.  A server is defined as > 90% of traffic
+  // to the top two ports.
   TopKProducer producer(queueLength, numExamples, numServers, numNonservers);
   FeatureMap featureMap;
   vector<size_t> keyFields;

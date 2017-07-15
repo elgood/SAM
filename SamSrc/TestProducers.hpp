@@ -16,6 +16,12 @@
 namespace sam {
  
 /**
+ * Class that allows you to produce a scenario where some IPs have
+ * two ports that accept traffic, and other IPs have three ports that accept
+ * traffic.  Using the definition from Disclosure where top2 dest ports >
+ * 0.9 are classified as servers, this will create a distinction between
+ * server IPs and nonserver IPs when using a filter that uses the topk 
+ * feature.
  */
 class TopKProducer : public BaseProducer<Netflow>
 {
@@ -27,7 +33,7 @@ private:
   std::list<std::string> nonserverIps;
 
   // This is for keeping metrics on the netflows generated.  It is a mapping
-  // from ip/port to counts.
+  // from ip/port to counts.  It is used for testing purposes.
   std::map<std::pair<std::string, int>, int> ipPortMap;
 
 public:
@@ -49,9 +55,10 @@ public:
 };
 
 TopKProducer::TopKProducer(int queueLength, 
-             int numExamples, 
-             int numServers, 
-             int numNonservers) : BaseProducer(queueLength) 
+                           int numExamples, 
+                           int numServers, 
+                           int numNonservers) : 
+                           BaseProducer(queueLength)
 {
   this->numExamples = numExamples;
   int last = 1; 
@@ -70,7 +77,7 @@ TopKProducer::TopKProducer(int queueLength,
      ipPortMap[std::pair<std::string, int>(ip, 2)] = 0;
 
   }
-  // Servers will have three ports, thus the top two dest ports > 0.9 will
+  // NonServers will have three ports, thus the top two dest ports > 0.9 will
   // evaluate to false and will be classified as a non server.
   for (int i = 0; i < numNonservers; i++) {
      std::string ip = "192.168.0." + boost::lexical_cast<std::string>(last);
@@ -89,7 +96,8 @@ TopKProducer::TopKProducer(int queueLength,
 
 void TopKProducer::run() {
 
-  for (int i = 0; i < numExamples; i++) {
+  for (int i = 0; i < numExamples; i++) 
+  {
     int serverId = 0;
     for (auto g : servers) {
       std::string s = g->generate();
@@ -130,6 +138,45 @@ std::list<std::string> const& TopKProducer::getServerIps() const
 std::list<std::string> const& TopKProducer::getNonserverIps() const
 {
   return nonserverIps;
+}
+
+/**
+ * This will create netflows where you can specify
+ * 1) number of ips
+ * 2) 
+ */
+class GeneralNetflowProducer : public BaseProducer<Netflow>
+{
+  std::vector<std::shared_ptr<AbstractNetflowGenerator>> generators;
+  int numExamples;
+public:
+  GeneralNetflowProducer(int queueLength,
+    int numExamples,
+    std::vector<std::shared_ptr<AbstractNetflowGenerator>>  
+      const& _generators) :
+    BaseProducer(queueLength),
+    generators(_generators)
+  {
+    this->numExamples = numExamples;
+  }
+
+  void run();
+  
+
+};
+
+void GeneralNetflowProducer::run()
+{
+  for (int i = 0; i < numExamples; i++) 
+  {
+    for (int j = 0; j < generators.size(); j++) 
+    {
+      std::string s = generators[j]->generate();
+      Netflow netflow = makeNetflow(j * numExamples + i, s);
+
+      parallelFeed(netflow);
+    }  
+  }
 }
 
 }

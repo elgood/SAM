@@ -83,24 +83,25 @@ public:
     sums[key]->add(value);
     squares[key]->add(value * value);
 
-    // Getting the current variance and providing that to the imux data 
-    // structure.
+    // Getting the current variance and providing that to the featureMap
     T currentSum = sums[key]->getTotal();
     T currentSquares = squares[key]->getTotal();
-    double currentVariance = calculateVariance(currentSquares, currentSum);
+    size_t numItems = sums[key]->getNumItems();
+    double currentVariance = calculateVariance(currentSquares, currentSum,
+                                               numItems);
     SingleFeature feature(currentVariance);
     this->featureMap.updateInsert(key, this->identifier, feature);
 
-    
+    notifySubscribers(key, currentVariance);    
 
 
     return true;
   }
 
 private:
-  double calculateVariance(T sumOfSquares, T sum) {
-    double variance = boost::lexical_cast<double>(sumOfSquares) / N -
-                      boost::lexical_cast<double>(sum * sum) / (N * N);
+  double calculateVariance(T sumOfSquares, T sum, size_t numItems) {
+    double variance = boost::lexical_cast<double>(sumOfSquares) / numItems -
+                boost::lexical_cast<double>(sum * sum) / (numItems * numItems);
     return variance;
   }
 

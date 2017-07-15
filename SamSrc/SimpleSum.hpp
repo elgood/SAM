@@ -13,6 +13,7 @@
 #include "BaseComputation.hpp"
 #include "Features.hpp"
 #include "Util.hpp"
+#include "FeatureProducer.hpp"
 
 namespace sam 
 {
@@ -64,7 +65,8 @@ public:
 template <typename T, typename TupleType, size_t valueField, 
           size_t... keyFields>
 class SimpleSum: public AbstractConsumer<TupleType>, 
-                 public BaseComputation
+                 public BaseComputation,
+                 public FeatureProducer
 {
 private:
   size_t N; ///> Size of sliding window
@@ -121,10 +123,12 @@ public:
 
     allWindows[key]->insert(value);
     
-    // Getting the current sum and providing that to the imux data structure.
+    // Getting the current sum and providing that to the featureMap.
     T currentSum = allWindows[key]->getSum();
     SingleFeature feature(currentSum);
     this->featureMap.updateInsert(key, this->identifier, feature);
+
+    notifySubscribers(key, currentSum);
 
     return true;
   }

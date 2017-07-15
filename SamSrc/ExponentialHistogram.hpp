@@ -44,6 +44,8 @@ private:
 
   T total = 0;
 
+  int numItems = 0;
+
 public:
   ExponentialHistogram(size_t N, size_t k) : BaseSlidingWindow<T>(N)
   {
@@ -97,6 +99,9 @@ public:
     //update the global total
     total = total + item;
 
+    //update the number of items represented
+    numItems++;
+
     // Add the item to the data structure.
     add(item, 0);
   } 
@@ -127,6 +132,14 @@ public:
       total = total + size * (k/2 + 2); 
     }
     return total;
+  }
+
+  /**
+   * Returns the number of items currently being represented by the
+   * exponential histogram.
+   */
+  size_t getNumItems() {
+    return numItems;
   }
   
 private:
@@ -182,6 +195,7 @@ private:
     // If there isn't another level, we update the total and drop the item.
     else 
     {
+      numItems -= pow(2, level);
       total = total - item;
     }
   }

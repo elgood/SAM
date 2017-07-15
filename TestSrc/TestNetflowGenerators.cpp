@@ -87,7 +87,9 @@ BOOST_AUTO_TEST_CASE( test_netflow_conversion )
   }
 }
 
-
+/**
+ * Tests the UniformDestPort netflow generator. 
+ */
 BOOST_AUTO_TEST_CASE( test_uniform_dest_port )
 {
   std::string destIp = "192.168.0.1";
@@ -95,11 +97,21 @@ BOOST_AUTO_TEST_CASE( test_uniform_dest_port )
   UniformDestPort generator1(destIp, numPorts);
   int numIters = 30000;
   std::map<int, int> portCounts;
+
+  // Generate numIters netflows. 
   for(int i = 0; i < numIters; i++) {
-    std::string netflow = generator1.generate();
-    std::vector<std::string> v = convertToTokens(netflow);
-    BOOST_CHECK_EQUAL(v[6].compare(destIp), 0);
-    portCounts[boost::lexical_cast<int>(v[8])]++;
+    std::string netflowStr = generator1.generate();
+
+    // use i as the SamGeneratedId
+    Netflow netflow = makeNetflow(i, netflowStr);
+    //std::vector<std::string> v = convertToTokens(netflow);
+
+    // In all cases the destIp should the same.
+    std::string netflowDestIp = std::get<DestIp>(netflow);
+    BOOST_CHECK_EQUAL(netflowDestIp.compare(destIp), 0);
+    
+    int destPort = std::get<DestPort>(netflow);
+    portCounts[destPort]++;
   }
 
   for ( auto p : portCounts ) {
@@ -113,23 +125,56 @@ BOOST_AUTO_TEST_CASE( test_uniform_dest_port )
     numIters = 30000;
     portCounts.clear();
     for(int i = 0; i < numIters; i++) {
-      std::string netflow = generator2.generate();
-      boost::char_separator<char> sep(",");
-      boost::tokenizer<boost::char_separator<char>> tokenizer(netflow, sep);
-      std::vector<std::string> v;
-      for ( std::string t : tokenizer ) {
-        v.push_back(t);
-      }
-      BOOST_CHECK_EQUAL(v[6].compare(destIp), 0);
-      portCounts[boost::lexical_cast<int>(v[8])]++;
+      std::string netflowStr = generator2.generate();
+      Netflow netflow = makeNetflow(i, netflowStr);
+      BOOST_CHECK_EQUAL(std::get<DestIp>(netflow).compare(destIp), 0);
+      portCounts[std::get<DestPort>(netflow)]++;
     }
 
+    
     for ( auto p : portCounts ) {
       BOOST_CHECK_EQUAL( static_cast<double>(p.second) / numIters,
                          static_cast<double>(1) / numPorts);
     }
   }
+}
 
+/**
+ * Tests the OnePairSizeDist netflow generator.
+ */
+BOOST_AUTO_TEST_CASE( test_one_pair_size_dist )
+{
+  std::string destIp   = "192.168.0.1";
+  std::string sourceIp = "192.186.0.2";
+  double meanDestFlowSize   = 100.0;
+  double meanSourceFlowSize = 50.0;
+  double devDestFlowSize    = 2.0;
+  double devSourceFlowSize  = 3.0;
+
+  OnePairSizeDist generator(destIp, sourceIp, 
+                               meanDestFlowSize, meanSourceFlowSize,
+                               devDestFlowSize, devSourceFlowSize);
+
+  int numIter = 100000;
+  std::vector<double> destFlowSizes;
+  std::vector<double> sourceFlowSizes;
+  for(int i = 0; i < numIter; i++) 
+  {
+    std::string netflowString = generator.generate();
+    Netflow netflow = makeNetflow(i, netflowString); 
+    destFlowSizes.push_back(std::get<DestPayloadBytes>(netflow)); 
+    sourceFlowSizes.push_back(std::get<SrcPayloadBytes>(netflow));
+  }
+
+  double m1 = calcMean(destFlowSizes);
+  double m2 = calcMean(sourceFlowSizes);
+  double d1 = calcStandardDeviation(destFlowSizes);
+  double d2 = calcStandardDeviation(sourceFlowSizes);
+
+  BOOST_CHECK_CLOSE(m1, meanDestFlowSize, 5);
+  BOOST_CHECK_CLOSE(m2, meanSourceFlowSize, 5);
+  BOOST_CHECK_CLOSE(d1, devDestFlowSize, 5);
+  BOOST_CHECK_CLOSE(d2, devSourceFlowSize, 5);
 
 }
 

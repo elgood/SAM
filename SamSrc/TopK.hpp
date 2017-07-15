@@ -9,6 +9,7 @@
 #include "AbstractConsumer.hpp"
 #include "BaseComputation.hpp"
 #include "Util.hpp"
+#include "FeatureProducer.hpp"
 
 namespace sam {
 
@@ -17,7 +18,8 @@ template <typename T,
           size_t valueField,
           size_t... keyFields>
 class TopK: public AbstractConsumer<TupleType>, 
-            public BaseComputation
+            public BaseComputation,
+            public FeatureProducer
 {
 private:
   size_t N; ///>Total number of elements

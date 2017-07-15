@@ -13,13 +13,15 @@
 #include "ExponentialHistogram.hpp"
 #include "Features.hpp"
 #include "Util.hpp"
+#include "FeatureProducer.hpp"
 
 namespace sam {
 
 template <typename T, typename InputType,  
           size_t valueField, size_t... keyFields>
 class ExponentialHistogramSum: public AbstractConsumer<InputType>, 
-                               public BaseComputation
+                               public BaseComputation,
+                               public FeatureProducer
 {
 private:
 
@@ -34,6 +36,17 @@ private:
   std::map<std::string, std::shared_ptr<ExponentialHistogram<T>>> allWindows;
 
 public:
+  /**
+   * Constructor.
+   * \param N The number of elements in the sliding window.
+   * \param k Determines the number of buckets.  If there are k/2 + 2 buckets
+   *          of the same size (k + 2 buckets if bucket size equals 1),
+   *          the oldest two buckets are combined. 
+   * \param nodeId The nodeId of the node that is running this operator.
+   * \param featureMap The global featureMap that holds the features produced
+   *                   by this operator.
+   * \param identifier A unique identifier associated with this operator.
+   */
   ExponentialHistogramSum(size_t N, size_t k,
                           size_t nodeId,
                           FeatureMap& featureMap,
@@ -73,6 +86,8 @@ public:
     SingleFeature feature(currentSum);
     this->featureMap.updateInsert(key, this->identifier, feature);
 
+    this->notifySubscribers(key, currentSum);
+
     return true;
   }
 
@@ -83,7 +98,8 @@ public:
 template <typename T, typename InputType,
           size_t valueField, size_t... keyFields>
 class ExponentialHistogramAve: public AbstractConsumer<InputType>, 
-                               public BaseComputation
+                               public BaseComputation,
+                               public FeatureProducer
 {
 private:
 
@@ -95,6 +111,8 @@ private:
   // The size of the sliding window
   size_t N; 
 
+  // Mapping from string key to the ExponentialHistogram representing the
+  // key.
   std::map<std::string, std::shared_ptr<ExponentialHistogram<T>>> allWindows;
 
 public:
@@ -134,8 +152,10 @@ public:
 
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getTotal();
-    SingleFeature feature(currentSum/ allWindows[key]->getNumSlots());
+    SingleFeature feature(currentSum/ allWindows[key]->getNumItems());
     this->featureMap.updateInsert(key, this->identifier, feature);
+  
+    this->notifySubscribers(key, currentSum / allWindows[key]->getNumItems());
 
     return true;
   }
