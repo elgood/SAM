@@ -148,16 +148,22 @@ BOOST_FIXTURE_TEST_CASE( test_func_token, F )
 
 BOOST_FIXTURE_TEST_CASE( test_prev_token, F )
 {
-  PrevToken<TimeSeconds, Netflow> prevToken(featureMap);
+  PrevToken<TimeSeconds, Netflow> prevToken1(featureMap);
+  PrevToken<TimeSeconds, Netflow> prevToken2(featureMap);
+
+  // We don't want the identifiers to be the same or that could cause problems.
+  BOOST_CHECK(prevToken1.getIdentifier() != prevToken2.getIdentifier());
 
   // First pass should have no previous value, so fails.
-  bool b = prevToken.evaluate(mystack, key, netflow); 
+  bool b = prevToken1.evaluate(mystack, key, netflow); 
   BOOST_CHECK_EQUAL(b, false);
 
   // Second pass should have previous value.
-  b = prevToken.evaluate(mystack, key, netflow); 
+  b = prevToken1.evaluate(mystack, key, netflow); 
   BOOST_CHECK_EQUAL(b, true);
   BOOST_CHECK_EQUAL(mystack.top(), 1365582756.384094);
+
+
 }
 
  
