@@ -60,16 +60,18 @@ bool TransformProducer<InputType, OutputType, keyFields...>::consume(
   std::string key = generateKey<keyFields...>(input);
 
   // Generate a subtuple with just the key fields
-  std::index_sequence<keyFields...> sequence;
+  // 0 is included to get the SamGenerated id
+  std::index_sequence<0, keyFields...> sequence;
   auto outTuple = subtuple(input, sequence);
- 
 
-  // Add the new fields from the transform expressions. 
-  for ( auto expression : transformExpressions ) {
+  //TODO: This only works if there is only one transform expression
+  double result = 0;
+  
+  //auto expression = transformExpressions.get(0);
+  bool b = transformExpressions.get(0).evaluate(key, input, result);
+  auto finalTuple = std::tuple_cat(outTuple, std::tie(result));
 
-    double result = 0;
-    bool b = expression.evaluate(key, input, result);
-  }
+  this->parallelFeed(finalTuple);
 
   return true;
 }
