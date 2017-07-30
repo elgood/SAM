@@ -128,7 +128,8 @@ public:
     SingleFeature feature(currentSum);
     this->featureMap.updateInsert(key, this->identifier, feature);
 
-    notifySubscribers(key, currentSum);
+    std::size_t id = std::get<0>(tuple);
+    notifySubscribers(id, currentSum);
 
     return true;
   }

@@ -78,6 +78,8 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
   // The subscriber listens to the features produced by the identity operator
   identity->registerSubscriber(subscriber, identifier);
 
+  subscriber->init();
+
   // We create a bunch or netflows where the only difference is the time, which
   // we increase by 1 second for each netflow.
   std::string before = "1,1,";

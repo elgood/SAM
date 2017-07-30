@@ -90,6 +90,13 @@ bool TopK<T, TupleType, valueField, keyFields...>::consume(
   if (keys.size() > 0 && frequencies.size() > 0) {
     TopKFeature feature(keys, frequencies);
     this->featureMap.updateInsert(key, this->identifier, feature);
+
+    std::size_t id = std::get<0>(tuple);
+    // notifySubscribers only takes doubles right now
+    std::cout << "notifying subscribers frequencies" << frequencies[0] 
+              << " id " << id << "key " << key << std::endl;
+    notifySubscribers(id, frequencies[0]);
+
   }
 
 

@@ -21,7 +21,7 @@ class DummyFeatureProducer : public FeatureProducer
 {
 private:
   double value;
-  int count = 0;
+  std::size_t count = 0;
   int milli = 0;
 public:
   DummyFeatureProducer(double _value, int _milli) : 
@@ -30,14 +30,35 @@ public:
 
   void consume() {
     for (int i = 0; i < subscribers.size(); i++) {
-      subscribers[i]->update(boost::lexical_cast<std::string>(count), 
-                             names[i], value);
+      subscribers[i]->update(count, names[i], value);
       std::this_thread::sleep_for(std::chrono::milliseconds(milli));
     }
     count++;
   }
 
 };
+
+/**
+ * Tests the logic around init.  Init must be called before update is called.
+ * addFeature must be called before init.
+ */
+BOOST_AUTO_TEST_CASE( test_init )
+{
+  int numFeatures = 5;
+  FeatureSubscriber subscriber;
+  BOOST_CHECK_THROW(subscriber.update(1, "featureName", 5.0), 
+                    std::logic_error);
+  
+  // Should fail because no features have been added.
+  BOOST_CHECK_THROW(subscriber.init(), std::logic_error);
+
+  subscriber.addFeature("featureName1");
+  subscriber.addFeature("featureName2");
+
+  subscriber.init();
+  
+  BOOST_CHECK_THROW(subscriber.addFeature("blah"), std::logic_error);
+}
 
 /**
  * There is one feature subscriber and multiple feature producers, but
@@ -53,19 +74,19 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_single_thread )
     producers[i] = std::make_shared<DummyFeatureProducer>(i, 0); 
   }
 
-  std::vector<std::string> featureNames;
-  for (int i = 0; i < numFeatures; i++) {
-    featureNames.push_back(boost::lexical_cast<std::string>(i));
-  }
-
   int capacity = 10000;
-  auto subscriber = std::make_shared<FeatureSubscriber>(featureNames,
-                                                        capacity);
+  auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
   int i = 0;
   for (int i = 0; i < numFeatures; i++) {
-    producers[i]->registerSubscriber( subscriber, 
-      boost::lexical_cast<std::string>(i) );
+    std::string featureName = boost::lexical_cast<std::string>(i);
+
+    // calls FeatureSubscriber::addFeature(featureName)
+    producers[i]->registerSubscriber( subscriber, featureName);  
   }
+
+  subscriber->init();
+
+  BOOST_CHECK_EQUAL(subscriber->getNumFeatures(), numFeatures);
 
   int numTimes = 100;
   for (int i = 0; i < numTimes; i++) {
@@ -91,10 +112,6 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_single_thread )
       i++;
     }
   }
-
-  BOOST_CHECK_EQUAL(0, subscriber->size());
-  producers[0]->consume();
-  BOOST_CHECK_EQUAL(1, subscriber->size());
 }
 
 /**
@@ -106,14 +123,8 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_multi_thread )
   int numThreads = 5;
   int capacity = 10000;
 
-
-  std::vector<std::string> featureNames;
-  for (int i = 0; i < numThreads; i++) {
-    featureNames.push_back(boost::lexical_cast<std::string>(i));
-  }
-
   // Each of the threads will add to subscriber concurrently 
-  auto subscriber = std::make_shared<FeatureSubscriber>(featureNames, capacity);
+  auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
 
   // The number of concurrent threads
   std::vector<std::thread> threads;
@@ -126,9 +137,13 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_multi_thread )
 
   // Each thread produces one feature with the name "i"
   for (int i = 0; i < numThreads; i++) {
-    producers[i]->registerSubscriber( subscriber, 
-      boost::lexical_cast<std::string>(i) );
+    std::string featureName = boost::lexical_cast<std::string>(i);
+    
+    // calls FeatureSubscriber::addFeature(featureName)
+    producers[i]->registerSubscriber( subscriber, featureName);
   }
+
+  subscriber->init();
 
   for (int i = 0; i < numThreads; i++)
   {
@@ -193,6 +208,9 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   // The global feature map
   FeatureMap featureMap(capacity);
 
+  int numFeatures = 4;
+  auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
+
   int N = 1000;
   int k = 2;
   int nodeId = 0;
@@ -216,28 +234,20 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
                              size_t, Netflow, DestPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idVarDestFlowSize);
 
-  
-  // The names of the features that we will subscribe to.  These are the 
-  // the same as the operator identifiers.
-  std::vector<std::string> featureNames;
-  featureNames.push_back(idAveSourceFlowSize);
-  featureNames.push_back(idAveDestFlowSize);
-  featureNames.push_back(idVarSourceFlowSize);
-  featureNames.push_back(idVarDestFlowSize);
-
   // Connect the feature producers to the netflow producer. 
   netflowProducer.registerConsumer(aveSourceFlowSize);
   netflowProducer.registerConsumer(aveDestFlowSize);
   netflowProducer.registerConsumer(varSourceFlowSize);
   netflowProducer.registerConsumer(varDestFlowSize);
 
-  auto subscriber = std::make_shared<FeatureSubscriber>(featureNames, capacity);
 
   // Telling the feature producers about the subscriber
   aveSourceFlowSize->registerSubscriber( subscriber, idAveSourceFlowSize);
   aveDestFlowSize->registerSubscriber( subscriber, idAveDestFlowSize);
   varSourceFlowSize->registerSubscriber( subscriber, idVarSourceFlowSize);
   varDestFlowSize->registerSubscriber( subscriber, idVarDestFlowSize);
+
+  subscriber->init();
 
   netflowProducer.run();
 
@@ -270,11 +280,11 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
             break;
           case 2:
             BOOST_CHECK_CLOSE(pow(boost::lexical_cast<double>(t), 0.5), 
-                              devSourceFlowSize, 30);
+                              devSourceFlowSize, 40);
             break;
           case 3:
             BOOST_CHECK_CLOSE(pow(boost::lexical_cast<double>(t), 0.5), 
-                              devDestFlowSize, 30);
+                              devDestFlowSize, 40);
             break;
         }
         i++;

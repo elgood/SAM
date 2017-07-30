@@ -92,8 +92,8 @@ public:
     SingleFeature feature(currentVariance);
     this->featureMap.updateInsert(key, this->identifier, feature);
 
-    notifySubscribers(key, currentVariance);    
-
+    std::size_t id = std::get<0>(input);
+    notifySubscribers(id, currentVariance);    
 
     return true;
   }

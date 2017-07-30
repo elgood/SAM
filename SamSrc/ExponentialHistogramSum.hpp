@@ -84,9 +84,12 @@ public:
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getTotal();
     SingleFeature feature(currentSum);
+
     this->featureMap.updateInsert(key, this->identifier, feature);
 
-    this->notifySubscribers(key, currentSum);
+    // This assumes the identifier of the tuple is the first element
+    std::size_t id = std::get<0>(input);
+    this->notifySubscribers(id, currentSum);
 
     return true;
   }
@@ -155,7 +158,8 @@ public:
     SingleFeature feature(currentSum/ allWindows[key]->getNumItems());
     this->featureMap.updateInsert(key, this->identifier, feature);
   
-    this->notifySubscribers(key, currentSum / allWindows[key]->getNumItems());
+    std::size_t id = std::get<0>(input);
+    this->notifySubscribers(id, currentSum / allWindows[key]->getNumItems());
 
     return true;
   }

@@ -2,20 +2,30 @@
 #define SAM_UTIL_HPP
 
 #include <boost/lexical_cast.hpp>
+#include <boost/tokenizer.hpp>
 #include <numeric>
+#include <iostream>
 
+/**
+ * Generates a subtuple based on the provided index_sequence.
+ */
 template <typename... T, std::size_t... I>
 auto subtuple(std::tuple<T...> const& t, std::index_sequence<I...>) {
   return std::make_tuple(std::get<I>(t)...);
 }
 
+/**
+ * Base cae for generateKey.
+ */
 template <typename...  Ts>
 std::string generateKey(std::tuple<Ts...> const& t)
 {
   return "";
 }
 
-
+/**
+ * Generates a key based on the keyfields provided to the template.
+ */
 template <size_t keyField, size_t... keyFields, typename... Ts>
 std::string generateKey(std::tuple<Ts...> const& t)
 {
@@ -23,6 +33,10 @@ std::string generateKey(std::tuple<Ts...> const& t)
   return key + generateKey<keyFields...>(t);
 }
 
+
+/**
+ * Base case for tupleToString
+ */
 template <int I = 0, typename... Tp>
 inline typename std::enable_if<I == sizeof...(Tp), std::string>::type
 tupleToString(std::tuple<Tp...> const&)
@@ -30,6 +44,9 @@ tupleToString(std::tuple<Tp...> const&)
   return "";
 }
 
+/**
+ * Generates a string from the tuple.
+ */
 template<int I = 0, typename... Tp>
 inline typename std::enable_if<I < sizeof...(Tp), std::string>::type
 tupleToString(std::tuple<Tp...>const& t)
@@ -45,9 +62,12 @@ tupleToString(std::tuple<Tp...>const& t)
 template<typename... Tp>
 std::string toString(std::tuple<Tp...>const& t) {
   std::string result = tupleToString(t);
-  return result.substr(0, result.size()-1);
+  return result;
 }
 
+/**
+ * Hash function for strings.
+ */
 inline
 unsigned int hashFunction(std::string const& key) 
 {
@@ -78,6 +98,20 @@ double calcStandardDeviation(std::vector<T> const& v)
   double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 
                                      0.0);
   return std::sqrt(sq_sum / v.size());
+}
+
+/**
+ * Converts a netflow string into a vetor of tokens.
+ */
+inline
+std::vector<std::string> convertToTokens(std::string netflowString) {
+  boost::char_separator<char> sep(",");
+  boost::tokenizer<boost::char_separator<char>> tokenizer(netflowString, sep);
+  std::vector<std::string> v;
+  for ( std::string t : tokenizer ) {
+    v.push_back(t);
+  }
+  return v;
 }
 
 

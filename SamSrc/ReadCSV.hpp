@@ -33,10 +33,17 @@ public:
     int i = 0;
     std::string line;
     while(std::getline(file, line)) {
-      Netflow netflow = makeNetflow(line);
-      for (auto consumer: consumers) {
-        consumer->consume(netflow);
+      // We will use the order they come in as the SamGeneratedId.
+      // This assumes that there is a label in each line.
+      try {
+        Netflow netflow = makeNetflow(i, line);
+        for (auto consumer: consumers) {
+          consumer->consume(netflow);
+        }
+      } catch (std::exception e) {
+        std::cerr << e.what() << std::endl; 
       }
+      i++;
     }
   }
 

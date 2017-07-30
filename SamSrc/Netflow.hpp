@@ -31,7 +31,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
-
+#include <boost/algorithm/string.hpp>
 #include <boost/fusion/algorithm/iteration/for_each.hpp>
 
 #include "Util.hpp"
@@ -59,7 +59,7 @@ inline std::string getFirstElement(std::string s)
 }
 
 
-typedef std::tuple<int,          //SamGeneratedId
+typedef std::tuple<std::size_t,  //SamGeneratedId
                    int,          //Label
                    double,       //TimeSeconds
                    std::string,  //PARSE_DATE_FIELD
@@ -90,7 +90,9 @@ typedef std::tuple<int,          //SamGeneratedId
 inline
 Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s) 
 {
+  //std::cout << "MakeNetflowWithoutLabel " << s << std::endl;
 
+  boost::trim(s);
   double timeSeconds;
   std::string parsedDate; 
   std::string dateTimeStr;
@@ -118,6 +120,7 @@ Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s)
   // string, so we start at 2.
   int i = 2; 
   BOOST_FOREACH(std::string const &t, tok) {
+    //std::cout << "i " << i << " t " << t << std::endl;
     switch (i) {
     case TimeSeconds: timeSeconds = boost::lexical_cast<double>(t);       break;
     case ParseDate: parsedDate = t;                                       break;
@@ -147,7 +150,7 @@ Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s)
     }
     i++;
   }
-
+  //std::cout << " blah " << std::endl;
   return std::make_tuple(  samGeneratedId,
                            label,
                            timeSeconds,
@@ -175,10 +178,11 @@ Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s)
 }
 
 
-// This version has the label at the beginning.
+// This version assumes the string s has the label at the beginning.
 inline 
 Netflow makeNetflowWithLabel(int samGeneratedId, std::string s)
 {
+  //std::cout << "MakeNetflowWithLabel " << s << std::endl;
   // Grab the label
   int label = boost::lexical_cast<int>(getFirstElement(s));
   std::string withoutLabel = removeFirstElement(s);
@@ -191,6 +195,7 @@ Netflow makeNetflowWithLabel(int samGeneratedId, std::string s)
 inline
 Netflow makeNetflow(int samGeneratedId, std::string s)
 {
+  //std::cout << "samGeneratedId " << samGeneratedId << " s " << s << std::endl;
   // Determine the number of elements in the csv string to know which method
   // to call.
   boost::char_separator<char> sep(",");
@@ -202,8 +207,9 @@ Netflow makeNetflow(int samGeneratedId, std::string s)
   } else if (numTokens == RecordForceOut - 1) { // No label
     return makeNetflowWithoutLabel(samGeneratedId, DEFAULT_LABEL, s);
   } else {
-    throw std::invalid_argument("String provided to makeNetflow did not "
-                               " have the proper number of elements.");
+    throw std::invalid_argument("String provided to makeNetflow(id,s) did not "
+                               " have the proper number of elements:" +s);
+                               
   }
 
 }
@@ -223,8 +229,8 @@ Netflow makeNetflow(std::string s)
   // Check that we have the proper number of tokens.  RecordForceOut is the last
   // field index, so the total number of expected tokens is RecordForceOut +1.
   if (numTokens != RecordForceOut + 1) {
-    throw std::invalid_argument("String provided to makeNetflow did not "
-                               " have the proper number of elements.");
+    throw std::invalid_argument("String provided to makeNetflow(s) did not "
+                               " have the proper number of elements:" + s);
   }
 
   // Utilizing other methods

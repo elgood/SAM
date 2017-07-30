@@ -3,7 +3,7 @@
 //#define DEBUG 1
 
 #include "ReadSocket.h"
-#include "ZeroMQPushPull.h"
+#include "ZeroMQPushPull.hpp"
 #include "ExponentialHistogramVariance.hpp"
 
 #include <boost/program_options.hpp>

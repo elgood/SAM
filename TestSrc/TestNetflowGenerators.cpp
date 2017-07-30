@@ -9,21 +9,9 @@
 #include <vector>
 #include "NetflowGenerators.hpp"
 #include "Netflow.hpp"
+#include "Util.hpp"
 
 using namespace sam;
-
-/**
- * Converts a netflow string into a vetor of tokens.
- */
-std::vector<std::string> convertToTokens(std::string netflowString) {
-  boost::char_separator<char> sep(",");
-  boost::tokenizer<boost::char_separator<char>> tokenizer(netflowString, sep);
-  std::vector<std::string> v;
-  for ( std::string t : tokenizer ) {
-    v.push_back(t);
-  }
-  return v;
-}
 
 /**
  * Tests the utility function of generating random ips.

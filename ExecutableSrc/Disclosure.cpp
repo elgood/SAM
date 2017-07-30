@@ -15,7 +15,7 @@
 #include <boost/program_options.hpp>
 
 #include "ReadSocket.h"
-#include "ZeroMQPushPull.h"
+#include "ZeroMQPushPull.hpp"
 #include "TopK.hpp"
 #include "Expression.hpp"
 #include "TupleExpression.hpp"
@@ -247,11 +247,12 @@ int main(int argc, char** argv) {
 
   ////////////////// Creating Time Lapse Series ///////////////////////
   //FeatureMap featureMap;
-  
-  #define DestIp_TimeLapseSeries    0
-  #define SrcIp_TimeLapseSeries     1
-  #define TimeDiff_TimeLapseSeries  2 
-  typedef std::tuple<std::string, std::string, double> TimeLapseSeries;
+ 
+  #define DestIp_TimeLapseSeries    1
+  #define SrcIp_TimeLapseSeries     2
+  #define TimeDiff_TimeLapseSeries  3 
+  typedef std::tuple<std::size_t, std::string, std::string, double> 
+          TimeLapseSeries;
  
   std::vector<Expression<Netflow>> expressions;
   std::vector<std::string> names;
@@ -278,7 +279,7 @@ int main(int argc, char** argv) {
   Expression<Netflow> expression(infixList2);
   expressions.push_back(expression); 
    
-  TupleExpression<Netflow> tupleExpression(expressions, names);
+  TupleExpression<Netflow> tupleExpression(expressions);
   identifier = "destsrc_timelapseseries";
 
   auto timeLapseSeries = std::make_shared<TransformProducer<
