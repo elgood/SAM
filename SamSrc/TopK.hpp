@@ -31,7 +31,7 @@ private:
 public:
   TopK(size_t N, size_t b, size_t k,
        size_t nodeId,
-       FeatureMap& featureMap,
+       std::shared_ptr<FeatureMap> featureMap,
        string identifier);
      
 
@@ -46,7 +46,7 @@ TopK<T, TupleType, valueField, keyFields...>::TopK(
       size_t b, 
       size_t k,
       size_t nodeId,
-      FeatureMap& featureMap,
+      std::shared_ptr<FeatureMap> featureMap,
       std::string identifier) :
       BaseComputation(nodeId, featureMap, identifier)
 {
@@ -89,12 +89,12 @@ bool TopK<T, TupleType, valueField, keyFields...>::consume(
   
   if (keys.size() > 0 && frequencies.size() > 0) {
     TopKFeature feature(keys, frequencies);
-    this->featureMap.updateInsert(key, this->identifier, feature);
+    this->featureMap->updateInsert(key, this->identifier, feature);
 
     std::size_t id = std::get<0>(tuple);
     // notifySubscribers only takes doubles right now
-    std::cout << "notifying subscribers frequencies" << frequencies[0] 
-              << " id " << id << "key " << key << std::endl;
+    //std::cout << "notifying subscribers frequencies" << frequencies[0] 
+    //          << " id " << id << "key " << key << std::endl;
     notifySubscribers(id, frequencies[0]);
 
   }

@@ -120,7 +120,7 @@ int main(int argc, char** argv)
 
   receiver.registerConsumer(consumer);
 
-  FeatureMap featureMap;
+  auto featureMap = std::make_shared<FeatureMap>();
   std::vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;

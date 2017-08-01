@@ -89,6 +89,7 @@ void BaseProducer<T>::parallelFeed(T const& item) {
   inputQueue[numItems] = T(item);
   numItems++;
   if (numItems >= queueLength) {
+    //std::cout << "parallelfeed " << numItems << " " << queueLength << std::endl;
 
     boost::thread_group threads;
     for (int i = 0; i < consumers.size(); i++) {

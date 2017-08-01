@@ -14,11 +14,11 @@ class Filter: public AbstractConsumer<TupleType>,
               public BaseProducer<TupleType>
 {
 private:
-  Expression<TupleType> const& expression;
+  std::shared_ptr<const Expression<TupleType>> expression;
 public:
-  Filter(Expression<TupleType> const& _exp,
+  Filter(std::shared_ptr<const Expression<TupleType>> _exp,
          size_t nodeId,
-         FeatureMap& featureMap,
+         std::shared_ptr<FeatureMap> featureMap,
          string identifier,
          size_t queueLength) :
          BaseComputation(nodeId, featureMap, identifier), 
@@ -34,10 +34,11 @@ template <typename TupleType, size_t... keyFields>
 bool Filter<TupleType, keyFields...>::consume(TupleType const& t) 
 {
   string key = generateKey<keyFields...>(t);
-
+  std::cout << "key " << key << std::endl;
   double result = 0;
-  bool b = expression.evaluate(key, t, result); 
-  if (b) {
+  bool b = expression->evaluate(key, t, result); 
+  //std::cout << "result " << result << std::endl;
+  /*if (b) {
     BooleanFeature feature(result);
     this->featureMap.updateInsert(key, this->identifier, feature); 
     if ( result ) {
@@ -46,7 +47,7 @@ bool Filter<TupleType, keyFields...>::consume(TupleType const& t)
       BooleanFeature feature(0);
       this->featureMap.updateInsert(key, this->identifier, feature);  
     }
-  }
+  }*/
   return true;
 }
 

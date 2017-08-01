@@ -25,14 +25,17 @@ protected:
   // When tokens are created, they are always created in the context of a 
   // feature map.  Thus, while not all tokens need a feature map to evaluate
   // them, all tokens have a reference to a feature map.
-  FeatureMap &featureMap;
+  std::shared_ptr<FeatureMap> featureMap;
 public:
 
   /**
    * Constructor for the base class.  
    * \param _featureMap The feature map that some tokens need to evaluate.
    */
-  ExpressionToken(FeatureMap& _featureMap) : featureMap(_featureMap) {}
+  ExpressionToken(std::shared_ptr<FeatureMap> featureMap) 
+  {
+    this->featureMap = featureMap;
+  }
   
   /**
    * Returns a string representation.  Mostly for debugging.  Should be 
@@ -76,7 +79,7 @@ class NumberToken<std::tuple<Ts...>> :
 private:
   double number;
 public:
-  NumberToken(FeatureMap& featureMap, double d) : 
+  NumberToken(std::shared_ptr<FeatureMap> featureMap, double d) : 
     ExpressionToken<std::tuple<Ts...>>(featureMap), number(d) {}
  
   std::string toString() const {
@@ -111,7 +114,7 @@ private:
 public:
   const static int RIGHT_ASSOCIATIVE = 0;
   const static int LEFT_ASSOCIATIVE = 1; 
-  OperatorToken(FeatureMap& featureMap,
+  OperatorToken(std::shared_ptr<FeatureMap> featureMap,
                 int associativity,
                 int precedence) : 
                 ExpressionToken<std::tuple<Ts...>>(featureMap) 
@@ -136,7 +139,7 @@ class AddOperator<std::tuple<Ts...>> :
   public OperatorToken<std::tuple<Ts...>>
 {
 public:
-  AddOperator(FeatureMap& featureMap) : 
+  AddOperator(std::shared_ptr<FeatureMap> featureMap) : 
     OperatorToken<std::tuple<Ts...>>(featureMap, 2, this->LEFT_ASSOCIATIVE) {}
 
   std::string toString() const {
@@ -169,7 +172,7 @@ class SubOperator<std::tuple<Ts...>> :
   public OperatorToken<std::tuple<Ts...>>
 {
 public:
-  SubOperator(FeatureMap& featureMap) : 
+  SubOperator(std::shared_ptr<FeatureMap> featureMap) : 
     OperatorToken<std::tuple<Ts...>>(featureMap, 2, this->LEFT_ASSOCIATIVE) {}
 
   std::string toString() const {
@@ -202,7 +205,7 @@ class MultOperator<std::tuple<Ts...>> :
   public OperatorToken<std::tuple<Ts...>>
 {
 public:
-  MultOperator(FeatureMap& featureMap) : 
+  MultOperator(std::shared_ptr<FeatureMap> featureMap) : 
     OperatorToken<std::tuple<Ts...>>(featureMap, 3, this->LEFT_ASSOCIATIVE) {}
 
   std::string toString() const {
@@ -235,7 +238,7 @@ class LessThanOperator<std::tuple<Ts...>> :
   public OperatorToken<std::tuple<Ts...>>
 {
 public:
-  LessThanOperator(FeatureMap& featureMap) : 
+  LessThanOperator(std::shared_ptr<FeatureMap> featureMap) : 
     OperatorToken<std::tuple<Ts...>>(featureMap, 1, this->LEFT_ASSOCIATIVE) {}
 
   std::string toString() const {
@@ -278,7 +281,7 @@ class FieldToken<field, std::tuple<Ts...>> :
 private:
   std::string identifier;
 public:
-  FieldToken(FeatureMap &featureMap) : 
+  FieldToken(std::shared_ptr<FeatureMap> featureMap) : 
     ExpressionToken<std::tuple<Ts...>>(featureMap) {}
 
   bool evaluate(std::stack<double> & mystack,
@@ -316,7 +319,7 @@ private:
   std::string identifier; ///> The name of the variable, e.g. top2
   std::function<double(Feature const *)> function;
 public:
-  FuncToken(FeatureMap &featureMap,
+  FuncToken(std::shared_ptr<FeatureMap> featureMap,
             std::function<double(Feature const *)> function,
             std::string identifier)
             :
@@ -333,9 +336,9 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input)
   {
-    if (this->featureMap.exists(key, identifier)) {
+    if (this->featureMap->exists(key, identifier)) {
       try {
-        double d = this->featureMap.at(key, identifier)->evaluate(function);
+        double d = this->featureMap->at(key, identifier)->evaluate(function);
         mystack.push(d);
       } catch (std::exception e) {
         printf("Caught exception %s\n", e.what());
@@ -363,7 +366,7 @@ private:
   std::string identifier;
 public:
  
-  PrevToken(FeatureMap &featureMap) : 
+  PrevToken(std::shared_ptr<FeatureMap> featureMap) : 
     ExpressionToken<std::tuple<Ts...>>(featureMap) 
   {
     identifier = createPreviousIdentifierString();
@@ -386,11 +389,11 @@ public:
 
     // Check to see if the feature has been added before
     bool exists = false;
-    if (this->featureMap.exists(key, identifier)) { 
+    if (this->featureMap->exists(key, identifier)) { 
 
       // If the feature exists, we can return previous value
       exists = true;
-      auto feature = this->featureMap.at(key, identifier);
+      auto feature = this->featureMap->at(key, identifier);
       
       // Getting the value of the feature through this function
       auto valueFunc = [](Feature const * feature)->double { 
@@ -404,7 +407,7 @@ public:
 
     // Inserting the current data to become the past data
     feature = std::make_shared<SingleFeature>(currentData);
-    this->featureMap.updateInsert(key, identifier, *feature);
+    this->featureMap->updateInsert(key, identifier, *feature);
 
     return exists;
      

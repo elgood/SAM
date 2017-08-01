@@ -24,7 +24,7 @@ private:
 public:
   TransformProducer(TupleExpression<InputType> const& _expression,
                       size_t nodeId,
-                      FeatureMap& featureMap,
+                      std::shared_ptr<FeatureMap> featureMap,
                       std::string identifier,
                       size_t queueLength);
                       //size_t historyLength);
@@ -38,7 +38,7 @@ template <typename InputType, typename OutputType, size_t... keyFields>
 TransformProducer<InputType, OutputType, keyFields...>::TransformProducer(
   TupleExpression<InputType> const& expression,
   size_t nodeId,
-  FeatureMap& featureMap,
+  std::shared_ptr<FeatureMap> featureMap,
   std::string identifier,
   size_t queueLength)
   :

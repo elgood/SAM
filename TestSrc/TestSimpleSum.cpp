@@ -10,7 +10,7 @@ BOOST_AUTO_TEST_CASE( simple_sum_test )
 {
   std::vector<size_t> keyFields;
   size_t nodeId = 0;
-  FeatureMap featureMap;
+  auto featureMap = std::make_shared<FeatureMap>();
   SimpleSum<size_t,Netflow, SrcTotalBytes, DestIp> 
     sum(10, nodeId, featureMap, "sum0");
                                 

@@ -37,7 +37,7 @@ public:
    * \param identifier A unique identifier associated with this operator.
    */
   Identity(size_t nodeId,
-           FeatureMap& featureMap,
+           std::shared_ptr<FeatureMap> featureMap,
            std::string identifier) :
            BaseComputation(nodeId, featureMap, identifier) 
                                           
@@ -53,7 +53,7 @@ public:
 
     SingleFeature feature(value);
 
-    this->featureMap.updateInsert(key, this->identifier, feature);
+    this->featureMap->updateInsert(key, this->identifier, feature);
 
     // This assumes the identifier of the tuple is the first element
     std::size_t id = std::get<0>(input);

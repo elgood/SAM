@@ -49,7 +49,7 @@ public:
    */
   ExponentialHistogramSum(size_t N, size_t k,
                           size_t nodeId,
-                          FeatureMap& featureMap,
+                          std::shared_ptr<FeatureMap> featureMap,
                           std::string identifier) :
                           BaseComputation(nodeId, featureMap, identifier) 
                                           
@@ -85,7 +85,7 @@ public:
     T currentSum = allWindows[key]->getTotal();
     SingleFeature feature(currentSum);
 
-    this->featureMap.updateInsert(key, this->identifier, feature);
+    this->featureMap->updateInsert(key, this->identifier, feature);
 
     // This assumes the identifier of the tuple is the first element
     std::size_t id = std::get<0>(input);
@@ -121,7 +121,7 @@ private:
 public:
   ExponentialHistogramAve(size_t N, size_t k,
                           size_t nodeId,
-                          FeatureMap& featureMap,
+                          std::shared_ptr<FeatureMap> featureMap,
                           std::string identifier) :
                           BaseComputation(nodeId, featureMap, identifier) 
                                           
@@ -156,7 +156,7 @@ public:
     // Getting the current sum and providing that to the imux data structure.
     T currentSum = allWindows[key]->getTotal();
     SingleFeature feature(currentSum/ allWindows[key]->getNumItems());
-    this->featureMap.updateInsert(key, this->identifier, feature);
+    this->featureMap->updateInsert(key, this->identifier, feature);
   
     std::size_t id = std::get<0>(input);
     this->notifySubscribers(id, currentSum / allWindows[key]->getNumItems());

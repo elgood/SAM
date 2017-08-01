@@ -34,7 +34,7 @@ public:
             std::function<double(std::list<std::shared_ptr<Feature>>)> _func,
             std::string _targetId,
             size_t nodeId,
-            FeatureMap& featureMap,
+            std::shared_ptr<FeatureMap> featureMap,
             std::string newIdentifier) :
             func(_func),
             targetId(_targetId),
@@ -47,14 +47,14 @@ public:
   {
     std::string key = generateKey<keyFields...>(tuple);
 
-    if (featureMap.exists(key, targetId))
+    if (featureMap->exists(key, targetId))
     {
       auto mapFeature = std::static_pointer_cast<const MapFeature>(
-                          this->featureMap.at(key, targetId));
+                          this->featureMap->at(key, targetId));
       double result = mapFeature->evaluate(func);
        
       SingleFeature feature(result);
-      this->featureMap.updateInsert(key, this->identifier, feature);
+      this->featureMap->updateInsert(key, this->identifier, feature);
   
       return true;   
     }

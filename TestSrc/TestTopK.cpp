@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE( test_topk )
   // and numNonservers non-servers.  A server is defined as > 90% of traffic
   // to the top two ports.
   TopKProducer producer(queueLength, numExamples, numServers, numNonservers);
-  FeatureMap featureMap;
+  auto featureMap = std::make_shared<FeatureMap>();
   vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;
@@ -37,10 +37,9 @@ BOOST_AUTO_TEST_CASE( test_topk )
 
   // Five tokens for the 
   // First function token
-  int index1 = 0;
-  auto function1 = [&index1](Feature const * feature)->double {
+  auto function1 = [](Feature const * feature)->double {
     auto topKFeature = static_cast<TopKFeature const *>(feature);
-    return topKFeature->getFrequencies()[index1];  
+    return topKFeature->getFrequencies()[0];  
   };
   auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, function1,
                                                          identifier);
@@ -49,8 +48,11 @@ BOOST_AUTO_TEST_CASE( test_topk )
   auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
 
   // Second function token
-  index1 = 1;
-  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, function1,
+  auto function2 = [](Feature const * feature)->double {
+    auto topKFeature = static_cast<TopKFeature const *>(feature);
+    return topKFeature->getFrequencies()[1];
+  };
+  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, function2,
                                                          identifier);
 
   // Lessthan token
@@ -66,18 +68,15 @@ BOOST_AUTO_TEST_CASE( test_topk )
   infixList.push_back(lessThanToken);
   infixList.push_back(numberToken);
 
-
-
-  Expression<Netflow> filterExpression(infixList);
+  auto filterExpression = std::make_shared<Expression<Netflow>>(infixList);
   auto filter = std::make_shared<Filter<Netflow, DestIp>>(
     filterExpression, 0, featureMap, "servers", queueLength);
-                
 
   producer.registerConsumer(filter);
 
   producer.run();
   for (std::string ip : producer.getServerIps()) {
-    std::shared_ptr<Feature const> feature = featureMap.at(ip, identifier);
+    std::shared_ptr<Feature const> feature = featureMap->at(ip, identifier);
     int index1 = 0;
     auto function1 = [&index1](Feature const * feature)->double {
       auto topKFeature = static_cast<TopKFeature const *>(feature);
@@ -92,7 +91,7 @@ BOOST_AUTO_TEST_CASE( test_topk )
     BOOST_CHECK_CLOSE(value, 0.5, 0.01);
   }
   for (std::string ip : producer.getNonserverIps()) {
-    std::shared_ptr<Feature const> feature = featureMap.at(ip, identifier);
+    std::shared_ptr<Feature const> feature = featureMap->at(ip, identifier);
     std::vector<double> parameters;
     parameters.push_back(0);
 

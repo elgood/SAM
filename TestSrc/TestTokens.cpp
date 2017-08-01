@@ -11,7 +11,7 @@ using namespace sam;
 
 struct F {
   Netflow netflow;
-  FeatureMap featureMap;
+  std::shared_ptr<FeatureMap> featureMap = std::make_shared<FeatureMap>();
   std::stack<double> mystack;
   std::string key;
 
@@ -138,7 +138,7 @@ BOOST_FIXTURE_TEST_CASE( test_func_token, F )
 
   TopKFeature feature(keys, frequencies);
 
-  featureMap.updateInsert(key, identifier, feature);
+  featureMap->updateInsert(key, identifier, feature);
   
   b = funcToken.evaluate(mystack, key, netflow);
   BOOST_CHECK_EQUAL(b, true);

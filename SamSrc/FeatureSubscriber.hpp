@@ -112,6 +112,7 @@ bool FeatureSubscriber::update(std::size_t key,
                                std::string const& featureName,
                                double value)
 {
+  //std::cout << "update " << key << std::endl;
   int numFeatures = getNumFeatures();
   if (initCalled) {
     int index = key % capacity;

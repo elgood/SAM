@@ -1,4 +1,4 @@
-#define BOOST_TEST_MAIN TestFilterExpression
+#define BOOST_TEST_MAIN TestExpression
 #include <string>
 #include <vector>
 #include <boost/test/unit_test.hpp>
@@ -8,6 +8,9 @@ using std::string;
 using std::vector;
 
 using namespace sam;
+
+//TODO Redo these tests because it seems to be failing in ServerQuery.  However,
+//I think there is an example in TestTopk that is working.
 
 BOOST_AUTO_TEST_CASE( number_test )
 {

@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
 
   receiver.registerConsumer(consumer);
 
-  FeatureMap featureMap;
+  auto featureMap = std::make_shared<FeatureMap>();
   for (int i = 0; nop > 0 && i < nop; i++) {
     string identifier = "simplesum" + boost::lexical_cast<string>(i);
     auto sum = std::make_shared<SimpleSum<size_t, Netflow, 14, DestIp>>

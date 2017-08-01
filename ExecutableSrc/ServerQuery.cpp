@@ -26,6 +26,7 @@
 #include "Filter.hpp"
 #include "Netflow.hpp"
 #include "Learning.hpp"
+#include "Identity.hpp"
 
 #define DEBUG 1
 
@@ -42,11 +43,21 @@ using namespace mlpack;
 using namespace mlpack::naive_bayes;
 
 void createPipeline(std::shared_ptr<ZeroMQPushPull> consumer,
-                 FeatureMap& featureMap,
+                 std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
                  int nodeId)
 {
-    string identifier = "top2";
+    // An operator to get the label from each netflow and add it to the
+    // subscriber.
+    string identifier = "label";
+
+    // Doesn't really need a key, but provide one anyway to the template.
+    auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
+                  (nodeId, featureMap, identifier);
+    consumer->registerConsumer(label);
+    label->registerSubscriber(subscriber, identifier); 
+
+    identifier = "top2";
     int k = 2;
     int N = 10000;
     int b = 1000;
@@ -59,10 +70,9 @@ void createPipeline(std::shared_ptr<ZeroMQPushPull> consumer,
 
     // Five tokens for the 
     // First function token
-    int index1 = 0;
-    auto function1 = [&index1](Feature const * feature)->double {
+    auto function1 = [](Feature const * feature)->double {
       auto topKFeature = static_cast<TopKFeature const *>(feature);
-      return topKFeature->getFrequencies()[index1];    
+      return topKFeature->getFrequencies()[0];    
     };
     auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, 
                                                       function1, identifier);
@@ -71,10 +81,9 @@ void createPipeline(std::shared_ptr<ZeroMQPushPull> consumer,
     auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
 
     // Second function token
-    int index2 = 0;
-    auto function2 = [&index2](Feature const * feature)->double {
+    auto function2 = [](Feature const * feature)->double {
       auto topKFeature = static_cast<TopKFeature const *>(feature);
-      return topKFeature->getFrequencies()[index2];    
+      return topKFeature->getFrequencies()[1];    
     };
 
     auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, 
@@ -98,9 +107,8 @@ void createPipeline(std::shared_ptr<ZeroMQPushPull> consumer,
      
     int queueLength = 1000; 
     auto filter = std::make_shared<Filter<Netflow, DestIp>>(
-      *filterExpression, nodeId, featureMap, "servers", queueLength);
+      filterExpression, nodeId, featureMap, "servers", queueLength);
     consumer->registerConsumer(filter);
-
 }
 
 int main(int argc, char** argv) {
@@ -227,7 +235,7 @@ int main(int argc, char** argv) {
 
   // The global featureMap (global for all features generated for this node,
   // each node has it's own featuremap.
-  FeatureMap featureMap;
+  auto featureMap = std::make_shared<FeatureMap>();
 
   /********************** Creating features ******************************/
   if (vm.count("create_features")) 
@@ -250,7 +258,6 @@ int main(int argc, char** argv) {
     auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
                                                           
     createPipeline(consumer, featureMap, subscriber, nodeId);
-
     subscriber->init();
 
     if (!receiver.connect()) {

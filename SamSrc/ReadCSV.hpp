@@ -33,6 +33,7 @@ public:
     int i = 0;
     std::string line;
     while(std::getline(file, line)) {
+      //std::cout << "line " << line << std::endl;
       // We will use the order they come in as the SamGeneratedId.
       // This assumes that there is a label in each line.
       try {

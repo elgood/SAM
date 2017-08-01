@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
 
   receiver.registerConsumer(consumer);
 
-  FeatureMap featureMap;
+  auto featureMap = std::shared_ptr<FeatureMap>();
 
   string identifier = "top2";
   k = 2;
@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
   infixList.push_back(lessThanToken);
   infixList.push_back(numberToken);
 
-  Expression<Netflow> filterExpression(infixList);
+  auto filterExpression = std::make_shared<Expression<Netflow>>(infixList);
     
   auto filter = std::make_shared<Filter<Netflow, DestIp>>(
     filterExpression, nodeId, featureMap, "servers", queueLength);

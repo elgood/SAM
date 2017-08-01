@@ -13,14 +13,14 @@ BOOST_AUTO_TEST_CASE( map_test_updateInsert )
 {
 
   int capacity = 1000;
-  FeatureMap mymap( capacity );
+  auto featureMap = std::make_shared<FeatureMap>( capacity );
 
 
   BooleanFeature bf1(false);
-  mymap.updateInsert("192.168.0.1", "testbooleanfeature", bf1);
+  featureMap->updateInsert("192.168.0.1", "testbooleanfeature", bf1);
 
   std::shared_ptr<Feature const> bf2 = 
-    mymap.at("192.168.0.1", "testbooleanfeature");
+    featureMap->at("192.168.0.1", "testbooleanfeature");
 
   BOOST_CHECK(*bf2.get() == bf1);  
 
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE( map_test_multi_threads )
   int numInserts = 10000;
 
   // The feature map under test
-  FeatureMap mymap( capacity );
+  FeatureMap featureMap( capacity );
 
   // The identifier of the feature that we are inserting.
   std::string featureName = "testbooleanfeature";
@@ -47,15 +47,15 @@ BOOST_AUTO_TEST_CASE( map_test_multi_threads )
   
   for (int i = 0; i < numThreads; i++) 
   {
-    threads.push_back(std::thread([i, numInserts, featureName, &mymap]() {
+    threads.push_back(std::thread([i, numInserts, featureName, &featureMap]() {
       for (int j = 0; j < numInserts; j++) {
         std::string ip = "192.168.0." + boost::lexical_cast<std::string>(i);
         if (i % 2 == 0) {
           BooleanFeature bf(false);  
-          mymap.updateInsert(ip, featureName, bf); 
+          featureMap.updateInsert(ip, featureName, bf); 
         } else {
           BooleanFeature bf(true);  
-          mymap.updateInsert(ip, featureName, bf); 
+          featureMap.updateInsert(ip, featureName, bf); 
         }
       }
     }));
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE( map_test_multi_threads )
   for (int i = 0; i < numThreads; i++) 
   {
     std::string ip = "192.168.0." + boost::lexical_cast<std::string>(i);
-    std::shared_ptr<Feature const> bf = mymap.at(ip, featureName);
+    std::shared_ptr<Feature const> bf = featureMap.at(ip, featureName);
     if (i % 2 == 0) {
       BooleanFeature expected(false);
       BOOST_CHECK( expected == *bf.get() );

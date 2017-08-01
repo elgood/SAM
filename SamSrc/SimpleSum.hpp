@@ -82,7 +82,7 @@ private:
 public:
   SimpleSum(size_t N,
             size_t nodeId,
-            FeatureMap& featureMap,
+            std::shared_ptr<FeatureMap> featureMap,
             std::string identifier) :
     BaseComputation(nodeId, featureMap, identifier) 
   {
@@ -126,7 +126,7 @@ public:
     // Getting the current sum and providing that to the featureMap.
     T currentSum = allWindows[key]->getSum();
     SingleFeature feature(currentSum);
-    this->featureMap.updateInsert(key, this->identifier, feature);
+    this->featureMap->updateInsert(key, this->identifier, feature);
 
     std::size_t id = std::get<0>(tuple);
     notifySubscribers(id, currentSum);

@@ -24,7 +24,7 @@ private:
 public:
   Project(std::list<std::string> const& _identifiers,
           size_t nodeId,
-          FeatureMap& featureMap,
+          std::shared_ptr<FeatureMap> featureMap,
           std::string identifier) :
           identifiers(_identifiers),
           BaseComputation(nodeId, featureMap, identifier)
@@ -51,8 +51,8 @@ public:
     // time a DestIp talks to a SrcIp, that stays around forever, no matter
     // how long ago it took place.  
     for (auto id : identifiers) {
-      if (featureMap.exists(origKey, id)) {
-        std::shared_ptr<const Feature> origFeature = featureMap.at(origKey, id);
+      if (featureMap->exists(origKey, id)) {
+        std::shared_ptr<const Feature> origFeature = featureMap->at(origKey, id);
         std::map<std::string, std::shared_ptr<Feature>> localFeatureMap;
         localFeatureMap[projectKey] = origFeature->createCopy();
         MapFeature mapFeature(localFeatureMap);
@@ -61,7 +61,7 @@ public:
         // no MapFeature associated with the newkey, then we simply add it.
         // If there is a MapFeature, the original MapFeature and the new 
         // MapFeature are unioned.
-        this->featureMap.updateInsert(newKey, id, mapFeature);
+        this->featureMap->updateInsert(newKey, id, mapFeature);
       }
     }
     return true;

@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   int capacity = 10000;
 
   // The global feature map
-  FeatureMap featureMap(capacity);
+  auto featureMap = std::make_shared<FeatureMap>(capacity);
 
   int numFeatures = 4;
   auto subscriber = std::make_shared<FeatureSubscriber>(capacity);

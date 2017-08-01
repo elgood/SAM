@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
   typedef std::tuple<std::size_t, std::string, std::string, double> 
     TimeLapseDestSrc;
 
-  FeatureMap featureMap;
+  auto featureMap = std::make_shared<FeatureMap>();
 
   std::vector<Expression<Netflow>> expressions;
   std::vector<std::string> names;

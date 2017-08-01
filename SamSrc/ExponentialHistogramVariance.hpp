@@ -41,7 +41,7 @@ private:
 public:
   ExponentialHistogramVariance(size_t N, size_t k,
                           size_t nodeId,
-                          FeatureMap& featureMap,
+                          std::shared_ptr<FeatureMap> featureMap,
                           std::string identifier) :
                           BaseComputation(
                             nodeId,featureMap, identifier) 
@@ -90,7 +90,7 @@ public:
     double currentVariance = calculateVariance(currentSquares, currentSum,
                                                numItems);
     SingleFeature feature(currentVariance);
-    this->featureMap.updateInsert(key, this->identifier, feature);
+    this->featureMap->updateInsert(key, this->identifier, feature);
 
     std::size_t id = std::get<0>(input);
     notifySubscribers(id, currentVariance);    

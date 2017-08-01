@@ -21,16 +21,16 @@ protected:
   /// in the query.
   std::string identifier;
 
-  /// This is a reference to the map that stores the mapping from 
+  /// This is a pointer to the map that stores the mapping from 
   /// key/featurename to feature.
-  FeatureMap& featureMap;
+  std::shared_ptr<FeatureMap> featureMap;
 
 public:
   BaseComputation(size_t nodeId,
-                  FeatureMap& _featureMap, 
+                  std::shared_ptr<FeatureMap> featureMap, 
                   std::string identifier)
-  : featureMap(_featureMap) 
   {
+    this->featureMap = featureMap;
     this->nodeId = nodeId;
     this->identifier = identifier;
   }
