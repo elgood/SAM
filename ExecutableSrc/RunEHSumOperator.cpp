@@ -95,7 +95,7 @@ int main(int argc, char** argv)
 #endif
 
   std::vector<std::string> hostnames(numNodes);
-  std::vector<int> ports(numNodes);
+  std::vector<std::size_t> ports(numNodes);
 
   if (numNodes == 1) {
     hostnames[0] = "127.0.0.1";

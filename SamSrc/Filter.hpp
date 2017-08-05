@@ -34,20 +34,20 @@ template <typename TupleType, size_t... keyFields>
 bool Filter<TupleType, keyFields...>::consume(TupleType const& t) 
 {
   string key = generateKey<keyFields...>(t);
-  std::cout << "key " << key << std::endl;
+  //std::cout << "key " << key << std::endl;
   double result = 0;
   bool b = expression->evaluate(key, t, result); 
   //std::cout << "result " << result << std::endl;
-  /*if (b) {
+  if (b) {
     BooleanFeature feature(result);
-    this->featureMap.updateInsert(key, this->identifier, feature); 
+    this->featureMap->updateInsert(key, this->identifier, feature); 
     if ( result ) {
       this->parallelFeed(t);
     } else {
       BooleanFeature feature(0);
-      this->featureMap.updateInsert(key, this->identifier, feature);  
+      this->featureMap->updateInsert(key, this->identifier, feature);  
     }
-  }*/
+  }
   return true;
 }
 

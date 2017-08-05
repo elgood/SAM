@@ -72,8 +72,6 @@ int main(int argc, char** argv) {
   // The number of elements to keep track of
   int k;
 
-	time_t timestamp_sec1, timestamp_sec2;
-
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "help message")
@@ -127,7 +125,7 @@ int main(int argc, char** argv) {
 #endif
 
   vector<string> hostnames(numNodes);
-  vector<int> ports(numNodes);
+  vector<std::size_t> ports(numNodes);
 
   if (numNodes == 1) {
     hostnames[0] = "127.0.0.1";

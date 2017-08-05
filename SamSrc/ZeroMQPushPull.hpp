@@ -30,7 +30,7 @@ private:
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
   std::vector<std::string> hostnames; ///> The hostnames of all the nodes
-  std::vector<int> ports;  ///> The ports of all the nodes
+  std::vector<std::size_t> ports;  ///> The ports of all the nodes
   uint32_t hwm;  ///> The high water mark
 
   size_t consumeCount = 0; ///> How many items this node has seen through feed()
@@ -55,12 +55,12 @@ private:
 
 
 public:
-  ZeroMQPushPull(size_t queueLength,
-                 size_t numNodes, 
-                 size_t nodeId, 
+  ZeroMQPushPull(std::size_t queueLength,
+                 std::size_t numNodes, 
+                 std::size_t nodeId, 
                  std::vector<std::string> hostnames, 
-                 std::vector<int> ports, 
-                 uint32_t hwm);
+                 std::vector<std::size_t> ports, 
+                 std::size_t hwm);
 
   virtual ~ZeroMQPushPull()
   {
@@ -84,12 +84,12 @@ private:
 };
 
 ZeroMQPushPull::ZeroMQPushPull(
-                 size_t queueLength,
-                 size_t numNodes, 
-                 size_t nodeId, 
+                 std::size_t queueLength,
+                 std::size_t numNodes, 
+                 std::size_t nodeId, 
                  std::vector<std::string> hostnames, 
-                 std::vector<int> ports, 
-                 uint32_t hwm)
+                 std::vector<std::size_t> ports, 
+                 std::size_t hwm)
   :
   BaseProducer(queueLength)
 {
@@ -198,12 +198,7 @@ bool ZeroMQPushPull::consume(Netflow const& n)
 
   // Convert the netflow to a string to send over the network via zeromq.
   std::string s;
-  try {
-    s = toString(n);
-  } catch (std::exception e) {
-    std::cerr << "Caught exception in ZeroMQPushPull " << std::endl;
-    return false;
-  } 
+  s = toString(n);
 
   // The netflow was assigned a id from the previous producer.  However, we
   // want a new id to be assigned by the receiving node.  So we remove the

@@ -36,13 +36,9 @@ public:
       //std::cout << "line " << line << std::endl;
       // We will use the order they come in as the SamGeneratedId.
       // This assumes that there is a label in each line.
-      try {
-        Netflow netflow = makeNetflow(i, line);
-        for (auto consumer: consumers) {
-          consumer->consume(netflow);
-        }
-      } catch (std::exception e) {
-        std::cerr << e.what() << std::endl; 
+      Netflow netflow = makeNetflow(i, line);
+      for (auto consumer: consumers) {
+        consumer->consume(netflow);
       }
       i++;
     }

@@ -15,69 +15,48 @@ using namespace std::chrono;
 
 int main(int argc, char** argv)
 {
-
-  // The ip to read the nc data from.
-  std::string ip;
-
-  // The port to read the nc data from.
-  int ncPort;
-
-  // The number of nodes in the cluster
-  int numNodes;
-
-  // The node id of this node
-  int nodeId;
-
-  // The prefix to the nodes
-  std::string prefix;
-
-  // The starting port number
-  int startingPort;
-
-  // The high-water mark
-  long hwm;
-
-  // The length of the input queue
-  int queueLength;
-
-  // How many simultaneous operators
-  int nop;
-
-  // The total number of elements in a sliding window
-  int N;
-
-  // Determines size of buckets 
-  int k;
-
-  time_t timestamp_sec1, timestamp_sec2;
+  std::string ip; ///> The ip to read the nc data from.
+  std::size_t ncPort; ///> The port to read the nc data from.
+  std::size_t numNodes; ///> The number of nodes in the cluster
+  std::size_t nodeId; ///> The node id of this node
+  std::string prefix; ///> The prefix to the nodes
+  std::size_t startingPort; ///> The starting port number for push/pull sockets
+  std::size_t hwm; ///> The high-water mark (Zeromq parameter)
+  std::size_t queueLength; ///> The length of the input queue
+  std::size_t N; ///> The total number of elements in a sliding window
+  std::size_t k; ///> Determines size of buckets 
+  std::size_t nop; //not used
+  std::size_t capacity = 10000;////> Capacity of FeatureMap and subscriber
 
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "help message")
     ("ip", po::value<std::string>(&ip)->default_value("localhost"),
       "The ip to receive the data from nc")
-    ("ncPort", po::value<int>(&ncPort)->default_value(9999),
+    ("ncPort", po::value<std::size_t>(&ncPort)->default_value(9999),
       "The port to receive the data from nc")
-    ("numNodes", po::value<int>(&numNodes)->default_value(1),
+    ("numNodes", po::value<std::size_t>(&numNodes)->default_value(1),
       "The number of nodes involved in the computation")
-    ("nodeId", po::value<int>(&nodeId)->default_value(0),
+    ("nodeId", po::value<std::size_t>(&nodeId)->default_value(0),
       "The node id of this node")
     ("prefix", po::value<std::string>(&prefix)->default_value("node"),
       "The prefix common to all nodes")
-    ("startingPort", po::value<int>(&startingPort)->default_value(10000),
-      "The starting port for the zeromq communications")
-    ("hwm", po::value<long>(&hwm)->default_value(10000),
+    ("startingPort", po::value<std::size_t>(&startingPort)->default_value(
+      10000), "The starting port for the zeromq communications")
+    ("hwm", po::value<std::size_t>(&hwm)->default_value(10000),
       "The high water mark (how many items can queue up before we start "
       "dropping)")
-    ("queueLength", po::value<int>(&queueLength)->default_value(10000),
+    ("queueLength", po::value<std::size_t>(&queueLength)->default_value(10000),
       "We fill a queue before sending things in parallel to all consumers."
       "  This controls the size of that queue.")
-    ("nop", po::value<int>(&nop)->default_value(1),
+    ("nop", po::value<std::size_t>(&nop)->default_value(1),
       "The number of simultaneous operators")
-    ("N", po::value<int>(&N)->default_value(10000),
+    ("N", po::value<std::size_t>(&N)->default_value(10000),
       "The total number of elements in a sliding window")
-    ("k", po::value<int>(&k)->default_value(2),
+    ("k", po::value<std::size_t>(&k)->default_value(2),
       "Determines size of buckets.")
+    ("capacity", po::value<std::size_t>(&capacity)->default_value(10000),
+      "The capacity of the FeatureMap and FeatureSubcriber")
   ;
 
   po::variables_map vm;
@@ -90,12 +69,9 @@ int main(int argc, char** argv)
   }
 
   ReadSocket receiver(ip, ncPort);
-#ifdef DEBUG
-  cout << "DEBUG: main created receiver " << endl;
-#endif
 
   std::vector<std::string> hostnames(numNodes);
-  std::vector<int> ports(numNodes);
+  std::vector<std::size_t> ports(numNodes);
 
   if (numNodes == 1) {
     hostnames[0] = "127.0.0.1";

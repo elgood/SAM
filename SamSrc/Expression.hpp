@@ -43,17 +43,14 @@ public:
                     operatorStack);
       } else {
         postfixList.push_back(token);
-        std::cout << "postfixList.size " << postfixList.size() << std::endl;
       }
     }
 
     while (operatorStack.size() > 0) {
       auto top = operatorStack.top();
       postfixList.push_back(top);
-      std::cout << "postfixList.size " << postfixList.size() << std::endl;
       operatorStack.pop();
     }
-    std::cout << "postfixList.size " << postfixList.size() << std::endl;
   }
 
   void addOperator(std::shared_ptr<OperatorToken<std::tuple<Ts...>>> o1,
@@ -75,7 +72,6 @@ public:
           foundQualifyingTopElement = true;
           operatorStack.pop();
           postfixList.push_back(top);
-          std::cout << "postfixList.size() " << postfixList.size() << std::endl;
         }
        } while (operatorStack.size() > 0 && foundQualifyingTopElement);
     }
@@ -87,13 +83,9 @@ public:
                 std::tuple<Ts...> const& input, 
                 double& result) const 
   {
-    std::cout << "input " << toString(input) << std::endl;
     std::stack<double> mystack;
     int i = 0;
-    std::cout << "postfixlist size " << std::endl;
-    std::cout << postfixList.size() << std::endl;
     for (auto token : postfixList) {
-      std::cout << "i " << i << std::endl;
       i++;
       if (!token->evaluate(mystack, key, input)) {
         return false;
