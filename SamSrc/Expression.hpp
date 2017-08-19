@@ -83,9 +83,12 @@ public:
                 std::tuple<Ts...> const& input, 
                 double& result) const 
   {
+    //std::cout << "evaluate " << toString(input) << std::endl;
+    //std::cout << "postfixList.size() " << postfixList.size() << std::endl;
     std::stack<double> mystack;
     int i = 0;
     for (auto token : postfixList) {
+      //std::cout << "i " << i << std::endl;
       i++;
       if (!token->evaluate(mystack, key, input)) {
         return false;

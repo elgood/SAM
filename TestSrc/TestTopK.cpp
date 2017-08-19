@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE( test_topk )
   // to the top two ports.
   TopKProducer producer(queueLength, numExamples, numServers, numNonservers);
   auto featureMap = std::make_shared<FeatureMap>();
-  vector<size_t> keyFields;
+  std::vector<size_t> keyFields;
   keyFields.push_back(6);
   int valueField = 8;
   string identifier = "top2";

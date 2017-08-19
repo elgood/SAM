@@ -52,8 +52,6 @@ private:
   // The thread that polls the pull sockets
   std::thread pullThread;
 
-
-
 public:
   ZeroMQPushPull(std::size_t queueLength,
                  std::size_t numNodes, 
@@ -93,6 +91,7 @@ ZeroMQPushPull::ZeroMQPushPull(
   :
   BaseProducer(queueLength)
 {
+  //std::cout << "Entering ZeroMQPushPull constructor" << std::endl; 
   this->numNodes  = numNodes;
   this->nodeId    = nodeId;
   this->hostnames = hostnames;
@@ -104,6 +103,7 @@ ZeroMQPushPull::ZeroMQPushPull(
  
   for (int i =0; i < numNodes; i++) 
   {
+    //std::cout << "i " << i << std::endl;
     auto counter = std::shared_ptr<std::atomic<std::uint32_t> >(
                     new std::atomic<std::uint32_t>(0));
     pullCounters.push_back( counter );   
@@ -116,7 +116,9 @@ ZeroMQPushPull::ZeroMQPushPull(
     std::string url = "tcp://" + ip + ":" + 
                       boost::lexical_cast<std::string>(ports[i]);
 
-    pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
+    // The function complains if you use std::size_t, so be sure to use the
+    // uint32_t class member for hwm.
+    pusher->setsockopt(ZMQ_SNDHWM, &this->hwm, sizeof(this->hwm)); 
     pusher->bind(url);
     pushers.push_back(pusher);
 
@@ -126,7 +128,7 @@ ZeroMQPushPull::ZeroMQPushPull(
 
     ip = getIpString(hostnames[i]);
     url = "tcp://" + ip + ":" + boost::lexical_cast<std::string>(ports[nodeId]);
-    puller->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+    puller->setsockopt(ZMQ_RCVHWM, &this->hwm, sizeof(this->hwm));
     puller->connect(url);
 
     pullers.push_back(puller);
@@ -158,17 +160,18 @@ ZeroMQPushPull::ZeroMQPushPull(
           Netflow netflow = makeNetflow(pullCount, sNetflow);
           this->parallelFeed(netflow);
           if (pullCount % metricInterval == 0) {
-            std::cout << "nodeid " << this->nodeId << " PullCount[" << i 
-                      << "] " << pullCount << std::endl;
+            //std::cout << "nodeid " << this->nodeId << " PullCount[" << i 
+            //          << "] " << pullCount << std::endl;
           }
         } 
       }
     }
-    std::cout << "Exiting pull function" << std::endl;
+    //std::cout << "Exiting pull function" << std::endl;
   };
 
   pullThread = std::thread(pullFunction); 
   
+  //std::cout << "Exiting ZeroMQPushPull constructor" << std::endl; 
 }
 
 
@@ -185,8 +188,8 @@ bool ZeroMQPushPull::consume(Netflow const& n)
   // Keep track how many netflows have come through this method.
   consumeCount++;
   if (consumeCount % metricInterval == 0) {
-    std::cout << "NodeId " << nodeId << " consumeCount " << consumeCount 
-              << std::endl; 
+    //std::cout << "NodeId " << nodeId << " consumeCount " << consumeCount 
+    //          << std::endl; 
   }
 
   // Get the source and dest ips.  We send the netflow twice, once to each

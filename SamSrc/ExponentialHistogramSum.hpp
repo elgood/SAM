@@ -62,7 +62,8 @@ public:
     this->feedCount++;
     if (this->feedCount % this->metricInterval == 0) {
       std::cout << "NodeId " << this->nodeId << " number of keys " 
-                << allWindows.size() << std::endl;
+                << allWindows.size() << " feedCount " << this->feedCount
+                << std::endl;
     }
 
     // Generates unique key from key fields
@@ -134,7 +135,8 @@ public:
     this->feedCount++;
     if (this->feedCount % this->metricInterval == 0) {
       std::cout << "NodeId " << this->nodeId << " number of keys " 
-                << allWindows.size() << std::endl;
+                << allWindows.size() << " feedCount " << this->feedCount
+                << std::endl;
     }
 
     // Generates unique key from key fields

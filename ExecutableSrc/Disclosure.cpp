@@ -59,6 +59,7 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                  std::size_t b,
                  std::size_t k)
 {
+  std::cout << "before creating consumer " << std::endl;
   // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
   // getting the data from the receiver (e.g. a socket or a file) and then
   // publishing it in a load-balanced way to the cluster.
@@ -69,6 +70,8 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                  ports, 
                                  hwm);
 
+  std::cout << "consumer created " << std::endl;
+
   receiver->registerConsumer(consumer);
     
   string identifier = "top2";
@@ -78,11 +81,19 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                
   consumer->registerConsumer(topk); 
 
+  std::cout << "topk created and registered " << std::endl;
+
   // Five tokens for the 
   // First function token
-  int index1 = 0;
-  auto function1 = [&index1](Feature const * feature)->double {
+  auto function1 = [](Feature const * feature)->double {
+    int index1 = 0;
+    //std::cout << "index1 " << index1 << std::endl;
+    //std::cout << "In function1 call " << std::endl;
+    //std::cout << feature << std::endl;
     auto topKFeature = static_cast<TopKFeature const *>(feature);
+    //std::cout << topKFeature << std::endl;
+    //std::cout << &topKFeature->getFrequencies() << std::endl;
+    //std::cout << "index1 " << index1 << std::endl;
     return topKFeature->getFrequencies()[index1];    
   };
   auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, 
@@ -93,8 +104,8 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
 
   // Second function token
-  int index2 = 1;
-  auto function2 = [&index2](Feature const * feature)->double {
+  auto function2 = [](Feature const * feature)->double {
+    int index2 = 1;
     auto topKFeature = static_cast<TopKFeature const *>(feature);
     return topKFeature->getFrequencies()[index2];    
   };
@@ -124,12 +135,15 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
 
   consumer->registerConsumer(filter);
 
+  std::cout << "filter created and registiered " << std::endl;
+
   identifier = "serverSumIncomingFlowSize";
   auto sumIncoming = std::make_shared<ExponentialHistogramSum<size_t, Netflow,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(sumIncoming); 
+  sumIncoming->registerSubscriber(subscriber, identifier);
   
   identifier = "serverSumOutgoingFlowSize";
   auto sumOutgoing = std::make_shared<ExponentialHistogramSum<size_t, Netflow,
@@ -137,29 +151,30 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                   DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(sumOutgoing);
+  sumOutgoing->registerSubscriber(subscriber, identifier);
      
   identifier = "serverVarianceIncomingFlowSize";
   auto varianceIncoming = std::make_shared<ExponentialHistogramVariance<
-                               size_t, Netflow, SrcTotalBytes, DestIp>>
+                               double, Netflow, SrcTotalBytes, DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(varianceIncoming); 
+  varianceIncoming->registerSubscriber(subscriber, identifier);
   
   identifier = "serverVarianceOutgoingFlowSize";
   auto varianceOutgoing = std::make_shared<ExponentialHistogramVariance<
-                            size_t, Netflow, DestTotalBytes, DestIp>>
+                            double, Netflow, DestTotalBytes, DestIp>>
                               (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(varianceOutgoing);
+  varianceOutgoing->registerSubscriber(subscriber, identifier);
      
   ////////////////// Creating Time Lapse Series ///////////////////////
-  //FeatureMap featureMap;
- 
   #define DestIp_TimeLapseSeries    1
   #define SrcIp_TimeLapseSeries     2
   #define TimeDiff_TimeLapseSeries  3 
   typedef std::tuple<std::size_t, std::string, std::string, double> 
           TimeLapseSeries;
  
-  std::vector<Expression<Netflow>> expressions;
+  std::vector<std::shared_ptr<Expression<Netflow>>> expressions;
   std::vector<std::string> names;
   std::string name = "TimeLapseSeries_TimeDiff";
   names.push_back(name);
@@ -181,10 +196,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   infixList2.push_back(subToken);
   infixList2.push_back(prevToken);
     
-  Expression<Netflow> expression(infixList2);
+  auto expression = std::make_shared<Expression<Netflow>>(infixList2);
   expressions.push_back(expression); 
    
-  TupleExpression<Netflow> tupleExpression(expressions);
+  auto tupleExpression =std::make_shared<TupleExpression<Netflow>>(expressions);
   identifier = "destsrc_timelapseseries";
 
   auto timeLapseSeries = std::make_shared<TransformProducer<
@@ -196,17 +211,18 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                               queueLength);  
 
   filter->registerConsumer(timeLapseSeries);
-
+  
   std::list<std::string> destSrcIdentifiers;
 
   identifier = "destSourceTimeDiffVariance";
   destSrcIdentifiers.push_back(identifier);
   auto destSourceTimeDiffVar = 
-    std::make_shared<ExponentialHistogramVariance<size_t, TimeLapseSeries, 
+    std::make_shared<ExponentialHistogramVariance<double, TimeLapseSeries, 
                            TimeDiff_TimeLapseSeries, 
                            DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>>
                           (N, 2, nodeId, featureMap, identifier);
   timeLapseSeries->registerConsumer(destSourceTimeDiffVar); 
+
 
   identifier = "projectOutSource";
   auto projectToDest = 
@@ -238,8 +254,8 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                identifier); 
   
   filter->registerConsumer(destTimeDiffVar);
- 
-
+  destTimeDiffVar->registerSubscriber(subscriber, identifier);
+  
 }
 
 int main(int argc, char** argv) {
@@ -280,8 +296,8 @@ int main(int argc, char** argv) {
       "The node id of this node")
     ("prefix", po::value<string>(&prefix)->default_value("node"), 
       "The prefix common to all nodes")
-    ("startingPort", po::value<std::size_t>(&startingPort)->default_value(10000), 
-      "The starting port for the zeromq communications")
+    ("startingPort", po::value<std::size_t>(&startingPort)->default_value(
+      10000),  "The starting port for the zeromq communications")
     ("hwm", po::value<std::size_t>(&hwm)->default_value(10000), 
       "The high water mark (how many items can queue up before we start "
       "dropping)")
@@ -344,7 +360,8 @@ int main(int argc, char** argv) {
 
   // The global featureMap (global for all features generated for this node;
   // each node has it's own featuremap.
-  auto featureMap = std::shared_ptr<FeatureMap>();
+  std::cout << "About to create feature Map " << std::endl;
+  auto featureMap = std::make_shared<FeatureMap>(capacity);
 
   /********************** Creating features ******************************/
   if (vm.count("create_features")) 
@@ -367,6 +384,7 @@ int main(int argc, char** argv) {
     // subscriber collects the features for each netflow
     auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
 
+    std::cout << "Creating Pipeline " << std::endl;
     // createPipeline creates all the operators and ties them together.  It 
     // also notifies the designated feature producers of the subscriber.
     createPipeline(receiver, featureMap, subscriber, 
@@ -377,16 +395,18 @@ int main(int argc, char** argv) {
                    ports,
                    hwm,
                    N, b, k);
+   
+    std::cout << "Created Pipeline " << std::endl;
     
     // You must call init before starting the pipeline.
     subscriber->init();
-
+    
     // Connects the receiver to the input data but doesn't start ingestion.
     if (!receiver->connect()) {
       std::cout << "Problems opening file " << inputfile << std::endl;
       return -1;
     }
-
+    
     milliseconds ms1 = duration_cast<milliseconds>(
       system_clock::now().time_since_epoch()
     );
@@ -397,15 +417,17 @@ int main(int argc, char** argv) {
     );
     std::cout << "Seconds for Node" << nodeId << ": "  
       << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
-
+    
     // Get the features that had been created and write them out to outputfile
     std::string result = subscriber->getOutput();
 
     std::ofstream out(outputfile);
     out << result;
     out.close();
+   
+    std::cout << "Finished" << std::endl;
     return 0;
- 
+    
   } 
   /********************* Learning Model *********************************/
   else if (vm.count("train"))

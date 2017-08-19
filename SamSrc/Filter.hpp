@@ -48,6 +48,9 @@ bool Filter<TupleType, keyFields...>::consume(TupleType const& t)
       this->featureMap->updateInsert(key, this->identifier, feature);  
     }
   }
+
+  this->parallelFeed(t);
+
   return true;
 }
 

@@ -216,22 +216,22 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   int nodeId = 0;
   std::string idAveSourceFlowSize = "aveSourceFlowSize";
   auto aveSourceFlowSize = std::make_shared<ExponentialHistogramAve<
-                             size_t, Netflow, SrcPayloadBytes, DestIp>>(
+                             double, Netflow, SrcPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idAveSourceFlowSize);
                             
   std::string idAveDestFlowSize = "aveDestFlowSize";
   auto aveDestFlowSize = std::make_shared<ExponentialHistogramAve<
-                             size_t, Netflow, DestPayloadBytes, DestIp>>(
+                             double, Netflow, DestPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idAveDestFlowSize);
 
   std::string idVarSourceFlowSize = "varSourceFlowSize";
   auto varSourceFlowSize = std::make_shared<ExponentialHistogramVariance<
-                             size_t, Netflow, SrcPayloadBytes, DestIp>>(
+                             double, Netflow, SrcPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idVarSourceFlowSize);
   
   std::string idVarDestFlowSize = "varDestFlowSize";
   auto varDestFlowSize = std::make_shared<ExponentialHistogramVariance<
-                             size_t, Netflow, DestPayloadBytes, DestIp>>(
+                             double, Netflow, DestPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idVarDestFlowSize);
 
   // Connect the feature producers to the netflow producer. 
@@ -272,19 +272,19 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
           /// can be off by more for some reason.
           case 0: 
             BOOST_CHECK_CLOSE(boost::lexical_cast<double>(t), 
-                              meanSourceFlowSize, 15);
+                              meanSourceFlowSize, 5);
             break;
           case 1:
             BOOST_CHECK_CLOSE(boost::lexical_cast<double>(t), 
-                              meanDestFlowSize, 15);
+                              meanDestFlowSize, 5);
             break;
           case 2:
             BOOST_CHECK_CLOSE(pow(boost::lexical_cast<double>(t), 0.5), 
-                              devSourceFlowSize, 40);
+                              devSourceFlowSize, 15);
             break;
           case 3:
             BOOST_CHECK_CLOSE(pow(boost::lexical_cast<double>(t), 0.5), 
-                              devDestFlowSize, 40);
+                              devDestFlowSize, 15);
             break;
         }
         i++;

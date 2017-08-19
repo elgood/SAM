@@ -93,6 +93,7 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input) 
   {
+    //std::cout << "NumberToken evaluate " << std::endl;
     mystack.push(number);
     return true;
   }
@@ -150,6 +151,7 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input)
   {
+    //std::cout << "AddOperator evaluate " << std::endl;
     if (mystack.size() >= 2) {
       double o2 = mystack.top();
       mystack.pop();
@@ -183,6 +185,7 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input)
   {
+    //std::cout << "SubOperator evaluate " << std::endl;
     if (mystack.size() >= 2) {
       double o2 = mystack.top();
       mystack.pop();
@@ -216,6 +219,7 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input)
   {
+    //std::cout << "MultOperator evaluate " << std::endl;
     if (mystack.size() >= 2) {
       double o2 = mystack.top();
       mystack.pop();
@@ -249,6 +253,7 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input)
   {
+    //std::cout << "LessThanOperator evalute " <<std::endl;
     if (mystack.size() >= 2) {
       double o2 = mystack.top();
       mystack.pop();
@@ -288,6 +293,7 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input)
   {
+    //std::cout << "FieldToken evaluate " << std::endl;
     try {
       //double data = boost::lexical_cast<double>(std::get<field>(input));
       double d = std::get<0>(input);
@@ -336,9 +342,13 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input)
   {
+    //std::cout << "FuncToken evaluate " << std::endl;
     if (this->featureMap->exists(key, identifier)) {
+      //std::cout << "Key identifier exists in feature map " << key << " "
+      //          << identifier << std::endl;
       try {
         double d = this->featureMap->at(key, identifier)->evaluate(function);
+        //std::cout << "Got d " << d << std::endl;
         mystack.push(d);
       } catch (std::exception e) {
         printf("Caught exception %s\n", e.what());
@@ -380,6 +390,7 @@ public:
                   std::string const& key,
                   std::tuple<Ts...> const& input) 
   {
+    //std::cout << "PrevToken evaluate " << std::endl;
     // Get the current value of the field.
     double currentData = boost::lexical_cast<double>(std::get<field>(input));
     

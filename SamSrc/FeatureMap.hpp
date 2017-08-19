@@ -35,6 +35,7 @@ public:
    */
   FeatureMap(int capacity = 1000) {
     this->capacity = capacity;  
+    //std::cout << "capacity " << capacity << std::endl;
     features = new std::shared_ptr<Feature>[capacity];
     flag = new std::atomic<int>[capacity];
     keys = new std::string[capacity];
@@ -153,24 +154,36 @@ bool FeatureMap::updateInsert(std::string const& key,
                                std::string const& featureName,  
                                Feature const& f) 
 {
+  //std::cout << "updateInsert " << std::endl;
   std::string combinedKey = key + featureName;
+  //std::cout << "combinedKey " << combinedKey << std::endl;
   unsigned int hash = hashFunction(combinedKey);
+  //std::cout << "hash " << hash << std::endl;
+  //std::cout << "capacity " << capacity << std::endl;
   int i = hash % capacity;
+  //std::cout << "i " << i << std::endl;
   int index = i;
+  //std::cout << "updateInsert " << key << std::endl;
   do
   {
     if (flag[i] == MAP_EMPTY ||
         flag[i] == MAP_INTERMEDIATE)
     {
+      //std::cout << "firstif " << key << std::endl;
       do
       {
         int expected = MAP_EMPTY;
         bool b = std::atomic_compare_exchange_strong(&flag[i], &expected,
                                             MAP_INTERMEDIATE);
         if (b) {
+          //std::cout << "secondif " << key << std::endl;
+          //std::cout << "i " << i << std::endl;
           features[i] = f.createCopy(); 
+          //std::cout << "blah" << std::endl;
           keys[i] = combinedKey;
+          //std::cout << "blah1" << std::endl;
           flag[i] = MAP_OCCUPIED;
+          //std::cout << "blah2" << std::endl;
           return true;
         }
 

@@ -13,10 +13,6 @@
 #include "ActiveWindow.hpp"
 #include "DormantWindow.hpp"
 
-using std::vector;
-using std::endl;
-using std::cout;
-
 namespace sam {
 
 template <typename K>
@@ -112,8 +108,8 @@ public:
   /**
    * Returns a vector of the keys in string format in descending order.
    */
-  vector<string> getKeys() {
-    vector<string> keys;
+  std::vector<string> getKeys() {
+    std::vector<string> keys;
     int limit = globalInfo.size();  
     for (int i = 0; i < limit; i++) {
       auto p = getIthElement(i);
@@ -123,8 +119,8 @@ public:
     return keys;
   }
 
-  vector<double> getFrequencies() {
-    vector<double> frequencies;
+  std::vector<double> getFrequencies() {
+    std::vector<double> frequencies;
     int limit = globalInfo.size();  
     for (int i = 0; i < limit; i++) {
       auto p = getIthElement(i);

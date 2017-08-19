@@ -60,6 +60,7 @@ template <typename T, typename TupleType, size_t valueField,
 bool TopK<T, TupleType, valueField, keyFields...>::consume(
   TupleType const& tuple) 
 {
+  //std::cout << "tuple in topk " << toString(tuple) << std::endl;
   this->feedCount++;
   if (this->feedCount % this->metricInterval == 0) {
     std::cout << "NodeId " << this->nodeId << " allWindows.size() " 
@@ -84,18 +85,24 @@ bool TopK<T, TupleType, valueField, keyFields...>::consume(
   auto sw = allWindows[key];
   sw->add(value);
 
-  vector<string> keys        = sw->getKeys();
-  vector<double> frequencies = sw->getFrequencies();
+  std::vector<string> keys        = sw->getKeys();
+  std::vector<double> frequencies = sw->getFrequencies();
   
   if (keys.size() > 0 && frequencies.size() > 0) {
+    //std::cout << "keys.size() " << keys.size() << " frequencies.size() " 
+    //          << frequencies.size() << std::endl;
     TopKFeature feature(keys, frequencies);
+    //std::cout << "Createad feature " << std::endl;
+    //std::cout << "key " << key << " identifier " << this->identifier << std::endl;
     this->featureMap->updateInsert(key, this->identifier, feature);
+    //std::cout << "update insert " << std::endl;
 
     std::size_t id = std::get<0>(tuple);
     // notifySubscribers only takes doubles right now
     //std::cout << "notifying subscribers frequencies" << frequencies[0] 
     //          << " id " << id << "key " << key << std::endl;
     notifySubscribers(id, frequencies[0]);
+    //std::cout << "Notifified subscribers " <<std::endl;
 
   }
 

@@ -10,7 +10,8 @@ namespace sam {
 template  <typename TupleType,
           size_t... keyFields>
 class CollapsedConsumer : public BaseComputation, 
-                          public AbstractConsumer<TupleType>
+                          public AbstractConsumer<TupleType>,
+                          public FeatureProducer
 {
 private:
   /**
@@ -45,6 +46,7 @@ public:
  
   bool consume(TupleType const& tuple)
   {
+    //std::cout << "Tuple in collapsed consumer " << toString(tuple) << std::endl;
     std::string key = generateKey<keyFields...>(tuple);
 
     if (featureMap->exists(key, targetId))
@@ -55,6 +57,9 @@ public:
        
       SingleFeature feature(result);
       this->featureMap->updateInsert(key, this->identifier, feature);
+
+      std::size_t id = std::get<0>(tuple);
+      notifySubscribers(id, result);
   
       return true;   
     }

@@ -32,6 +32,7 @@ public:
 
   bool consume(InputType const& input)
   {
+    //std::cout << "in project" << std::endl;
     std::string origKey = generateKey<keyFields...>(input); 
     std::string newKey = generateKey<keepField>(input);
     std::string projectKey = generateKey<projectField>(input);

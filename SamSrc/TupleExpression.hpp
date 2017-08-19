@@ -17,11 +17,13 @@ template <typename... Ts>
 class TupleExpression<std::tuple<Ts...>>
 {
 private:
-  std::vector<Expression<std::tuple<Ts...>>> expressions;
+  std::vector<std::shared_ptr<Expression<std::tuple<Ts...>>>> expressions;
 public:
-  TupleExpression(std::vector<Expression<std::tuple<Ts...>>> const& expressions)
+  TupleExpression(std::vector<std::shared_ptr<Expression<std::tuple<Ts...>>>> 
+                  const& expressions)
   {
-    this->expressions = std::vector<Expression<std::tuple<Ts...>>>(expressions);
+    this->expressions = std::vector<std::shared_ptr<
+                          Expression<std::tuple<Ts...>>>>(expressions);
   }
                   
   // For iterating over the expressions
@@ -36,7 +38,8 @@ public:
   const_iterator end() const { return expressions.end(); }
 
   std::size_t size() const { return expressions.size(); }
-  Expression<std::tuple<Ts...>> const& get(int i) const { return expressions[i]; }
+  std::shared_ptr<Expression<std::tuple<Ts...>>> const& get(int i) const 
+  { return expressions[i]; }
 
 };
 

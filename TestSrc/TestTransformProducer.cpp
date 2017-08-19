@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
 
   auto featureMap = std::make_shared<FeatureMap>();
 
-  std::vector<Expression<Netflow>> expressions;
+  std::vector<std::shared_ptr<Expression<Netflow>>> expressions;
   std::vector<std::string> names;
   names.push_back("TimeDiff");
 
@@ -42,10 +42,10 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
   infixList.push_back(subToken);
   infixList.push_back(prevToken);
 
-  Expression<Netflow> expression(infixList);
+  auto expression = std::make_shared<Expression<Netflow>>( infixList );
   expressions.push_back(expression);
   
-  TupleExpression<Netflow> tupleExpression(expressions);
+  auto tupleExpression =std::make_shared<TupleExpression<Netflow>>(expressions);
   size_t nodeId = 0;
   std::string identifier = "destsrc_timelapseseries";
 

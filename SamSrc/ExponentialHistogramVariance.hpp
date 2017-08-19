@@ -60,6 +60,7 @@ public:
 
     // Generates unique key from key fields
     std::string key = generateKey<keyFields...>(input);
+    //std::cout << "key " << key << std::endl;
 
     if (sums.count(key) == 0) {
       auto eh = std::shared_ptr<ExponentialHistogram<T>>(
@@ -74,27 +75,39 @@ public:
                     std::shared_ptr<ExponentialHistogram<T>>>(key, eh);
       squares[key] = eh;
     }
+    //std::cout << "past if " << std::endl;
 
     std::string sValue = boost::lexical_cast<std::string>(
                       std::get<valueField>(input));
+    //std::cout << "sValue " << sValue << std::endl;
 
     T value = boost::lexical_cast<T>(sValue);
+    //std::cout << " value " << value << std::endl;
 
     sums[key]->add(value);
+    //std::cout << "blah1 " << std::endl;
     squares[key]->add(value * value);
+    //std::cout << "blah2 " << std::endl;
 
     // Getting the current variance and providing that to the featureMap
     T currentSum = sums[key]->getTotal();
     T currentSquares = squares[key]->getTotal();
+  
+    //std::cout << "sums " << currentSum << " " << currentSquares << std::endl;
+
     size_t numItems = sums[key]->getNumItems();
     double currentVariance = calculateVariance(currentSquares, currentSum,
                                                numItems);
     SingleFeature feature(currentVariance);
     this->featureMap->updateInsert(key, this->identifier, feature);
+    //std::cout << "called updateInsert inside variance " << std::endl;
 
     std::size_t id = std::get<0>(input);
+    //std::cout << "id " << id << std::endl;
+    //std::cout << "currentVariance " << currentVariance << std::endl;
     notifySubscribers(id, currentVariance);    
 
+    //std::cout << "return true " << std::endl;
     return true;
   }
 
