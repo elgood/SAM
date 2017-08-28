@@ -31,6 +31,7 @@
 #include "Project.hpp"
 #include "CollapsedConsumer.hpp"
 #include "Learning.hpp"
+#include "Identity.hpp"
 
 #define DEBUG 1
 
@@ -73,8 +74,20 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   std::cout << "consumer created " << std::endl;
 
   receiver->registerConsumer(consumer);
+
+  // An operator to get the label from each netflow and add it to the
+  // subscriber.
+  string identifier = "label";
+
+  // Doesn't really need a key, but provide one anyway to the template.
+  auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
+                (nodeId, featureMap, identifier);
+  consumer->registerConsumer(label);
+  label->registerSubscriber(subscriber, identifier); 
+
+
     
-  string identifier = "top2";
+  identifier = "top2";
   auto topk = std::make_shared<TopK<size_t, Netflow, DestPort, 
                               DestIp>>
                               (N, b, k, nodeId, featureMap, identifier);
@@ -432,7 +445,7 @@ int main(int argc, char** argv) {
   /********************* Learning Model *********************************/
   else if (vm.count("train"))
   {
-    if (inputfile == "") {
+    /*if (inputfile == "") {
       std::cout << "--train was specified but no input file"
                 << " was listed with --inputfile." << std::endl;
       return -1; 
@@ -447,9 +460,9 @@ int main(int argc, char** argv) {
     // and columns are observations, which makes things confusing.
     data::Load(inputfile, trainingData, true);
 
-    arma::Row<size_t> labels;
+    arma::Row<double> labels = trainingData.row(0);
 
-    data::NormalizeLabels(trainingData.row(0), labels, model.mappings);
+    //data::NormalizeLabels(trainingData.row(0), labels, model.mappings);
     
     // Remove the label row
     trainingData.shed_row(0);
@@ -463,12 +476,19 @@ int main(int argc, char** argv) {
     std::cout << "Saved Model " << std::endl;
     Timer::Stop("nbc_training");
     return 0;
-
+    */
   } 
   /******************** Applying model *********************************/
   else if (vm.count("test"))
   {
-
+    if (inputfile == "") {
+      std::cout << "--test was specified but no input file"
+                << " was listed with --inputfile." << std::endl;
+      return -1; 
+    }
+    data::Load(inputfile, "model", model);
+    cout << "model.mappings " << model.mappings << std::endl;
+    
   }
   /******************* Running pipeline without model ******************/
   else 
@@ -505,7 +525,5 @@ int main(int argc, char** argv) {
     std::cout << "Seconds for Node" << nodeId << ": "  
       << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
   }
-
-
 }
 

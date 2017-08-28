@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #include "Util.hpp"
+#include "Learning.hpp"
 
 #define MAP_EMPTY        0
 #define MAP_OCCUPIED     1
@@ -15,6 +16,14 @@
 
 namespace sam {
 
+/**
+ * Has two modes, create feature mode and test mode.  In the create feature
+ * mode, it outputs all of the features to a stringstream.  This might not
+ * be the best approach.  A parallel implementation would be better.
+ *
+ * The other mode is test mode.  In test mode the feature subscriber has a
+ * model that it applies to each example. 
+ */
 class FeatureSubscriber
 {
 private:
@@ -36,7 +45,21 @@ private:
   // Init must be called before update is called.  This variable keeps track.
   bool initCalled = false;
 
+  std::shared_ptr<NBCModel> model;
+
 public:
+  FeatureSubscriber(std::shared_ptr<NBCModel> model,
+                    int capacity = 10000) 
+  {
+    this->model = model;
+    this->capacity = capacity;
+
+    // TODO add parallel loop
+    for(int i = 0; i < capacity; i++) {
+      counts[i] = 0;
+    }
+  }
+
   FeatureSubscriber(int capacity = 10000) 
                     
   {
@@ -123,7 +146,13 @@ bool FeatureSubscriber::update(std::size_t key,
     if (counts[index] >= numFeatures) {
       // The lock_guard makes it so that only one thread can access the 
       // following body of the if statement.
+
       std::lock_guard<std::mutex> lock(mu);
+      //if (model) {
+      //  model
+      //  ss << 
+      //} 
+
       counts[index] = 0;
       for (int j = 0; j < numFeatures - 1; j++) {
         ss << values[index * numFeatures + j] << ","; 

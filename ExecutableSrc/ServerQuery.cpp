@@ -53,80 +53,80 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                  std::size_t hwm)
 {
 
-    // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
-    // getting the data from the receiver (e.g. a socket or a file) and then
-    // publishing it in a load-balanced way to the cluster.
-    auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
-                                   numNodes, 
-                                   nodeId, 
-                                   hostnames, 
-                                   ports, 
-                                   hwm);
+  // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
+  // getting the data from the receiver (e.g. a socket or a file) and then
+  // publishing it in a load-balanced way to the cluster.
+  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
+                                 numNodes, 
+                                 nodeId, 
+                                 hostnames, 
+                                 ports, 
+                                 hwm);
 
-    receiver->registerConsumer(consumer);
-      
-
-    // An operator to get the label from each netflow and add it to the
-    // subscriber.
-    string identifier = "label";
-
-    // Doesn't really need a key, but provide one anyway to the template.
-    auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
-                  (nodeId, featureMap, identifier);
-    consumer->registerConsumer(label);
-    label->registerSubscriber(subscriber, identifier); 
-
-    identifier = "top2";
-    int k = 2;
-    int N = 10000;
-    int b = 1000;
-    auto topk = std::make_shared<TopK<size_t, Netflow, 
-                                 DestPort, DestIp>>(
-                                 N, b, k, nodeId,
-                                 featureMap, identifier);
-    consumer->registerConsumer(topk); 
-    topk->registerSubscriber(subscriber, identifier);
-
-    // Five tokens for the 
-    // First function token
-    auto function1 = [](Feature const * feature)->double {
-      auto topKFeature = static_cast<TopKFeature const *>(feature);
-      return topKFeature->getFrequencies()[0];    
-    };
-    auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, 
-                                                      function1, identifier);
-
-    // Addition token
-    auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
-
-    // Second function token
-    auto function2 = [](Feature const * feature)->double {
-      auto topKFeature = static_cast<TopKFeature const *>(feature);
-      return topKFeature->getFrequencies()[1];    
-    };
-
-    auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, 
-                                                      function2, identifier);
-
-    // Lessthan token
-    auto lessThanToken =std::make_shared<LessThanOperator<Netflow>>(featureMap);
+  receiver->registerConsumer(consumer);
     
-    // Number token
-    auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 0.9);
 
-    auto infixList = std::make_shared<std::list<std::shared_ptr<
-                      ExpressionToken<Netflow>>>>();
-    infixList->push_back(funcToken1);
-    infixList->push_back(addOper);
-    infixList->push_back(funcToken2);
-    infixList->push_back(lessThanToken);
-    infixList->push_back(numberToken);
+  // An operator to get the label from each netflow and add it to the
+  // subscriber.
+  string identifier = "label";
 
-    auto filterExpression = std::make_shared<Expression<Netflow>>(*infixList);
-     
-    auto filter = std::make_shared<Filter<Netflow, DestIp>>(
-      filterExpression, nodeId, featureMap, "servers", queueLength);
-    consumer->registerConsumer(filter);
+  // Doesn't really need a key, but provide one anyway to the template.
+  auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
+                (nodeId, featureMap, identifier);
+  consumer->registerConsumer(label);
+  label->registerSubscriber(subscriber, identifier); 
+
+  identifier = "top2";
+  int k = 2;
+  int N = 10000;
+  int b = 1000;
+  auto topk = std::make_shared<TopK<size_t, Netflow, 
+                               DestPort, DestIp>>(
+                               N, b, k, nodeId,
+                               featureMap, identifier);
+  consumer->registerConsumer(topk); 
+  topk->registerSubscriber(subscriber, identifier);
+
+  // Five tokens for the 
+  // First function token
+  auto function1 = [](Feature const * feature)->double {
+    auto topKFeature = static_cast<TopKFeature const *>(feature);
+    return topKFeature->getFrequencies()[0];    
+  };
+  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, 
+                                                    function1, identifier);
+
+  // Addition token
+  auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
+
+  // Second function token
+  auto function2 = [](Feature const * feature)->double {
+    auto topKFeature = static_cast<TopKFeature const *>(feature);
+    return topKFeature->getFrequencies()[1];    
+  };
+
+  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, 
+                                                    function2, identifier);
+
+  // Lessthan token
+  auto lessThanToken =std::make_shared<LessThanOperator<Netflow>>(featureMap);
+  
+  // Number token
+  auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 0.9);
+
+  auto infixList = std::make_shared<std::list<std::shared_ptr<
+                    ExpressionToken<Netflow>>>>();
+  infixList->push_back(funcToken1);
+  infixList->push_back(addOper);
+  infixList->push_back(funcToken2);
+  infixList->push_back(lessThanToken);
+  infixList->push_back(numberToken);
+
+  auto filterExpression = std::make_shared<Expression<Netflow>>(*infixList);
+   
+  auto filter = std::make_shared<Filter<Netflow, DestIp>>(
+    filterExpression, nodeId, featureMap, "servers", queueLength);
+  consumer->registerConsumer(filter);
 }
 
 int main(int argc, char** argv) {

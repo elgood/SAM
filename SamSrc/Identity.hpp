@@ -1,5 +1,5 @@
-#ifndef EXPONENTIAL_HISTOGRAM_SUM_HPP
-#define EXPONENTIAL_HISTOGRAM_SUM_HPP
+#ifndef IDENTITY_HPP
+#define IDENTITY_HPP
 
 /**
  * Operator that does nothing to the input. 

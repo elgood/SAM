@@ -72,7 +72,7 @@ typedef std::tuple<std::size_t,  //SamGeneratedId
                    int,          //DestPort
                    std::string,  //MORE_FRAGMENTS
                    int,          //COUNT_FRAGMENTS
-                   int,          //DURATION_SECONDS
+                   double,          //DURATION_SECONDS
                    int,          //SRC_PAYLOAD_BYTES
                    int,          //DEST_PAYLOAD_BYTES
                    int,          //SOURCE_TOTAL_BYTES
