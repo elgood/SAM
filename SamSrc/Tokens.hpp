@@ -14,6 +14,13 @@
 
 namespace sam {
 
+class ExpressionTokenException : public std::runtime_error {
+public:
+  ExpressionTokenException(char const * message) : std::runtime_error(message) { } 
+  ExpressionTokenException(std::string  message) : std::runtime_error(message) { } 
+};
+
+
 template <typename... Ts>
 class ExpressionToken
 {};
@@ -295,7 +302,6 @@ public:
   {
     //std::cout << "FieldToken evaluate " << std::endl;
     try {
-      //double data = boost::lexical_cast<double>(std::get<field>(input));
       double d = std::get<0>(input);
       auto data = std::get<field>(input);
       mystack.push(data);
@@ -392,7 +398,16 @@ public:
   {
     //std::cout << "PrevToken evaluate " << std::endl;
     // Get the current value of the field.
-    double currentData = boost::lexical_cast<double>(std::get<field>(input));
+    double currentData;
+    try {
+      auto item = std::get<field>(input);
+      currentData = boost::lexical_cast<double>(item);
+    } catch (std::exception e) {
+      std::string message = std::string("In PrevToken::evaluate, tried to") +
+        " convert " + boost::lexical_cast<std::string>(std::get<field>(input)) +
+        " to double and failed.";
+      throw ExpressionTokenException(message);
+    }
     
     // Create a feature out of the current data
     std::shared_ptr<Feature> feature 

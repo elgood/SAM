@@ -104,6 +104,18 @@ public:
 
     // Add the item to the data structure.
     add(item, 0);
+
+    /*for (int i = 0; i < k + 2; i++) {
+      std::cout << data[0][i] << " ";
+    }
+    std::cout << std::endl;
+    for (int i = 1; i < numLevels; i++) {
+      for (int j = 0; j < k/2 + 2; j++) {
+        std::cout << data[i][j] << " ";
+      }
+      std::cout << std::endl;
+    }*/
+
   } 
 
   /**
@@ -124,14 +136,7 @@ public:
    * the histogram.
    */
   size_t getNumSlots() {
-    int size = 1;
-    int total = 0;
-    total = size * (k + 2);
-    for (int i = 1; i < numLevels; i++) {
-      size = size * 2;
-      total = total + size * (k/2 + 2); 
-    }
-    return total;
+    return getNumSlots(numLevels, k);
   }
 
   /**
@@ -141,10 +146,24 @@ public:
   size_t getNumItems() {
     return numItems;
   }
+
+  static size_t getNumSlots(long N, int k) 
+  {
+    int size = 1;
+    int total = 0;
+    total = size * (k + 2);
+    for (int i = 1; i < N; i++) {
+      size = size * 2;
+      total = total + size * (k/2 + 2); 
+    }
+    return total;
+
+  }
   
 private:
 
   void add(T item, size_t level) {
+    //std::cout << "Adding item " << item << " to level " << level << std::endl;
     if (level < numLevels) {
       // Going through the level for the first time.  
       // We can just add items without worrying about overwriting values 
@@ -167,6 +186,7 @@ private:
         // Adding an item will force a merger
         if (needToMerge[level]) { 
           // index of the first item to merge.
+          //std::cout << ends[level] << " " << endPlusOne(level) << std::endl;
           size_t first = data[level][ends[level]]; 
           
           // index of the second item to merge.
@@ -177,6 +197,7 @@ private:
           
           // Adding the new item to the now open space
           data[level][ends[level]] = item; 
+          data[level][endPlusOne(level)] = -1;
           
           // The next addition won't require a merger since we cleared out
           // two spaces.
@@ -206,8 +227,8 @@ private:
    */
   size_t endPlusOne(size_t level) {
     size_t tempEnd = ends[level] + 1;
-    if (((level == 0) && (tempEnd >= (k + 1))) ||
-        ((level > 0) && (tempEnd >= (k/2 + 1))))
+    if (((level == 0) && (tempEnd >= (k + 2))) ||
+        ((level > 0) && (tempEnd >= (k/2 + 2))))
     {
       return 0;
     }

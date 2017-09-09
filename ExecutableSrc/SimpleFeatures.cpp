@@ -1,7 +1,19 @@
 /*
- * Disclosure.cpp
- * This does the server query as described in Disclosure.
- *
+ * SimpleFeatures.cpp
+ * This creates features on the netflow features without any
+ * operators added in.
+ * The base netflow features are:
+ * 1) duration
+ * 2) source app bytes
+ * 3) dest app bytes
+ * 4) source total bytes
+ * 5) dest total bytes
+ * 6) source packets
+ * 7) dest packets 
+ * 
+ * The types of features created are
+ * 1) average 
+ * 2) variance
  *  Created on: March 15, 2017
  *      Author: elgood
  */
@@ -13,9 +25,6 @@
 #include <chrono>
 
 #include <boost/program_options.hpp>
-
-#include <mlpack/core.hpp>
-#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
 
 #include "ReadSocket.h"
 #include "ReadCSV.hpp"
@@ -33,8 +42,6 @@
 #include "Learning.hpp"
 #include "Identity.hpp"
 
-//#define DEBUG 1
-
 using std::string;
 using std::vector;
 using std::cout;
@@ -44,8 +51,6 @@ namespace po = boost::program_options;
 
 using namespace sam;
 using namespace std::chrono;
-using namespace mlpack;
-using namespace mlpack::naive_bayes;
 
 void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                  std::shared_ptr<FeatureMap> featureMap,
@@ -60,20 +65,17 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                  std::size_t b,
                  std::size_t k)
 {
-  std::cout << "before creating consumer " << std::endl;
   // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
   // getting the data from the receiver (e.g. a socket or a file) and then
   // publishing it in a load-balanced way to the cluster.
-  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
-                                 numNodes, 
-                                 nodeId, 
-                                 hostnames, 
-                                 ports, 
-                                 hwm);
+  //auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
+  //                               numNodes, 
+  //                               nodeId, 
+  //                               hostnames, 
+  //                               ports, 
+  //                               hwm);
 
-  std::cout << "consumer created " << std::endl;
-
-  receiver->registerConsumer(consumer);
+  //receiver->registerConsumer(consumer);
 
   // An operator to get the label from each netflow and add it to the
   // subscriber.
@@ -82,191 +84,138 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   // Doesn't really need a key, but provide one anyway to the template.
   auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
                 (nodeId, featureMap, identifier);
-  consumer->registerConsumer(label);
+  receiver->registerConsumer(label);
   label->registerSubscriber(subscriber, identifier); 
 
-  identifier = "top2";
-  auto topk = std::make_shared<TopK<size_t, Netflow, DestPort, 
-                              DestIp>>
-                              (N, b, k, nodeId, featureMap, identifier);
-                               
-  consumer->registerConsumer(topk); 
 
-  std::cout << "topk created and registered " << std::endl;
-  /*
-  // Five tokens for the 
-  // First function token
-  auto function1 = [](Feature const * feature)->double {
-    int index1 = 0;
-    //std::cout << "index1 " << index1 << std::endl;
-    //std::cout << "In function1 call " << std::endl;
-    //std::cout << feature << std::endl;
-    auto topKFeature = static_cast<TopKFeature const *>(feature);
-    //std::cout << topKFeature << std::endl;
-    //std::cout << &topKFeature->getFrequencies() << std::endl;
-    //std::cout << "index1 " << index1 << std::endl;
-    return topKFeature->getFrequencies()[index1];    
-  };
-  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, 
-                                                        function1,
-                                                        identifier);
-
-  // Addition token
-  auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
-
-  // Second function token
-  auto function2 = [](Feature const * feature)->double {
-    int index2 = 1;
-    auto topKFeature = static_cast<TopKFeature const *>(feature);
-    return topKFeature->getFrequencies()[index2];    
-  };
-  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, 
-                                                         function2,
-                                                         identifier);
-
-  // Lessthan token
-  auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(
-                        featureMap);
-  
-  // Number token
-  auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 
-                                                            0.9);
-
-  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
-  infixList.push_back(funcToken1);
-  infixList.push_back(addOper);
-  infixList.push_back(funcToken2);
-  infixList.push_back(lessThanToken);
-  infixList.push_back(numberToken);
-
-  auto filterExpression = std::make_shared<Expression<Netflow>>(infixList);
-    
-  auto filter = std::make_shared<Filter<Netflow, DestIp>>(
-    filterExpression, nodeId, featureMap, "servers", queueLength);
-
-  consumer->registerConsumer(filter);
-
-  std::cout << "filter created and registiered " << std::endl;
-
-  identifier = "serverSumIncomingFlowSize";
-  auto sumIncoming = std::make_shared<ExponentialHistogramSum<size_t, Netflow,
+  identifier = "averageSrcTotalBytes";
+  auto averageSrcTotalBytes = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  filter->registerConsumer(sumIncoming); 
-  sumIncoming->registerSubscriber(subscriber, identifier);
-  
-  identifier = "serverSumOutgoingFlowSize";
-  auto sumOutgoing = std::make_shared<ExponentialHistogramSum<size_t, Netflow,
-                                                  DestTotalBytes,
-                                                  DestIp>>
+  receiver->registerConsumer(averageSrcTotalBytes); 
+  averageSrcTotalBytes->registerSubscriber(subscriber, identifier);
+
+  identifier = "varSrcTotalBytes";
+  auto varSrcTotalBytes = std::make_shared<
+                      ExponentialHistogramVariance<double, Netflow,
+                                                 SrcTotalBytes,
+                                                 DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  filter->registerConsumer(sumOutgoing);
-  sumOutgoing->registerSubscriber(subscriber, identifier);
-     
-  identifier = "serverVarianceIncomingFlowSize";
-  auto varianceIncoming = std::make_shared<ExponentialHistogramVariance<
-                               double, Netflow, SrcTotalBytes, DestIp>>
+  receiver->registerConsumer(varSrcTotalBytes); 
+  varSrcTotalBytes->registerSubscriber(subscriber, identifier);
+
+  identifier = "averageDestTotalBytes";
+  auto averageDestTotalBytes = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 DestTotalBytes,
+                                                 DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  filter->registerConsumer(varianceIncoming); 
-  varianceIncoming->registerSubscriber(subscriber, identifier);
-  
-  identifier = "serverVarianceOutgoingFlowSize";
-  auto varianceOutgoing = std::make_shared<ExponentialHistogramVariance<
-                            double, Netflow, DestTotalBytes, DestIp>>
-                              (N, 2, nodeId, featureMap, identifier);
-  filter->registerConsumer(varianceOutgoing);
-  varianceOutgoing->registerSubscriber(subscriber, identifier);
-     
-  ////////////////// Creating Time Lapse Series ///////////////////////
-  #define DestIp_TimeLapseSeries    1
-  #define SrcIp_TimeLapseSeries     2
-  #define TimeDiff_TimeLapseSeries  3 
-  typedef std::tuple<std::size_t, std::string, std::string, double> 
-          TimeLapseSeries;
- 
-  std::vector<std::shared_ptr<Expression<Netflow>>> expressions;
-  std::vector<std::string> names;
-  std::string name = "TimeLapseSeries_TimeDiff";
-  names.push_back(name);
-  
-  // Expression TimeSeconds - Prev.TimeSeconds
-  // 
-  // TimeSeconds field token 
-  std::shared_ptr<ExpressionToken<Netflow>> fieldToken = std::make_shared<
-    FieldToken<TimeSeconds, Netflow>>(featureMap);
-  // Sub operator token
-  std::shared_ptr<ExpressionToken<Netflow>> subToken = std::make_shared<
-    SubOperator<Netflow>>(featureMap);
-  // Prev.TimeSeconds
-  std::shared_ptr<ExpressionToken<Netflow>> prevToken = std::make_shared<
-    PrevToken<TimeSeconds, Netflow>>(featureMap);
-    
-  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList2;
-  infixList2.push_back(fieldToken);
-  infixList2.push_back(subToken);
-  infixList2.push_back(prevToken);
-    
-  auto expression = std::make_shared<Expression<Netflow>>(infixList2);
-  expressions.push_back(expression); 
-   
-  auto tupleExpression =std::make_shared<TupleExpression<Netflow>>(expressions);
-  identifier = "destsrc_timelapseseries";
+  receiver->registerConsumer(averageDestTotalBytes); 
+  averageDestTotalBytes->registerSubscriber(subscriber, identifier);
 
-  auto timeLapseSeries = std::make_shared<TransformProducer<
-                     Netflow, TimeLapseSeries, DestIp, SourceIp>>
-                             (tupleExpression,
-                              nodeId,
-                              featureMap,
-                              identifier,
-                              queueLength);  
-
-  filter->registerConsumer(timeLapseSeries);
-  
-  std::list<std::string> destSrcIdentifiers;
-
-  identifier = "destSourceTimeDiffVariance";
-  destSrcIdentifiers.push_back(identifier);
-  auto destSourceTimeDiffVar = 
-    std::make_shared<ExponentialHistogramVariance<double, TimeLapseSeries, 
-                           TimeDiff_TimeLapseSeries, 
-                           DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>>
+  identifier = "varDestTotalBytes";
+  auto varDestTotalBytes = std::make_shared<
+                      ExponentialHistogramVariance<double, Netflow,
+                                                 DestTotalBytes,
+                                                 DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  timeLapseSeries->registerConsumer(destSourceTimeDiffVar); 
+  receiver->registerConsumer(varDestTotalBytes); 
+  varDestTotalBytes->registerSubscriber(subscriber, identifier);
+
+  identifier = "averageDuration";
+  auto averageDuration = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 DurationSeconds,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(averageDuration); 
+  averageDuration->registerSubscriber(subscriber, identifier);
+
+  identifier = "varDuration";
+  auto varDuration = std::make_shared<
+                      ExponentialHistogramVariance<double, Netflow,
+                                                 DurationSeconds,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(varDuration); 
+  varDuration->registerSubscriber(subscriber, identifier);
+
+  identifier = "averageSrcPayloadBytes";
+  auto averageSrcPayloadBytes = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 SrcPayloadBytes,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(averageSrcPayloadBytes); 
+  averageSrcPayloadBytes->registerSubscriber(subscriber, identifier);
+
+  identifier = "varSrcPayloadBytes";
+  auto varSrcPayloadBytes = std::make_shared<
+                      ExponentialHistogramVariance<double, Netflow,
+                                                 SrcPayloadBytes,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(varSrcPayloadBytes); 
+  varSrcPayloadBytes->registerSubscriber(subscriber, identifier);
+
+  identifier = "averageDestPayloadBytes";
+  auto averageDestPayloadBytes = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 DestPayloadBytes,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(averageDestPayloadBytes); 
+  averageDestPayloadBytes->registerSubscriber(subscriber, identifier);
+
+  identifier = "varDestPayloadBytes";
+  auto varDestPayloadBytes = std::make_shared<
+                      ExponentialHistogramVariance<double, Netflow,
+                                                 DestPayloadBytes,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(varDestPayloadBytes); 
+  varDestPayloadBytes->registerSubscriber(subscriber, identifier);
+
+  identifier = "averageSrcPacketCount";
+  auto averageSrcPacketCount = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 FirstSeenSrcPacketCount,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(averageSrcPacketCount); 
+  averageSrcPacketCount->registerSubscriber(subscriber, identifier);
+
+  identifier = "varSrcPacketCount";
+  auto varSrcPacketCount = std::make_shared<
+                      ExponentialHistogramVariance<double, Netflow,
+                                                 FirstSeenSrcPacketCount,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(varSrcPacketCount); 
+  varSrcPacketCount->registerSubscriber(subscriber, identifier);
+
+  identifier = "averageDestPacketCount";
+  auto averageDestPacketCount = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 FirstSeenDestPacketCount,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(averageDestPacketCount); 
+  averageDestPacketCount->registerSubscriber(subscriber, identifier);
+
+  identifier = "varDestPacketCount";
+  auto varDestPacketCount = std::make_shared<
+                      ExponentialHistogramVariance<double, Netflow,
+                                                 FirstSeenDestPacketCount,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  receiver->registerConsumer(varDestPacketCount); 
+  varDestPacketCount->registerSubscriber(subscriber, identifier);
 
 
-  identifier = "projectOutSource";
-  auto projectToDest = 
-    std::make_shared<Project<TimeLapseSeries, DestIp_TimeLapseSeries, 
-                SrcIp_TimeLapseSeries,
-                DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>>
-                (destSrcIdentifiers, 
-                nodeId,
-                featureMap, 
-                identifier);
-               
-  timeLapseSeries->registerConsumer(projectToDest);
- 
-  identifier = "serverAveClientsTimeDiffVar";
-  auto aveFunction = [](std::list<std::shared_ptr<Feature>> myList)->double {
-    double sum = 0;
-    for (auto feature : myList) {
-      sum = sum + feature->evaluate(valueFunc); 
-    }
-    return sum / myList.size();
-  };
 
-  auto destTimeDiffVar = 
-    std::make_shared<CollapsedConsumer<Netflow, DestIp>>(
-                                               aveFunction,
-                                               "destSourceTimeDiffVariance",
-                                               nodeId, 
-                                               featureMap, 
-                                               identifier); 
-  
-  filter->registerConsumer(destTimeDiffVar);
-  destTimeDiffVar->registerSubscriber(subscriber, identifier);
-  */ 
 }
 
 int main(int argc, char** argv) {
@@ -387,7 +336,7 @@ int main(int argc, char** argv) {
                 << " was listed with --outputfile." << std::endl;
       return -1; 
     }
-
+    
     // We read the netflow data from a file.  It assumes each netflow 
     // has a label at the beginning.
     auto receiver = std::make_shared<ReadCSV>(inputfile);
@@ -438,7 +387,6 @@ int main(int argc, char** argv) {
    
     std::cout << "Finished" << std::endl;
     return 0;
-    
   } 
   /********************* Learning Model *********************************/
   else if (vm.count("train"))
@@ -479,20 +427,20 @@ int main(int argc, char** argv) {
   /******************** Applying model *********************************/
   else if (vm.count("test"))
   {
-    if (inputfile == "") {
+    /*if (inputfile == "") {
       std::cout << "--test was specified but no input file"
                 << " was listed with --inputfile." << std::endl;
       return -1; 
     }
     data::Load(inputfile, "model", model);
     cout << "model.mappings " << model.mappings << std::endl;
-    
+    */
   }
   /******************* Running pipeline without model ******************/
   else 
   {
 
-    ReadSocket receiver(ip, ncPort);
+    /*ReadSocket receiver(ip, ncPort);
 
     // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
     // getting the data from the receiver (e.g. a socket or a file) and then
@@ -521,7 +469,9 @@ int main(int argc, char** argv) {
       system_clock::now().time_since_epoch()
     );
     std::cout << "Seconds for Node" << nodeId << ": "  
-      << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
+      << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;*/
   }
 }
+  
+ 
 

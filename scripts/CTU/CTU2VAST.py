@@ -124,27 +124,27 @@ def main():
 
       
         ### IpLayerProtocol ###
-        newline = newline + splitline[PROTOCOL] + ","
+        protocol = splitline[PROTOCOL]
+        newline = newline + protocol + ","
 
         ### IpLayerProtocolCode ###
-        protocol = splitline[PROTOCOL]
-        if protocol == "icmp":
-          newline = newline + "1,"
-        elif protocol == "tcp":
-          newline = newline + "6,"
-        elif protocol == "udp":
-          newline = newline + "17,"
-        elif protocol == "rtp":
-          newline = newline + "28,"
-        elif protocol == "arp":
-          newline = newline + "54,"
-        elif protocol == "pim":
-          newline = newline + "103,"
-        elif protocol == "ipx/spx":
-          newline = newline + "111,"
+        if protocol == "1": 
+          newline = newline + "icmp,"
+        elif protocol == "6":
+          newline = newline + "tcp,"
+        elif protocol == "17":
+          newline = newline + "udp,"
+        elif protocol == "28":
+          newline = newline + "rtp,"
+        elif protocol == "54":
+          newline = newline + "arp,"
+        elif protocol == "103":
+          newline = newline + "pim,"
+        elif protocol == "111":
+          newline = newline + "ipx/spx,"
         else:
           #TODO: Finish
-          newline = newline + "255,"
+          newline = newline + "todo,"
           #raise Exception("No mapping for protocol " + protocol)
 
         ### SourceIp ###

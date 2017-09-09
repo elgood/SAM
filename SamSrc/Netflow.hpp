@@ -23,7 +23,6 @@
 #define FirstSeenDestPacketCount      19
 #define RecordForceOut                20
 
-#define DEFAULT_LABEL -1
 
 #include <string>
 #include <tuple>
@@ -36,7 +35,20 @@
 
 #include "Util.hpp"
 
+#define DEFAULT_LABEL -1
+//#define EMPTY_NETFLOW "EMPTY_NETFLOW"
+
 namespace sam {
+
+/**
+ * We catch exceptions generated from this file and wrap them with a 
+ * NetflowException to make them easier to track.
+ */
+class NetflowException : public std::runtime_error {
+public:
+  NetflowException(char const * message) : std::runtime_error(message) { } 
+  NetflowException(std::string  message) : std::runtime_error(message) { } 
+};
 
 /**
  * Removes the first element of a csv string. 
@@ -73,12 +85,12 @@ typedef std::tuple<std::size_t,  //SamGeneratedId
                    std::string,  //MORE_FRAGMENTS
                    int,          //COUNT_FRAGMENTS
                    double,          //DURATION_SECONDS
-                   int,          //SRC_PAYLOAD_BYTES
-                   int,          //DEST_PAYLOAD_BYTES
-                   int,          //SOURCE_TOTAL_BYTES
-                   int,          //DEST_TOTAL_BYTES
-                   int,          //FIRST_SEEN_SRC_PACKET_COUNT
-                   int,          //FIRST_SEEN_DEST_PACKET_COUNT
+                   long,          //SRC_PAYLOAD_BYTES
+                   long,          //DEST_PAYLOAD_BYTES
+                   long,          //SOURCE_TOTAL_BYTES
+                   long,          //DEST_TOTAL_BYTES
+                   long,          //FIRST_SEEN_SRC_PACKET_COUNT
+                   long,          //FIRST_SEEN_DEST_PACKET_COUNT
                    int          //RECORD_FORCE_OUT
                    >
                    Netflow;
@@ -121,32 +133,40 @@ Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s)
   int i = 2; 
   BOOST_FOREACH(std::string const &t, tok) {
     //std::cout << "i " << i << " t " << t << std::endl;
-    switch (i) {
-    case TimeSeconds: timeSeconds = boost::lexical_cast<double>(t);       break;
-    case ParseDate: parsedDate = t;                                       break;
-    case DateTime: dateTimeStr = t;                                       break;
-    case IpLayerProtocol: ipLayerProtocol = t;                            break;
-    case IpLayerProtocolCode: ipLayerProtocolCode = t;                    break;
-    case SourceIp: sourceIP = t;                                          break;
-    case DestIp: destIP = t;                                              break;
-    case SourcePort: sourcePort = boost::lexical_cast<int>(t);            break;
-    case DestPort: destPort = boost::lexical_cast<int>(t);                break;
-    case MoreFragments: moreFragments = t;                                break;
-    case CountFragments: countFragments = boost::lexical_cast<int>(t);    break;
-    case DurationSeconds: durationSeconds = boost::lexical_cast<int>(t);  break;
-    case SrcPayloadBytes: 
-      firstSeenSrcPayloadBytes = boost::lexical_cast<int>(t);             break;
-    case DestPayloadBytes: 
-      firstSeenDestPayloadBytes = boost::lexical_cast<int>(t);            break;
-    case SrcTotalBytes: 
-      firstSeenSrcTotalBytes = boost::lexical_cast<int>(t);               break;
-    case DestTotalBytes: 
-      firstSeenDestTotalBytes = boost::lexical_cast<int>(t);              break;
-    case FirstSeenSrcPacketCount: 
-      firstSeenSrcPacketCount = boost::lexical_cast<int>(t);              break;
-    case FirstSeenDestPacketCount: 
-      firstSeenDestPacketCount = boost::lexical_cast<int>(t);             break;
-    case RecordForceOut: recordForceOut = boost::lexical_cast<int>(t);    break;
+
+    try {
+      switch (i) {
+      case TimeSeconds: timeSeconds = boost::lexical_cast<double>(t);       break;
+      case ParseDate: parsedDate = t;                                       break;
+      case DateTime: dateTimeStr = t;                                       break;
+      case IpLayerProtocol: ipLayerProtocol = t;                            break;
+      case IpLayerProtocolCode: ipLayerProtocolCode = t;                    break;
+      case SourceIp: sourceIP = t;                                          break;
+      case DestIp: destIP = t;                                              break;
+      case SourcePort: sourcePort = boost::lexical_cast<int>(t);            break; 
+      case DestPort: destPort = boost::lexical_cast<int>(t);                break;
+      case MoreFragments: moreFragments = t;                                break;
+      case CountFragments: countFragments = boost::lexical_cast<int>(t);    break;
+      case DurationSeconds: durationSeconds = boost::lexical_cast<double>(t);break;
+      case SrcPayloadBytes: 
+        firstSeenSrcPayloadBytes = boost::lexical_cast<long>(t);             break;
+      case DestPayloadBytes: 
+        firstSeenDestPayloadBytes = boost::lexical_cast<long>(t);            break;
+      case SrcTotalBytes: 
+        firstSeenSrcTotalBytes = boost::lexical_cast<long>(t);               break;
+      case DestTotalBytes: 
+        firstSeenDestTotalBytes = boost::lexical_cast<long>(t);              break;
+      case FirstSeenSrcPacketCount: 
+        firstSeenSrcPacketCount = boost::lexical_cast<long>(t);              break;
+      case FirstSeenDestPacketCount: 
+        firstSeenDestPacketCount = boost::lexical_cast<long>(t);             break;
+      case RecordForceOut: recordForceOut = boost::lexical_cast<int>(t);    break;
+      }
+    } catch (std::exception e) {
+      std::cout << "Error in makeNetflowWithoutLabel " << e.what() << std::endl;
+      throw NetflowException("Netflow exception when processing item " + 
+        boost::lexical_cast<std::string>(i) + " with token " + t + 
+        " for netflow: " + s);
     }
     i++;
   }
@@ -184,7 +204,13 @@ Netflow makeNetflowWithLabel(int samGeneratedId, std::string s)
 {
   //std::cout << "MakeNetflowWithLabel " << s << std::endl;
   // Grab the label
-  int label = boost::lexical_cast<int>(getFirstElement(s));
+  int label;
+  try {
+    label = boost::lexical_cast<int>(getFirstElement(s));
+  } catch (std::exception e) {
+    std::cout << "Error in makeNetflowWithLabel " << e.what() << std::endl;
+    throw NetflowException(e.what());
+  }
   std::string withoutLabel = removeFirstElement(s);
   return makeNetflowWithoutLabel(samGeneratedId, label, withoutLabel);
 }
@@ -235,7 +261,13 @@ Netflow makeNetflow(std::string s)
 
   // Utilizing other methods
   // Get the id
-  int id = boost::lexical_cast<int>(getFirstElement(s));
+  int id;
+  try {
+    id = boost::lexical_cast<int>(getFirstElement(s));
+  } catch (std::exception e) {
+    std::cout << "Error in makeNetflow " << e.what() << std::endl;
+    throw NetflowException(e.what());
+  }
   std::string withoutId = removeFirstElement(s);
   return makeNetflow(id, withoutId);
 }

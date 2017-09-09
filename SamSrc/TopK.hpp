@@ -13,6 +13,12 @@
 
 namespace sam {
 
+class TopKException : public std::runtime_error {
+public:
+  TopKException(char const * message) : std::runtime_error(message) { } 
+
+};
+
 template <typename T, 
           typename TupleType, 
           size_t valueField,
@@ -77,10 +83,19 @@ bool TopK<T, TupleType, valueField, keyFields...>::consume(
     allWindows[key] = sw;    
   }
   
-  std::string sValue = 
-    boost::lexical_cast<std::string>(std::get<valueField>(tuple));
-  
-  T value = boost::lexical_cast<T>(sValue);
+  std::string sValue;
+  try { 
+    sValue = boost::lexical_cast<std::string>(std::get<valueField>(tuple));
+  } catch (std::exception e) {
+    throw TopKException(e.what()); 
+  }
+ 
+  T value;
+  try { 
+    value = boost::lexical_cast<T>(sValue);
+  } catch (std::exception e) {
+    throw TopKException(e.what()); 
+  }
   
   auto sw = allWindows[key];
   sw->add(value);

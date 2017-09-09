@@ -4,6 +4,7 @@
 #include "BaseProducer.hpp"
 #include "Netflow.hpp"
 #include "AbstractDataSource.hpp"
+#include <fstream>
 
 namespace sam {
 
@@ -33,14 +34,18 @@ public:
     int i = 0;
     std::string line;
     while(std::getline(file, line)) {
+      //std::cout << "ReadCSV::receive got line " << line << std::endl;
       // We will use the order they come in as the SamGeneratedId.
       // This assumes that there is a label in each line.
       Netflow netflow = makeNetflow(i, line);
+      //std::cout << "blah" << std::endl;
       for (auto consumer: consumers) {
         consumer->consume(netflow);
       }
-      i++;
+      //i++;
+      //std::cout << "ReadCSV i " << i << std::endl;
     }
+    //consumer->consume(EMPTY_NETFLOW);
   }
 
 };

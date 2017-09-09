@@ -5,6 +5,7 @@
 #include <boost/tokenizer.hpp>
 #include <numeric>
 #include <iostream>
+#include <queue>
 
 /**
  * Generates a subtuple based on the provided index_sequence.
@@ -81,14 +82,21 @@ unsigned int hashFunction(std::string const& key)
 }
 
 template <typename T>
-double calcMean(std::vector<T> const& v)
+double calcMean(T const& v)
 {
   double sum = std::accumulate(v.begin(), v.end(), 0.0);
   return sum / v.size();
 }
 
+//template <typename T>
+//double calcMean(std::deque<T> const& v)
+//{
+//  double sum = std::accumulate(v.begin(), v.end(), 0.0);
+//  return sum / v.size();
+//}
+
 template <typename T>
-double calcStandardDeviation(std::vector<T> const& v)
+double calcStandardDeviation(T const& v)
 {
   double mean = calcMean(v);
 

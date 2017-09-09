@@ -12,15 +12,23 @@
 #include <vector>
 #include <atomic>
 #include <thread>
-
+#include <netdb.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <zmq.hpp>
 
 #include "AbstractConsumer.hpp"
 #include "BaseProducer.hpp"
 #include "Netflow.hpp"
 
+
 namespace sam {
 
+class ZeroMQPushPullException : public std::runtime_error {
+public:
+  ZeroMQPushPullException(char const * message) : std::runtime_error(message) { } 
+};
 
 class ZeroMQPushPull : public AbstractConsumer<Netflow>, 
                        public BaseProducer<Netflow>
@@ -37,9 +45,10 @@ private:
   size_t metricInterval = 100000; ///> How many seen before spitting metrics out
 
   /// The zmq context
-  std::shared_ptr<zmq::context_t> context = 
-    std::shared_ptr<zmq::context_t>(new zmq::context_t(1));
-  
+  //std::shared_ptr<zmq::context_t> context = 
+  //  std::shared_ptr<zmq::context_t>(new zmq::context_t(1));
+  zmq::context_t* context = new zmq::context_t(1);
+
   /// A vector of all the push sockets
   std::vector<std::shared_ptr<zmq::socket_t> > pushers;
 
@@ -63,6 +72,7 @@ public:
   virtual ~ZeroMQPushPull()
   {
     stopThread();
+    delete context;
   }
   
   virtual bool consume(Netflow const& netflow);
@@ -113,8 +123,12 @@ ZeroMQPushPull::ZeroMQPushPull(
                     new zmq::socket_t(*context, ZMQ_PUSH));
 
     std::string ip = getIpString(hostnames[nodeId]);
-    std::string url = "tcp://" + ip + ":" + 
-                      boost::lexical_cast<std::string>(ports[i]);
+    std::string url = "tcp://" + ip + ":";
+    try {  
+      url = url + boost::lexical_cast<std::string>(ports[i]);
+    } catch (std::exception e) {
+      throw ZeroMQPushPullException(e.what()); 
+    }
 
     // The function complains if you use std::size_t, so be sure to use the
     // uint32_t class member for hwm.
@@ -127,7 +141,12 @@ ZeroMQPushPull::ZeroMQPushPull(
                     new zmq::socket_t(*context, ZMQ_PULL));
 
     ip = getIpString(hostnames[i]);
-    url = "tcp://" + ip + ":" + boost::lexical_cast<std::string>(ports[nodeId]);
+    url = "tcp://" + ip + ":";
+    try {
+      url = url + boost::lexical_cast<std::string>(ports[nodeId]);
+    } catch (std::exception e) {
+      throw ZeroMQPushPullException(e.what()); 
+    }
     puller->setsockopt(ZMQ_RCVHWM, &this->hwm, sizeof(this->hwm));
     puller->connect(url);
 
@@ -153,16 +172,18 @@ ZeroMQPushPull::ZeroMQPushPull(
         if (pollItems[i].revents & ZMQ_POLLIN) {
 
           int pullCount = this->pullCounters[i]->fetch_add(1);
+            std::string message1 = "pullCount " + boost::lexical_cast<std::string>(pullCount) + "\n";
+            //std::cout << message1;
           this->pullers[i]->recv(&message);
           // Is this null terminated?
           char *buff = static_cast<char*>(message.data());
           std::string sNetflow(buff); 
           Netflow netflow = makeNetflow(pullCount, sNetflow);
           this->parallelFeed(netflow);
-          if (pullCount % metricInterval == 0) {
+          //if (pullCount % metricInterval == 0) {
             //std::cout << "nodeid " << this->nodeId << " PullCount[" << i 
             //          << "] " << pullCount << std::endl;
-          }
+          //}
         } 
       }
     }
@@ -185,12 +206,23 @@ std::string ZeroMQPushPull::getIpString(std::string hostname) const
 
 bool ZeroMQPushPull::consume(Netflow const& n)
 {
+  // Test if we got the empty netflow.  If so kill the threads.
+  //if (isEmptyNetflow(n)) {
+  //  for (int i = 0; i < numNodes; i++) {
+  //    
+  //  }
+  //}
+
+
+  //std::cout << "ZeroMQPushPull::consume " << toString(n) << std::endl;
   // Keep track how many netflows have come through this method.
   consumeCount++;
-  if (consumeCount % metricInterval == 0) {
-    //std::cout << "NodeId " << nodeId << " consumeCount " << consumeCount 
-    //          << std::endl; 
-  }
+  //if (consumeCount % metricInterval == 0) {
+    std::string debugMessage = "NodeId " + 
+      boost::lexical_cast<std::string>(nodeId) +  " consumeCount " +
+      boost::lexical_cast<std::string>(consumeCount) + "\n"; 
+    printf("%s", debugMessage.c_str());
+  //}
 
   // Get the source and dest ips.  We send the netflow twice, once to each
   // node responsible for the found ips.
@@ -214,10 +246,14 @@ bool ZeroMQPushPull::consume(Netflow const& n)
   snprintf ((char *) message1.data(), lengthString + 1 ,
               "%s", s.c_str());
   pushers[node1]->send(message1);
-  zmq::message_t message2(lengthString + 1);
-  snprintf ((char *) message2.data(), lengthString + 1 ,
-              "%s", s.c_str());
-  pushers[node2]->send(message2);
+
+  // Don't send message twice
+  if (node1 != node2) {
+    zmq::message_t message2(lengthString + 1);
+    snprintf ((char *) message2.data(), lengthString + 1 ,
+                "%s", s.c_str());
+    pushers[node2]->send(message2);
+  }
   return true;
 }
 

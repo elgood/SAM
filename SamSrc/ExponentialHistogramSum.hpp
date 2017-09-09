@@ -73,8 +73,6 @@ public:
     if (allWindows.count(key) == 0) {
       auto eh = std::shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
-      std::pair<std::string, 
-                std::shared_ptr<ExponentialHistogram<T>>> p(key, eh);
       allWindows[key] = eh;
     }
 
@@ -146,8 +144,6 @@ public:
     if (allWindows.count(key) == 0) {
       auto eh = std::shared_ptr<ExponentialHistogram<T>>(
                   new ExponentialHistogram<T>(N, k));
-      std::pair<std::string, 
-                std::shared_ptr<ExponentialHistogram<T>>> p(key, eh);
       allWindows[key] = eh;
     }
 
@@ -161,6 +157,8 @@ public:
     this->featureMap->updateInsert(key, this->identifier, feature);
   
     std::size_t id = std::get<0>(input);
+    //std::cout << "currentSum for " << key << ": " << currentSum  
+    //          << " getNumItems " << allWindows[key]->getNumItems() << std::endl;
     this->notifySubscribers(id, currentSum / allWindows[key]->getNumItems());
 
     return true;

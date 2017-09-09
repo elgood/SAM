@@ -26,7 +26,9 @@ class Identity: public AbstractConsumer<InputType>,
                 public FeatureProducer
 {
 private:
-
+  //TODO remove
+  int numPos = 0;
+  int numNeg = 0;
 
 public:
   /**
@@ -56,8 +58,16 @@ public:
     this->featureMap->updateInsert(key, this->identifier, feature);
 
     // This assumes the identifier of the tuple is the first element
+    if (value == 0) {
+      numNeg++;
+    } else if (value == 1) {
+      numPos++;
+    }
+    //std::cout << toString(input) << std::endl;
     std::size_t id = std::get<0>(input);
     this->notifySubscribers(id, value);
+    
+    //std::cout << "numNeg, numPos " << numNeg << " " << numPos << std::endl;
 
     return true;
   }
