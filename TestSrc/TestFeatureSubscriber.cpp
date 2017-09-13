@@ -14,6 +14,7 @@
 #include "FeatureMap.hpp"
 #include "ExponentialHistogramSum.hpp"
 #include "ExponentialHistogramVariance.hpp"
+#include <stdio.h>
 
 using namespace sam;
 
@@ -45,7 +46,8 @@ public:
 BOOST_AUTO_TEST_CASE( test_init )
 {
   int numFeatures = 5;
-  FeatureSubscriber subscriber;
+  std::string outputfile = "TestTransformProducerOutput.txt";
+  FeatureSubscriber subscriber(outputfile);
   BOOST_CHECK_THROW(subscriber.update(1, "featureName", 5.0), 
                     std::logic_error);
   
@@ -58,6 +60,7 @@ BOOST_AUTO_TEST_CASE( test_init )
   subscriber.init();
   
   BOOST_CHECK_THROW(subscriber.addFeature("blah"), std::logic_error);
+  remove(outputfile.c_str());
 }
 
 /**
@@ -75,7 +78,8 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_single_thread )
   }
 
   int capacity = 10000;
-  auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
+  std::string outputfile = "TestTransformProducerOutput.txt";
+  auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
   int i = 0;
   for (int i = 0; i < numFeatures; i++) {
     std::string featureName = boost::lexical_cast<std::string>(i);
@@ -95,15 +99,12 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_single_thread )
     }
   }
 
-  std::string result = subscriber->getOutput();
-
   // Each line should look like 0,1,2,3,4
-  
-  boost::char_separator<char> newline("\n");
-  boost::char_separator<char> comma(",");
-  boost::tokenizer<boost::char_separator<char>> newlineTok(result, newline);
-  BOOST_FOREACH(std::string const &line, newlineTok)
-  {
+  auto infile = std::ifstream(outputfile);
+  std::string line;
+  int numLines = 0;
+  while(std::getline(infile, line)) {
+    boost::char_separator<char> comma(",");
     boost::tokenizer<boost::char_separator<char>> csvTok(line, comma);
     int i = 0;
     BOOST_FOREACH(std::string const &t, csvTok)
@@ -111,7 +112,11 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_single_thread )
       BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(i), t); 
       i++;
     }
+    numLines++;
   }
+  BOOST_CHECK_EQUAL(numLines, numTimes);
+ 
+  remove(outputfile.c_str());
 }
 
 /**
@@ -124,7 +129,8 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_multi_thread )
   int capacity = 10000;
 
   // Each of the threads will add to subscriber concurrently 
-  auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
+  std::string outputfile = "TestTransformProducerOutput.txt";
+  auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
 
   // The number of concurrent threads
   std::vector<std::thread> threads;
@@ -144,12 +150,11 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_multi_thread )
   }
 
   subscriber->init();
-
+  int numTimes = 100;
   for (int i = 0; i < numThreads; i++)
   {
     auto producer = producers[i];
-    threads.push_back(std::thread([producer]() {
-      int numTimes = 100;
+    threads.push_back(std::thread([producer, numTimes]() {
       for (int i = 0; i < numTimes; i++) {
         producer->consume();
       }
@@ -160,13 +165,12 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_multi_thread )
     threads[i].join();
   }
 
-  std::string result = subscriber->getOutput();
-
-  boost::char_separator<char> newline("\n");
-  boost::char_separator<char> comma(",");
-  boost::tokenizer<boost::char_separator<char>> newlineTok(result, newline);
-  BOOST_FOREACH(std::string const &line, newlineTok)
-  {
+  // Each line should look like 0,1,2,3,4
+  auto infile = std::ifstream(outputfile);
+  std::string line;
+  int numLines = 0;
+  while(std::getline(infile, line)) {
+    boost::char_separator<char> comma(",");
     boost::tokenizer<boost::char_separator<char>> csvTok(line, comma);
     int i = 0;
     BOOST_FOREACH(std::string const &t, csvTok)
@@ -174,7 +178,11 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_multi_thread )
       BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(i), t); 
       i++;
     }
+    numLines++;
   }
+  BOOST_CHECK_EQUAL(numLines, numTimes);
+ 
+  remove(outputfile.c_str());
 }
 
 /**
@@ -209,7 +217,8 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   auto featureMap = std::make_shared<FeatureMap>(capacity);
 
   int numFeatures = 4;
-  auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
+  std::string outputfile = "TestTransformProducerOutput.txt";
+  auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
 
   int N = 1000;
   int k = 2;
@@ -251,17 +260,12 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
 
   netflowProducer.run();
 
-  std::string result = subscriber->getOutput();
-
-  //std::cout << result << std::endl;
-
-  boost::char_separator<char> newline("\n");
-  boost::char_separator<char> comma(",");
-  boost::tokenizer<boost::char_separator<char>> newlineTok(result, newline);
+  auto infile = std::ifstream(outputfile);
+  std::string line;
   int skip = 200; //skip the first lines because they are inaccurate
   int linesSeen = 0;
-  BOOST_FOREACH(std::string const &line, newlineTok)
-  {
+  boost::char_separator<char> comma(",");
+  while(std::getline(infile, line)) {
     if (linesSeen > skip) {
       boost::tokenizer<boost::char_separator<char>> csvTok(line, comma);
       int i = 0;
@@ -292,4 +296,6 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
     }
     linesSeen++;
   }
+  BOOST_CHECK_EQUAL(linesSeen, numExamples);
+  remove(outputfile.c_str());
 }

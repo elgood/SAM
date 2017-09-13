@@ -15,8 +15,8 @@
 
 #include <boost/program_options.hpp>
 
-#include <mlpack/core.hpp>
-#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
+//#include <mlpack/core.hpp>
+//#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
 
 #include "ReadSocket.h"
 #include "ReadCSV.hpp"
@@ -39,8 +39,8 @@ namespace po = boost::program_options;
 
 using namespace sam;
 using namespace std::chrono;
-using namespace mlpack;
-using namespace mlpack::naive_bayes;
+//using namespace mlpack;
+//using namespace mlpack::naive_bayes;
 
 void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                  std::shared_ptr<FeatureMap> featureMap,
@@ -247,7 +247,7 @@ int main(int argc, char** argv) {
     auto receiver = std::make_shared<ReadCSV>(inputfile);
 
     // subscriber collects the features for each netflow
-    auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
+    auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
 
     // createPipeline creates all the operators and ties them together.  It 
     // also notifies the designated feature producers of the subscriber.
@@ -279,19 +279,13 @@ int main(int argc, char** argv) {
     std::cout << "Seconds for Node" << nodeId << ": "  
       << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
 
-    // Get the features that had been created and write them out to outputfile
-    std::string result = subscriber->getOutput();
-
-    std::ofstream out(outputfile);
-    out << result;
-    out.close();
     return 0;
  
   }  
   /********************* Learning Model *********************************/
   else if (vm.count("train"))
   {
-    if (inputfile == "") {
+    /*if (inputfile == "") {
       std::cout << "--train was specified but no input file"
                 << " was listed with --inputfile." << std::endl;
       return -1; 
@@ -322,7 +316,7 @@ int main(int argc, char** argv) {
     std::cout << "Saved Model " << std::endl;
     Timer::Stop("nbc_training");
     return 0;
-
+    */
   } 
   /******************** Applying model *********************************/
   else if (vm.count("test"))

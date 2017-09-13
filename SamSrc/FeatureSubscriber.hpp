@@ -45,14 +45,14 @@ private:
   // Init must be called before update is called.  This variable keeps track.
   bool initCalled = false;
 
-  std::shared_ptr<NBCModel> model;
+  //std::shared_ptr<NBCModel> model;
 
 public:
-  FeatureSubscriber(std::shared_ptr<NBCModel> model,
+  /*FeatureSubscriber(//std::shared_ptr<NBCModel> model,
                     std::string outputfile,
                     int capacity = 10000) 
   {
-    this->model = model;
+    //this->model = model;
     this->capacity = capacity;
     this->out = std::ofstream(outputfile);
 
@@ -60,7 +60,7 @@ public:
     for(int i = 0; i < capacity; i++) {
       counts[i] = 0;
     }
-  }
+  }*/
 
   FeatureSubscriber(std::string outputfile,
                     int capacity = 10000) 

@@ -47,13 +47,15 @@ BOOST_AUTO_TEST_CASE( test_sample )
       }
     }
 
-    std::cout << numNeg << " " << numPos << std::endl;
+    std::cout << "Num Negative " <<  numNeg 
+              << " Num Positive " << numPos << std::endl;
 
     infile.close();
 
     int capacity = 100000;
     auto featureMap = std::make_shared<FeatureMap>(capacity);
-    auto subscriber = std::make_shared<FeatureSubscriber>(capacity);
+    std::string outputfile = "TestCTUOutputFile.txt";
+    auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
     auto receiver = std::make_shared<ReadCSV>(dataFile);
     std::size_t dequeLength = 100;
     std::size_t numNodes = 1;
@@ -103,19 +105,19 @@ BOOST_AUTO_TEST_CASE( test_sample )
     receiver->receive();
     //delete consumer;
 
-    std::string result = subscriber->getOutput();
-
-    boost::char_separator<char> newline("\n");
-    boost::char_separator<char> comma(",");
-    boost::tokenizer<boost::char_separator<char>> newlineTok(result, newline);
     int numPosFound = 0;
     int numNegFound = 0;
-    std::ifstream infile;
-    infile.open( dataFile );
+
+    // Open the original file
+    std::ifstream origfile;
+    origfile.open( dataFile );
+
+    // Open the result file
+    std::ifstream resultfile = std::ifstream(outputfile);
 
     // Going to read through the original data file and the result string
     // simultaneously.  There should be a one-to-one correspondence.
-    if (infile.is_open())
+    if (resultfile.is_open() && origfile.is_open())
     {
       //Sum of SrcTotalBytes per dest ip
       std::map<std::string, std::deque<long>> valuesSrcTotalBytes; 
@@ -123,14 +125,15 @@ BOOST_AUTO_TEST_CASE( test_sample )
       double totalDiffMeanSrcTotalBytes = 0;
       double totalDiffVarSrcTotalBytes = 0;
 
-      BOOST_FOREACH(std::string const &line, newlineTok)
+      bool anotherLine = false;
+      // Get a line from the original data file
+      std::string orig;
+      std::string result;
+      while (std::getline(origfile, orig) && std::getline(resultfile, result))
       {
-        // Geta a line from the original data file
-        std::string fromfile;
-        std::getline(infile, fromfile);
-
+      
         // Tokenize the line from the original data file
-        std::vector<std::string> lineVector = convertToTokens(fromfile);
+        std::vector<std::string> lineVector = convertToTokens(orig);
 
         // Get the destIp, which is the key for imux operation
         std::string destIp = lineVector[DestIp - 1];
@@ -155,26 +158,24 @@ BOOST_AUTO_TEST_CASE( test_sample )
                                       valuesSrcTotalBytes[destIp] );
         expVarSrcTotalBytes *= expVarSrcTotalBytes;
 
-         
         // Convert the current line from the result string to tokens
-        std::vector<std::string> tokenVector = convertToTokens(line);
+        std::vector<std::string> tokenVector = convertToTokens(result);
 
         // Updating counts of num negative examples and num positive examples
         if (tokenVector[0] == "0") numNegFound++;
         if (tokenVector[0] == "1") numPosFound++;
 
-        //std::cout << tokenVector[1] << std::endl;
         double predMeanSrcTotalBytes = boost::lexical_cast<double>(
                                           tokenVector[1]);
         double predVarSrcTotalBytes = boost::lexical_cast<double>(
                                           tokenVector[2]);
-        //std::cout << "destIp " << destIp << " srcTotalBytes " << srcTotalBytes 
-        //          << " expMeanSrcTotalBytes " << expMeanSrcTotalBytes 
-        //          << " predMeanSrcTotalBytes " << predMeanSrcTotalBytes 
-        //          << " expVarSrcTotalBytes " << expVarSrcTotalBytes 
-        //          << " predVarSrcTotalBytes " << predVarSrcTotalBytes 
-        //          << " size "<< valuesSrcTotalBytes[destIp].size() << std::endl;
-
+        /*std::cout <<"destIp " << destIp << " srcTotalBytes " << srcTotalBytes 
+                  << " expMeanSrcTotalBytes " << expMeanSrcTotalBytes 
+                  << " predMeanSrcTotalBytes " << predMeanSrcTotalBytes 
+                  << " expVarSrcTotalBytes " << expVarSrcTotalBytes 
+                  << " predVarSrcTotalBytes " << predVarSrcTotalBytes 
+                  << " size "<< valuesSrcTotalBytes[destIp].size() << std::endl;
+        */
         //std::cout << "totalDiffVarSrcTotalBytes " << totalDiffVarSrcTotalBytes
         //          << std::endl;
         if (expMeanSrcTotalBytes < predMeanSrcTotalBytes) {
@@ -197,11 +198,6 @@ BOOST_AUTO_TEST_CASE( test_sample )
         //          << std::endl;
 
         numLines++;
-                  
-        // SrcTotalBytes can't be negative
-        BOOST_CHECK(predMeanSrcTotalBytes >= 0);
-        BOOST_CHECK(predVarSrcTotalBytes >= 0);
-
         // Comparing predicated and expected SrcTotalBytes
         // Individual differences can be big, especially when there is a 
         // deletion of a large item.  Later we gather overall differences,
@@ -209,8 +205,12 @@ BOOST_AUTO_TEST_CASE( test_sample )
         BOOST_CHECK_CLOSE(predMeanSrcTotalBytes, expMeanSrcTotalBytes, 300);
         BOOST_CHECK_CLOSE(std::sqrt(predVarSrcTotalBytes), 
                           std::sqrt(expVarSrcTotalBytes), 2100);
-      }
 
+                 
+        // SrcTotalBytes can't be negative
+        BOOST_CHECK(predMeanSrcTotalBytes >= 0);
+        BOOST_CHECK(predVarSrcTotalBytes >= 0);
+      }
       std::cout << "average diff " << totalDiffMeanSrcTotalBytes / numLines
                 << std::endl;
       std::cout << "average diff " << totalDiffVarSrcTotalBytes / numLines
@@ -218,15 +218,16 @@ BOOST_AUTO_TEST_CASE( test_sample )
       BOOST_CHECK_CLOSE(1, totalDiffMeanSrcTotalBytes/ numLines, 50);
       BOOST_CHECK_CLOSE(1, totalDiffVarSrcTotalBytes/ numLines, 50); 
 
+      BOOST_CHECK_EQUAL(numNeg, numNegFound);
+      BOOST_CHECK_EQUAL(numPos, numPosFound);
+
     } else {
       throw std::runtime_error("Problems opening data file");
     }
-    BOOST_CHECK_EQUAL(numNeg, numNegFound);
-    BOOST_CHECK_EQUAL(numPos, numPosFound);
+    remove(outputfile.c_str());
   } else {
     std::cout << "Couldn't read file " << std::endl;
     throw std::runtime_error("Problem with test.  Couldn't read data file");
   }
   std::cout << "The end " << std::endl;
-
 }

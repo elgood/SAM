@@ -34,12 +34,12 @@ include_directories("${ZMQ_INCLUDE_DIRS}")
 
 ###################### Armadillo ##############################
 
-find_package(Armadillo REQUIRED)
-include_directories(${ARMADILLO_INCLUDE_DIRS})
+#find_package(Armadillo REQUIRED)
+#include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 ####################### MLPACK #########################
-find_library(MLPACK_LIBRARY NAMES mlpack)
-set (MLPACK_LIBRARIES ${MLPACK_LIBRARY})
+#find_library(MLPACK_LIBRARY NAMES mlpack)
+#set (MLPACK_LIBRARIES ${MLPACK_LIBRARY})
 
 ####################### Include directories #################
 include_directories(SamSrc)
@@ -79,8 +79,8 @@ foreach(exeSrc ${EXE_SRCS})
   target_link_libraries(${exeName} pthread)
   #target_link_libraries(${exeName} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
   target_link_libraries(${exeName} ${ZMQ_LIBRARIES})
-  target_link_libraries(${exeName} ${ARMADILLO_LIBRARIES})
-  target_link_libraries(${exeName} ${MLPACK_LIBRARIES})
+  #target_link_libraries(${exeName} ${ARMADILLO_LIBRARIES})
+  #target_link_libraries(${exeName} ${MLPACK_LIBRARIES})
   target_link_libraries(${exeName} ${Boost_LIBRARIES})
 
   set_target_properties(${exeName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")

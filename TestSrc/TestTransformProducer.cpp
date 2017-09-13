@@ -65,7 +65,8 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
   // We'll use a feature subscriber and an identity operator to accumulate
   // the timediff values from the TransformProducer.
   int numFeatures = 1;
-  auto subscriber = std::make_shared<FeatureSubscriber>(numFeatures);
+  std::string outputFile = "outputFileTestTransformProducer.txt";
+  auto subscriber = std::make_shared<FeatureSubscriber>(outputFile, numFeatures);
 
   identifier = "identity";
   auto identity = std::make_shared<Identity<TimeLapseDestSrc, 
@@ -98,12 +99,10 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
   }
 
   // Each line should contain the number 1
-  std::string result = subscriber->getOutput();  
-  boost::char_separator<char> newline("\n");
-  boost::tokenizer<boost::char_separator<char>> newlineTok(result, newline);
+  auto infile = std::ifstream(outputFile);
+  std::string line;
   int i = 0;
-  BOOST_FOREACH(std::string const& line, newlineTok)
-  {
+  while(std::getline(infile, line)) {
     // The first line is 0 since there wasn't a previous value to work with.
     if (i == 0) {
       BOOST_CHECK_EQUAL(boost::lexical_cast<double>(line), 0.0);
@@ -112,8 +111,16 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
       BOOST_CHECK_EQUAL(boost::lexical_cast<double>(line), 1.0);
     }
     i++;
+
   }
   BOOST_CHECK_EQUAL(i, numExamples);
+  //std::string result = subscriber->getOutput();  
+  //boost::char_separator<char> newline("\n");
+  //boost::tokenizer<boost::char_separator<char>> newlineTok(result, newline);
+  //int i = 0;
+  //BOOST_FOREACH(std::string const& line, newlineTok)
+  //{
+  //}
 
 
 
