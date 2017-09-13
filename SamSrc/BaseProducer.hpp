@@ -91,7 +91,7 @@ void BaseProducer<T>::parallelFeed(T const& item) {
   if (numItems >= queueLength) {
     //std::cout << "parallelfeed " << numItems << " " << queueLength << std::endl;
 
-    /*boost::thread_group threads;
+    boost::thread_group threads;
     for (int i = 0; i < consumers.size(); i++) {
      
       threads.create_thread([this, i]()
@@ -105,17 +105,17 @@ void BaseProducer<T>::parallelFeed(T const& item) {
 
       );
       
-    }*/
+    }
     //REMOVE serial implementation for debugging
-    for (int j = 0; j < this->queueLength; j++) {
-      for (int i = 0; i < consumers.size(); i++) {
-        //std::cout << "i j " << i << " " << j << " blahblahblah" << std::endl;
-        this->consumers[i]->consume(inputQueue[j]);
-        //std::cout << "after consume" << std::endl;
-      }
-    } //END REMOVE
+    //for (int j = 0; j < this->queueLength; j++) {
+    //  for (int i = 0; i < consumers.size(); i++) {
+    //    //std::cout << "i j " << i << " " << j << " blahblahblah" << std::endl;
+    //    this->consumers[i]->consume(inputQueue[j]);
+    //    //std::cout << "after consume" << std::endl;
+    //  }
+    //} //END REMOVE
     numItems = 0;
-    //threads.join_all();
+    threads.join_all();
 
   }
   //std::cout << "exiting parallelfeed" << std::endl;

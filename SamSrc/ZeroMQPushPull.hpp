@@ -217,12 +217,12 @@ bool ZeroMQPushPull::consume(Netflow const& n)
   //std::cout << "ZeroMQPushPull::consume " << toString(n) << std::endl;
   // Keep track how many netflows have come through this method.
   consumeCount++;
-  //if (consumeCount % metricInterval == 0) {
+  if (consumeCount % metricInterval == 0) {
     std::string debugMessage = "NodeId " + 
       boost::lexical_cast<std::string>(nodeId) +  " consumeCount " +
       boost::lexical_cast<std::string>(consumeCount) + "\n"; 
     printf("%s", debugMessage.c_str());
-  //}
+  }
 
   // Get the source and dest ips.  We send the netflow twice, once to each
   // node responsible for the found ips.

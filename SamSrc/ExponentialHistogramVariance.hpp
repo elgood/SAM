@@ -54,8 +54,13 @@ public:
   bool consume(InputType const& input) {
     this->feedCount++;
     if (this->feedCount % this->metricInterval == 0) {
-      std::cout << "NodeId " << this->nodeId << " number of keys " 
-                << sums.size() << std::endl;
+      std::string message = "ExponentialHistogramVariance id " +
+        this->identifier + " NodeId " +
+        boost::lexical_cast<std::string>(this->nodeId) + 
+        " number of keys " + boost::lexical_cast<std::string>(sums.size())
+        + " feedCount " + boost::lexical_cast<std::string>(this->feedCount) +
+        "\n";
+        printf("%s", message.c_str());
     }
 
     // Generates unique key from key fields

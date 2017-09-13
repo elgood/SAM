@@ -33,7 +33,7 @@ private:
   std::map<std::string, int> featureIndices;
 
   // Stores the results of completed rows
-  std::stringstream ss;
+  std::ofstream out;
 
   mutable std::mutex mu;
 
@@ -49,10 +49,12 @@ private:
 
 public:
   FeatureSubscriber(std::shared_ptr<NBCModel> model,
+                    std::string outputfile,
                     int capacity = 10000) 
   {
     this->model = model;
     this->capacity = capacity;
+    this->out = std::ofstream(outputfile);
 
     // TODO add parallel loop
     for(int i = 0; i < capacity; i++) {
@@ -60,10 +62,12 @@ public:
     }
   }
 
-  FeatureSubscriber(int capacity = 10000) 
+  FeatureSubscriber(std::string outputfile,
+                    int capacity = 10000) 
                     
   {
     this->capacity = capacity;
+    this->out = std::ofstream(outputfile);
     counts = new int[capacity];
 
     // TODO add parallel loop
@@ -122,12 +126,6 @@ public:
               std::string const& featureName,
               double value);
 
-  /**
-   * Get the created features.  Each line represents one input (e.g. one
-   * netflow) and all the features generated from the input.  It is CSV.
-   */
-  std::string getOutput();
-  
 };
 
 inline
@@ -155,9 +153,9 @@ bool FeatureSubscriber::update(std::size_t key,
 
       counts[index] = 0;
       for (int j = 0; j < numFeatures - 1; j++) {
-        ss << values[index * numFeatures + j] << ","; 
+        out << values[index * numFeatures + j] << ","; 
       }
-      ss << values[index * numFeatures + numFeatures - 1] << std::endl;
+      out << values[index * numFeatures + numFeatures - 1] << std::endl;
       //std::cout << "Returning true2 " << std::endl;
       return true;
     }
@@ -170,11 +168,6 @@ bool FeatureSubscriber::update(std::size_t key,
   }
 }
 
-inline
-std::string FeatureSubscriber::getOutput() {
-  std::lock_guard<std::mutex> lock(mu);
-  return ss.str();
-}
 
 
 }
