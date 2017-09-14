@@ -6,9 +6,11 @@
 #include <sstream>
 #include <map>
 #include <stdexcept>
+#include <mutex>
+#include <fstream>
 
 #include "Util.hpp"
-#include "Learning.hpp"
+//#include "Learning.hpp"
 
 #define MAP_EMPTY        0
 #define MAP_OCCUPIED     1

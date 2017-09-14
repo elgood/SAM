@@ -17,7 +17,8 @@ include_directories("${STRING_INCLUDE_PATH}/dummy/../")
 ######################## Boost ######################
 
 SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_62_0")
-find_package(Boost REQUIRED system thread program_options serialization)
+find_package(Boost REQUIRED system thread program_options serialization
+              unit_test_framework)
 include_directories(${Boost_INCLUDE_DIRS})
 
 ###################### ZMQ ##########################

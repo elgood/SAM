@@ -527,11 +527,11 @@ int main(int argc, char** argv) {
   std::size_t capacity = 10000;////> Capacity of FeatureMap and subscriber
 
   // The training data if learning the classifier
-  arma::mat trainingData;
+  //arma::mat trainingData;
 
   // The model that can be trained from example data or if a trained model
   // exists, can be loaded from the filesystem.
-  NBCModel model;
+  //NBCModel model;
 
   po::options_description desc("Allowed options");
   desc.add_options()
