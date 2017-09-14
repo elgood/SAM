@@ -30,7 +30,7 @@
 #include "TransformProducer.hpp"
 #include "Project.hpp"
 #include "CollapsedConsumer.hpp"
-#include "Learning.hpp"
+//#include "Learning.hpp"
 #include "Identity.hpp"
 
 //#define DEBUG 1
