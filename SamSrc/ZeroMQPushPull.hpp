@@ -71,8 +71,9 @@ public:
 
   virtual ~ZeroMQPushPull()
   {
-    stopThread();
-    delete context;
+    //stopThread();
+    //delete context;
+    pullThread.join();
   }
   
   virtual bool consume(Netflow const& netflow);
@@ -82,8 +83,8 @@ public:
    * exit when using this class.
    */
   void stopThread() {
-    stopPull = true;
-    pullThread.join();
+    //stopPull = true;
+    //pullThread.join();
   }
 
 private:
