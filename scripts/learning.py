@@ -166,6 +166,7 @@ def main():
     figurenum = analysis(figurenum, y2, X2, y1, X1, FLAGS.plot, 
                           FLAGS.problem_name, srcIps[0:i], destIps[0:i])
 
+
     if FLAGS.plot:
       input()
 
