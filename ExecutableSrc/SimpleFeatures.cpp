@@ -26,7 +26,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "ReadSocket.h"
+#include "ReadSocket.hpp"
 #include "ReadCSV.hpp"
 #include "ZeroMQPushPull.hpp"
 #include "TopK.hpp"
@@ -64,7 +64,9 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                  std::size_t hwm,
                  std::size_t N,
                  std::size_t b,
-                 std::size_t k)
+                 std::size_t k,
+                 bool excludeAverageSrcTotalBytes,
+                 bool excludeAverageDestTotalBytes)
 {
   // An operator to get the label from each netflow and add it to the
   // subscriber.
@@ -83,21 +85,23 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   }
 
 
-  /** Dest Ip as key **/
-  identifier = "averageSrcTotalBytes";
-  auto averageSrcTotalBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
-                                                 SrcTotalBytes,
-                                                 DestIp>>
-                          (N, 2, nodeId, featureMap, identifier);
+  if (!excludeAverageSrcTotalBytes) {
+    /** Dest Ip as key **/
+    identifier = "averageSrcTotalBytes";
+    auto averageSrcTotalBytes = std::make_shared<
+                        ExponentialHistogramAve<double, Netflow,
+                                                   SrcTotalBytes,
+                                                   DestIp>>
+                            (N, 2, nodeId, featureMap, identifier);
 
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageSrcTotalBytes);
-  } else {
-    receiver->registerConsumer(averageSrcTotalBytes); 
-  }
-  if (subscriber != NULL) {
-    averageSrcTotalBytes->registerSubscriber(subscriber, identifier);
+    if (pushpull != NULL) {
+      pushpull->registerConsumer(averageSrcTotalBytes);
+    } else {
+      receiver->registerConsumer(averageSrcTotalBytes); 
+    }
+    if (subscriber != NULL) {
+      averageSrcTotalBytes->registerSubscriber(subscriber, identifier);
+    }
   }
 
   identifier = "varSrcTotalBytes";
@@ -115,19 +119,21 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
     varSrcTotalBytes->registerSubscriber(subscriber, identifier);
   }
 
-  identifier = "averageDestTotalBytes";
-  auto averageDestTotalBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
-                                                 DestTotalBytes,
-                                                 DestIp>>
-                          (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageDestTotalBytes);
-  } else {
-    receiver->registerConsumer(averageDestTotalBytes); 
-  }
-  if (subscriber != NULL) {
-    averageDestTotalBytes->registerSubscriber(subscriber, identifier);
+  if (!excludeAverageDestTotalBytes) {
+    identifier = "averageDestTotalBytes";
+    auto averageDestTotalBytes = std::make_shared<
+                        ExponentialHistogramAve<double, Netflow,
+                                                   DestTotalBytes,
+                                                   DestIp>>
+                            (N, 2, nodeId, featureMap, identifier);
+    if (pushpull != NULL) {
+      pushpull->registerConsumer(averageDestTotalBytes);
+    } else {
+      receiver->registerConsumer(averageDestTotalBytes); 
+    }
+    if (subscriber != NULL) {
+      averageDestTotalBytes->registerSubscriber(subscriber, identifier);
+    }
   }
 
   identifier = "varDestTotalBytes";
@@ -296,19 +302,21 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   }
 
   /** SourceIp as key **/
-  identifier = "averageSrcTotalBytesSourceIp";
-  auto averageSrcTotalBytesSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
-                                                 SrcTotalBytes,
-                                                 SourceIp>>
-                          (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageSrcTotalBytesSourceIp);
-  } else {
-    receiver->registerConsumer(averageSrcTotalBytesSourceIp); 
-  }
-  if (subscriber != NULL) {
-    averageSrcTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
+  if (!excludeAverageSrcTotalBytes) {
+    identifier = "averageSrcTotalBytesSourceIp";
+    auto averageSrcTotalBytesSourceIp = std::make_shared<
+                        ExponentialHistogramAve<double, Netflow,
+                                                   SrcTotalBytes,
+                                                   SourceIp>>
+                            (N, 2, nodeId, featureMap, identifier);
+    if (pushpull != NULL) {
+      pushpull->registerConsumer(averageSrcTotalBytesSourceIp);
+    } else {
+      receiver->registerConsumer(averageSrcTotalBytesSourceIp); 
+    }
+    if (subscriber != NULL) {
+      averageSrcTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
+    }
   }
 
   identifier = "varSrcTotalBytesSourceIp";
@@ -326,19 +334,21 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
     varSrcTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
   }
 
-  identifier = "averageDestTotalBytesSourceIp";
-  auto averageDestTotalBytesSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
-                                                 DestTotalBytes,
-                                                 SourceIp>>
-                          (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageDestTotalBytesSourceIp);
-  } else {
-    receiver->registerConsumer(averageDestTotalBytesSourceIp); 
-  }
-  if (subscriber != NULL) {
-    averageDestTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
+  if (!excludeAverageDestTotalBytes) {
+    identifier = "averageDestTotalBytesSourceIp";
+    auto averageDestTotalBytesSourceIp = std::make_shared<
+                        ExponentialHistogramAve<double, Netflow,
+                                                   DestTotalBytes,
+                                                   SourceIp>>
+                            (N, 2, nodeId, featureMap, identifier);
+    if (pushpull != NULL) {
+      pushpull->registerConsumer(averageDestTotalBytesSourceIp);
+    } else {
+      receiver->registerConsumer(averageDestTotalBytesSourceIp); 
+    }
+    if (subscriber != NULL) {
+      averageDestTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
+    }
   }
 
   identifier = "varDestTotalBytesSourceIp";
@@ -577,6 +587,8 @@ int main(int argc, char** argv) {
       " a learned model.")
     ("capacity", po::value<std::size_t>(&capacity)->default_value(10000),
       "The capacity of the FeatureMap and FeatureSubcriber")
+    ("excludeAveSrcTotalBytes", "If set, will exclude average SrcTotalBytes")
+    ("excludeAveDestTotalBytes", "If set, will exclude average DestTotalBytes")
   ;
 
   // Parse the command line variables
@@ -613,6 +625,9 @@ int main(int argc, char** argv) {
   std::cout << "About to create feature Map " << std::endl;
   auto featureMap = std::make_shared<FeatureMap>(capacity);
 
+  bool excludeAverageSrcTotalBytes = vm.count("excludeAveSrcTotalBytes");
+  bool excludeAverageDestTotalBytes = vm.count("excludeAveDestTotalBytes");
+  
   /********************** Creating features ******************************/
   if (vm.count("create_features")) 
   {
@@ -644,7 +659,9 @@ int main(int argc, char** argv) {
                    hostnames,
                    ports,
                    hwm,
-                   N, b, k);
+                   N, b, k,
+                   excludeAverageSrcTotalBytes,
+                   excludeAverageDestTotalBytes);
    
     std::cout << "Created Pipeline " << std::endl;
     
@@ -744,7 +761,9 @@ int main(int argc, char** argv) {
                    hostnames,
                    ports,
                    hwm,
-                   N, b, k);
+                   N, b, k,
+                   excludeAverageSrcTotalBytes,
+                   excludeAverageDestTotalBytes);
  
     if (!receiver->connect()) {
       std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;

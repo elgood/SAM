@@ -15,7 +15,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "ReadSocket.h"
+#include "ReadSocket.hpp"
 #include "ZeroMQPushPull.hpp"
 #include "TopK.hpp"
 #include "Netflow.hpp"

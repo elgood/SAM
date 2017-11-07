@@ -2,7 +2,7 @@
 
 //#define DEBUG 1
 
-#include "ReadSocket.h"
+#include "ReadSocket.hpp"
 #include "ZeroMQPushPull.hpp"
 #include "ExponentialHistogramSum.hpp"
 

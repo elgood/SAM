@@ -14,7 +14,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "ReadSocket.h"
+#include "ReadSocket.hpp"
 #include "ZeroMQPushPull.hpp"
 
 using std::string;

@@ -18,7 +18,7 @@
 //#include <mlpack/core.hpp>
 //#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
 
-#include "ReadSocket.h"
+#include "ReadSocket.hpp"
 #include "ReadCSV.hpp"
 #include "ZeroMQPushPull.hpp"
 #include "TopK.hpp"

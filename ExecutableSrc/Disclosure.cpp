@@ -17,7 +17,7 @@
 //#include <mlpack/core.hpp>
 //#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
 
-#include "ReadSocket.h"
+#include "ReadSocket.hpp"
 #include "ReadCSV.hpp"
 #include "ZeroMQPushPull.hpp"
 #include "TopK.hpp"
@@ -93,7 +93,7 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   consumer->registerConsumer(topk); 
 
   std::cout << "topk created and registered " << std::endl;
-  /*
+  
   // Five tokens for the 
   // First function token
   auto function1 = [](Feature const * feature)->double {
@@ -266,7 +266,7 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   
   filter->registerConsumer(destTimeDiffVar);
   destTimeDiffVar->registerSubscriber(subscriber, identifier);
-  */ 
+   
 }
 
 int main(int argc, char** argv) {

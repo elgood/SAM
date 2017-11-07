@@ -57,15 +57,17 @@ include_directories(SamSrc)
 
 ############# The SAM Library ################
 
-file (GLOB SAM_SOURCES "SamSrc/*.cpp")
+#file (GLOB SAM_SOURCES "SamSrc/*.cpp")
 
-add_library(SamLib ${SAM_SOURCES})
-set_target_properties(SamLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY "lib")
+#add_library(SamLib ${SAM_SOURCES})
+add_library(SamLib INTERFACE)
+target_include_directories(SamLib INTERFACE SamSrc/)
+#set_target_properties(SamLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY "lib")
 
-target_link_libraries(SamLib ${ZMQ_LIBRARIES})
-target_link_libraries(SamLib boost_program_options)
-target_link_libraries(SamLib boost_thread)
-target_link_libraries(SamLib boost_system)
+#target_link_libraries(SamLib ${ZMQ_LIBRARIES})
+#target_link_libraries(SamLib boost_program_options)
+#target_link_libraries(SamLib boost_thread)
+#target_link_libraries(SamLib boost_system)
 
 
 ################# Executables ###############################
@@ -101,7 +103,9 @@ foreach(testSrc ${TEST_SRCS})
 
   target_link_libraries(${testName} SamLib)
   target_link_libraries(${testName} boost_unit_test_framework)
+  target_link_libraries(${testName} boost_system)
   target_link_libraries(${testName} pthread)
+  target_link_libraries(${testName} boost_thread)
 
   set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
 
