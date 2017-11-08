@@ -14,6 +14,7 @@
 #include <boost/program_options.hpp>
 
 #include "ReadSocket.hpp"
+#include "ReadFile.hpp"
 #include "ReadCSV.hpp"
 #include "ZeroMQPushPull.hpp"
 #include "TopK.hpp"
@@ -26,8 +27,8 @@
 #include "TransformProducer.hpp"
 #include "Project.hpp"
 #include "CollapsedConsumer.hpp"
-//#include "Learning.hpp"
 #include "Identity.hpp"
+#include "AbstractDataSource.hpp"
 
 using std::string;
 using std::vector;
@@ -92,7 +93,7 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
     }
   }*/
 
-  /*
+  
   // Original Feature from SimpleFeatures.cpp: 1 
   identifier = "varSrcTotalBytes";
   auto varSrcTotalBytes = std::make_shared<
@@ -108,9 +109,9 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   if (subscriber != NULL) {
     varSrcTotalBytes->registerSubscriber(subscriber, identifier);
   }
-  */
+  
 
-  /*
+  
   // Original Feature from SimpleFeatures.cpp: 2 
   if (!excludeAverageDestTotalBytes) {
     identifier = "averageDestTotalBytes";
@@ -127,7 +128,7 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
     if (subscriber != NULL) {
       averageDestTotalBytes->registerSubscriber(subscriber, identifier);
     }
-  }*/
+  }
 
   /*
   // Original Feature from SimpleFeatures.cpp: 3 
@@ -560,6 +561,7 @@ int main(int argc, char** argv) {
   string inputfile = "";
   string outputfile = "";
   std::size_t capacity = 10000;////> Capacity of FeatureMap and subscriber
+  std::string netflowfile = "";
 
   // The training data if learning the classifier
   //arma::mat trainingData;
@@ -583,6 +585,8 @@ int main(int argc, char** argv) {
       "The prefix common to all nodes")
     ("startingPort", po::value<std::size_t>(&startingPort)->default_value(
       10000),  "The starting port for the zeromq communications")
+    ("netflowfile", po::value<std::string>(&netflowfile),
+      "Read from a file rather than a socket")
     ("hwm", po::value<std::size_t>(&hwm)->default_value(10000), 
       "The high water mark (how many items can queue up before we start "
       "dropping)")
@@ -764,8 +768,12 @@ int main(int argc, char** argv) {
   /******************* Running pipeline without model ******************/
   else 
   {
-
-    auto receiver = std::make_shared<ReadSocket>(ip, ncPort);
+    std::shared_ptr<BaseProducer<Netflow>> receiver;
+    if (netflowfile != "") {
+      receiver = std::make_shared<ReadFile>(netflowfile);
+    } else {
+      receiver = std::make_shared<ReadSocket>(ip, ncPort);
+    }
 
     // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
     // getting the data from the receiver (e.g. a socket or a file) and then
@@ -790,7 +798,7 @@ int main(int argc, char** argv) {
                    excludeAverageSrcTotalBytes,
                    excludeAverageDestTotalBytes);
  
-    if (!receiver->connect()) {
+    if (!std::dynamic_pointer_cast<AbstractDataSource>(receiver)->connect()) {
       std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;
       return -1;
     }
@@ -798,7 +806,7 @@ int main(int argc, char** argv) {
     milliseconds ms1 = duration_cast<milliseconds>(
       system_clock::now().time_since_epoch()
     );
-    receiver->receive();
+    std::dynamic_pointer_cast<AbstractDataSource>(receiver)->receive();
     milliseconds ms2 = duration_cast<milliseconds>(
       system_clock::now().time_since_epoch()
     );
