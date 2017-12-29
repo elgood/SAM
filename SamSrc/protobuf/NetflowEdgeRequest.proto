@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package Sam;
+
+message NetflowEdgeRequest {
+  string sourceIP = 1;
+  string destIP = 2;
+  
+  message SimpleEdgeCondition {
+    string field = 1;
+    string operator = 2;
+    int32 rside = 3;
+  }
+   
+  repeated SimpleEdgeCondition conditions = 3;
+}
