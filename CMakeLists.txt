@@ -5,8 +5,9 @@ ENABLE_LANGUAGE(CXX)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
 
-#set(GCC_COVERAGE_COMPILE_FLAGS "-std=c++14 -g")
-set(GCC_COVERAGE_COMPILE_FLAGS "-std=c++14 -O3")
+set(GCC_COVERAGE_COMPILE_FLAGS "-std=c++14 -g")
+#set(GCC_COVERAGE_COMPILE_FLAGS "-std=c++14 -O3")
+#set(GCC_COVERAGE_COMPILE_FLAGS "-std=c++14 -O3")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
 
 find_path(STDIO_INCLUDE_PATH stdio.h)
@@ -20,6 +21,11 @@ SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_62_0")
 find_package(Boost REQUIRED system thread program_options serialization
               unit_test_framework)
 include_directories(${Boost_INCLUDE_DIRS})
+
+##################### Protobuf ######################
+
+find_package(Protobuf REQUIRED)
+include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 ###################### ZMQ ##########################
 
@@ -69,6 +75,11 @@ target_include_directories(SamLib INTERFACE SamSrc/)
 #target_link_libraries(SamLib boost_thread)
 #target_link_libraries(SamLib boost_system)
 
+############# Protobuf ######################
+file (GLOB PROTO_SOURCES "SamSrc/protobuf/*.cc")
+add_library(ProtoLib ${PROTO_SOURCES})
+set_target_properties(ProtoLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY "lib") 
+include_directories(SamSrc/protobuf)
 
 ################# Executables ###############################
 file (GLOB EXE_SRCS ExecutableSrc/*.cpp)
@@ -82,9 +93,8 @@ foreach(exeSrc ${EXE_SRCS})
   target_link_libraries(${exeName} pthread)
   #target_link_libraries(${exeName} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
   target_link_libraries(${exeName} ${ZMQ_LIBRARIES})
-  #target_link_libraries(${exeName} ${ARMADILLO_LIBRARIES})
-  #target_link_libraries(${exeName} ${MLPACK_LIBRARIES})
   target_link_libraries(${exeName} ${Boost_LIBRARIES})
+  target_link_libraries(${exeName} ${PROTOBUF_LIBRARIES})
 
   set_target_properties(${exeName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 endforeach(exeSrc)
@@ -106,6 +116,9 @@ foreach(testSrc ${TEST_SRCS})
   target_link_libraries(${testName} boost_system)
   target_link_libraries(${testName} pthread)
   target_link_libraries(${testName} boost_thread)
+  target_link_libraries(${testName} ${ZMQ_LIBRARIES})
+  target_link_libraries(${testName} ${PROTOBUF_LIBRARIES})
+  target_link_libraries(${testName} ProtoLib)
 
   set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
 

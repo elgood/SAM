@@ -6,6 +6,12 @@
 #include <numeric>
 #include <iostream>
 #include <queue>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <zmq.hpp>
+
+namespace sam {
 
 /**
  * Generates a subtuple based on the provided index_sequence.
@@ -66,6 +72,15 @@ std::string toString(std::tuple<Tp...>const& t) {
   return result;
 }
 
+template<typename... Tp>
+inline zmq::message_t tupleToZmq(std::tuple<Tp...>const& t)
+{
+  std::string str = toString(t);
+  zmq::message_t message(str.size() + 1);
+  snprintf((char*) message.data(), str.size() + 1, "%s", str.c_str());
+  return message;
+}
+
 /**
  * Hash function for strings.
  */
@@ -123,5 +138,45 @@ std::vector<std::string> convertToTokens(std::string netflowString) {
 }
 
 
+std::string getIpString(std::string hostname) {
+  hostent* hostInfo = gethostbyname(hostname.c_str());
+  in_addr* address = (in_addr*)hostInfo->h_addr;
+  std::string ip = inet_ntoa(* address);
+  return ip;
+}
+
+zmq::message_t fillZmqMessage(std::string& str)
+{
+  zmq::message_t message(str.length() + 1);
+  snprintf((char*) message.data(), str.length() + 1, "%s", str.c_str());
+  return message;
+}
+
+/**
+ * Creates an empty zmq message.  We use this to indicate a terminate
+ * message.
+ */
+zmq::message_t emptyZmqMessage() {
+  std::string str = "";
+  zmq::message_t message = fillZmqMessage(str);
+  //zmq::message_t message(str.length() + 1);
+  //fillZmqMessage(str, 
+  //snprintf ((char *) message.data(), str.length() + 1,
+  //          "%s", str.c_str());
+  return message;
+}
+
+/**
+ * Checks if the zmq message is a terminate message. A terminate message
+ * is one with an empty string.
+ */
+bool isTerminateMessage(zmq::message_t& message)
+{
+  char* buff = static_cast<char*>(message.data());
+  return strcmp(buff, "") == 0;
+}
+
+ 
+}
 
 #endif

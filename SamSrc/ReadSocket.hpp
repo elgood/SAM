@@ -18,21 +18,23 @@
 #include "Netflow.hpp"
 #include "AbstractDataSource.hpp"
 
-#define BUFFER_SIZE 256
+#define READ_SOCKET_BUFFER_SIZE 4096 
 
 namespace sam {
 
-class ReadSocket : public BaseProducer<Netflow>, public AbstractDataSource
+class ReadSocket : public BaseProducer<std::string>, public AbstractDataSource
 {
 private:
 	int port;
+  int start = 0;
+  int currentSizeBuffer = 0;
 	std::string ip;
 	int sockfd;
-	char buffer[BUFFER_SIZE];
+	char buffer[READ_SOCKET_BUFFER_SIZE];
 	char buffer2[2048];
 	std::string bufferStr;
 	int readCount;
-	std::string previous;
+	std::string previous = "";
   int metricInterval = 100000;
 
 public:
@@ -41,9 +43,9 @@ public:
 
 	bool connect();
 	std::string readline();
+  std::string readline2();
   void receive();
-	/*string readline2();
-	string readline3();
+	/*string readline3();
 	string readline4();
 	string readline5();*/
 };
@@ -102,7 +104,7 @@ string ReadSocket::readline2()
 
 	string::iterator pos;
 	while ((pos = std::find(bufferStr.begin(), bufferStr.end(), '\n')) == bufferStr.end()) {
-		int numRead = read(sockfd, buffer, BUFFER_SIZE);
+		int numRead = read(sockfd, buffer, READ_SOCKET_BUFFER_SIZE);
 		if (numRead <= 0) {
 			line = "";
 			return line;
@@ -145,7 +147,7 @@ string ReadSocket::readline4()
 				break;
 
 		} else {
-			if (totRead < BUFFER_SIZE) {
+			if (totRead < READ_SOCKET_BUFFER_SIZE) {
 				totRead++;
 				*buf++ = ch;
 			}
@@ -187,7 +189,7 @@ string ReadSocket::readline5()
 				break;
 
 		} else {
-			if (totRead < BUFFER_SIZE) {
+			if (totRead < READ_SOCKET_BUFFER_SIZE) {
 				int i = 0;
 				for (i = 0; i < numRead && buffer2[i] != '\n'; i++) {
 					*buf++ = buffer2[i];
@@ -226,8 +228,8 @@ std::string ReadSocket::readline()
 		}
 	}
 
-	//bzero(buffer,BUFFER_SIZE);
-	numRead = recv(sockfd,buffer,BUFFER_SIZE - 1, 0);
+	//bzero(buffer,READ_SOCKET_BUFFER_SIZE);
+	numRead = recv(sockfd,buffer,READ_SOCKET_BUFFER_SIZE - 1, 0);
 	if (numRead > 0) {
 
 		//int error = 0;
@@ -247,8 +249,8 @@ std::string ReadSocket::readline()
 				previous = previous.substr(pos + 1, previous.size() - (pos + 1));
 				return rString;
 			}
-			//bzero(buffer,BUFFER_SIZE);
-			numRead = recv(sockfd,buffer,BUFFER_SIZE - 1, 0);
+			//bzero(buffer,READ_SOCKET_BUFFER_SIZE);
+			numRead = recv(sockfd,buffer,READ_SOCKET_BUFFER_SIZE - 1, 0);
 			if (numRead <= 0) {
 				return "";
 			}
@@ -257,25 +259,65 @@ std::string ReadSocket::readline()
 	return "";
 }
 
+std::string ReadSocket::readline2()
+{
+	readCount++;
+
+  while (true) {
+    if (start == 0) {
+      int numRead = recv(sockfd,buffer,READ_SOCKET_BUFFER_SIZE - 1, 0);
+      if (numRead <= 0) {
+        return "";
+      }
+      currentSizeBuffer = numRead;
+    }
+
+    char* search = &buffer[start];
+    char* newline = (char*) memchr(search, '\n', (currentSizeBuffer)-start);
+    if (newline != NULL) {
+      newline[0] = '\0';
+      std::string rstring(&buffer[start]);
+      rstring = previous + rstring;
+      previous = "";
+      start += newline-search + 1;
+      //std::cout << "start " << start << std::endl;
+      start = start % (currentSizeBuffer);   
+      //std::cout << "start " << start << std::endl;
+      return rstring;
+    } else {
+      buffer[currentSizeBuffer] = '\0';
+      previous = std::string(&buffer[start]);
+      //std::cout << "Previous " << previous << std::endl;
+      start = 0;
+    }
+  }
+
+}
+
+
+
+
+
 void ReadSocket::receive()
 {
   int i = 0;
   while(true) {
     std::string s = readline();
-    //cout << "s in receive " << s << endl;
+    //std::cout << "s in receive " << s << std::endl;
     if (s == "") {
       std::cout << "total in ReadSocket receive " << i << std::endl;
       return;
     }
     i++;
-    if (i % metricInterval == 0) {
-      std::cout << "ReadSocket received " << i << std::endl;
-    }
+    //if (i % metricInterval == 0) {
+    //  std::cout << "ReadSocket received " << i << std::endl;
+    //}
     // This will generate a netflow with i as the sam generate id.
     // This label is thrown away later after the zeromq phase.
-    Netflow netflow = makeNetflow(i, s);
+    //Netflow netflow = makeNetflow(i, s);
     for (auto consumer : consumers) {
-      consumer->consume(netflow);
+      //consumer->consume(netflow);
+      consumer->consume(s);
     }
   }
 }

@@ -146,6 +146,7 @@ public:
     return theKeys;
   }
 
+  void terminate() {}
 };
 
 }

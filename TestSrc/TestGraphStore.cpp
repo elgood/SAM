@@ -34,18 +34,6 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   edgeHostnames.push_back("localhost");
   edgePorts.push_back(10003);
 
-  /*GraphStore graphStore1(numNodes, nodeId1,
-                        requestHostnames, requestPorts,
-                        edgeHostnames, edgePorts,
-                        hwm, true);
-  printf("Created graphStore1\n");
-  GraphStore graphStore2(numNodes, nodeId2,
-                        requestHostnames, requestPorts,
-                        edgeHostnames, edgePorts,
-                        hwm, true);
-  std::cout << "Created graphStore2 " << std::endl;
-  */
-
   int n = 10;
 
   GraphStore* graphStore0 = new GraphStore(numNodes, nodeId0, 
@@ -79,10 +67,6 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   auto graph_function1 = [graphStore1, n]()
                           
   {
-    //GraphStore graphStore(numNodes, nodeId1, 
-    //                      requestHostnames, requestPorts,
-    //                      edgeHostnames, edgePorts,
-    //                      hwm); 
     AbstractNetflowGenerator *generator1 = 
       new UniformDestPort("192.168.0.2", 1);
     

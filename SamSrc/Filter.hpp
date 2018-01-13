@@ -28,6 +28,8 @@ public:
 
   bool consume(TupleType const& t);
 
+  void terminate();
+
 };
 
 template <typename TupleType, size_t... keyFields>
@@ -52,6 +54,14 @@ bool Filter<TupleType, keyFields...>::consume(TupleType const& t)
   this->parallelFeed(t);
 
   return true;
+}
+
+template <typename TupleType, size_t... keyFields>
+void Filter<TupleType, keyFields...>::terminate()
+{
+  for (auto consumer : this->consumers) {
+    consumer->terminate();
+  }
 }
 
 

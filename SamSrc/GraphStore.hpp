@@ -22,6 +22,7 @@ namespace sam {
 class GraphStoreException : public std::runtime_error {
 public:
   GraphStoreException(char const * message) : std::runtime_error(message) { } 
+  GraphStoreException(std::string message) : std::runtime_error(message) { } 
 };
 
 
@@ -107,7 +108,7 @@ public:
              std::vector<std::size_t> requestPorts,
              std::vector<std::string> edgeHostnames,
              std::vector<std::size_t> edgePorts,
-             std::size_t hwm);
+             uint32_t hwm);
 
   ~GraphStore();
 
@@ -195,7 +196,7 @@ GraphStore::GraphStore(std::size_t numNodes,
              std::vector<std::size_t> requestPorts,
              std::vector<std::string> edgeHostnames,
              std::vector<std::size_t> edgePorts,
-             std::size_t hwm)
+             uint32_t hwm)
 {
   //printf("Start of graphstore creation %lu\n", nodeId);
 
@@ -237,8 +238,7 @@ GraphStore::GraphStore(std::size_t numNodes,
         // Creating the zmq pull socket.
         zmq::socket_t* socket = new zmq::socket_t(*(this->context), ZMQ_PULL);
         
-        // Creating the address.  Can perhaps use inproc instead of tcp for
-        // threads running on the same node.
+        // Creating the address.  
         std::string ip = getIpString(requestHostnames[i]);
         std::string url = "";
         url = "tcp://" + ip + ":";
@@ -249,9 +249,13 @@ GraphStore::GraphStore(std::size_t numNodes,
           throw GraphStoreException(e.what());
         }
 
-        // Line below is causing abort errors.  I'm not sure why.  Maybe we
-        // only need to worry about the send buffer and not the receive buffer.
-        //socket->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+        try {
+          socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+        } catch (std::exception e) {
+          std::string message = std::string("Problem setting pull socket's") + 
+            std::string(" send high water mark: ") + e.what();
+          throw GraphStoreException(message);
+        }
         
         socket->connect(url);
         sockets.push_back(socket);
@@ -408,7 +412,13 @@ void GraphStore::createPushSockets(
 
       // The function complains if you use std::size_t, so be sure to use the
       // uint32_t class member for hwm.
-      pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+      try {
+        pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+      } catch (std::exception e) {
+        std::string message = std::string("Problem setting push socket's send")+
+          std::string(" high water mark: ") + e.what();
+        throw GraphStoreException(message);
+      }
       //printf("createPushSockets nodeId %lu %d set socket option\n", 
       //  this->nodeId, i);
       pusher->bind(url);

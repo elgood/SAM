@@ -19,7 +19,7 @@
 #include "third_party/protobuf/version.h"
 #endif
 // @@protoc_insertion_point(includes)
-namespace Sam {
+namespace sam {
 class NetflowEdgeRequest_SimpleEdgeConditionDefaultTypeInternal {
  public:
   ::google::protobuf::internal::ExplicitlyConstructed<NetflowEdgeRequest_SimpleEdgeCondition>
@@ -30,7 +30,7 @@ class NetflowEdgeRequestDefaultTypeInternal {
   ::google::protobuf::internal::ExplicitlyConstructed<NetflowEdgeRequest>
       _instance;
 } _NetflowEdgeRequest_default_instance_;
-}  // namespace Sam
+}  // namespace sam
 namespace protobuf_NetflowEdgeRequest_2eproto {
 void InitDefaultsNetflowEdgeRequest_SimpleEdgeConditionImpl() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -41,11 +41,11 @@ void InitDefaultsNetflowEdgeRequest_SimpleEdgeConditionImpl() {
   ::google::protobuf::internal::InitProtobufDefaults();
 #endif  // GOOGLE_PROTOBUF_ENFORCE_UNIQUENESS
   {
-    void* ptr = &::Sam::_NetflowEdgeRequest_SimpleEdgeCondition_default_instance_;
-    new (ptr) ::Sam::NetflowEdgeRequest_SimpleEdgeCondition();
+    void* ptr = &::sam::_NetflowEdgeRequest_SimpleEdgeCondition_default_instance_;
+    new (ptr) ::sam::NetflowEdgeRequest_SimpleEdgeCondition();
     ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::Sam::NetflowEdgeRequest_SimpleEdgeCondition::InitAsDefaultInstance();
+  ::sam::NetflowEdgeRequest_SimpleEdgeCondition::InitAsDefaultInstance();
 }
 
 void InitDefaultsNetflowEdgeRequest_SimpleEdgeCondition() {
@@ -63,11 +63,11 @@ void InitDefaultsNetflowEdgeRequestImpl() {
 #endif  // GOOGLE_PROTOBUF_ENFORCE_UNIQUENESS
   protobuf_NetflowEdgeRequest_2eproto::InitDefaultsNetflowEdgeRequest_SimpleEdgeCondition();
   {
-    void* ptr = &::Sam::_NetflowEdgeRequest_default_instance_;
-    new (ptr) ::Sam::NetflowEdgeRequest();
+    void* ptr = &::sam::_NetflowEdgeRequest_default_instance_;
+    new (ptr) ::sam::NetflowEdgeRequest();
     ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::Sam::NetflowEdgeRequest::InitAsDefaultInstance();
+  ::sam::NetflowEdgeRequest::InitAsDefaultInstance();
 }
 
 void InitDefaultsNetflowEdgeRequest() {
@@ -79,30 +79,31 @@ void InitDefaultsNetflowEdgeRequest() {
 
 const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
   ~0u,  // no _has_bits_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Sam::NetflowEdgeRequest_SimpleEdgeCondition, _internal_metadata_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest_SimpleEdgeCondition, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Sam::NetflowEdgeRequest_SimpleEdgeCondition, field_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Sam::NetflowEdgeRequest_SimpleEdgeCondition, operator__),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Sam::NetflowEdgeRequest_SimpleEdgeCondition, rside_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest_SimpleEdgeCondition, field_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest_SimpleEdgeCondition, operator__),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest_SimpleEdgeCondition, rside_),
   ~0u,  // no _has_bits_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Sam::NetflowEdgeRequest, _internal_metadata_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Sam::NetflowEdgeRequest, sourceip_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Sam::NetflowEdgeRequest, destip_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::Sam::NetflowEdgeRequest, conditions_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, sourceip_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, destip_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, terminate_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, conditions_),
 };
 static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, -1, sizeof(::Sam::NetflowEdgeRequest_SimpleEdgeCondition)},
-  { 8, -1, sizeof(::Sam::NetflowEdgeRequest)},
+  { 0, -1, sizeof(::sam::NetflowEdgeRequest_SimpleEdgeCondition)},
+  { 8, -1, sizeof(::sam::NetflowEdgeRequest)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
-  reinterpret_cast<const ::google::protobuf::Message*>(&::Sam::_NetflowEdgeRequest_SimpleEdgeCondition_default_instance_),
-  reinterpret_cast<const ::google::protobuf::Message*>(&::Sam::_NetflowEdgeRequest_default_instance_),
+  reinterpret_cast<const ::google::protobuf::Message*>(&::sam::_NetflowEdgeRequest_SimpleEdgeCondition_default_instance_),
+  reinterpret_cast<const ::google::protobuf::Message*>(&::sam::_NetflowEdgeRequest_default_instance_),
 };
 
 void protobuf_AssignDescriptors() {
@@ -127,15 +128,16 @@ void protobuf_RegisterTypes(const ::std::string&) {
 void AddDescriptorsImpl() {
   InitDefaults();
   static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-      "\n\030NetflowEdgeRequest.proto\022\003Sam\"\276\001\n\022Netf"
+      "\n\030NetflowEdgeRequest.proto\022\003sam\"\321\001\n\022Netf"
       "lowEdgeRequest\022\020\n\010sourceIP\030\001 \001(\t\022\016\n\006dest"
-      "IP\030\002 \001(\t\022\?\n\nconditions\030\003 \003(\0132+.Sam.Netfl"
-      "owEdgeRequest.SimpleEdgeCondition\032E\n\023Sim"
-      "pleEdgeCondition\022\r\n\005field\030\001 \001(\t\022\020\n\010opera"
-      "tor\030\002 \001(\t\022\r\n\005rside\030\003 \001(\005b\006proto3"
+      "IP\030\002 \001(\t\022\021\n\tterminate\030\003 \001(\010\022\?\n\ncondition"
+      "s\030\004 \003(\0132+.sam.NetflowEdgeRequest.SimpleE"
+      "dgeCondition\032E\n\023SimpleEdgeCondition\022\r\n\005f"
+      "ield\030\001 \001(\t\022\020\n\010operator\030\002 \001(\t\022\r\n\005rside\030\003 "
+      "\001(\005b\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 232);
+      descriptor, 251);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "NetflowEdgeRequest.proto", &protobuf_RegisterTypes);
 }
@@ -151,7 +153,7 @@ struct StaticDescriptorInitializer {
   }
 } static_descriptor_initializer;
 }  // namespace protobuf_NetflowEdgeRequest_2eproto
-namespace Sam {
+namespace sam {
 
 // ===================================================================
 
@@ -169,7 +171,7 @@ NetflowEdgeRequest_SimpleEdgeCondition::NetflowEdgeRequest_SimpleEdgeCondition()
     ::protobuf_NetflowEdgeRequest_2eproto::InitDefaultsNetflowEdgeRequest_SimpleEdgeCondition();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(constructor:sam.NetflowEdgeRequest.SimpleEdgeCondition)
 }
 NetflowEdgeRequest_SimpleEdgeCondition::NetflowEdgeRequest_SimpleEdgeCondition(const NetflowEdgeRequest_SimpleEdgeCondition& from)
   : ::google::protobuf::Message(),
@@ -185,7 +187,7 @@ NetflowEdgeRequest_SimpleEdgeCondition::NetflowEdgeRequest_SimpleEdgeCondition(c
     operator__.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.operator__);
   }
   rside_ = from.rside_;
-  // @@protoc_insertion_point(copy_constructor:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(copy_constructor:sam.NetflowEdgeRequest.SimpleEdgeCondition)
 }
 
 void NetflowEdgeRequest_SimpleEdgeCondition::SharedCtor() {
@@ -196,7 +198,7 @@ void NetflowEdgeRequest_SimpleEdgeCondition::SharedCtor() {
 }
 
 NetflowEdgeRequest_SimpleEdgeCondition::~NetflowEdgeRequest_SimpleEdgeCondition() {
-  // @@protoc_insertion_point(destructor:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(destructor:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   SharedDtor();
 }
 
@@ -229,7 +231,7 @@ NetflowEdgeRequest_SimpleEdgeCondition* NetflowEdgeRequest_SimpleEdgeCondition::
 }
 
 void NetflowEdgeRequest_SimpleEdgeCondition::Clear() {
-// @@protoc_insertion_point(message_clear_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+// @@protoc_insertion_point(message_clear_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -244,7 +246,7 @@ bool NetflowEdgeRequest_SimpleEdgeCondition::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(parse_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -259,7 +261,7 @@ bool NetflowEdgeRequest_SimpleEdgeCondition::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             this->field().data(), static_cast<int>(this->field().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
-            "Sam.NetflowEdgeRequest.SimpleEdgeCondition.field"));
+            "sam.NetflowEdgeRequest.SimpleEdgeCondition.field"));
         } else {
           goto handle_unusual;
         }
@@ -275,7 +277,7 @@ bool NetflowEdgeRequest_SimpleEdgeCondition::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             this->operator_().data(), static_cast<int>(this->operator_().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
-            "Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator"));
+            "sam.NetflowEdgeRequest.SimpleEdgeCondition.operator"));
         } else {
           goto handle_unusual;
         }
@@ -308,17 +310,17 @@ bool NetflowEdgeRequest_SimpleEdgeCondition::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(parse_success:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(parse_failure:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   return false;
 #undef DO_
 }
 
 void NetflowEdgeRequest_SimpleEdgeCondition::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(serialize_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -327,7 +329,7 @@ void NetflowEdgeRequest_SimpleEdgeCondition::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->field().data(), static_cast<int>(this->field().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Sam.NetflowEdgeRequest.SimpleEdgeCondition.field");
+      "sam.NetflowEdgeRequest.SimpleEdgeCondition.field");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       1, this->field(), output);
   }
@@ -337,7 +339,7 @@ void NetflowEdgeRequest_SimpleEdgeCondition::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->operator_().data(), static_cast<int>(this->operator_().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator");
+      "sam.NetflowEdgeRequest.SimpleEdgeCondition.operator");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       2, this->operator_(), output);
   }
@@ -351,13 +353,13 @@ void NetflowEdgeRequest_SimpleEdgeCondition::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
   }
-  // @@protoc_insertion_point(serialize_end:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(serialize_end:sam.NetflowEdgeRequest.SimpleEdgeCondition)
 }
 
 ::google::protobuf::uint8* NetflowEdgeRequest_SimpleEdgeCondition::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
   (void)deterministic; // Unused
-  // @@protoc_insertion_point(serialize_to_array_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(serialize_to_array_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -366,7 +368,7 @@ void NetflowEdgeRequest_SimpleEdgeCondition::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->field().data(), static_cast<int>(this->field().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Sam.NetflowEdgeRequest.SimpleEdgeCondition.field");
+      "sam.NetflowEdgeRequest.SimpleEdgeCondition.field");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         1, this->field(), target);
@@ -377,7 +379,7 @@ void NetflowEdgeRequest_SimpleEdgeCondition::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->operator_().data(), static_cast<int>(this->operator_().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator");
+      "sam.NetflowEdgeRequest.SimpleEdgeCondition.operator");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         2, this->operator_(), target);
@@ -392,12 +394,12 @@ void NetflowEdgeRequest_SimpleEdgeCondition::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(serialize_to_array_end:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   return target;
 }
 
 size_t NetflowEdgeRequest_SimpleEdgeCondition::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+// @@protoc_insertion_point(message_byte_size_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   size_t total_size = 0;
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -434,22 +436,22 @@ size_t NetflowEdgeRequest_SimpleEdgeCondition::ByteSizeLong() const {
 }
 
 void NetflowEdgeRequest_SimpleEdgeCondition::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+// @@protoc_insertion_point(generalized_merge_from_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   GOOGLE_DCHECK_NE(&from, this);
   const NetflowEdgeRequest_SimpleEdgeCondition* source =
       ::google::protobuf::internal::DynamicCastToGenerated<const NetflowEdgeRequest_SimpleEdgeCondition>(
           &from);
   if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:sam.NetflowEdgeRequest.SimpleEdgeCondition)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:sam.NetflowEdgeRequest.SimpleEdgeCondition)
     MergeFrom(*source);
   }
 }
 
 void NetflowEdgeRequest_SimpleEdgeCondition::MergeFrom(const NetflowEdgeRequest_SimpleEdgeCondition& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+// @@protoc_insertion_point(class_specific_merge_from_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -469,14 +471,14 @@ void NetflowEdgeRequest_SimpleEdgeCondition::MergeFrom(const NetflowEdgeRequest_
 }
 
 void NetflowEdgeRequest_SimpleEdgeCondition::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+// @@protoc_insertion_point(generalized_copy_from_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void NetflowEdgeRequest_SimpleEdgeCondition::CopyFrom(const NetflowEdgeRequest_SimpleEdgeCondition& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+// @@protoc_insertion_point(class_specific_copy_from_start:sam.NetflowEdgeRequest.SimpleEdgeCondition)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -512,6 +514,7 @@ void NetflowEdgeRequest::InitAsDefaultInstance() {
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int NetflowEdgeRequest::kSourceIPFieldNumber;
 const int NetflowEdgeRequest::kDestIPFieldNumber;
+const int NetflowEdgeRequest::kTerminateFieldNumber;
 const int NetflowEdgeRequest::kConditionsFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
@@ -521,7 +524,7 @@ NetflowEdgeRequest::NetflowEdgeRequest()
     ::protobuf_NetflowEdgeRequest_2eproto::InitDefaultsNetflowEdgeRequest();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(constructor:sam.NetflowEdgeRequest)
 }
 NetflowEdgeRequest::NetflowEdgeRequest(const NetflowEdgeRequest& from)
   : ::google::protobuf::Message(),
@@ -537,17 +540,19 @@ NetflowEdgeRequest::NetflowEdgeRequest(const NetflowEdgeRequest& from)
   if (from.destip().size() > 0) {
     destip_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.destip_);
   }
-  // @@protoc_insertion_point(copy_constructor:Sam.NetflowEdgeRequest)
+  terminate_ = from.terminate_;
+  // @@protoc_insertion_point(copy_constructor:sam.NetflowEdgeRequest)
 }
 
 void NetflowEdgeRequest::SharedCtor() {
   sourceip_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   destip_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  terminate_ = false;
   _cached_size_ = 0;
 }
 
 NetflowEdgeRequest::~NetflowEdgeRequest() {
-  // @@protoc_insertion_point(destructor:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(destructor:sam.NetflowEdgeRequest)
   SharedDtor();
 }
 
@@ -580,7 +585,7 @@ NetflowEdgeRequest* NetflowEdgeRequest::New(::google::protobuf::Arena* arena) co
 }
 
 void NetflowEdgeRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:Sam.NetflowEdgeRequest)
+// @@protoc_insertion_point(message_clear_start:sam.NetflowEdgeRequest)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -588,6 +593,7 @@ void NetflowEdgeRequest::Clear() {
   conditions_.Clear();
   sourceip_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   destip_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  terminate_ = false;
   _internal_metadata_.Clear();
 }
 
@@ -595,7 +601,7 @@ bool NetflowEdgeRequest::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(parse_start:sam.NetflowEdgeRequest)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -610,7 +616,7 @@ bool NetflowEdgeRequest::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             this->sourceip().data(), static_cast<int>(this->sourceip().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
-            "Sam.NetflowEdgeRequest.sourceIP"));
+            "sam.NetflowEdgeRequest.sourceIP"));
         } else {
           goto handle_unusual;
         }
@@ -626,17 +632,31 @@ bool NetflowEdgeRequest::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             this->destip().data(), static_cast<int>(this->destip().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
-            "Sam.NetflowEdgeRequest.destIP"));
+            "sam.NetflowEdgeRequest.destIP"));
         } else {
           goto handle_unusual;
         }
         break;
       }
 
-      // repeated .Sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 3;
+      // bool terminate = 3;
       case 3: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
+            static_cast< ::google::protobuf::uint8>(24u /* 24 & 0xFF */)) {
+
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+                 input, &terminate_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
+      // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
+      case 4: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessage(input, add_conditions()));
         } else {
           goto handle_unusual;
@@ -656,17 +676,17 @@ bool NetflowEdgeRequest::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(parse_success:sam.NetflowEdgeRequest)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(parse_failure:sam.NetflowEdgeRequest)
   return false;
 #undef DO_
 }
 
 void NetflowEdgeRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(serialize_start:sam.NetflowEdgeRequest)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -675,7 +695,7 @@ void NetflowEdgeRequest::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->sourceip().data(), static_cast<int>(this->sourceip().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Sam.NetflowEdgeRequest.sourceIP");
+      "sam.NetflowEdgeRequest.sourceIP");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       1, this->sourceip(), output);
   }
@@ -685,29 +705,34 @@ void NetflowEdgeRequest::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->destip().data(), static_cast<int>(this->destip().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Sam.NetflowEdgeRequest.destIP");
+      "sam.NetflowEdgeRequest.destIP");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       2, this->destip(), output);
   }
 
-  // repeated .Sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 3;
+  // bool terminate = 3;
+  if (this->terminate() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteBool(3, this->terminate(), output);
+  }
+
+  // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->conditions_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      3, this->conditions(static_cast<int>(i)), output);
+      4, this->conditions(static_cast<int>(i)), output);
   }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
   }
-  // @@protoc_insertion_point(serialize_end:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(serialize_end:sam.NetflowEdgeRequest)
 }
 
 ::google::protobuf::uint8* NetflowEdgeRequest::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
   (void)deterministic; // Unused
-  // @@protoc_insertion_point(serialize_to_array_start:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:sam.NetflowEdgeRequest)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -716,7 +741,7 @@ void NetflowEdgeRequest::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->sourceip().data(), static_cast<int>(this->sourceip().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Sam.NetflowEdgeRequest.sourceIP");
+      "sam.NetflowEdgeRequest.sourceIP");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         1, this->sourceip(), target);
@@ -727,30 +752,35 @@ void NetflowEdgeRequest::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
       this->destip().data(), static_cast<int>(this->destip().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "Sam.NetflowEdgeRequest.destIP");
+      "sam.NetflowEdgeRequest.destIP");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         2, this->destip(), target);
   }
 
-  // repeated .Sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 3;
+  // bool terminate = 3;
+  if (this->terminate() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(3, this->terminate(), target);
+  }
+
+  // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->conditions_size()); i < n; i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageToArray(
-        3, this->conditions(static_cast<int>(i)), deterministic, target);
+        4, this->conditions(static_cast<int>(i)), deterministic, target);
   }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:sam.NetflowEdgeRequest)
   return target;
 }
 
 size_t NetflowEdgeRequest::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Sam.NetflowEdgeRequest)
+// @@protoc_insertion_point(message_byte_size_start:sam.NetflowEdgeRequest)
   size_t total_size = 0;
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -758,7 +788,7 @@ size_t NetflowEdgeRequest::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
-  // repeated .Sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 3;
+  // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
   {
     unsigned int count = static_cast<unsigned int>(this->conditions_size());
     total_size += 1UL * count;
@@ -783,6 +813,11 @@ size_t NetflowEdgeRequest::ByteSizeLong() const {
         this->destip());
   }
 
+  // bool terminate = 3;
+  if (this->terminate() != 0) {
+    total_size += 1 + 1;
+  }
+
   int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = cached_size;
@@ -791,22 +826,22 @@ size_t NetflowEdgeRequest::ByteSizeLong() const {
 }
 
 void NetflowEdgeRequest::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Sam.NetflowEdgeRequest)
+// @@protoc_insertion_point(generalized_merge_from_start:sam.NetflowEdgeRequest)
   GOOGLE_DCHECK_NE(&from, this);
   const NetflowEdgeRequest* source =
       ::google::protobuf::internal::DynamicCastToGenerated<const NetflowEdgeRequest>(
           &from);
   if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:sam.NetflowEdgeRequest)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Sam.NetflowEdgeRequest)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:sam.NetflowEdgeRequest)
     MergeFrom(*source);
   }
 }
 
 void NetflowEdgeRequest::MergeFrom(const NetflowEdgeRequest& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Sam.NetflowEdgeRequest)
+// @@protoc_insertion_point(class_specific_merge_from_start:sam.NetflowEdgeRequest)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -821,17 +856,20 @@ void NetflowEdgeRequest::MergeFrom(const NetflowEdgeRequest& from) {
 
     destip_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.destip_);
   }
+  if (from.terminate() != 0) {
+    set_terminate(from.terminate());
+  }
 }
 
 void NetflowEdgeRequest::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Sam.NetflowEdgeRequest)
+// @@protoc_insertion_point(generalized_copy_from_start:sam.NetflowEdgeRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void NetflowEdgeRequest::CopyFrom(const NetflowEdgeRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Sam.NetflowEdgeRequest)
+// @@protoc_insertion_point(class_specific_copy_from_start:sam.NetflowEdgeRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -850,6 +888,7 @@ void NetflowEdgeRequest::InternalSwap(NetflowEdgeRequest* other) {
   conditions_.InternalSwap(&other->conditions_);
   sourceip_.Swap(&other->sourceip_);
   destip_.Swap(&other->destip_);
+  swap(terminate_, other->terminate_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_cached_size_, other->_cached_size_);
 }
@@ -861,6 +900,6 @@ void NetflowEdgeRequest::InternalSwap(NetflowEdgeRequest* other) {
 
 
 // @@protoc_insertion_point(namespace_scope)
-}  // namespace Sam
+}  // namespace sam
 
 // @@protoc_insertion_point(global_scope)

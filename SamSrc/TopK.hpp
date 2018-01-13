@@ -42,6 +42,8 @@ public:
      
 
   bool consume(TupleType const& tuple);
+
+  void terminate() {}
      
 };
 

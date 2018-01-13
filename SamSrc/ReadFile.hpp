@@ -23,7 +23,7 @@
 
 namespace sam {
 
-class ReadFile : public BaseProducer<Netflow>, public AbstractDataSource
+class ReadFile : public BaseProducer<std::string>, public AbstractDataSource
 {
 private:
 	int readCount;
@@ -58,9 +58,8 @@ void ReadFile::receive()
   int i = 0;
   std::string line;
   while(std::getline(myfile, line)) {
-    Netflow netflow = makeNetflow(i, line);
     for (auto consumer : consumers) {
-      consumer->consume(netflow);
+      consumer->consume(line);
     }
     i++;
     if (i % metricInterval == 0) {
@@ -72,4 +71,4 @@ void ReadFile::receive()
 
 }
 
-#endif /* READSOCKET_HPP */
+#endif /* READFILE_HPP */

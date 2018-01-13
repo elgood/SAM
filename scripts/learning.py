@@ -132,6 +132,8 @@ def main():
                       help="File with list of source ips")
   parser.add_argument('--dest_ips', type=str, required=True,
                       help="File with list of dest ips")
+  parser.add_argument('--subset', type=str,
+    help="Comma-separated list of features to include") 
                       
   FLAGS = parser.parse_args()
 
@@ -143,6 +145,12 @@ def main():
 
     y = data[:, 0] #labels are in the first column
     X = data[:, 1:] #features are in the rest of the columns
+
+    if FLAGS.subset:
+      selectedFeatures = FLAGS.subset.split(",")
+      selectedFeatures = list(map(int, selectedFeatures))
+      X = data[:, selectedFeatures]
+      print( X[1] )
 
     numNonZero = np.count_nonzero(y)
     numFound = 0

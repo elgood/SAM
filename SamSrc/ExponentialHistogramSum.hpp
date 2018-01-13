@@ -93,6 +93,8 @@ public:
     return true;
   }
 
+  void terminate() {}
+
 };
 
 //TODO Should make the function a template parameter so we don't have to copy
@@ -162,11 +164,13 @@ public:
     std::size_t id = std::get<0>(input);
     //std::cout << "currentSum for " << key << ": " << currentSum  
     //          << " getNumItems " << allWindows[key]->getNumItems() << std::endl;
+    //printf("exphistave id %u\n", id);
     this->notifySubscribers(id, currentSum / allWindows[key]->getNumItems());
 
     return true;
   }
 
+  void terminate() {}
 };
 
 

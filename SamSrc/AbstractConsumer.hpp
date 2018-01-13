@@ -1,5 +1,5 @@
-/*
- * AbstractConsumer.h
+/**
+ * AbstractConsumer.hpp
  *
  *  Created on: Dec 10, 2016
  *      Author: elgood
@@ -22,6 +22,8 @@ public:
 	virtual ~AbstractConsumer() {}
 
 	virtual bool consume(T const& item) = 0;
+
+  virtual void terminate() = 0;
 
 };
 

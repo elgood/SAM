@@ -141,9 +141,9 @@ std::list<std::string> const& TopKProducer::getNonserverIps() const
 }
 
 /**
- * This will create netflows where you can specify
- * 1) number of ips
- * 2) 
+ * Generic netflow producer that uses a vector of netflow generators
+ * to produce netflows.  Generates a netflow numExamples times for
+ * each generator.
  */
 class GeneralNetflowProducer : public BaseProducer<Netflow>
 {
@@ -167,16 +167,19 @@ public:
 
 void GeneralNetflowProducer::run()
 {
+  int count = 0; //Remove
   for (int i = 0; i < numExamples; i++) 
   {
     for (int j = 0; j < generators.size(); j++) 
     {
+      count++; //Remove
       std::string s = generators[j]->generate();
       Netflow netflow = makeNetflow(j * numExamples + i, s);
 
       parallelFeed(netflow);
     }  
   }
+  //std::cout << "Count in GeneralNetflowProducer " << count << std::endl;
 }
 
 }

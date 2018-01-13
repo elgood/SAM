@@ -116,6 +116,8 @@ public:
     return true;
   }
 
+  void terminate() {}
+
 private:
   double calculateVariance(T sumOfSquares, T sum, size_t numItems) {
     double variance = boost::lexical_cast<double>(sumOfSquares) / numItems -

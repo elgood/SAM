@@ -1,4 +1,4 @@
-/*
+/**
  * BaseProducer.h
  *
  *  Created on: Dec 10, 2016
@@ -31,6 +31,9 @@ protected:
   /// The number of items in the queue
   size_t numItems;
 
+  /// The number of items passed to parallelFeed
+  size_t numReadItems = 0;
+
 public:
   //BaseProducer();
 	BaseProducer(int queueLength);
@@ -48,6 +51,8 @@ public:
   std::shared_ptr<const AbstractConsumer<T>> getConsumer(size_t i);
 
   void parallelFeed(T const& s);
+
+  size_t getNumReadItems() const { return numReadItems; }
 
 };
 
@@ -85,6 +90,9 @@ size_t BaseProducer<T>::getNumConsumers() const { return consumers.size(); }
 
 template <typename T>
 void BaseProducer<T>::parallelFeed(T const& item) {
+  //std::cout << "In parallelfeed " << std::endl;
+
+  numReadItems++;
   
   inputQueue[numItems] = T(item);
   numItems++;
@@ -118,7 +126,8 @@ void BaseProducer<T>::parallelFeed(T const& item) {
     threads.join_all();
 
   }
-  //std::cout << "exiting parallelfeed" << std::endl;
+  //std::cout << "exiting parallelfeed " << numReadItems << " " << numItems 
+  //          << std::endl;
 
 }
 

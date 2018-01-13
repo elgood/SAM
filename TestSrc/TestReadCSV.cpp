@@ -25,6 +25,9 @@ public:
     seen += 1;  
     return true;  
   }
+
+  // Don't need to do anything
+  void terminate() {};
 };
 
 BOOST_AUTO_TEST_CASE( test_readcsv )
@@ -48,7 +51,6 @@ BOOST_AUTO_TEST_CASE( test_readcsv )
     myfile << netflowString << std::endl;
   }
   myfile.close();
-
 
   ReadCSV receiver(testfilename);
 

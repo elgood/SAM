@@ -9,12 +9,15 @@
 #include <string>
 #include <boost/program_options.hpp>
 #include <time.h>
+#include <chrono>
+#include <stdlib.h>
 
 #include "ReadSocket.hpp"
 
 
 namespace po = boost::program_options;
 using std::string;
+using namespace std::chrono;
 
 int main(int argc, char* argv[])
 {
@@ -45,20 +48,18 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	time(&timestamp_sec1);
+  milliseconds ms1 = duration_cast<milliseconds>(
+    system_clock::now().time_since_epoch()
+  );
 	string line = "";
 	int count = 0;
   socket.receive();
-	/*do {
-		line = socket.readline();
-		if (line != "") {
-			count++;
-		}
-		//std::cout << line << std::endl;
-		//if (count % 100000 == 0) std::cout << "Count " << count << std::endl;
-	} while (line != "");*/
-	time(&timestamp_sec2);
-	std::cout << "Seconds " << timestamp_sec2 - timestamp_sec1 << std::endl;
+  milliseconds ms2 = duration_cast<milliseconds>(
+    system_clock::now().time_since_epoch()
+  );
+  std::cout << "Seconds " <<
+    static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
+
 
 	return 0;
 }

@@ -67,6 +67,8 @@ public:
     }
     return true;
   }
+
+  void terminate() {}
 };
 
 }

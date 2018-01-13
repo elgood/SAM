@@ -1,19 +1,21 @@
-#define BOOST_TEST_MAIN TestDormantWindow
+#define BOOST_TEST_MAIN TestProtocolBuffers
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include <string>
 #include "NetflowEdgeRequest.pb.h"
 
+using namespace sam;
+
 BOOST_AUTO_TEST_CASE( test_netflow_edge_request )
 {
-  Sam::NetflowEdgeRequest request;
+  NetflowEdgeRequest request;
   request.set_sourceip("192.168.0.1");
 
   std::string str;
   bool b = request.SerializeToString(&str);
   BOOST_CHECK(b);
 
-  Sam::NetflowEdgeRequest request2;
+  NetflowEdgeRequest request2;
   b = request2.ParseFromString(str);
   BOOST_CHECK(b);
 

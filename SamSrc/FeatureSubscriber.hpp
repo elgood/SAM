@@ -10,7 +10,6 @@
 #include <fstream>
 
 #include "Util.hpp"
-//#include "Learning.hpp"
 
 #define MAP_EMPTY        0
 #define MAP_OCCUPIED     1
@@ -24,7 +23,9 @@ namespace sam {
  * be the best approach.  A parallel implementation would be better.
  *
  * The other mode is test mode.  In test mode the feature subscriber has a
- * model that it applies to each example. 
+ * model that it applies to each example.  TODO: Test mode is not implemented. 
+ *
+ * The only data type supported for features is doubles.
  */
 class FeatureSubscriber
 {
@@ -39,30 +40,23 @@ private:
 
   mutable std::mutex mu;
 
+  // TODO: Figure out.  Before, this was a fixed sized hash table, but now
+  // we just cycle through because we have a sequence of increasing integers
+  // for the keys (SamGeneratedId).  As such, I think we can come up with a 
+  // bound on the needed capacity as a function of the number of features. 
   int capacity;
 
   double* values = 0;
-  int* counts = 0;
+  std::atomic<int>* counts = 0;
 
   // Init must be called before update is called.  This variable keeps track.
   bool initCalled = false;
 
-  //std::shared_ptr<NBCModel> model;
+  int numRows = 0; ///> Keeps track of how many rows we've written.
+
+  size_t numFeatures = 0;
 
 public:
-  /*FeatureSubscriber(//std::shared_ptr<NBCModel> model,
-                    std::string outputfile,
-                    int capacity = 10000) 
-  {
-    //this->model = model;
-    this->capacity = capacity;
-    this->out = std::ofstream(outputfile);
-
-    // TODO add parallel loop
-    for(int i = 0; i < capacity; i++) {
-      counts[i] = 0;
-    }
-  }*/
 
   FeatureSubscriber(std::string outputfile,
                     int capacity = 10000) 
@@ -70,7 +64,7 @@ public:
   {
     this->capacity = capacity;
     this->out = std::ofstream(outputfile);
-    counts = new int[capacity];
+    counts = new std::atomic<int>[capacity];
 
     // TODO add parallel loop
     for(int i = 0; i < capacity; i++) {
@@ -78,13 +72,17 @@ public:
     }
   }
 
+  /**
+   * Once all the features have been added using the addFeature
+   * method, this function shoudl be called.
+   */
   void init() {
-    if (getNumFeatures() <= 0) {
+    if (numFeatures <= 0) {
       throw std::logic_error("init was called but no features have been "
         "added");
     }
     initCalled = true;
-    values = new double[capacity * getNumFeatures()]();
+    values = new double[capacity * numFeatures]();
   }
 
   ~FeatureSubscriber() {
@@ -98,7 +96,8 @@ public:
  
   /**
    * This method should be called by the FeatureProducer using 
-   * FeatureProducer::registerSubscriber.
+   * FeatureProducer::registerSubscriber.  This method must be called
+   * for each feature before init is called.
    */ 
   void addFeature(std::string name) {
     if (initCalled) {
@@ -107,9 +106,10 @@ public:
     }
     names.push_back(name);
     featureIndices[names[names.size() - 1]] = names.size() - 1;
+    numFeatures++;
   }
 
-  int getNumFeatures() { return names.size(); }
+  int getNumFeatures() { return numFeatures; }
 
   /**
    * How the subscriber is informed of feature updates. 
@@ -118,7 +118,8 @@ public:
    * can then be accessed via getOutput().
    * \param key The key uniquely identifying the item that all the features
    *            are derived from.  We assume that the keys are a sequence of
-   *            incresing integers.
+   *            incresing integers.  This is the SamGeneratedId that is 
+   *            preserved through all transformations.
    * \param featureName Identifies uniquely the feature that needs to be
    *            updated.  Generally this corresponds to the 
    *            BaseComputation's identifier.
@@ -128,6 +129,10 @@ public:
               std::string const& featureName,
               double value);
 
+  void close() {
+    out.close();
+  }
+
 };
 
 inline
@@ -135,23 +140,24 @@ bool FeatureSubscriber::update(std::size_t key,
                                std::string const& featureName,
                                double value)
 {
+  //std::lock_guard<std::mutex> lock(mu);
+  //printf("FeatureSubscriber::update key %lu featureName %s\n",
+  //        key, featureName.c_str());
   //std::cout << "update " << key << std::endl;
-  int numFeatures = getNumFeatures();
   if (initCalled) {
     int index = key % capacity;
     int featureIndex = featureIndices[featureName];
     values[index * numFeatures + featureIndex] = value;
-    counts[index]++;
+    counts[index].fetch_add(1);
 
     if (counts[index] >= numFeatures) {
+      // counts[indes] >= numFeatures indicates that we have collected
+      // all of the features associated with the input item (i.e. netflow
+      // or whatever tuple).
+
       // The lock_guard makes it so that only one thread can access the 
       // following body of the if statement.
-
       std::lock_guard<std::mutex> lock(mu);
-      //if (model) {
-      //  model
-      //  ss << 
-      //} 
 
       counts[index] = 0;
       for (int j = 0; j < numFeatures - 1; j++) {
@@ -159,6 +165,10 @@ bool FeatureSubscriber::update(std::size_t key,
       }
       out << values[index * numFeatures + numFeatures - 1] << std::endl;
       //std::cout << "Returning true2 " << std::endl;
+
+      numRows++;
+      //std::cout << "Numrows in FeatureSubscriber " << numRows << std::endl;
+
       return true;
     }
 

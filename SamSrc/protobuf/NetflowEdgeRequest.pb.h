@@ -51,19 +51,19 @@ inline void InitDefaults() {
   InitDefaultsNetflowEdgeRequest();
 }
 }  // namespace protobuf_NetflowEdgeRequest_2eproto
-namespace Sam {
+namespace sam {
 class NetflowEdgeRequest;
 class NetflowEdgeRequestDefaultTypeInternal;
 extern NetflowEdgeRequestDefaultTypeInternal _NetflowEdgeRequest_default_instance_;
 class NetflowEdgeRequest_SimpleEdgeCondition;
 class NetflowEdgeRequest_SimpleEdgeConditionDefaultTypeInternal;
 extern NetflowEdgeRequest_SimpleEdgeConditionDefaultTypeInternal _NetflowEdgeRequest_SimpleEdgeCondition_default_instance_;
-}  // namespace Sam
-namespace Sam {
+}  // namespace sam
+namespace sam {
 
 // ===================================================================
 
-class NetflowEdgeRequest_SimpleEdgeCondition : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:Sam.NetflowEdgeRequest.SimpleEdgeCondition) */ {
+class NetflowEdgeRequest_SimpleEdgeCondition : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:sam.NetflowEdgeRequest.SimpleEdgeCondition) */ {
  public:
   NetflowEdgeRequest_SimpleEdgeCondition();
   virtual ~NetflowEdgeRequest_SimpleEdgeCondition();
@@ -179,7 +179,7 @@ class NetflowEdgeRequest_SimpleEdgeCondition : public ::google::protobuf::Messag
   ::google::protobuf::int32 rside() const;
   void set_rside(::google::protobuf::int32 value);
 
-  // @@protoc_insertion_point(class_scope:Sam.NetflowEdgeRequest.SimpleEdgeCondition)
+  // @@protoc_insertion_point(class_scope:sam.NetflowEdgeRequest.SimpleEdgeCondition)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
@@ -192,7 +192,7 @@ class NetflowEdgeRequest_SimpleEdgeCondition : public ::google::protobuf::Messag
 };
 // -------------------------------------------------------------------
 
-class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:Sam.NetflowEdgeRequest) */ {
+class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:sam.NetflowEdgeRequest) */ {
  public:
   NetflowEdgeRequest();
   virtual ~NetflowEdgeRequest();
@@ -276,16 +276,16 @@ class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insert
 
   // accessors -------------------------------------------------------
 
-  // repeated .Sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 3;
+  // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
   int conditions_size() const;
   void clear_conditions();
-  static const int kConditionsFieldNumber = 3;
-  const ::Sam::NetflowEdgeRequest_SimpleEdgeCondition& conditions(int index) const;
-  ::Sam::NetflowEdgeRequest_SimpleEdgeCondition* mutable_conditions(int index);
-  ::Sam::NetflowEdgeRequest_SimpleEdgeCondition* add_conditions();
-  ::google::protobuf::RepeatedPtrField< ::Sam::NetflowEdgeRequest_SimpleEdgeCondition >*
+  static const int kConditionsFieldNumber = 4;
+  const ::sam::NetflowEdgeRequest_SimpleEdgeCondition& conditions(int index) const;
+  ::sam::NetflowEdgeRequest_SimpleEdgeCondition* mutable_conditions(int index);
+  ::sam::NetflowEdgeRequest_SimpleEdgeCondition* add_conditions();
+  ::google::protobuf::RepeatedPtrField< ::sam::NetflowEdgeRequest_SimpleEdgeCondition >*
       mutable_conditions();
-  const ::google::protobuf::RepeatedPtrField< ::Sam::NetflowEdgeRequest_SimpleEdgeCondition >&
+  const ::google::protobuf::RepeatedPtrField< ::sam::NetflowEdgeRequest_SimpleEdgeCondition >&
       conditions() const;
 
   // string sourceIP = 1;
@@ -316,13 +316,20 @@ class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insert
   ::std::string* release_destip();
   void set_allocated_destip(::std::string* destip);
 
-  // @@protoc_insertion_point(class_scope:Sam.NetflowEdgeRequest)
+  // bool terminate = 3;
+  void clear_terminate();
+  static const int kTerminateFieldNumber = 3;
+  bool terminate() const;
+  void set_terminate(bool value);
+
+  // @@protoc_insertion_point(class_scope:sam.NetflowEdgeRequest)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::RepeatedPtrField< ::Sam::NetflowEdgeRequest_SimpleEdgeCondition > conditions_;
+  ::google::protobuf::RepeatedPtrField< ::sam::NetflowEdgeRequest_SimpleEdgeCondition > conditions_;
   ::google::protobuf::internal::ArenaStringPtr sourceip_;
   ::google::protobuf::internal::ArenaStringPtr destip_;
+  bool terminate_;
   mutable int _cached_size_;
   friend struct ::protobuf_NetflowEdgeRequest_2eproto::TableStruct;
   friend void ::protobuf_NetflowEdgeRequest_2eproto::InitDefaultsNetflowEdgeRequestImpl();
@@ -343,41 +350,41 @@ inline void NetflowEdgeRequest_SimpleEdgeCondition::clear_field() {
   field_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& NetflowEdgeRequest_SimpleEdgeCondition::field() const {
-  // @@protoc_insertion_point(field_get:Sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
   return field_.GetNoArena();
 }
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_field(const ::std::string& value) {
   
   field_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:Sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
 }
 #if LANG_CXX11
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_field(::std::string&& value) {
   
   field_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:Sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
+  // @@protoc_insertion_point(field_set_rvalue:sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
 }
 #endif
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_field(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   field_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:Sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
+  // @@protoc_insertion_point(field_set_char:sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
 }
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_field(const char* value, size_t size) {
   
   field_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:Sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
+  // @@protoc_insertion_point(field_set_pointer:sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
 }
 inline ::std::string* NetflowEdgeRequest_SimpleEdgeCondition::mutable_field() {
   
-  // @@protoc_insertion_point(field_mutable:Sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
+  // @@protoc_insertion_point(field_mutable:sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
   return field_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* NetflowEdgeRequest_SimpleEdgeCondition::release_field() {
-  // @@protoc_insertion_point(field_release:Sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
+  // @@protoc_insertion_point(field_release:sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
   
   return field_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -388,7 +395,7 @@ inline void NetflowEdgeRequest_SimpleEdgeCondition::set_allocated_field(::std::s
     
   }
   field_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), field);
-  // @@protoc_insertion_point(field_set_allocated:Sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
+  // @@protoc_insertion_point(field_set_allocated:sam.NetflowEdgeRequest.SimpleEdgeCondition.field)
 }
 
 // string operator = 2;
@@ -396,41 +403,41 @@ inline void NetflowEdgeRequest_SimpleEdgeCondition::clear_operator_() {
   operator__.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& NetflowEdgeRequest_SimpleEdgeCondition::operator_() const {
-  // @@protoc_insertion_point(field_get:Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
   return operator__.GetNoArena();
 }
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_operator_(const ::std::string& value) {
   
   operator__.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
 }
 #if LANG_CXX11
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_operator_(::std::string&& value) {
   
   operator__.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
+  // @@protoc_insertion_point(field_set_rvalue:sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
 }
 #endif
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_operator_(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   operator__.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
+  // @@protoc_insertion_point(field_set_char:sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
 }
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_operator_(const char* value, size_t size) {
   
   operator__.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
+  // @@protoc_insertion_point(field_set_pointer:sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
 }
 inline ::std::string* NetflowEdgeRequest_SimpleEdgeCondition::mutable_operator_() {
   
-  // @@protoc_insertion_point(field_mutable:Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
+  // @@protoc_insertion_point(field_mutable:sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
   return operator__.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* NetflowEdgeRequest_SimpleEdgeCondition::release_operator_() {
-  // @@protoc_insertion_point(field_release:Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
+  // @@protoc_insertion_point(field_release:sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
   
   return operator__.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -441,7 +448,7 @@ inline void NetflowEdgeRequest_SimpleEdgeCondition::set_allocated_operator_(::st
     
   }
   operator__.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), operator_);
-  // @@protoc_insertion_point(field_set_allocated:Sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
+  // @@protoc_insertion_point(field_set_allocated:sam.NetflowEdgeRequest.SimpleEdgeCondition.operator)
 }
 
 // int32 rside = 3;
@@ -449,13 +456,13 @@ inline void NetflowEdgeRequest_SimpleEdgeCondition::clear_rside() {
   rside_ = 0;
 }
 inline ::google::protobuf::int32 NetflowEdgeRequest_SimpleEdgeCondition::rside() const {
-  // @@protoc_insertion_point(field_get:Sam.NetflowEdgeRequest.SimpleEdgeCondition.rside)
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.SimpleEdgeCondition.rside)
   return rside_;
 }
 inline void NetflowEdgeRequest_SimpleEdgeCondition::set_rside(::google::protobuf::int32 value) {
   
   rside_ = value;
-  // @@protoc_insertion_point(field_set:Sam.NetflowEdgeRequest.SimpleEdgeCondition.rside)
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.SimpleEdgeCondition.rside)
 }
 
 // -------------------------------------------------------------------
@@ -467,41 +474,41 @@ inline void NetflowEdgeRequest::clear_sourceip() {
   sourceip_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& NetflowEdgeRequest::sourceip() const {
-  // @@protoc_insertion_point(field_get:Sam.NetflowEdgeRequest.sourceIP)
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.sourceIP)
   return sourceip_.GetNoArena();
 }
 inline void NetflowEdgeRequest::set_sourceip(const ::std::string& value) {
   
   sourceip_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:Sam.NetflowEdgeRequest.sourceIP)
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.sourceIP)
 }
 #if LANG_CXX11
 inline void NetflowEdgeRequest::set_sourceip(::std::string&& value) {
   
   sourceip_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:Sam.NetflowEdgeRequest.sourceIP)
+  // @@protoc_insertion_point(field_set_rvalue:sam.NetflowEdgeRequest.sourceIP)
 }
 #endif
 inline void NetflowEdgeRequest::set_sourceip(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   sourceip_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:Sam.NetflowEdgeRequest.sourceIP)
+  // @@protoc_insertion_point(field_set_char:sam.NetflowEdgeRequest.sourceIP)
 }
 inline void NetflowEdgeRequest::set_sourceip(const char* value, size_t size) {
   
   sourceip_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:Sam.NetflowEdgeRequest.sourceIP)
+  // @@protoc_insertion_point(field_set_pointer:sam.NetflowEdgeRequest.sourceIP)
 }
 inline ::std::string* NetflowEdgeRequest::mutable_sourceip() {
   
-  // @@protoc_insertion_point(field_mutable:Sam.NetflowEdgeRequest.sourceIP)
+  // @@protoc_insertion_point(field_mutable:sam.NetflowEdgeRequest.sourceIP)
   return sourceip_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* NetflowEdgeRequest::release_sourceip() {
-  // @@protoc_insertion_point(field_release:Sam.NetflowEdgeRequest.sourceIP)
+  // @@protoc_insertion_point(field_release:sam.NetflowEdgeRequest.sourceIP)
   
   return sourceip_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -512,7 +519,7 @@ inline void NetflowEdgeRequest::set_allocated_sourceip(::std::string* sourceip) 
     
   }
   sourceip_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), sourceip);
-  // @@protoc_insertion_point(field_set_allocated:Sam.NetflowEdgeRequest.sourceIP)
+  // @@protoc_insertion_point(field_set_allocated:sam.NetflowEdgeRequest.sourceIP)
 }
 
 // string destIP = 2;
@@ -520,41 +527,41 @@ inline void NetflowEdgeRequest::clear_destip() {
   destip_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& NetflowEdgeRequest::destip() const {
-  // @@protoc_insertion_point(field_get:Sam.NetflowEdgeRequest.destIP)
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.destIP)
   return destip_.GetNoArena();
 }
 inline void NetflowEdgeRequest::set_destip(const ::std::string& value) {
   
   destip_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:Sam.NetflowEdgeRequest.destIP)
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.destIP)
 }
 #if LANG_CXX11
 inline void NetflowEdgeRequest::set_destip(::std::string&& value) {
   
   destip_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:Sam.NetflowEdgeRequest.destIP)
+  // @@protoc_insertion_point(field_set_rvalue:sam.NetflowEdgeRequest.destIP)
 }
 #endif
 inline void NetflowEdgeRequest::set_destip(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   destip_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:Sam.NetflowEdgeRequest.destIP)
+  // @@protoc_insertion_point(field_set_char:sam.NetflowEdgeRequest.destIP)
 }
 inline void NetflowEdgeRequest::set_destip(const char* value, size_t size) {
   
   destip_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:Sam.NetflowEdgeRequest.destIP)
+  // @@protoc_insertion_point(field_set_pointer:sam.NetflowEdgeRequest.destIP)
 }
 inline ::std::string* NetflowEdgeRequest::mutable_destip() {
   
-  // @@protoc_insertion_point(field_mutable:Sam.NetflowEdgeRequest.destIP)
+  // @@protoc_insertion_point(field_mutable:sam.NetflowEdgeRequest.destIP)
   return destip_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* NetflowEdgeRequest::release_destip() {
-  // @@protoc_insertion_point(field_release:Sam.NetflowEdgeRequest.destIP)
+  // @@protoc_insertion_point(field_release:sam.NetflowEdgeRequest.destIP)
   
   return destip_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -565,36 +572,50 @@ inline void NetflowEdgeRequest::set_allocated_destip(::std::string* destip) {
     
   }
   destip_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), destip);
-  // @@protoc_insertion_point(field_set_allocated:Sam.NetflowEdgeRequest.destIP)
+  // @@protoc_insertion_point(field_set_allocated:sam.NetflowEdgeRequest.destIP)
 }
 
-// repeated .Sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 3;
+// bool terminate = 3;
+inline void NetflowEdgeRequest::clear_terminate() {
+  terminate_ = false;
+}
+inline bool NetflowEdgeRequest::terminate() const {
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.terminate)
+  return terminate_;
+}
+inline void NetflowEdgeRequest::set_terminate(bool value) {
+  
+  terminate_ = value;
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.terminate)
+}
+
+// repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
 inline int NetflowEdgeRequest::conditions_size() const {
   return conditions_.size();
 }
 inline void NetflowEdgeRequest::clear_conditions() {
   conditions_.Clear();
 }
-inline const ::Sam::NetflowEdgeRequest_SimpleEdgeCondition& NetflowEdgeRequest::conditions(int index) const {
-  // @@protoc_insertion_point(field_get:Sam.NetflowEdgeRequest.conditions)
+inline const ::sam::NetflowEdgeRequest_SimpleEdgeCondition& NetflowEdgeRequest::conditions(int index) const {
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.conditions)
   return conditions_.Get(index);
 }
-inline ::Sam::NetflowEdgeRequest_SimpleEdgeCondition* NetflowEdgeRequest::mutable_conditions(int index) {
-  // @@protoc_insertion_point(field_mutable:Sam.NetflowEdgeRequest.conditions)
+inline ::sam::NetflowEdgeRequest_SimpleEdgeCondition* NetflowEdgeRequest::mutable_conditions(int index) {
+  // @@protoc_insertion_point(field_mutable:sam.NetflowEdgeRequest.conditions)
   return conditions_.Mutable(index);
 }
-inline ::Sam::NetflowEdgeRequest_SimpleEdgeCondition* NetflowEdgeRequest::add_conditions() {
-  // @@protoc_insertion_point(field_add:Sam.NetflowEdgeRequest.conditions)
+inline ::sam::NetflowEdgeRequest_SimpleEdgeCondition* NetflowEdgeRequest::add_conditions() {
+  // @@protoc_insertion_point(field_add:sam.NetflowEdgeRequest.conditions)
   return conditions_.Add();
 }
-inline ::google::protobuf::RepeatedPtrField< ::Sam::NetflowEdgeRequest_SimpleEdgeCondition >*
+inline ::google::protobuf::RepeatedPtrField< ::sam::NetflowEdgeRequest_SimpleEdgeCondition >*
 NetflowEdgeRequest::mutable_conditions() {
-  // @@protoc_insertion_point(field_mutable_list:Sam.NetflowEdgeRequest.conditions)
+  // @@protoc_insertion_point(field_mutable_list:sam.NetflowEdgeRequest.conditions)
   return &conditions_;
 }
-inline const ::google::protobuf::RepeatedPtrField< ::Sam::NetflowEdgeRequest_SimpleEdgeCondition >&
+inline const ::google::protobuf::RepeatedPtrField< ::sam::NetflowEdgeRequest_SimpleEdgeCondition >&
 NetflowEdgeRequest::conditions() const {
-  // @@protoc_insertion_point(field_list:Sam.NetflowEdgeRequest.conditions)
+  // @@protoc_insertion_point(field_list:sam.NetflowEdgeRequest.conditions)
   return conditions_;
 }
 
@@ -606,7 +627,7 @@ NetflowEdgeRequest::conditions() const {
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace Sam
+}  // namespace sam
 
 // @@protoc_insertion_point(global_scope)
 

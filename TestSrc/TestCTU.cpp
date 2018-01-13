@@ -17,6 +17,7 @@
 #include "Identity.hpp"
 #include "ExponentialHistogramSum.hpp"
 #include "ExponentialHistogramVariance.hpp"
+#include "ZeroMQPushPull.hpp"
 
 using namespace sam;
 
@@ -57,16 +58,26 @@ BOOST_AUTO_TEST_CASE( test_sample )
     std::string outputfile = "TestCTUOutputFile.txt";
     auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
     auto receiver = std::make_shared<ReadCSV>(dataFile);
-    std::size_t dequeLength = 100;
-    std::size_t numNodes = 1;
-    std::size_t nodeId = 0;
-    std::vector<std::size_t> ports(numNodes);
-    ports[0] = 10000;
-    std::size_t hwm = 1;
-    std::vector<std::string> hostnames(numNodes); 
+    std::size_t numNodes = 1; ///> The number of nodes in the cluster
+    std::size_t nodeId = 0; ///> The node id of this node
+    /*std::vector<std::string> hostnames(numNodes); // A vector of hosts in the cluster
+    std::vector<std::size_t> ports(numNodes); // Vector of ports to use in the cluster
     hostnames[0] = "127.0.0.1";
+    ports[0] = 10000;
+    std::size_t hwm = 1; ///> The high-water mark (zeromq parameter)
+    std::size_t queueLength = 10000; ///> The length of the input queue
+    
+
+    auto pushpull = std::make_shared<ZeroMQPushPull>(queueLength,
+                                   numNodes, 
+                                   nodeId, 
+                                   hostnames, 
+                                   ports, 
+                                   hwm);
+    
+    receiver->registerConsumer(pushpull);
+    */
    
-    // Not using ZeroMQPushPull since we are working with just one node.
     
     // Get the label
     // Doesn't really need a key, but provide one anyway to the template.
@@ -129,6 +140,7 @@ BOOST_AUTO_TEST_CASE( test_sample )
       // Get a line from the original data file
       std::string orig;
       std::string result;
+      std::cout << "blah " << std::endl;
       while (std::getline(origfile, orig) && std::getline(resultfile, result))
       {
       

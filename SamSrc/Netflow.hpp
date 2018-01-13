@@ -32,6 +32,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/fusion/algorithm/iteration/for_each.hpp>
+#include <zmq.hpp>
 
 #include "Util.hpp"
 
@@ -95,6 +96,31 @@ typedef std::tuple<std::size_t,  //SamGeneratedId
                    >
                    Netflow;
 
+
+std::vector<std::string> mytokenize(std::string s)
+{
+  std::vector<std::string> v;
+  typedef std::string::const_iterator iter;
+  std::string::const_iterator beg;
+  bool in_token = false;
+  for ( iter it = s.begin(); it != s.end(); ++it)
+  {
+    if ( *it == ',') {
+      if ( in_token ) {
+        v.push_back(std::string(beg, it)); 
+      }
+    } else if ( !in_token) 
+    { 
+      beg = it;
+      in_token = true;
+    }
+  }
+  if ( in_token ) {
+    v.push_back(std::string(beg, s.cend()));
+  }
+  return v;
+}
+
 /**
  * This version is the original VAST format.  The generatedId and the label
  * have to be provided.
@@ -104,7 +130,8 @@ Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s)
 {
   //std::cout << "MakeNetflowWithoutLabel " << s << std::endl;
 
-  boost::trim(s);
+  //boost::trim(s);
+  /*
   double timeSeconds;
   std::string parsedDate; 
   std::string dateTimeStr;
@@ -124,15 +151,124 @@ Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s)
   int firstSeenSrcPacketCount;
   int firstSeenDestPacketCount;
   int recordForceOut; 
+  */
+  double timeSeconds = 1;
+  std::string parsedDate = "blah"; 
+  std::string dateTimeStr = "blah";
+  std::string ipLayerProtocol = "blah";
+  std::string ipLayerProtocolCode = "blah";
+  std::string sourceIP = "192.168.0.1"; 
+  std::string destIP = "192.168.0.1";
+  int sourcePort = 55;
+  int destPort = 66;
+  std::string moreFragments = "0";
+  int countFragments = 1;
+  int durationSeconds = 1;
+  int firstSeenSrcPayloadBytes = 1;
+  int firstSeenDestPayloadBytes = 1;
+  int firstSeenSrcTotalBytes = 1;
+  int firstSeenDestTotalBytes = 1;
+  int firstSeenSrcPacketCount = 1;
+  int firstSeenDestPacketCount = 1;
+  int recordForceOut = 0; 
 
-  boost::char_separator<char> sep(",");
-  boost::tokenizer<boost::char_separator<char>> tok(s, sep);
+  //std::vector<std::string> v = mytokenize(s);
+  
+  std::stringstream ss(s);
+  std::string item;
+  std::getline(ss, item, ',');
+  timeSeconds = boost::lexical_cast<double>(item); std::getline(ss, item, ','); 
+  //std::cout << "blah3 " << timeSeconds << std::endl;
+  parsedDate = item; std::getline(ss, item, ',');
+  //std::cout << "blah4" << std::endl;
+  dateTimeStr = item; std::getline(ss, item, ',');
+  //std::cout << "blah5" << std::endl;
+  ipLayerProtocol = item; std::getline(ss, item, ',');
+  //std::cout << "blah6" << std::endl;
+  ipLayerProtocolCode = item; std::getline(ss, item, ',');
+  //std::cout << "blah7" << std::endl;
+  sourceIP = item; std::getline(ss, item, ',');                                          
+  //std::cout << "blah8" << std::endl;
+  destIP = item; std::getline(ss, item, ',');
+  //std::cout << "blah9" << std::endl;
+  sourcePort = boost::lexical_cast<int>(item); std::getline(ss, item, ',');
+  //std::cout << "blah10" << std::endl;
+  destPort = boost::lexical_cast<int>(item); std::getline(ss, item, ',');
+  //std::cout << "blah11" << std::endl;
+  moreFragments = item; std::getline(ss, item, ',');
+  //std::cout << "blah12" << std::endl;
+  countFragments = boost::lexical_cast<int>(item); std::getline(ss, item, ',');
+  //std::cout << "blah13" << std::endl;
+  durationSeconds = boost::lexical_cast<double>(item); std::getline(ss, item, ',');
+  //std::cout << "blah14" << std::endl;
+  firstSeenSrcPayloadBytes = boost::lexical_cast<long>(item); std::getline(ss, item, ',');
+  //std::cout << "blah15" << std::endl;
+  firstSeenDestPayloadBytes = boost::lexical_cast<long>(item); std::getline(ss, item, ',');
+  //std::cout << "blah16" << std::endl;
+  firstSeenSrcTotalBytes = boost::lexical_cast<long>(item); std::getline(ss, item, ',');
+  //std::cout << "blah17" << std::endl;
+  firstSeenDestTotalBytes = boost::lexical_cast<long>(item); std::getline(ss, item, ',');
+  //std::cout << "blah18" << std::endl;
+  firstSeenSrcPacketCount = boost::lexical_cast<long>(item); std::getline(ss, item, ',');
+  //std::cout << "blah19" << firstSeenSrcPacketCount << std::endl;
+  firstSeenDestPacketCount = boost::lexical_cast<long>(item); std::getline(ss, item, ',');
+  //std::cout << "blah20" << std::endl;
+  recordForceOut = boost::lexical_cast<int>(item); std::getline(ss, item, ',');
+  //std::cout << "blah21" << std::endl;
+  
+
+  //boost::char_separator<char> sep(",");
+  //boost::tokenizer<boost::char_separator<char>> tok(s, sep);
 
   // The first two items, samGeneratedId and label, are not provided in the
   // string, so we start at 2.
-  int i = 2; 
+  //int i = 2; 
+/*
+  auto beg = tok.begin();
+  //std::cout << "blah1" << std::endl;
+  //std::cout << "blah2" << std::endl;
+  timeSeconds = boost::lexical_cast<double>(*beg); ++beg; 
+  //std::cout << "blah3 " << timeSeconds << std::endl;
+  parsedDate = *beg; ++beg;
+  //std::cout << "blah4" << std::endl;
+  dateTimeStr = *beg; ++beg;
+  //std::cout << "blah5" << std::endl;
+  ipLayerProtocol = *beg; ++beg;
+  //std::cout << "blah6" << std::endl;
+  ipLayerProtocolCode = *beg; ++beg;
+  //std::cout << "blah7" << std::endl;
+  sourceIP = *beg; ++beg;                                          
+  //std::cout << "blah8" << std::endl;
+  destIP = *beg; ++beg;
+  //std::cout << "blah9" << std::endl;
+  sourcePort = boost::lexical_cast<int>(*beg); ++beg;
+  //std::cout << "blah10" << std::endl;
+  destPort = boost::lexical_cast<int>(*beg); ++beg;
+  //std::cout << "blah11" << std::endl;
+  moreFragments = *beg; ++beg;
+  //std::cout << "blah12" << std::endl;
+  countFragments = boost::lexical_cast<int>(*beg); ++beg;
+  //std::cout << "blah13" << std::endl;
+  durationSeconds = boost::lexical_cast<double>(*beg); ++beg;
+  //std::cout << "blah14" << std::endl;
+  firstSeenSrcPayloadBytes = boost::lexical_cast<long>(*beg); ++beg;
+  //std::cout << "blah15" << std::endl;
+  firstSeenDestPayloadBytes = boost::lexical_cast<long>(*beg); ++beg;
+  //std::cout << "blah16" << std::endl;
+  firstSeenSrcTotalBytes = boost::lexical_cast<long>(*beg); ++beg;
+  //std::cout << "blah17" << std::endl;
+  firstSeenDestTotalBytes = boost::lexical_cast<long>(*beg); ++beg;
+  //std::cout << "blah18" << std::endl;
+  firstSeenSrcPacketCount = boost::lexical_cast<long>(*beg); ++beg;
+  //std::cout << "blah19" << firstSeenSrcPacketCount << std::endl;
+  firstSeenDestPacketCount = boost::lexical_cast<long>(*beg); ++beg;
+  //std::cout << "blah20" << std::endl;
+  recordForceOut = boost::lexical_cast<int>(*beg); ++beg;
+  //std::cout << "blah21" << std::endl;
+*/
+/* 
   BOOST_FOREACH(std::string const &t, tok) {
-    //std::cout << "i " << i << " t " << t << std::endl;
+    //std::cout << "i " << i << " t " << t << std::endl; ++beg;
 
     try {
       switch (i) {
@@ -168,8 +304,11 @@ Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s)
         boost::lexical_cast<std::string>(i) + " with token " + t + 
         " for netflow: " + s);
     }
+    
     i++;
   }
+  */
+  
   //std::cout << " blah " << std::endl;
   return std::make_tuple(  samGeneratedId,
                            label,
@@ -228,7 +367,10 @@ Netflow makeNetflow(int samGeneratedId, std::string s)
   boost::tokenizer<boost::char_separator<char>> tok(s, sep);
   int numTokens = std::distance(tok.begin(), tok.end());
 
-  if (numTokens == RecordForceOut) { // Has a label
+  if (numTokens == RecordForceOut + 1) { // Has all fields but overriding id
+    std::string withoutId = removeFirstElement(s);
+    return makeNetflow(samGeneratedId, withoutId);    
+  } else if (numTokens == RecordForceOut) { // Has a label
     return makeNetflowWithLabel(samGeneratedId, s);
   } else if (numTokens == RecordForceOut - 1) { // No label
     return makeNetflowWithoutLabel(samGeneratedId, DEFAULT_LABEL, s);
@@ -271,6 +413,8 @@ Netflow makeNetflow(std::string s)
   std::string withoutId = removeFirstElement(s);
   return makeNetflow(id, withoutId);
 }
+
+
 
 }
 #endif

@@ -33,7 +33,17 @@ public:
 
   virtual bool consume(InputType const& input);
 
+  void terminate();
+
 };
+
+template <typename InputType, typename OutputType, size_t... keyFields>
+void TransformProducer<InputType, OutputType, keyFields...>::terminate()
+{
+  for (auto consumer : this->consumers) {
+    consumer->terminate();
+  }
+}
 
 template <typename InputType, typename OutputType, size_t... keyFields>
 TransformProducer<InputType, OutputType, keyFields...>::TransformProducer(

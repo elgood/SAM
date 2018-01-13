@@ -47,9 +47,11 @@ using namespace std::chrono;
 //using namespace mlpack;
 //using namespace mlpack::naive_bayes;
 
-void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
+void createPipeline(
+                 std::shared_ptr<ReadCSV> readCSV,
                  std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
+                 std::shared_ptr<ZeroMQPushPull> pushpull,
                  std::size_t queueLength,
                  std::size_t numNodes,
                  std::size_t nodeId,
@@ -73,7 +75,7 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
 
   std::cout << "consumer created " << std::endl;
 
-  receiver->registerConsumer(consumer);
+  //receiver->registerConsumer(consumer);
 
   // An operator to get the label from each netflow and add it to the
   // subscriber.
@@ -398,7 +400,7 @@ int main(int argc, char** argv) {
     std::cout << "Creating Pipeline " << std::endl;
     // createPipeline creates all the operators and ties them together.  It 
     // also notifies the designated feature producers of the subscriber.
-    createPipeline(receiver, featureMap, subscriber, 
+    /*createPipeline(receiver, featureMap, subscriber, NULL,
                    queueLength,
                    numNodes,
                    nodeId,
@@ -406,7 +408,7 @@ int main(int argc, char** argv) {
                    ports,
                    hwm,
                    N, b, k);
-   
+    */
     std::cout << "Created Pipeline " << std::endl;
     
     // You must call init before starting the pipeline.

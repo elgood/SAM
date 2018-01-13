@@ -109,3 +109,14 @@ BOOST_AUTO_TEST_CASE( test_makeTuple_to_toString)
   std::string stringAgain = toString(netflow);
   BOOST_CHECK_EQUAL(netflowString, stringAgain); 
 }
+
+BOOST_AUTO_TEST_CASE( test_empty_zmq_message)
+{
+  zmq::message_t message = emptyZmqMessage();
+  char* buff = static_cast<char*>(message.data());
+  std::cout << buff << std::endl;
+  BOOST_CHECK_EQUAL(buff, "");
+
+  BOOST_CHECK(isTerminateMessage(message));
+
+}

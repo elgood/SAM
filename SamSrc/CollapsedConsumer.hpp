@@ -46,7 +46,6 @@ public:
  
   bool consume(TupleType const& tuple)
   {
-    //std::cout << "Tuple in collapsed consumer " << toString(tuple) << std::endl;
     std::string key = generateKey<keyFields...>(tuple);
 
     if (featureMap->exists(key, targetId))
@@ -65,8 +64,9 @@ public:
     }
 
     return false;
-
   }
+
+  void terminate() {}
   
 };
 

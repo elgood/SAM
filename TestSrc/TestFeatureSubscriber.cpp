@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber_multi_thread )
 BOOST_AUTO_TEST_CASE( test_feature_subscriber )
 {
   std::string destIp   = "192.168.0.1";
-  std::string sourceIp = "192.186.0.2";
+  std::string sourceIp = "192.168.0.2";
   double meanDestFlowSize   = 100.0;
   double meanSourceFlowSize = 50.0;
   double devDestFlowSize    = 2.0;
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   generators.push_back(generator);
 
   int queueLength = 1000;
-  int numExamples = 20000;
+  int numExamples = 200000;
   GeneralNetflowProducer netflowProducer( queueLength,
                                           numExamples,
                                           generators);
@@ -259,6 +259,9 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   subscriber->init();
 
   netflowProducer.run();
+  //std::cout << "netflowproducers num read items " 
+  //          << netflowProducer.getNumReadItems() << std::endl;
+  subscriber->close();
 
   auto infile = std::ifstream(outputfile);
   std::string line;

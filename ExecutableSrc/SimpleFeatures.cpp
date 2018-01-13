@@ -52,7 +52,8 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
+void createPipeline(
+                 std::shared_ptr<ReadCSV> readCSV,
                  std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
                  std::shared_ptr<ZeroMQPushPull> pushpull,
@@ -64,9 +65,7 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                  std::size_t hwm,
                  std::size_t N,
                  std::size_t b,
-                 std::size_t k,
-                 bool excludeAverageSrcTotalBytes,
-                 bool excludeAverageDestTotalBytes)
+                 std::size_t k)
 {
   // An operator to get the label from each netflow and add it to the
   // subscriber.
@@ -75,33 +74,31 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   // Doesn't really need a key, but provide one anyway to the template.
   auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
                 (nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(label);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(label);
   } else {
-    receiver->registerConsumer(label);
+    pushpull->registerConsumer(label);
   }
   if (subscriber != NULL) {
     label->registerSubscriber(subscriber, identifier); 
   }
 
 
-  if (!excludeAverageSrcTotalBytes) {
-    /** Dest Ip as key **/
-    identifier = "averageSrcTotalBytes";
-    auto averageSrcTotalBytes = std::make_shared<
-                        ExponentialHistogramAve<double, Netflow,
-                                                   SrcTotalBytes,
-                                                   DestIp>>
-                            (N, 2, nodeId, featureMap, identifier);
+  /** Dest Ip as key **/
+  identifier = "averageSrcTotalBytes";
+  auto averageSrcTotalBytes = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 SrcTotalBytes,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
 
-    if (pushpull != NULL) {
-      pushpull->registerConsumer(averageSrcTotalBytes);
-    } else {
-      receiver->registerConsumer(averageSrcTotalBytes); 
-    }
-    if (subscriber != NULL) {
-      averageSrcTotalBytes->registerSubscriber(subscriber, identifier);
-    }
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageSrcTotalBytes);
+  } else {
+    pushpull->registerConsumer(averageSrcTotalBytes);
+  }
+  if (subscriber != NULL) {
+    averageSrcTotalBytes->registerSubscriber(subscriber, identifier);
   }
 
   identifier = "varSrcTotalBytes";
@@ -110,30 +107,28 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varSrcTotalBytes);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varSrcTotalBytes);
   } else {
-    receiver->registerConsumer(varSrcTotalBytes); 
+    pushpull->registerConsumer(varSrcTotalBytes);
   }
   if (subscriber != NULL) {
     varSrcTotalBytes->registerSubscriber(subscriber, identifier);
   }
 
-  if (!excludeAverageDestTotalBytes) {
-    identifier = "averageDestTotalBytes";
-    auto averageDestTotalBytes = std::make_shared<
-                        ExponentialHistogramAve<double, Netflow,
-                                                   DestTotalBytes,
-                                                   DestIp>>
-                            (N, 2, nodeId, featureMap, identifier);
-    if (pushpull != NULL) {
-      pushpull->registerConsumer(averageDestTotalBytes);
-    } else {
-      receiver->registerConsumer(averageDestTotalBytes); 
-    }
-    if (subscriber != NULL) {
-      averageDestTotalBytes->registerSubscriber(subscriber, identifier);
-    }
+  identifier = "averageDestTotalBytes";
+  auto averageDestTotalBytes = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 DestTotalBytes,
+                                                 DestIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageDestTotalBytes);
+  } else {
+    pushpull->registerConsumer(averageDestTotalBytes);
+  }
+  if (subscriber != NULL) {
+    averageDestTotalBytes->registerSubscriber(subscriber, identifier);
   }
 
   identifier = "varDestTotalBytes";
@@ -142,10 +137,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DestTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varDestTotalBytes);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varDestTotalBytes);
   } else {
-    receiver->registerConsumer(varDestTotalBytes); 
+    pushpull->registerConsumer(varDestTotalBytes);
   }
   if (subscriber != NULL) {
     varDestTotalBytes->registerSubscriber(subscriber, identifier);
@@ -157,10 +152,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DurationSeconds,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageDuration);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageDuration);
   } else {
-    receiver->registerConsumer(averageDuration); 
+    pushpull->registerConsumer(averageDuration);
   }
   if (subscriber != NULL) {
     averageDuration->registerSubscriber(subscriber, identifier);
@@ -172,10 +167,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DurationSeconds,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varDuration);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varDuration);
   } else {
-    receiver->registerConsumer(varDuration); 
+    pushpull->registerConsumer(varDuration);
   }
   if (subscriber != NULL) {
     varDuration->registerSubscriber(subscriber, identifier);
@@ -187,10 +182,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  SrcPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageSrcPayloadBytes);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageSrcPayloadBytes);
   } else {
-    receiver->registerConsumer(averageSrcPayloadBytes); 
+    pushpull->registerConsumer(averageSrcPayloadBytes);
   }
   if (subscriber != NULL) {
     averageSrcPayloadBytes->registerSubscriber(subscriber, identifier);
@@ -202,10 +197,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  SrcPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varSrcPayloadBytes);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varSrcPayloadBytes);
   } else {
-    receiver->registerConsumer(varSrcPayloadBytes); 
+    pushpull->registerConsumer(varSrcPayloadBytes);
   }
   if (subscriber != NULL) {
     varSrcPayloadBytes->registerSubscriber(subscriber, identifier);
@@ -217,10 +212,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DestPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageDestPayloadBytes);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageDestPayloadBytes);
   } else {
-    receiver->registerConsumer(averageDestPayloadBytes); 
+    pushpull->registerConsumer(averageDestPayloadBytes);
   }
   if (subscriber != NULL) {
     averageDestPayloadBytes->registerSubscriber(subscriber, identifier);
@@ -232,10 +227,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DestPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varDestPayloadBytes);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varDestPayloadBytes);
   } else {
-    receiver->registerConsumer(varDestPayloadBytes); 
+    pushpull->registerConsumer(varDestPayloadBytes);
   }
   if (subscriber != NULL) {
     varDestPayloadBytes->registerSubscriber(subscriber, identifier);
@@ -247,10 +242,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  FirstSeenSrcPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageSrcPacketCount);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageSrcPacketCount);
   } else {
-    receiver->registerConsumer(averageSrcPacketCount); 
+    pushpull->registerConsumer(averageSrcPacketCount);
   }
   if (subscriber != NULL) {
     averageSrcPacketCount->registerSubscriber(subscriber, identifier);
@@ -262,10 +257,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  FirstSeenSrcPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varSrcPacketCount);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varSrcPacketCount);
   } else {
-    receiver->registerConsumer(varSrcPacketCount); 
+    pushpull->registerConsumer(varSrcPacketCount);
   }
   if (subscriber != NULL) {
     varSrcPacketCount->registerSubscriber(subscriber, identifier);
@@ -277,10 +272,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  FirstSeenDestPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageDestPacketCount);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageDestPacketCount);
   } else {
-    receiver->registerConsumer(averageDestPacketCount); 
+    pushpull->registerConsumer(averageDestPacketCount);
   }
   if (subscriber != NULL) {
     averageDestPacketCount->registerSubscriber(subscriber, identifier);
@@ -292,31 +287,29 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  FirstSeenDestPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varDestPacketCount);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varDestPacketCount);
   } else {
-    receiver->registerConsumer(varDestPacketCount); 
+    pushpull->registerConsumer(varDestPacketCount);
   }
   if (subscriber != NULL) {
     varDestPacketCount->registerSubscriber(subscriber, identifier);
   }
 
   /** SourceIp as key **/
-  if (!excludeAverageSrcTotalBytes) {
-    identifier = "averageSrcTotalBytesSourceIp";
-    auto averageSrcTotalBytesSourceIp = std::make_shared<
-                        ExponentialHistogramAve<double, Netflow,
-                                                   SrcTotalBytes,
-                                                   SourceIp>>
-                            (N, 2, nodeId, featureMap, identifier);
-    if (pushpull != NULL) {
-      pushpull->registerConsumer(averageSrcTotalBytesSourceIp);
-    } else {
-      receiver->registerConsumer(averageSrcTotalBytesSourceIp); 
-    }
-    if (subscriber != NULL) {
-      averageSrcTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
-    }
+  identifier = "averageSrcTotalBytesSourceIp";
+  auto averageSrcTotalBytesSourceIp = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 SrcTotalBytes,
+                                                 SourceIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageSrcTotalBytesSourceIp);
+  } else {
+    pushpull->registerConsumer(averageSrcTotalBytesSourceIp);
+  }
+  if (subscriber != NULL) {
+    averageSrcTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
   }
 
   identifier = "varSrcTotalBytesSourceIp";
@@ -325,30 +318,28 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  SrcTotalBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varSrcTotalBytesSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varSrcTotalBytesSourceIp);
   } else {
-    receiver->registerConsumer(varSrcTotalBytesSourceIp); 
+    pushpull->registerConsumer(varSrcTotalBytesSourceIp);
   }
   if (subscriber != NULL) {
     varSrcTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
   }
 
-  if (!excludeAverageDestTotalBytes) {
-    identifier = "averageDestTotalBytesSourceIp";
-    auto averageDestTotalBytesSourceIp = std::make_shared<
-                        ExponentialHistogramAve<double, Netflow,
-                                                   DestTotalBytes,
-                                                   SourceIp>>
-                            (N, 2, nodeId, featureMap, identifier);
-    if (pushpull != NULL) {
-      pushpull->registerConsumer(averageDestTotalBytesSourceIp);
-    } else {
-      receiver->registerConsumer(averageDestTotalBytesSourceIp); 
-    }
-    if (subscriber != NULL) {
-      averageDestTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
-    }
+  identifier = "averageDestTotalBytesSourceIp";
+  auto averageDestTotalBytesSourceIp = std::make_shared<
+                      ExponentialHistogramAve<double, Netflow,
+                                                 DestTotalBytes,
+                                                 SourceIp>>
+                          (N, 2, nodeId, featureMap, identifier);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageDestTotalBytesSourceIp);
+  } else {
+    pushpull->registerConsumer(averageDestTotalBytesSourceIp);
+  }
+  if (subscriber != NULL) {
+    averageDestTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
   }
 
   identifier = "varDestTotalBytesSourceIp";
@@ -357,10 +348,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DestTotalBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varDestTotalBytesSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varDestTotalBytesSourceIp);
   } else {
-    receiver->registerConsumer(varDestTotalBytesSourceIp); 
+    pushpull->registerConsumer(varDestTotalBytesSourceIp);
   }
   if (subscriber != NULL) {
     varDestTotalBytesSourceIp->registerSubscriber(subscriber, identifier);
@@ -372,10 +363,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DurationSeconds,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageDurationSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageDurationSourceIp);
   } else {
-    receiver->registerConsumer(averageDurationSourceIp); 
+    pushpull->registerConsumer(averageDurationSourceIp);
   }
   if (subscriber != NULL) {
     averageDurationSourceIp->registerSubscriber(subscriber, identifier);
@@ -387,10 +378,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DurationSeconds,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varDurationSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varDurationSourceIp);
   } else {
-    receiver->registerConsumer(varDurationSourceIp); 
+    pushpull->registerConsumer(varDurationSourceIp);
   }
   if (subscriber != NULL) {
     varDurationSourceIp->registerSubscriber(subscriber, identifier);
@@ -402,10 +393,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  SrcPayloadBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageSrcPayloadBytesSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageSrcPayloadBytesSourceIp);
   } else {
-    receiver->registerConsumer(averageSrcPayloadBytesSourceIp); 
+    pushpull->registerConsumer(averageSrcPayloadBytesSourceIp);
   }
   if (subscriber != NULL) {
     averageSrcPayloadBytesSourceIp->registerSubscriber(subscriber, identifier);
@@ -417,10 +408,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  SrcPayloadBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varSrcPayloadBytesSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varSrcPayloadBytesSourceIp);
   } else {
-    receiver->registerConsumer(varSrcPayloadBytesSourceIp); 
+    pushpull->registerConsumer(varSrcPayloadBytesSourceIp);
   }
   if (subscriber != NULL) {
     varSrcPayloadBytesSourceIp->registerSubscriber(subscriber, identifier);
@@ -432,10 +423,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DestPayloadBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageDestPayloadBytesSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageDestPayloadBytesSourceIp);
   } else {
-    receiver->registerConsumer(averageDestPayloadBytesSourceIp); 
+    pushpull->registerConsumer(averageDestPayloadBytesSourceIp);
   }
   if (subscriber != NULL) {
     averageDestPayloadBytesSourceIp->registerSubscriber(subscriber, identifier);
@@ -447,10 +438,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  DestPayloadBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varDestPayloadBytesSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varDestPayloadBytesSourceIp);
   } else {
-    receiver->registerConsumer(varDestPayloadBytesSourceIp); 
+    pushpull->registerConsumer(varDestPayloadBytesSourceIp);
   }
   if (subscriber != NULL) {
     varDestPayloadBytesSourceIp->registerSubscriber(subscriber, identifier);
@@ -462,10 +453,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  FirstSeenSrcPacketCount,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageSrcPacketCountSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageSrcPacketCountSourceIp);
   } else {
-    receiver->registerConsumer(averageSrcPacketCountSourceIp); 
+    pushpull->registerConsumer(averageSrcPacketCountSourceIp);
   }
   if (subscriber != NULL) {
     averageSrcPacketCountSourceIp->registerSubscriber(subscriber, identifier);
@@ -477,10 +468,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  FirstSeenSrcPacketCount,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varSrcPacketCountSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varSrcPacketCountSourceIp);
   } else {
-    receiver->registerConsumer(varSrcPacketCountSourceIp); 
+    pushpull->registerConsumer(varSrcPacketCountSourceIp);
   }
   if (subscriber != NULL) {
     varSrcPacketCountSourceIp->registerSubscriber(subscriber, identifier);
@@ -492,10 +483,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  FirstSeenDestPacketCount,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(averageDestPacketCountSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(averageDestPacketCountSourceIp);
   } else {
-    receiver->registerConsumer(averageDestPacketCountSourceIp); 
+    pushpull->registerConsumer(averageDestPacketCountSourceIp);
   }
   if (subscriber != NULL) {
     averageDestPacketCountSourceIp->registerSubscriber(subscriber, identifier);
@@ -507,10 +498,10 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                                  FirstSeenDestPacketCount,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
-  if (pushpull != NULL) {
-    pushpull->registerConsumer(varDestPacketCountSourceIp);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(varDestPacketCountSourceIp);
   } else {
-    receiver->registerConsumer(varDestPacketCountSourceIp); 
+    pushpull->registerConsumer(varDestPacketCountSourceIp);
   }
   if (subscriber != NULL) {
     varDestPacketCountSourceIp->registerSubscriber(subscriber, identifier);
@@ -587,8 +578,6 @@ int main(int argc, char** argv) {
       " a learned model.")
     ("capacity", po::value<std::size_t>(&capacity)->default_value(10000),
       "The capacity of the FeatureMap and FeatureSubcriber")
-    ("excludeAveSrcTotalBytes", "If set, will exclude average SrcTotalBytes")
-    ("excludeAveDestTotalBytes", "If set, will exclude average DestTotalBytes")
   ;
 
   // Parse the command line variables
@@ -625,8 +614,6 @@ int main(int argc, char** argv) {
   std::cout << "About to create feature Map " << std::endl;
   auto featureMap = std::make_shared<FeatureMap>(capacity);
 
-  bool excludeAverageSrcTotalBytes = vm.count("excludeAveSrcTotalBytes");
-  bool excludeAverageDestTotalBytes = vm.count("excludeAveDestTotalBytes");
   
   /********************** Creating features ******************************/
   if (vm.count("create_features")) 
@@ -659,9 +646,7 @@ int main(int argc, char** argv) {
                    hostnames,
                    ports,
                    hwm,
-                   N, b, k,
-                   excludeAverageSrcTotalBytes,
-                   excludeAverageDestTotalBytes);
+                   N, b, k);
    
     std::cout << "Created Pipeline " << std::endl;
     
@@ -754,16 +739,14 @@ int main(int argc, char** argv) {
 
     receiver->registerConsumer(consumer);
 
-    createPipeline(receiver, featureMap, NULL, consumer,
+    createPipeline(NULL, featureMap, NULL, consumer,
                    queueLength,
                    numNodes,
                    nodeId,
                    hostnames,
                    ports,
                    hwm,
-                   N, b, k,
-                   excludeAverageSrcTotalBytes,
-                   excludeAverageDestTotalBytes);
+                   N, b, k);
  
     if (!receiver->connect()) {
       std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;

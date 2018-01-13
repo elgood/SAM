@@ -16,7 +16,7 @@ public:
   /**
    * \param filename The location of a CSV file.
    */
-  ReadCSV(std::string _filename) : BaseProducer<Netflow>(1) {
+  ReadCSV(std::string _filename) : BaseProducer(1) {
     filename = _filename;
   }
 

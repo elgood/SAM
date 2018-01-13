@@ -42,9 +42,11 @@ using namespace std::chrono;
 //using namespace mlpack;
 //using namespace mlpack::naive_bayes;
 
-void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
+void createPipeline(
+                 std::shared_ptr<ReadCSV> readCSV,
                  std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
+                 std::shared_ptr<ZeroMQPushPull> pushpull,
                  std::size_t queueLength,
                  std::size_t numNodes,
                  std::size_t nodeId,
@@ -53,19 +55,6 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                  std::size_t hwm)
 {
 
-  // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
-  // getting the data from the receiver (e.g. a socket or a file) and then
-  // publishing it in a load-balanced way to the cluster.
-  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
-                                 numNodes, 
-                                 nodeId, 
-                                 hostnames, 
-                                 ports, 
-                                 hwm);
-
-  receiver->registerConsumer(consumer);
-    
-
   // An operator to get the label from each netflow and add it to the
   // subscriber.
   string identifier = "label";
@@ -73,8 +62,14 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
   // Doesn't really need a key, but provide one anyway to the template.
   auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
                 (nodeId, featureMap, identifier);
-  consumer->registerConsumer(label);
-  label->registerSubscriber(subscriber, identifier); 
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(label);
+  } else {
+    pushpull->registerConsumer(label);
+  }
+  if (subscriber != NULL) {
+    label->registerSubscriber(subscriber, identifier); 
+  }
 
   identifier = "top2";
   int k = 2;
@@ -84,8 +79,15 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
                                DestPort, DestIp>>(
                                N, b, k, nodeId,
                                featureMap, identifier);
-  consumer->registerConsumer(topk); 
-  topk->registerSubscriber(subscriber, identifier);
+  
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(topk);
+  } else {
+    pushpull->registerConsumer(topk);
+  }
+  if (subscriber != NULL) {
+    topk->registerSubscriber(subscriber, identifier);
+  }
 
   // Five tokens for the 
   // First function token
@@ -126,7 +128,11 @@ void createPipeline(std::shared_ptr<BaseProducer<Netflow>> receiver,
    
   auto filter = std::make_shared<Filter<Netflow, DestIp>>(
     filterExpression, nodeId, featureMap, "servers", queueLength);
-  consumer->registerConsumer(filter);
+  if (readCSV != NULL) {
+    readCSV->registerConsumer(filter);
+  } else {
+    pushpull->registerConsumer(filter);
+  }
 }
 
 int main(int argc, char** argv) {
@@ -251,7 +257,7 @@ int main(int argc, char** argv) {
 
     // createPipeline creates all the operators and ties them together.  It 
     // also notifies the designated feature producers of the subscriber.
-    createPipeline(receiver, featureMap, subscriber, 
+    createPipeline(receiver, featureMap, subscriber, NULL, 
                    queueLength,
                    numNodes,
                    nodeId,
@@ -340,6 +346,7 @@ int main(int argc, char** argv) {
                                    hwm);
 
     receiver.registerConsumer(consumer);
+
 
     //createPipeline(consumer, featureMap, featureNames, nodeId);
 
