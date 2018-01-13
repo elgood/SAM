@@ -198,8 +198,6 @@ GraphStore::GraphStore(std::size_t numNodes,
              std::vector<std::size_t> edgePorts,
              uint32_t hwm)
 {
-  //printf("Start of graphstore creation %lu\n", nodeId);
-
   this->numNodes = numNodes;
   this->nodeId   = nodeId;
 
@@ -220,7 +218,6 @@ GraphStore::GraphStore(std::size_t numNodes,
   /// pull sockets.
   auto requestPullFunction = [this, requestHostnames, requestPorts, hwm]() 
   {
-    //printf("Starting request pull function %lu\n", this->nodeId);
     // All sockets passed to zmq_poll() function must belong to the same
     // thread calling zmq_poll().  Below we create the poll items and the
     // pull sockets.
@@ -271,18 +268,14 @@ GraphStore::GraphStore(std::size_t numNodes,
     bool stop = false;
 
     while (!stop) {
-      //printf("request poll %lu\n", this->nodeId);
       int rValue = zmq::poll(pollItems, this->numNodes -1, 1);
       int numStop = 0;
       for (int i = 0; i < this->numNodes -1; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
-          //printf("%lu received message from %d\n", this->nodeId, i);
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
-            //printf("terminating message edge requests\n");
             terminate[i] = true;
           } else {
-            //printf("got netflow edge request\n");
             char *buff = static_cast<char*>(message.data());
             std::string sEdgeRequest(buff);
             NetflowEdgeRequest request;
@@ -293,7 +286,6 @@ GraphStore::GraphStore(std::size_t numNodes,
 
         if (terminate[i]) numStop++;
       }
-      //std::cout << "numStop " << numStop << std::endl;
       if (numStop == this->numNodes - 1) stop = true;
     }
 
@@ -308,7 +300,6 @@ GraphStore::GraphStore(std::size_t numNodes,
   auto edgePullFunction = [this, edgeHostnames, 
                            edgePorts, hwm]() 
   {
-    //printf("Starting edge pull function %lu\n", this->nodeId);
     zmq::pollitem_t pollItems[this->numNodes - 1];
     std::vector<zmq::socket_t*> sockets;
 
@@ -327,7 +318,6 @@ GraphStore::GraphStore(std::size_t numNodes,
         } catch (std::exception e) {
           throw GraphStoreException(e.what());
         }
-        //socket->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
         socket->connect(url);
         sockets.push_back(socket);
 
@@ -342,27 +332,19 @@ GraphStore::GraphStore(std::size_t numNodes,
     bool stop = false;
     while (!stop) {
       int numStop = 0;
-      //printf("netflow poll %lu\n", this->nodeId);
-      //std::cout << "poll " << this->nodeId << std::endl;
       int rvalue = zmq::poll(pollItems, this->numNodes - 1, 1);
-      //std::cout << "polled " << this->nodeId << std::endl;
       for (int i = 0; i < this->numNodes - 1; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
-          //printf("%lu received netflow from %d\n", this->nodeId, i);
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
-            //printf("terminating message netflows\n");
             terminate[i] = true;
           } else {
             netflowsReceived++;
-            //printf("%lu got netflow \n", this->nodeId);
             char *buff = static_cast<char*>(message.data());
             std::string sNetflow(buff);
             size_t id = idGenerator.generate();
             Netflow netflow = makeNetflow(id, sNetflow);
-            //printf("%lu aboud to add edge\n", this->nodeId);
             addEdge(netflow); 
-            //printf("%lu added netflow \n", this->nodeId);
           }
         }
         if (terminate[i]) numStop++;
