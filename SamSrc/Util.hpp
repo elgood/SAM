@@ -85,9 +85,9 @@ inline zmq::message_t tupleToZmq(std::tuple<Tp...>const& t)
  * Hash function for strings.
  */
 inline
-unsigned int hashFunction(std::string const& key) 
+uint64_t hashFunction(std::string const& key) 
 {
-  unsigned int hash = 0;
+  uint64_t hash = 0;
   
   for (int i = 0; i < key.size(); i++) {
     hash = key[i] + (hash << 6) + (hash << 16) - hash;
@@ -95,6 +95,26 @@ unsigned int hashFunction(std::string const& key)
 
   return hash;
 }
+
+class StringHashFunction
+{
+public:
+  inline
+  uint64_t operator()(std::string const& s) const {
+    return hashFunction(s);
+  }
+
+};
+
+class StringEqualityFunction
+{
+public:
+  inline
+  bool operator()(std::string const& s1, std::string const& s2) const
+  {
+    return s1.compare(s2) == 0;
+  }
+};
 
 template <typename T>
 double calcMean(T const& v)
@@ -176,7 +196,26 @@ bool isTerminateMessage(zmq::message_t& message)
   return strcmp(buff, "") == 0;
 }
 
+inline
+size_t get_begin_index(size_t num_elements, size_t stream_id, 
+                       size_t num_streams)
+{
+  return static_cast<size_t>((static_cast<double>(num_elements) / num_streams) *
+                        stream_id);
+}
+
+inline
+size_t get_end_index(size_t num_elements, size_t stream_id, 
+                       size_t num_streams)
+{
+
+  return (stream_id + 1 < num_streams) ?
+    static_cast<size_t>((static_cast<double>(num_elements) / num_streams) *
+                       (stream_id + 1)) :
+    num_elements;
  
+}
+
 }
 
 #endif

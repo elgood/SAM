@@ -81,7 +81,6 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
     delete generator1;
   };
 
-
   std::thread thread0(graph_function0);
   std::thread thread1(graph_function1);
 
