@@ -31,6 +31,17 @@ public:
 
 private:
 
+  // Time window in seconds.  
+  double window = 1;
+
+  /**
+   * The current time.  We update current time in method addEdge in a
+   * non-perfect way.  Current time should generally increase, but because
+   * of threading issues it might jump around a bit.  This should be good
+   * enough.
+   */
+  std::atomic<double> currentTime;
+
   HF hash;
   EF equal;
   size_t capacity;
@@ -39,12 +50,20 @@ private:
   // array of lists of lists of edges
   std::list<std::list<TupleType>>* alle;
 
+  void cleanupEdges(size_t index);
+
 public:
 
-  CompressedSparse(size_t capacity);
+  /**
+   * \param capacity How big the storage is.
+   * \param window How big the time window is in seconds.
+   */
+  CompressedSparse(size_t capacity, double window);
+
   ~CompressedSparse();
 
   void addEdge(TupleType tuple);
+
 
   /** 
    * Counts the number of edges in the graph.  Linear operation.
@@ -54,10 +73,14 @@ public:
 
 template <typename TupleType, size_t source, size_t target, size_t time,
           typename HF, typename EF>
-CompressedSparse<TupleType, source, target, time, HF, EF>::CompressedSparse(
-  size_t capacity)
+CompressedSparse<TupleType, source, target, time, HF, EF>::
+CompressedSparse( size_t capacity, double window ) :
+  currentTime(0)
 {
   this->capacity = capacity;
+  this->window = window;
+  //currentTime = std::atomic<double>(0);
+
   mutexes = new std::mutex[capacity];
 
   alle = new std::list<std::list<TupleType>>[capacity];
@@ -65,7 +88,8 @@ CompressedSparse<TupleType, source, target, time, HF, EF>::CompressedSparse(
 
 template <typename TupleType, size_t source, size_t target, size_t time,
           typename HF, typename EF>
-CompressedSparse<TupleType, source, target, time, HF, EF>::~CompressedSparse()
+CompressedSparse<TupleType, source, target, time, HF, EF>::
+~CompressedSparse()
 {
   delete[] mutexes;
   delete[] alle;
@@ -77,39 +101,69 @@ void
 CompressedSparse<TupleType, source, target, time, HF, EF>::addEdge(
   TupleType tuple)
 {
+  // Updating time in a somewhat unsafe manner that should generally work.
+  //uint64_t tupleTime = convert(std::get<time>(tuple));
+  double tupleTime = std::get<time>(tuple);
+  if (tupleTime > currentTime.load()) {
+    currentTime.store(tupleTime);
+  }
+
   SourceType s = std::get<source>(tuple);
   size_t index = hash(s) % capacity;
 
   std::lock_guard<std::mutex> lock(mutexes[index]);
 
   bool found = false;
+  std::list<TupleType>* emptyListPtr = 0;
   for (auto & l : alle[index]) {
-    // Each list should have at least one element or the list would have
-    // been deleted.
-    try {
-      SourceType s0 = std::get<source>(l.front());  
-      //printf("s %s s0 %s\n", s.c_str(), s0.c_str());
-      if (equal(s, s0)) 
-      {
-        //printf("found == true\n");
-        found = true;
-        l.push_back(tuple);
-        //printf("l.size() %lu\n", l.size());
-        break;
+    if (l.size() > 0) {
+      try {
+        SourceType s0 = std::get<source>(l.front());  
+        if (equal(s, s0)) 
+        {
+          found = true;
+          l.push_back(tuple);
+          break;
+        }
+      } catch (std::exception e) {
+        std::string message = std::string("addEdge: Error accessing first "
+          "element of list") + e.what();  
+        throw CompressedSparseException(message);
+          
       }
-    } catch (std::exception e) {
-      std::string message = std::string("addEdge: Error accessing first "
-        "element of list") + e.what();  
-      throw CompressedSparseException(message);
-        
+    } else {
+      emptyListPtr = &l;
     }
   }
 
   if (!found) {
-    alle[index].push_back(std::list<TupleType>());
-    alle[index].back().push_back(tuple);
+    if (emptyListPtr) {
+      emptyListPtr->push_back(tuple);
+    } else {
+      alle[index].push_back(std::list<TupleType>());
+      alle[index].back().push_back(tuple);
+    }
+  } else {
+    cleanupEdges(index);
   }
 }
+
+template <typename TupleType, size_t source, size_t target, size_t time,
+          typename HF, typename EF>
+void
+CompressedSparse<TupleType, source, target, time, HF, EF>::cleanupEdges(
+  size_t index)
+{
+  // Should only be called by addEdge which has this entry locked out.
+  for( auto & l : alle[index]) {
+    while (l.size() > 0 && 
+           currentTime.load() - std::get<time>(l.front()) > window) {
+      l.pop_front();
+    }
+  }
+  
+}
+
 
 template <typename TupleType, size_t source, size_t target, size_t time,
           typename HF, typename EF>

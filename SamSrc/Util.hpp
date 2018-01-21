@@ -103,7 +103,15 @@ public:
   uint64_t operator()(std::string const& s) const {
     return hashFunction(s);
   }
+};
 
+class TimeConversionFunction
+{
+public:
+  inline
+  uint64_t operator()(double time) const {
+    return static_cast<uint64_t>(time * 10000000);
+  }
 };
 
 class StringEqualityFunction

@@ -120,3 +120,11 @@ BOOST_AUTO_TEST_CASE( test_empty_zmq_message)
   BOOST_CHECK(isTerminateMessage(message));
 
 }
+
+BOOST_AUTO_TEST_CASE( test_conversion_function )
+{
+  TimeConversionFunction convert;
+  BOOST_CHECK_EQUAL(convert(1.9999999), 19999999);
+  BOOST_CHECK_CLOSE(static_cast<double>(convert(11111111111.9999999))
+    / 111111111119999999,1, .00001);
+}
