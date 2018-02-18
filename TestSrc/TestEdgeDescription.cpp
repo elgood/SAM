@@ -5,7 +5,7 @@
 
 using namespace sam;
 
-BOOST_AUTO_TEST_CASE( test_edge_description )
+BOOST_AUTO_TEST_CASE( test_edge_unspecified )
 {
   /// Tests unspecifiedSource/Target
   EdgeDescription<Netflow> e;
@@ -17,6 +17,54 @@ BOOST_AUTO_TEST_CASE( test_edge_description )
   e.target = "192.168.0.1";
   BOOST_CHECK_EQUAL(e.unspecifiedSource(), false);
   BOOST_CHECK_EQUAL(e.unspecifiedTarget(), false);
+}
+
+BOOST_AUTO_TEST_CASE( test_fix_time_range )
+{
+  EdgeDescription<Netflow> e;
+  double maxOffset = 10.0;
+
+  // Times are not specified, so exception should be thrown.
+  BOOST_CHECK_THROW(e.fixTimeRange(maxOffset), EdgeDescriptionException);
+  BOOST_CHECK_THROW(e.fixStartTimeRange(maxOffset), EdgeDescriptionException);
+  BOOST_CHECK_THROW(e.fixEndTimeRange(maxOffset), EdgeDescriptionException);
+
+  e.startTimeRange.first = 0;
+  e.startTimeRange.second = 10.1;
+  BOOST_CHECK_THROW(e.fixTimeRange(maxOffset), EdgeDescriptionException);
+  BOOST_CHECK_THROW(e.fixStartTimeRange(maxOffset), EdgeDescriptionException);
+
+  e.endTimeRange.first = 0;
+  e.endTimeRange.second = 10.1;
+  BOOST_CHECK_THROW(e.fixTimeRange(maxOffset), EdgeDescriptionException);
+  BOOST_CHECK_THROW(e.fixEndTimeRange(maxOffset), EdgeDescriptionException);
+
+  e.startTimeRange.first = std::numeric_limits<double>::lowest();
+  e.startTimeRange.second = 10;
+  e.fixStartTimeRange(maxOffset);
+  BOOST_CHECK_EQUAL(e.startTimeRange.first, 0);
+  BOOST_CHECK_EQUAL(e.startTimeRange.second, 10);
+
+  e.endTimeRange.first = std::numeric_limits<double>::lowest();
+  e.endTimeRange.second = 10;
+  e.fixEndTimeRange(maxOffset);
+  BOOST_CHECK_EQUAL(e.endTimeRange.first, 0);
+  BOOST_CHECK_EQUAL(e.endTimeRange.second, 10);
+
+  e.startTimeRange.first = 0; 
+  e.startTimeRange.second = std::numeric_limits<double>::max();
+  e.fixStartTimeRange(maxOffset);
+  BOOST_CHECK_EQUAL(e.startTimeRange.first, 0);
+  BOOST_CHECK_EQUAL(e.startTimeRange.second, 10);
+
+  e.endTimeRange.first = 0; 
+  e.endTimeRange.second = std::numeric_limits<double>::max();
+  e.fixEndTimeRange(maxOffset);
+  BOOST_CHECK_EQUAL(e.endTimeRange.first, 0);
+  BOOST_CHECK_EQUAL(e.endTimeRange.second, 10);
+
+
+
 }
 
 

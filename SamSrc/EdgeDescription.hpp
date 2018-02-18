@@ -2,6 +2,7 @@
 #define SAM_EDGE_DESCRIPTION_HPP
 
 #include <boost/lexical_cast.hpp>
+#include <cmath>
 
 namespace sam {
 
@@ -131,30 +132,100 @@ public:
   }
 };
 
-template <typename Tuple>
+class EdgeDescriptionException : public std::runtime_error
+{
+public:
+  EdgeDescriptionException(char const * message) :std::runtime_error(message) {}
+  EdgeDescriptionException(std::string message) : std::runtime_error(message) {}
+};
+
+template <typename TupleType>
 class EdgeDescription
-{ 
+{
 public:
   std::string source = ""; ///> The source of the edge
   std::string edgeId = ""; ///> Edge identifer
   std::string target = ""; ///> The target of the edge
- 
-  // By what time the edge needs to have started.
-  double startTime = std::numeric_limits<double>::max();
 
-  // By what time the edge needs to be done.
-  double endTime = std::numeric_limits<double>::min(); 
+  // The range of time values over which the start of this edge should occur.
+  std::pair<double, double> startTimeRange;
+    
+  // The range of time value over which the end of this edge should occur.
+  std::pair<double, double> endTimeRange;
 
-  EdgeDescription() {}
+  EdgeDescription() {
+    startTimeRange.first = std::numeric_limits<double>::lowest();
+    startTimeRange.second = std::numeric_limits<double>::max();
+    endTimeRange.first = std::numeric_limits<double>::lowest();
+    endTimeRange.second = std::numeric_limits<double>::max();
+  }
 
   EdgeDescription(std::string source,
                   std::string edgeId,
                   std::string target)
   {
+    EdgeDescription();
     this->source = source;
     this->edgeId = edgeId;
     this->target = target;
   }
+
+  void fixTimeRange(double maxOffset) {
+    fixEndTimeRange(maxOffset);
+    fixStartTimeRange(maxOffset);
+  }
+
+  /**
+   * Changes things from numeric limits to something within a small time 
+   * window for the endTimeRange.
+   * \param maxOffset The maximum length of the range. 
+   */
+  void fixEndTimeRange(double maxOffset) {
+    if (endTimeRange.first == std::numeric_limits<double>::lowest() &&
+        endTimeRange.second != std::numeric_limits<double>::max()) {
+      endTimeRange.first = endTimeRange.second - maxOffset;
+    } else if (endTimeRange.first != std::numeric_limits<double>::lowest() &&
+        endTimeRange.second == std::numeric_limits<double>::max()) {
+      endTimeRange.second = endTimeRange.first + maxOffset;
+    } else if (endTimeRange.first != std::numeric_limits<double>::lowest() &&
+        endTimeRange.second != std::numeric_limits<double>::max()) 
+    {
+      if (std::abs(endTimeRange.second - endTimeRange.first) > maxOffset) {
+        throw EdgeDescriptionException("EdgeDescription::fixEndTimeRange: "
+          "Tried to fix endTimeRange but the range is larger than the offset.");
+      }
+    } else {
+      throw EdgeDescriptionException("EdgeDescription::fixEndTimeRange: "
+        "Neither end of the endTimeRange is defined.");
+    }
+  }
+
+  /**
+   * Changes things from numeric limits to something within a small time 
+   * window for the startTimeRange.
+   * \param maxOffset The maximum length of the range. 
+   */
+  void fixStartTimeRange(double maxOffset) {
+    if (startTimeRange.first == std::numeric_limits<double>::lowest() &&
+        startTimeRange.second != std::numeric_limits<double>::max()) {
+      startTimeRange.first = startTimeRange.second - maxOffset;
+    } else if (startTimeRange.first != std::numeric_limits<double>::lowest() &&
+        startTimeRange.second == std::numeric_limits<double>::max()) {
+      startTimeRange.second = startTimeRange.first + maxOffset;
+    } else if (startTimeRange.first != std::numeric_limits<double>::lowest() &&
+        startTimeRange.second != std::numeric_limits<double>::max()) 
+    {
+      if (std::abs(startTimeRange.second - startTimeRange.first) > maxOffset) {
+        throw EdgeDescriptionException("EdgeDescription::fixStartTimeRange: "
+          "Tried to fix startTimeRange but the range is larger than the "
+          "offset.");
+      }
+    } else {
+      throw EdgeDescriptionException("EdgeDescription::fixStartTimeRange: "
+        "Neither end of the startTimeRange is defined.");
+    }
+  }
+
 
   bool unspecifiedSource() const {
     if (source.compare("") == 0)
@@ -170,24 +241,12 @@ public:
       return false;
   }
 
-  bool unspecifiedStartTime() const {
-    if (startTime == std::numeric_limits<double>::max()) 
-      return true;
-    else
-      return false;
-  }
-
-  bool unspecifiedEndTime() const {
-    if (endTime == std::numeric_limits<double>::min()) 
-      return true;
-    else
-      return false;
-  }
-
   std::string toString() const {
     std::string rString = source + " " + edgeId + " " + target + " " +
-                          boost::lexical_cast<std::string>(startTime) + " " +
-                          boost::lexical_cast<std::string>(endTime);
+      boost::lexical_cast<std::string>(startTimeRange).first + " " +
+      boost::lexical_cast<std::string>(startTimeRange).second + " " +
+      boost::lexical_cast<std::string>(endTimeRange).first + " " +
+      boost::lexical_cast<std::string>(endTimeRange).second;
     return rString;
   }
 
@@ -199,7 +258,7 @@ public:
    * Returns true if the tuple satisifies the constraints laid out by 
    * this edge description.
    */
-  bool satisfies(Tuple const& tuple) const {
+  bool satisfies(TupleType const& tuple) const {
     return true;
   }
 
