@@ -9,8 +9,16 @@
 
 using namespace sam;
 
+typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp, 
+                   TimeSeconds, DurationSeconds, 
+                   StringHashFunction, StringHashFunction, 
+                   StringEqualityFunction, StringEqualityFunction>
+        GraphStoreType;
+
 BOOST_AUTO_TEST_CASE( test_graph_store )
 {
+  /// In this test we create a graphstore on two nodes (both local addresses).
+  ///
   int major, minor, patch;
   zmq_version(&major, &minor, &patch);
   std::cout << "ZMQ Version " << major << " " << minor << " " << patch 
@@ -24,6 +32,8 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   std::vector<std::string> edgeHostnames;
   std::vector<size_t> edgePorts;
   size_t hwm = 1000;
+  size_t graphCapacity = 1000;
+  double timeWindow = 100;
 
   requestHostnames.push_back("localhost");
   requestPorts.push_back(10000);
@@ -34,14 +44,15 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   edgeHostnames.push_back("localhost");
   edgePorts.push_back(10003);
 
-  int n = 10;
+  int n = 1000;
 
-  GraphStore* graphStore0 = new GraphStore(numNodes, nodeId0, 
+  GraphStoreType* graphStore0 = new GraphStoreType(numNodes, nodeId0, 
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
-                          hwm); 
+                          hwm, graphCapacity, timeWindow); 
 
 
+  // One thread runs this.
   auto graph_function0 = [graphStore0, n]()
                           
   {
@@ -59,11 +70,12 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
     delete generator0;
   };
 
-  GraphStore* graphStore1 = new GraphStore(numNodes, nodeId1, 
+  GraphStoreType* graphStore1 = new GraphStoreType(numNodes, nodeId1, 
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
-                          hwm); 
+                          hwm, graphCapacity, timeWindow); 
 
+  // Another thread runs this.
   auto graph_function1 = [graphStore1, n]()
                           
   {
@@ -87,7 +99,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   thread0.join();
   thread1.join();
 
-  BOOST_CHECK_EQUAL(graphStore1->getNetflowsReceived(), n);
+  BOOST_CHECK_EQUAL(graphStore1->getTuplesReceived(), n);
 
 
 }

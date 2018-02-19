@@ -30,12 +30,12 @@ BOOST_AUTO_TEST_CASE( test_fix_time_range )
   BOOST_CHECK_THROW(e.fixEndTimeRange(maxOffset), EdgeDescriptionException);
 
   e.startTimeRange.first = 0;
-  e.startTimeRange.second = 10.1;
+  e.startTimeRange.second = 20.1;
   BOOST_CHECK_THROW(e.fixTimeRange(maxOffset), EdgeDescriptionException);
   BOOST_CHECK_THROW(e.fixStartTimeRange(maxOffset), EdgeDescriptionException);
 
   e.endTimeRange.first = 0;
-  e.endTimeRange.second = 10.1;
+  e.endTimeRange.second = 20.1;
   BOOST_CHECK_THROW(e.fixTimeRange(maxOffset), EdgeDescriptionException);
   BOOST_CHECK_THROW(e.fixEndTimeRange(maxOffset), EdgeDescriptionException);
 

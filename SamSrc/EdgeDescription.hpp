@@ -164,13 +164,60 @@ public:
                   std::string edgeId,
                   std::string target)
   {
-    EdgeDescription();
+    startTimeRange.first = std::numeric_limits<double>::lowest();
+    startTimeRange.second = std::numeric_limits<double>::max();
+    endTimeRange.first = std::numeric_limits<double>::lowest();
+    endTimeRange.second = std::numeric_limits<double>::max();
     this->source = source;
     this->edgeId = edgeId;
     this->target = target;
   }
 
   void fixTimeRange(double maxOffset) {
+    bool eb = (endTimeRange.first != std::numeric_limits<double>::lowest());
+    bool ee = (endTimeRange.second != std::numeric_limits<double>::max());
+    bool sb = (startTimeRange.first != std::numeric_limits<double>::lowest());
+    bool se = (startTimeRange.second != std::numeric_limits<double>::max());
+
+    if (eb && ee && sb && se) {
+      //do nothing
+    } else if (eb && ee && sb && !se) {
+      //do nothing
+    } else if (eb && ee && !sb && se) {
+      //do nothing
+    } else if (eb && ee && !sb && !se) {
+      startTimeRange.first = endTimeRange.first - maxOffset;
+      startTimeRange.second = endTimeRange.second - maxOffset;
+    } else if (eb && !ee && sb && se) {
+    } else if (eb && !ee && sb && !se) {
+      //do nothing
+    } else if (eb && !ee && !sb && se) {
+      //do nothing
+    } else if (eb && !ee && !sb && !se) {
+      startTimeRange.first = endTimeRange.first - maxOffset;
+    } else if (!eb && ee && sb && se) {
+      //do nothing
+    } else if (!eb && ee && sb && !se) {
+      //do nothing
+    } else if (!eb && ee && !sb && se) {
+      //do nothing
+    } else if (!eb && ee && !sb && !se) {
+      startTimeRange.first = endTimeRange.first - 2*maxOffset;
+      startTimeRange.second = endTimeRange.second - maxOffset;
+    } else if (!eb && !ee && sb && se) {
+      endTimeRange.first = startTimeRange.first;
+      endTimeRange.second = startTimeRange.second + maxOffset;
+    } else if (!eb && !ee && sb && !se) {
+      endTimeRange.first = startTimeRange.first;
+    } else if (!eb && !ee && !sb && se) {
+      endTimeRange.first = startTimeRange.second - maxOffset;
+      endTimeRange.second = startTimeRange.second + maxOffset;
+    } else if (!eb && !ee && !sb && !se) {
+      throw EdgeDescriptionException("EdgeDescription::fixTimeRange "
+        "No times are defined.");
+    }
+    
+
     fixEndTimeRange(maxOffset);
     fixStartTimeRange(maxOffset);
   }
@@ -190,7 +237,7 @@ public:
     } else if (endTimeRange.first != std::numeric_limits<double>::lowest() &&
         endTimeRange.second != std::numeric_limits<double>::max()) 
     {
-      if (std::abs(endTimeRange.second - endTimeRange.first) > maxOffset) {
+      if (std::abs(endTimeRange.second - endTimeRange.first) > 2*maxOffset) {
         throw EdgeDescriptionException("EdgeDescription::fixEndTimeRange: "
           "Tried to fix endTimeRange but the range is larger than the offset.");
       }
@@ -215,7 +262,7 @@ public:
     } else if (startTimeRange.first != std::numeric_limits<double>::lowest() &&
         startTimeRange.second != std::numeric_limits<double>::max()) 
     {
-      if (std::abs(startTimeRange.second - startTimeRange.first) > maxOffset) {
+      if (std::abs(startTimeRange.second - startTimeRange.first) >2*maxOffset) {
         throw EdgeDescriptionException("EdgeDescription::fixStartTimeRange: "
           "Tried to fix startTimeRange but the range is larger than the "
           "offset.");
@@ -243,10 +290,10 @@ public:
 
   std::string toString() const {
     std::string rString = source + " " + edgeId + " " + target + " " +
-      boost::lexical_cast<std::string>(startTimeRange).first + " " +
-      boost::lexical_cast<std::string>(startTimeRange).second + " " +
-      boost::lexical_cast<std::string>(endTimeRange).first + " " +
-      boost::lexical_cast<std::string>(endTimeRange).second;
+      boost::lexical_cast<std::string>(startTimeRange.first) + " " +
+      boost::lexical_cast<std::string>(startTimeRange.second) + " " +
+      boost::lexical_cast<std::string>(endTimeRange.first) + " " +
+      boost::lexical_cast<std::string>(endTimeRange.second);
     return rString;
   }
 

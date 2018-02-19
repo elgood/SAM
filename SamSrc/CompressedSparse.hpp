@@ -5,6 +5,7 @@
 #include <map>
 #include <mutex>
 #include "Util.hpp"
+#include <thread>
 
 namespace sam {
 
@@ -27,7 +28,6 @@ class CompressedSparse
 public:
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
-  typedef Edge<TupleType, source, target, time>       EdgeType;
 
 private:
 
@@ -79,7 +79,6 @@ CompressedSparse( size_t capacity, double window ) :
 {
   this->capacity = capacity;
   this->window = window;
-  //currentTime = std::atomic<double>(0);
 
   mutexes = new std::mutex[capacity];
 

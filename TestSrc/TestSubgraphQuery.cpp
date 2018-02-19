@@ -4,30 +4,23 @@
 #include <string>
 #include <vector>
 #include "SubgraphQuery.hpp"
+#include "Netflow.hpp"
 
 using namespace sam;
-
-BOOST_AUTO_TEST_CASE( test_edge_description )
-{
-  /// Tests unspecifiedSource/Target
-  EdgeDescription e;
-  BOOST_CHECK_EQUAL(e.unspecifiedSource(), true);
-  BOOST_CHECK_EQUAL(e.unspecifiedTarget(), true);
-  e.source = "192.168.0.1";
-  BOOST_CHECK_EQUAL(e.unspecifiedSource(), false);
-  BOOST_CHECK_EQUAL(e.unspecifiedTarget(), true);
-  e.target = "192.168.0.1";
-  BOOST_CHECK_EQUAL(e.unspecifiedSource(), false);
-  BOOST_CHECK_EQUAL(e.unspecifiedTarget(), false);
-}
-
+/*
 BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
 {
-  /// Adds a single TimeEdgeExpression to a SubgraphQuery and
-  /// then finalizes the query, which should result in an exception
-  /// because the source and target have not been specified.
-  SubgraphQuery query;
+  // Prepares this subgraph query:
+  // endtime(e1) = 0;
+  // target1 e1 bait;
+  // target1 e2 controller;
+  // starttime(e2) > 10 
+  // target1 e3 controller
+  // starttime(e3) > 1 
 
+  SubgraphQuery<Netflow> query;
+
+  // endtime(e1) = 0;
   std::string e1 = "e1";
   EdgeFunction endtime_e1 = EdgeFunction::EndTime;
   EdgeOperator equal_edge_operator = EdgeOperator::Assignment;
@@ -37,20 +30,27 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
   
   query.addExpression(endTimeExpressionE1);
 
+  // Adds a single TimeEdgeExpression to a SubgraphQuery and
+  // then finalizes the query, which should result in an exception
+  // because the source and target have not been specified.
   BOOST_CHECK_THROW(query.finalize(), SubgraphQueryException);
 
+  // Adding an actual edge expression:
+  // target1 e1 bait;
   std::string target1 = "target1";
   std::string bait = "bait";
   EdgeExpression target1E1Bait(target1, e1, bait);
 
   query.addExpression(target1E1Bait);
- 
+
+  // target1 e2 controller;
   std::string e2 = "e2";
   std::string controller = "controller";
   EdgeExpression targetE2Controller(target1, e2, controller);
   
   query.addExpression(targetE2Controller);
-  
+ 
+  // starttime(e2) > 10 
   EdgeFunction starttime_e2 = EdgeFunction::StartTime;
   EdgeOperator greater_edge_operator = EdgeOperator::GreaterThan;
   double starttime_e2_value = 10;
@@ -59,10 +59,12 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
                                   starttime_e2_value);  
   query.addExpression(starttimeExpressionE2);
 
+  // target1 e3 controller
   std::string e3 = "e3";
   EdgeExpression targetE3Controller(target1, e3, controller);
   query.addExpression(targetE3Controller);
-  
+ 
+  // starttime(e3) > 1 
   EdgeFunction starttime_e3 = EdgeFunction::StartTime;
   double starttime_e3_value = 1;
   TimeEdgeExpression starttimeExpressionE3(starttime_e3, e3, 
@@ -73,9 +75,9 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
   query.finalize(); 
 
   // Checking that the edge are in temporal order
-  double prev = 0;
+  double prev = std::numeric_limits<double>::lowest();
   int i = 0;
-  for (EdgeDescription edge : query) {
+  for (EdgeDescription<Netflow> edge : query) {
     switch (i)
     {
       case(0): BOOST_CHECK_EQUAL(e1, edge.edgeId); break;
@@ -83,23 +85,23 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
       case(2): BOOST_CHECK_EQUAL(e2, edge.edgeId); break;
       default: BOOST_CHECK(false);
     }
-    if (prev > edge.startTime) {
+    if (prev > edge.startTimeRange.first) {
       BOOST_CHECK(false);  
     }
-    prev = edge.startTime;
+    prev = edge.startTimeRange.first;
     i++;
   }
 }
 
 BOOST_AUTO_TEST_CASE( test_negative_offset )
 {
-  SubgraphQuery query;
+  SubgraphQuery<Netflow> query;
   BOOST_CHECK_THROW(query.setMaxOffset(-1), SubgraphQueryException);
 }
 
 BOOST_AUTO_TEST_CASE( test_unspecified_startendtime )
 {
-  SubgraphQuery query;
+  SubgraphQuery<Netflow> query;
 
   std::string target1 = "target1";
   std::string e1 = "e1";
@@ -109,12 +111,12 @@ BOOST_AUTO_TEST_CASE( test_unspecified_startendtime )
   query.addExpression(target1E1Bait);
  
   // All edges need at least an end time or a start time 
-  BOOST_CHECK_THROW(query.finalize(), SubgraphQueryException); 
+  BOOST_CHECK_THROW(query.finalize(), EdgeDescriptionException); 
 }
 
 BOOST_AUTO_TEST_CASE( test_conflicting_sources )
 {
-  SubgraphQuery query;
+  SubgraphQuery<Netflow> query;
   
   std::string target1 = "target1";
   std::string e1 = "e1";
@@ -127,12 +129,13 @@ BOOST_AUTO_TEST_CASE( test_conflicting_sources )
   query.addExpression(target1E1Bait);
   BOOST_CHECK_THROW(query.addExpression(target2E1Bait), SubgraphQueryException);
 }
+*/
 
 // "target e1 bait;
 // endtime(e1) = 0;
 // target e2 controller;
 // starttime(e2) > 0;
-// endtime(e2) < 10;
+// starttime(e2) < 10;
 // bait in Top1000;
 // controller not in Top1000;"
 BOOST_AUTO_TEST_CASE( test_watering_hole )
@@ -143,7 +146,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   EdgeExpression targetE1Bait(target, e1, bait);
 
   EdgeFunction endtime_e1 = EdgeFunction::EndTime;
-  EdgeOperator equal_edge_operator = EdgeOperator::Equal;
+  EdgeOperator equal_edge_operator = EdgeOperator::Assignment;
   double endtime_e1_value = 0;
   TimeEdgeExpression endtimeExpressionE1(endtime_e1, e1, equal_edge_operator, 
                                 endtime_e1_value); 
@@ -152,21 +155,47 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   std::string controller = "controller";
   EdgeExpression targetE2Controller(target, e2, controller);
   
-  EdgeFunction starttime_e2 = EdgeFunction::StartTime;
+  EdgeFunction starttime_e2_begin = EdgeFunction::StartTime;
   EdgeOperator greater_edge_operator = EdgeOperator::GreaterThan;
-  double starttime_e2_value = 0;
-  TimeEdgeExpression starttimeExpressionE2(starttime_e2, e2, 
+  double starttime_e2_value_begin = 0;
+  TimeEdgeExpression starttimeExpressionE2(starttime_e2_begin, e2, 
                                   greater_edge_operator, 
-                                  starttime_e2_value);  
+                                  starttime_e2_value_begin);  
 
 
-  EdgeFunction endtime_e2 = EdgeFunction::StartTime;
-  EdgeOperator less_edge_operator = EdgeOperator::Equal;
-  double endtime_e2_value = 10;
-  TimeEdgeExpression endtimeExpressionE2(starttime_e2, e2, 
-                     greater_edge_operator, 
-                     starttime_e2_value);  
+  EdgeFunction starttime_e2_end = EdgeFunction::StartTime;
+  EdgeOperator less_edge_operator = EdgeOperator::LessThan;
+  double starttime_e2_value_end = 10;
+  TimeEdgeExpression endtimeExpressionE2(starttime_e2_end, e2, 
+                     less_edge_operator, 
+                     starttime_e2_value_end);  
 
+  SubgraphQuery<Netflow> query;
+  double maxOffset = 15.0;
+  query.setMaxOffset(maxOffset);
+  query.addExpression(targetE1Bait);
+  query.addExpression(endtimeExpressionE1);
+  query.addExpression(targetE2Controller);
+  query.addExpression(starttimeExpressionE2);
+  query.addExpression(endtimeExpressionE2);
+  query.finalize();
 
-  
+  EdgeDescription<Netflow> const& edge0 = query.getEdgeDescription(0);
+  EdgeDescription<Netflow> const& edge1 = query.getEdgeDescription(1);
+
+  BOOST_CHECK_EQUAL(edge0.startTimeRange.first, endtime_e1_value-maxOffset);
+  BOOST_CHECK_EQUAL(edge0.startTimeRange.second, endtime_e1_value-maxOffset);
+  BOOST_CHECK_EQUAL(edge0.endTimeRange.first, endtime_e1_value);
+  BOOST_CHECK_EQUAL(edge0.endTimeRange.second, endtime_e1_value); 
+  BOOST_CHECK_EQUAL(edge1.startTimeRange.first, starttime_e2_value_begin);
+  BOOST_CHECK_EQUAL(edge1.startTimeRange.second, starttime_e2_value_end);
+  BOOST_CHECK_EQUAL(edge1.endTimeRange.first, starttime_e2_value_begin);
+  BOOST_CHECK_EQUAL(edge1.endTimeRange.second, starttime_e2_value_end
+    + maxOffset);
+
+  // Checking the maxTimeExtent, which should be final edge starttime - 
+  // first edge starttime
+  BOOST_CHECK_EQUAL(query.getMaxTimeExtent(), 
+    starttime_e2_value_end + maxOffset -
+    (endtime_e1_value-maxOffset));
 }

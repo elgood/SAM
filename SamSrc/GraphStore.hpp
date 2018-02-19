@@ -1,3 +1,6 @@
+#ifndef SAM_GRAPHSTORE_HPP
+#define SAM_GRAPHSTORE_HPP
+
 /**
  * GraphStore.hpp
  *
@@ -5,15 +8,14 @@
  *      Author: elgood
  */
 
-#ifndef GRAPHSTORE_HPP
-#define GRAPHSTORE_HPP
 
 #include "EdgeRequestList.hpp"
-#include "NetflowEdgeRequest.hpp"
-#include "Netflow.hpp"
 #include "IdGenerator.hpp"
 #include "Util.hpp"
 #include "AbstractConsumer.hpp"
+#include "CompressedSparse.hpp"
+#include "SubgraphQuery.hpp"
+#include "SubgraphQueryResultMap.hpp"
 #include <zmq.hpp>
 #include <thread>
 
@@ -35,18 +37,39 @@ public:
  * the index of the target of the edge.  time defines the index to the time
  * field in TupleType (every tuple must have a time field).
  *
- * Right now it is hardcoded for Netflows.  Hopefully later can be generalized
+ * Right now it is hardcoded for TupleTypes.  Hopefully later can be generalized
  * to handle other types of tuples.
  */
-//template <typename TupleType, size_t source, size_t target, size_t time> 
-class GraphStore : public AbstractConsumer<Netflow>
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+class GraphStore : public AbstractConsumer<TupleType>
 {
+public:
+  typedef SubgraphQueryResultMap<TupleType, source, target, time, duration,
+    SourceHF, TargetHF, SourceEF, TargetEF> MapType;
+
+  typedef SubgraphQuery<TupleType> QueryType;
+
+  typedef SubgraphQueryResult<TupleType, source, target, time, duration>
+          ResultType;
+
+
 private:
+ 
+  /// The object that creates tuples from strings. 
+  Tuplizer tuplizer;
+
+  /// This stores the query results.  It maps source or dest to query results
+  /// that are looking for that source or dest.
+  std::shared_ptr<MapType> resultMap;
 
   /// This handles the requests we get from other nodes.
   EdgeRequestList requestList; 
 
-  /// Creates id for each netflow we get from other nodes
+  /// Creates id for each tuple we get from other nodes
   SimpleIdGenerator idGenerator;
 
   /// There is another context in ZeroMQPushPull.  I think we can just
@@ -68,8 +91,22 @@ private:
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
 
-  /// Used for testing to make sure we got expected number of netflows.
-  size_t netflowsReceived = 0;
+  /// Used for testing to make sure we got expected number of tuples.
+  size_t tuplesReceived = 0;
+
+  typedef CompressedSparse<TupleType, SourceIp, DestIp, TimeSeconds, 
+                          StringHashFunction, StringEqualityFunction> csrType;
+  typedef CompressedSparse<TupleType, DestIp, SourceIp, TimeSeconds, 
+                          StringHashFunction, StringEqualityFunction> cscType;
+  
+  /// Compressed Sparse Row graph
+  std::shared_ptr<csrType> csr;
+
+  /// Compressed Sparse column graph
+  std::shared_ptr<cscType> csc;
+
+  /// The list of queries to run.
+  std::vector<QueryType> queries;
 
   /**
    * Called by addEdge, which has the current time.  Edges older than maximum
@@ -101,6 +138,8 @@ public:
    * \param edgePorts The vector of ports to be used for zeromq communications
    *                   for sending of edges.
    * \param hwm The highwater mark.
+   * \param graphCapacity The number of bins in the graph representation.
+   * \param timeWindow How long do we keep edges.
    */
   GraphStore(std::size_t numNodes,
              std::size_t nodeId,
@@ -108,17 +147,19 @@ public:
              std::vector<std::size_t> requestPorts,
              std::vector<std::string> edgeHostnames,
              std::vector<std::size_t> edgePorts,
-             uint32_t hwm);
+             uint32_t hwm,
+             std::size_t graphCapacity,
+             double timeWindow);
 
   ~GraphStore();
 
   /**
-   * Adds the netflow to the graph store.
+   * Adds the tuple to the graph store.
    */
-  void addEdge(Netflow n);
+  void addEdge(TupleType n);
 
 
-  bool consume(Netflow const& netflow);
+  bool consume(TupleType const& tuple);
 
   /**
    * Called by producer to indicate that no more data is coming and that this
@@ -126,43 +167,113 @@ public:
    */
   void terminate();
 
-  inline size_t getNetflowsReceived() { return netflowsReceived; }
+  /**
+   * Registers a subgraph query to run against the data
+   */
+  void registerQuery(QueryType query) {
+    queries.push_back(query);
+  }
 
+  void checkSubgraphQueries(TupleType const& tuple);
+
+  inline size_t getTuplesReceived() { return tuplesReceived; }
 
 };
 
-void GraphStore::addEdge(Netflow n) {
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+addEdge(TupleType tuple) 
+{
   
 
 }
 
-void GraphStore::deleteEdges() {
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+deleteEdges() 
+{
 
 
 }
 
-bool GraphStore::consume(Netflow const& netflow)
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+checkSubgraphQueries(TupleType const& tuple) 
 {
-  // TODO Add the edge to the graph
 
-  // TODO Delete old edges
+  for (QueryType const& query : queries) {
+    if (query.satisfies(tuple, 0)) {
+      ResultType queryResult(query, tuple);
+      //TODO
+      //resultMap.add(query);  
+    }
+  }
+}
+
+
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+bool 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+consume(TupleType const& tuple)
+{
+  csc->addEdge(tuple);
+  csr->addEdge(tuple);
+
+  // TODO Delete old edges, maybe
+
+  // Check against existing queryResults
+  resultMap->process(tuple);
+
+  // Check against all registered queries
+  checkSubgraphQueries(tuple);
 
   // TODO Check the edge to see if it fits any open requests
   // remove this: sending all edges to the other nodes
   for (int i = 0; i < numNodes; i++) {
     if (i != nodeId) {
       //printf("%lu sending message to node %i\n", nodeId, i);
-      zmq::message_t message = tupleToZmq(netflow);
+      zmq::message_t message = tupleToZmq(tuple);
       //edgePushers[i]->send(message, ZMQ_NOBLOCK);
       edgePushers[i]->send(message);
     }
   }
-  
-   
+
   return true;
 }
 
-void GraphStore::terminate() {
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+terminate() 
+{
   
   // If terminate was called, we aren't going to receive any more
   // edges, so we can push out the terminate signal to all the edge request
@@ -190,16 +301,31 @@ void GraphStore::terminate() {
   edgePullThread.join();
 }
 
-GraphStore::GraphStore(std::size_t numNodes,
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+GraphStore(std::size_t numNodes,
              std::size_t nodeId,
              std::vector<std::string> requestHostnames,
              std::vector<std::size_t> requestPorts,
              std::vector<std::string> edgeHostnames,
              std::vector<std::size_t> edgePorts,
-             uint32_t hwm)
+             uint32_t hwm,
+             std::size_t graphCapacity,
+             double timeWindow)
 {
   this->numNodes = numNodes;
   this->nodeId   = nodeId;
+
+
+  resultMap = std::make_shared< MapType>( graphCapacity );
+
+  csr = std::make_shared<csrType>(graphCapacity, timeWindow); 
+  csc = std::make_shared<cscType>(graphCapacity, timeWindow); 
 
   // Resizing the push socket vectors to be the size of numNodes
   requestPushers.resize(numNodes);
@@ -278,9 +404,10 @@ GraphStore::GraphStore(std::size_t numNodes,
           } else {
             char *buff = static_cast<char*>(message.data());
             std::string sEdgeRequest(buff);
-            NetflowEdgeRequest request;
-            bool b = request.ParseFromString(sEdgeRequest);
-            requestList.addRequest(request);
+            //TODO
+            //TupleTypeEdgeRequest request;
+            //bool b = request.ParseFromString(sEdgeRequest);
+            //requestList.addRequest(request);
           }
         }
 
@@ -339,12 +466,13 @@ GraphStore::GraphStore(std::size_t numNodes,
           if (isTerminateMessage(message)) {
             terminate[i] = true;
           } else {
-            netflowsReceived++;
+            tuplesReceived++;
             char *buff = static_cast<char*>(message.data());
-            std::string sNetflow(buff);
+            std::string sTuple(buff);
             size_t id = idGenerator.generate();
-            Netflow netflow = makeNetflow(id, sNetflow);
-            addEdge(netflow); 
+            TupleType tuple = tuplizer(id, sTuple);
+            //TupleType tuple = makeTupleType(id, sTupleType);
+            addEdge(tuple); 
           }
         }
         if (terminate[i]) numStop++;
@@ -361,12 +489,27 @@ GraphStore::GraphStore(std::size_t numNodes,
   edgePullThread = std::thread(edgePullFunction);
 }
 
-GraphStore::~GraphStore()
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+~GraphStore()
 {
 }
 
 
-void GraphStore::createPushSockets(
+template <typename TupleType, typename Tuplizer,
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+createPushSockets(
     std::vector<std::string>& hostnames,
     std::vector<size_t>& ports,
     std::vector<std::shared_ptr<zmq::socket_t>>& pushers,

@@ -414,6 +414,14 @@ Netflow makeNetflow(std::string s)
   return makeNetflow(id, withoutId);
 }
 
+class NetflowTuplizer
+{
+public:
+  Netflow operator()(size_t id, std::string s) {
+    return makeNetflow(id, s);
+  }
+
+};
 
 
 }
