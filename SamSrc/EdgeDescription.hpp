@@ -139,7 +139,7 @@ public:
   EdgeDescriptionException(std::string message) : std::runtime_error(message) {}
 };
 
-template <typename TupleType>
+template <typename TupleType, size_t time, size_t duration>
 class EdgeDescription
 {
 public:
@@ -305,12 +305,36 @@ public:
    * Returns true if the tuple satisifies the constraints laid out by 
    * this edge description.
    */
-  bool satisfies(TupleType const& tuple) const {
+  bool satisfies(TupleType const& tuple, double startTime) const {
+    if (!satisfiesTimeConstraints(tuple, startTime)) {
+      return false;
+    }
     return true;
   }
 
+  bool satisfiesTimeConstraints(TupleType const& tuple, double startTime) const
+  {
+    double edgeActualStartTime = std::get<time>(tuple);
+    double edgeActualEndTime = edgeActualStartTime +
+      std::get<duration>(tuple);
+    double constraintStartTime_beg = startTimeRange.first + startTime; 
+    double constraintStartTime_end = startTimeRange.second + startTime;
+    double constraintEndTime_beg = endTimeRange.first + startTime;
+    double constraintEndTime_end = endTimeRange.second + startTime;
 
+    if (edgeActualStartTime >= constraintStartTime_beg &&
+        edgeActualStartTime <= constraintStartTime_end &&
+        edgeActualEndTime >= constraintEndTime_beg &&
+        edgeActualEndTime <= constraintEndTime_end)
+    {
+      return true;
+    }
+
+    return false;
+  }
 };
+
+
 
 
 

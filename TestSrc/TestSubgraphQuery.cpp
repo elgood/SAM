@@ -7,7 +7,7 @@
 #include "Netflow.hpp"
 
 using namespace sam;
-/*
+
 BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
 {
   // Prepares this subgraph query:
@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
   // target1 e3 controller
   // starttime(e3) > 1 
 
-  SubgraphQuery<Netflow> query;
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
   // endtime(e1) = 0;
   std::string e1 = "e1";
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
   // Checking that the edge are in temporal order
   double prev = std::numeric_limits<double>::lowest();
   int i = 0;
-  for (EdgeDescription<Netflow> edge : query) {
+  for (EdgeDescription<Netflow, TimeSeconds, DurationSeconds> edge : query) {
     switch (i)
     {
       case(0): BOOST_CHECK_EQUAL(e1, edge.edgeId); break;
@@ -95,13 +95,13 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
 
 BOOST_AUTO_TEST_CASE( test_negative_offset )
 {
-  SubgraphQuery<Netflow> query;
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   BOOST_CHECK_THROW(query.setMaxOffset(-1), SubgraphQueryException);
 }
 
 BOOST_AUTO_TEST_CASE( test_unspecified_startendtime )
 {
-  SubgraphQuery<Netflow> query;
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
   std::string target1 = "target1";
   std::string e1 = "e1";
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE( test_unspecified_startendtime )
 
 BOOST_AUTO_TEST_CASE( test_conflicting_sources )
 {
-  SubgraphQuery<Netflow> query;
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   
   std::string target1 = "target1";
   std::string e1 = "e1";
@@ -129,7 +129,6 @@ BOOST_AUTO_TEST_CASE( test_conflicting_sources )
   query.addExpression(target1E1Bait);
   BOOST_CHECK_THROW(query.addExpression(target2E1Bait), SubgraphQueryException);
 }
-*/
 
 // "target e1 bait;
 // endtime(e1) = 0;
@@ -170,7 +169,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
                      less_edge_operator, 
                      starttime_e2_value_end);  
 
-  SubgraphQuery<Netflow> query;
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   double maxOffset = 15.0;
   query.setMaxOffset(maxOffset);
   query.addExpression(targetE1Bait);
@@ -180,8 +179,10 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   query.addExpression(endtimeExpressionE2);
   query.finalize();
 
-  EdgeDescription<Netflow> const& edge0 = query.getEdgeDescription(0);
-  EdgeDescription<Netflow> const& edge1 = query.getEdgeDescription(1);
+  EdgeDescription<Netflow, TimeSeconds, DurationSeconds> const& edge0 = 
+    query.getEdgeDescription(0);
+  EdgeDescription<Netflow, TimeSeconds, DurationSeconds> const& edge1 = 
+    query.getEdgeDescription(1);
 
   BOOST_CHECK_EQUAL(edge0.startTimeRange.first, endtime_e1_value-maxOffset);
   BOOST_CHECK_EQUAL(edge0.startTimeRange.second, endtime_e1_value-maxOffset);

@@ -32,7 +32,9 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   std::vector<std::string> edgeHostnames;
   std::vector<size_t> edgePorts;
   size_t hwm = 1000;
-  size_t graphCapacity = 1000;
+  size_t graphCapacity = 1000; //For csc and csr
+  size_t tableCapacity = 1000; //For SubgraphQueryResultMap intermediate results
+  size_t resultsCapacity = 1000; //For final results
   double timeWindow = 100;
 
   requestHostnames.push_back("localhost");
@@ -49,7 +51,8 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   GraphStoreType* graphStore0 = new GraphStoreType(numNodes, nodeId0, 
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
-                          hwm, graphCapacity, timeWindow); 
+                          hwm, graphCapacity, 
+                          tableCapacity, resultsCapacity, timeWindow); 
 
 
   // One thread runs this.
@@ -73,7 +76,8 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   GraphStoreType* graphStore1 = new GraphStoreType(numNodes, nodeId1, 
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
-                          hwm, graphCapacity, timeWindow); 
+                          hwm, graphCapacity, 
+                          tableCapacity, resultsCapacity, timeWindow); 
 
   // Another thread runs this.
   auto graph_function1 = [graphStore1, n]()
@@ -100,7 +104,5 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   thread1.join();
 
   BOOST_CHECK_EQUAL(graphStore1->getTuplesReceived(), n);
-
-
 }
 

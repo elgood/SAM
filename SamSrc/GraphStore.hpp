@@ -51,7 +51,7 @@ public:
   typedef SubgraphQueryResultMap<TupleType, source, target, time, duration,
     SourceHF, TargetHF, SourceEF, TargetEF> MapType;
 
-  typedef SubgraphQuery<TupleType> QueryType;
+  typedef SubgraphQuery<TupleType, time, duration> QueryType;
 
   typedef SubgraphQueryResult<TupleType, source, target, time, duration>
           ResultType;
@@ -139,6 +139,9 @@ public:
    *                   for sending of edges.
    * \param hwm The highwater mark.
    * \param graphCapacity The number of bins in the graph representation.
+   * \param tableCapacity The number of bins in the SubgraphQueryResultMap.
+   * \param resultsCapacity How many completed queries can be stored in
+   *          SubgraphQueryResultMap.
    * \param timeWindow How long do we keep edges.
    */
   GraphStore(std::size_t numNodes,
@@ -148,7 +151,9 @@ public:
              std::vector<std::string> edgeHostnames,
              std::vector<std::size_t> edgePorts,
              uint32_t hwm,
-             std::size_t graphCapacity,
+             size_t graphCapacity,
+             size_t tableCapacity,
+             size_t resultsCapacity,
              double timeWindow);
 
   ~GraphStore();
@@ -178,6 +183,8 @@ public:
 
   inline size_t getTuplesReceived() { return tuplesReceived; }
 
+
+
 };
 
 template <typename TupleType, typename Tuplizer, 
@@ -190,8 +197,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 addEdge(TupleType tuple) 
 {
-  
-
+  csc->addEdge(tuple);
+  csr->addEdge(tuple);
 }
 
 template <typename TupleType, typename Tuplizer, 
@@ -219,15 +226,14 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 checkSubgraphQueries(TupleType const& tuple) 
 {
 
+  double startTime = std::get<time>(tuple);
   for (QueryType const& query : queries) {
-    if (query.satisfies(tuple, 0)) {
-      ResultType queryResult(query, tuple);
-      //TODO
-      //resultMap.add(query);  
+    if (query.satisfies(tuple, 0, startTime)) {
+      ResultType queryResult(&query, tuple);
+      resultMap->add(queryResult);  
     }
   }
 }
-
 
 template <typename TupleType, typename Tuplizer, 
           size_t source, size_t target, 
@@ -239,8 +245,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consume(TupleType const& tuple)
 {
-  csc->addEdge(tuple);
-  csr->addEdge(tuple);
+  // Adds the edge to the graph
+  addEdge(tuple);
 
   // TODO Delete old edges, maybe
 
@@ -315,14 +321,16 @@ GraphStore(std::size_t numNodes,
              std::vector<std::string> edgeHostnames,
              std::vector<std::size_t> edgePorts,
              uint32_t hwm,
-             std::size_t graphCapacity,
+             std::size_t graphCapacity, //How many bins for csr and csc
+             std::size_t tableCapacity, //For SubgraphQueryResultMap
+             std::size_t resultsCapacity, //For SubgraphQueryResultMap
              double timeWindow)
 {
   this->numNodes = numNodes;
   this->nodeId   = nodeId;
 
 
-  resultMap = std::make_shared< MapType>( graphCapacity );
+  resultMap = std::make_shared< MapType>( tableCapacity, resultsCapacity );
 
   csr = std::make_shared<csrType>(graphCapacity, timeWindow); 
   csc = std::make_shared<cscType>(graphCapacity, timeWindow); 
@@ -331,7 +339,6 @@ GraphStore(std::size_t numNodes,
   requestPushers.resize(numNodes);
   edgePushers.resize(numNodes); 
 
-  //printf("blah %lu\n", nodeId);
   createPushSockets(requestHostnames, requestPorts,
                     requestPushers, hwm);
 
@@ -424,6 +431,8 @@ GraphStore(std::size_t numNodes,
 
   requestPullThread = std::thread(requestPullFunction);
 
+  // Function that is responsible for pulling edges from other nodes
+  // that result from edge requests. 
   auto edgePullFunction = [this, edgeHostnames, 
                            edgePorts, hwm]() 
   {
@@ -471,7 +480,6 @@ GraphStore(std::size_t numNodes,
             std::string sTuple(buff);
             size_t id = idGenerator.generate();
             TupleType tuple = tuplizer(id, sTuple);
-            //TupleType tuple = makeTupleType(id, sTupleType);
             addEdge(tuple); 
           }
         }

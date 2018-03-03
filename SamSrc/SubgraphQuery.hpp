@@ -45,17 +45,18 @@ public:
  * by the add addExpression methods, does some checks, and then sorts them
  * by starttime.
  */
-template <typename TupleType>
+template <typename TupleType, size_t time, size_t duration>
 class SubgraphQuery {
 public:
-  typedef std::vector<EdgeDescription<TupleType>> EdgeList; 
+  typedef EdgeDescription<TupleType, time, duration> EdgeDesc;
+  typedef std::vector<EdgeDesc> EdgeList; 
   typedef typename EdgeList::iterator iterator;
   typedef typename EdgeList::const_iterator const_iterator;
 
 private:
   
   /// A mapping from edge id to the corresponding edge description. 
-  std::map<std::string, EdgeDescription<TupleType>> edges;
+  std::map<std::string, EdgeDesc> edges;
   
   ///Sorted on startTime
   EdgeList sortedEdges; 
@@ -87,7 +88,7 @@ public:
    * Returns a constant reference to the ith EdgeDescription in the
    * sorted list.
    */
-  EdgeDescription<TupleType> const& getEdgeDescription(size_t index) const {
+  EdgeDesc const& getEdgeDescription(size_t index) const {
     return sortedEdges[index];
   }
 
@@ -152,21 +153,21 @@ public:
    * \param tuple The Tuple under question.
    * \param index The index of the edge description in sortedEdges.
    */
-  bool satisfies(TupleType const& tuple, size_t index) const; 
+  bool satisfies(TupleType const& tuple, size_t index, double startTime) const; 
 
   bool isFinalized() const { return finalized; }
 
 };
 
-template <typename TupleType>
-bool SubgraphQuery<TupleType>::
-satisfies(TupleType const& tuple, size_t index) const
+template <typename TupleType, size_t time, size_t duration>
+bool SubgraphQuery<TupleType, time, duration>::
+satisfies(TupleType const& tuple, size_t index, double startTime) const
 {
-  return sortedEdges[index].satisfies(tuple);
+  return sortedEdges[index].satisfies(tuple, startTime);
 }
 
-template <typename TupleType>
-size_t SubgraphQuery<TupleType>::size() const 
+template <typename TupleType, size_t time, size_t duration>
+size_t SubgraphQuery<TupleType, time, duration>::size() const 
 {
   if (!finalized) {
     std::string message = "SubgraphQuery::size() Tried to get the size of the " 
@@ -176,8 +177,8 @@ size_t SubgraphQuery<TupleType>::size() const
   return sortedEdges.size(); 
 }
 
-template <typename TupleType>
-double SubgraphQuery<TupleType>::getMaxTimeExtent() const
+template <typename TupleType, size_t time, size_t duration>
+double SubgraphQuery<TupleType, time, duration>::getMaxTimeExtent() const
 {
   if (!finalized) {
     std::string message = "SubgraphQuery::size() Tried to get the maxTimeExtent"
@@ -188,14 +189,14 @@ double SubgraphQuery<TupleType>::getMaxTimeExtent() const
   return maxTimeExtent; 
 }
 
-template <typename TupleType>
-void SubgraphQuery<TupleType>::finalize()
+template <typename TupleType, size_t time, size_t duration>
+void SubgraphQuery<TupleType, time, duration>::finalize()
 {
   // Confirm that all edges have a start time or end time
   for (auto keypair : edges) {
 
     std::string key = keypair.first;
-    EdgeDescription<TupleType>& edge = edges[key];
+    EdgeDesc& edge = edges[key];
 
     // Check to make sure we have a source and dest
     if (edge.unspecifiedSource() || edge.unspecifiedTarget()) {
@@ -207,8 +208,6 @@ void SubgraphQuery<TupleType>::finalize()
     edge.fixTimeRange(maxOffset);
   }
 
-
-
   // TODO Need to add other constaints defined on edges
 
 
@@ -217,8 +216,8 @@ void SubgraphQuery<TupleType>::finalize()
             back_inserter(sortedEdges), [](auto val){ return val.second;}); 
 
   sort(sortedEdges.begin(), sortedEdges.end(), 
-    [](EdgeDescription<TupleType> const & i, 
-       EdgeDescription<TupleType> const & j){
+    [](EdgeDesc const & i, 
+       EdgeDesc const & j){
       return i.startTimeRange.first < j.startTimeRange.first; 
     });
 
@@ -228,8 +227,9 @@ void SubgraphQuery<TupleType>::finalize()
   finalized = true;
 }
 
-template <typename TupleType>
-void SubgraphQuery<TupleType>::addExpression(TimeEdgeExpression expression)
+template <typename TupleType, size_t time, size_t duration>
+void SubgraphQuery<TupleType, time, duration>::
+addExpression(TimeEdgeExpression expression)
 {
   if (finalized) {
     std::string message = "SubgraphQuery::addExpression(TimeEdgeExpression)"
@@ -295,8 +295,9 @@ void SubgraphQuery<TupleType>::addExpression(TimeEdgeExpression expression)
 
 }
 
-template <typename TupleType>
-void SubgraphQuery<TupleType>::addExpression(EdgeExpression expression)
+template <typename TupleType, size_t time, size_t duration>
+void SubgraphQuery<TupleType, time, duration>::
+addExpression(EdgeExpression expression)
 {
   if (finalized) {
     std::string message = "SubgraphQuery::addExpression(TimeEdgeExpression)"
@@ -330,7 +331,7 @@ void SubgraphQuery<TupleType>::addExpression(EdgeExpression expression)
       }
     }
   } else {
-    EdgeDescription<TupleType> desc(source, edgeId, target);
+    EdgeDesc desc(source, edgeId, target);
     edges[edgeId] = desc;
 
   }

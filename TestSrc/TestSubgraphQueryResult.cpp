@@ -57,23 +57,23 @@ struct F {
 
 BOOST_FIXTURE_TEST_CASE( test_check_one_edge, F )
 {
-  SubgraphQuery<Netflow> query;
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   query.addExpression(*endTimeExpressionE1);
   query.addExpression(*targetE1Bait);
   
-  BOOST_CHECK_THROW( ResultType result(query, netflow1),
+  BOOST_CHECK_THROW( ResultType result(&query, netflow1),
                    SubgraphQueryResultException);
 
   query.finalize();
 
-  ResultType result(query, netflow1);
+  ResultType result(&query, netflow1);
 
   BOOST_CHECK(result.complete());
 }
 
 BOOST_FIXTURE_TEST_CASE( test_check_two_edges, F )
 {
-  SubgraphQuery<Netflow> query;
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   query.addExpression(*endTimeExpressionE1);
   query.addExpression(*targetE1Bait);
   query.addExpression(*startTimeExpressionE2_begin);
@@ -81,7 +81,7 @@ BOOST_FIXTURE_TEST_CASE( test_check_two_edges, F )
   query.addExpression(*targetE2Controller);
   query.finalize();
 
-  ResultType result(query, netflow1);
+  ResultType result(&query, netflow1);
 
   BOOST_CHECK(!result.complete());
 
@@ -103,7 +103,7 @@ BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
   // Tests giving an edge that doesn't fulfill time constraint.
   // Also checks that the query result is determined to be expired
   // when given a time that is past the max extent of the query.
-  SubgraphQuery<Netflow> query;
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   double maxOffset = 100.0;
   query.setMaxOffset(maxOffset);
   query.addExpression(*endTimeExpressionE1);
@@ -115,7 +115,7 @@ BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
 
   BOOST_CHECK_EQUAL(query.getMaxOffset(), maxOffset);
 
-  ResultType result(query, netflow1);
+  ResultType result(&query, netflow1);
 
   double netflow1Time = std::get<TimeSeconds>(netflow1);
   BOOST_CHECK_EQUAL(result.getExpireTime(), netflow1Time+maxOffset+10);

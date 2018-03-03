@@ -8,7 +8,7 @@ using namespace sam;
 BOOST_AUTO_TEST_CASE( test_edge_unspecified )
 {
   /// Tests unspecifiedSource/Target
-  EdgeDescription<Netflow> e;
+  EdgeDescription<Netflow, TimeSeconds, DurationSeconds> e;
   BOOST_CHECK_EQUAL(e.unspecifiedSource(), true);
   BOOST_CHECK_EQUAL(e.unspecifiedTarget(), true);
   e.source = "192.168.0.1";
@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE( test_edge_unspecified )
 
 BOOST_AUTO_TEST_CASE( test_fix_time_range )
 {
-  EdgeDescription<Netflow> e;
+  EdgeDescription<Netflow, TimeSeconds, DurationSeconds> e;
   double maxOffset = 10.0;
 
   // Times are not specified, so exception should be thrown.

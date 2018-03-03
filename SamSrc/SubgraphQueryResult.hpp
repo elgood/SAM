@@ -34,10 +34,14 @@ class SubgraphQueryResult
 public:
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
+  typedef SubgraphQueryResult<TupleType, source, target, time, duration> 
+    SubgraphQueryResultType;
+  typedef SubgraphQuery<TupleType, time, duration> SubgraphQueryType;
+  typedef EdgeDescription<TupleType, time, duration> EdgeDescriptionType;
   
 private:
   /// The SubgraphQuery that this is a result for.
-  SubgraphQuery<TupleType> const& subgraphQuery;
+  SubgraphQueryType const* subgraphQuery;
 
   /// A mapping from the variable name to the bound value.
   std::map<std::string, SourceType> var2SourceValue;
@@ -62,6 +66,11 @@ private:
 
 public:
   /**
+   * Default constructor.
+   */
+  SubgraphQueryResult();
+
+  /**
    * The construstor assumes that the check on the first edge description
    * has been satisfied.
    *
@@ -69,12 +78,22 @@ public:
    * \param firstEdge The first edge that satisfies the first edge description.
    * \param timeOffset The time extent of the query.
    */
-  SubgraphQueryResult(SubgraphQuery<TupleType> const& query, 
+  SubgraphQueryResult(SubgraphQueryType const* query, 
                       TupleType firstEdge);
+
+  /// Tries to add the edge to the subgraph query result. If successful
+  /// returns true along with the new query result.  This result remains
+  /// unchanged.  Returns false if adding doesn't work. 
+  /// \return Returns true if the netflow was added.  False otherwise.
+  std::pair<bool, SubgraphQueryResult<TupleType, source, 
+                                      target, time, duration>> 
+  addEdge(TupleType const& tuple) const;
 
   /// Tries to add the edge to the subgraph query result.
   /// \return Returns true if the netflow was added.  False otherwise.
-  bool addEdge(TupleType const& tuple);
+  bool
+  addEdgeInPlace(TupleType const& tuple);
+
 
   /**
    * Returns true if the query has expired (meaning it can't be fulfilled
@@ -118,7 +137,35 @@ public:
   /**
    * Returns true if the query has been satisfied.
    */
-  bool complete() const {return currentEdge == numEdges; } 
+  bool complete() const {
+    //std::cout << "currentEdge " << currentEdge << " numEdges " << numEdges
+    //          << std::endl;
+    return currentEdge == numEdges; 
+  } 
+
+  /**
+   * Returns a string representation of the query result
+   */
+  std::string toString() const {
+    std::string rString = "Result Edges:\n";
+    for(TupleType const& t : resultEdges) {
+      rString = rString + "ResultTuple " + sam::toString(t) + "\n";  
+    }
+    return rString;
+  }
+
+  /**
+   * Returns true if none of the result edges have the given sam id.
+   */
+  bool noSamId(size_t samId) 
+  {
+    for (TupleType const& t : resultEdges) {
+      if (std::get<0>(t) == samId) {
+        return false;
+      }
+    }
+    return true;
+  }
 
 private:
 
@@ -126,10 +173,59 @@ private:
    * Perfoms the check on whether the edge fulfills the time
    * constraints.
    */
-  bool fulfillsTimeConstraint(TupleType const& edge);
+  //bool fulfillsTimeConstraint(TupleType const& edge);
   
     
 };
+
+/*template <typename TupleType, size_t source, size_t target,
+          size_t time, size_t duration>
+SubgraphQueryResult<TupleType, source, target, time, duration>::
+SubgraphQueryResult(SubgraphQueryResult const& other) :
+  var2SourceValue(other.var2SourceValue),
+  var2TargetValue(other.var2TargetValue),
+  subgraphQuery(other.subgraphQuery),
+  resultEdges(other.resultEdges),
+  currentEdge(other.currentEdge),
+  numEdges(other.numEdges),
+  expireTime(other.expireTime),
+  startTime(other.startTime)
+{
+}*/
+
+template <typename TupleType, size_t source, size_t target,
+          size_t time, size_t duration>
+SubgraphQueryResult<TupleType, source, target, time, duration>::
+SubgraphQueryResult(SubgraphQueryType const* query,
+                    TupleType firstEdge) :
+  subgraphQuery(query)
+{
+  //TODO: Maybe remove this to improve performance
+  if (!query->isFinalized()) {
+    throw SubgraphQueryResultException("Subgraph query passed to "
+      "SubgraphQueryResult is not finalized.");
+  }
+  numEdges = subgraphQuery->size();
+  double currentTime = std::get<time>(firstEdge);
+  startTime = currentTime; 
+  expireTime = currentTime + query->getMaxTimeExtent();
+  if (!addEdgeInPlace(firstEdge)) {
+    throw SubgraphQueryResultException("SubgraphQueryResult::"
+      "SubgraphQueryResult(query, firstEdge) Tried to add edge in "
+      "constructor and it failed.");
+  }
+}
+
+template <typename TupleType, size_t source, size_t target,
+          size_t time, size_t duration>
+SubgraphQueryResult<TupleType, source, target, time, duration>::
+SubgraphQueryResult()
+{
+  subgraphQuery = nullptr;
+}
+
+
+
 
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration>
@@ -140,6 +236,7 @@ hash(SourceHF const& sourceHash, TargetHF const& targetHash) const
 {
   SourceType src = getCurrentSource();
   TargetType trg = getCurrentTarget();
+  //std::cout << "src " << src << " trg " << trg << std::endl;
 
   if (isNull(src) && !isNull(trg)) {
     return targetHash(trg);
@@ -155,25 +252,6 @@ hash(SourceHF const& sourceHash, TargetHF const& targetHash) const
 
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration>
-SubgraphQueryResult<TupleType, source, target, time, duration>::
-SubgraphQueryResult(SubgraphQuery<TupleType> const& query,
-                    TupleType firstEdge) :
-  subgraphQuery(query)
-{
-  //TODO: Maybe remove this to improve performance
-  if (!query.isFinalized()) {
-    throw SubgraphQueryResultException("Subgraph query passed to "
-      "SubgraphQueryResult is not finalized.");
-  }
-  numEdges = subgraphQuery.size();
-  double currentTime = std::get<time>(firstEdge);
-  startTime = currentTime; 
-  expireTime = currentTime + query.getMaxTimeExtent();
-  addEdge(firstEdge);
-}
-
-template <typename TupleType, size_t source, size_t target,
-          size_t time, size_t duration>
 double
 SubgraphQueryResult<TupleType, source, target, time, duration>::
 getExpireTime() const
@@ -182,7 +260,7 @@ getExpireTime() const
 }
 
 
-template <typename TupleType, size_t source, size_t target, 
+/*template <typename TupleType, size_t source, size_t target, 
           size_t time, size_t duration>
 bool SubgraphQueryResult<TupleType, source, target, time, duration>::
 fulfillsTimeConstraint(TupleType const& edge)
@@ -190,15 +268,21 @@ fulfillsTimeConstraint(TupleType const& edge)
   double edgeActualStartTime = std::get<time>(edge);
   double edgeActualEndTime = edgeActualStartTime + 
     std::get<duration>(edge);
-  double constraintStartTime_beg = subgraphQuery.getEdgeDescription(
+  double constraintStartTime_beg = subgraphQuery->getEdgeDescription(
     currentEdge).startTimeRange.first + this->startTime;
-  double constraintStartTime_end = subgraphQuery.getEdgeDescription(
+  double constraintStartTime_end = subgraphQuery->getEdgeDescription(
     currentEdge).startTimeRange.second + this->startTime;
-  double constraintEndTime_beg = subgraphQuery.getEdgeDescription(
+  double constraintEndTime_beg = subgraphQuery->getEdgeDescription(
     currentEdge).endTimeRange.first + this->startTime;
-  double constraintEndTime_end = subgraphQuery.getEdgeDescription(
+  double constraintEndTime_end = subgraphQuery->getEdgeDescription(
     currentEdge).endTimeRange.second + this->startTime;
 
+  //std::cout << "edgeActualStartTime " << edgeActualStartTime - 1.5197e9 << std::endl;
+  //std::cout << "constraintStartTime_beg " << constraintStartTime_beg  - 1.5197e9 << std::endl;
+  //std::cout << "constraintStartTime_end " << constraintStartTime_end  - 1.5197e9 << std::endl;
+  //std::cout << "edgeActualEndTime " << edgeActualEndTime  - 1.5197e9 << std::endl;
+  //std::cout << "constraintEndTime_beg " << constraintEndTime_beg  - 1.5197e9 << std::endl;
+  //std::cout << "constraintEndTime_end " << constraintEndTime_end  - 1.5197e9 << std::endl;
 
   if (edgeActualStartTime >= constraintStartTime_beg &&
       edgeActualStartTime <= constraintStartTime_end &&
@@ -209,12 +293,13 @@ fulfillsTimeConstraint(TupleType const& edge)
   }
   
   return false;
-}
+}*/
 
 template <typename TupleType, size_t source, size_t target, 
           size_t time, size_t duration>
-bool SubgraphQueryResult<TupleType, source, target, time, duration>::
-addEdge(TupleType const& edge)
+bool
+SubgraphQueryResult<TupleType, source, target, time, duration>::
+addEdgeInPlace(TupleType const& edge)
 {
   if (currentEdge >= numEdges) {
     std::string message = "SubgraphQueryResult::addEdge Tried to add an edge " 
@@ -224,17 +309,20 @@ addEdge(TupleType const& edge)
     throw SubgraphQueryResultException(message);              
   }
 
-  EdgeDescription<TupleType> const& edgeDescription = 
-    subgraphQuery.getEdgeDescription(currentEdge);
+  // We need to check if it fulfills the constraints of the edge description
+  // and also it fits the existing variable bindings.
+
+  // Checking against edge description constraints
+  EdgeDescriptionType const& edgeDescription = 
+    subgraphQuery->getEdgeDescription(currentEdge);
+
+  if (!edgeDescription.satisfies(edge, this->startTime)) {
+    return false;
+  }
+
 
   std::string src = edgeDescription.getSource();
   std::string trg = edgeDescription.getTarget();
-
-  /// Making sure we fulfill the time constraints
-  if (!fulfillsTimeConstraint(edge)) {
-    return false;
-  }
-  // TODO Add check for other constraints
 
   // Case when the source has been bound but the target has not
   if (var2SourceValue.count(src) > 0 &&
@@ -267,7 +355,8 @@ addEdge(TupleType const& edge)
     } 
   } else if (var2SourceValue.count(src) == 0 &&
              var2TargetValue.count(trg) == 0)
-  {
+  { 
+    //std::cout << "blah both 0 " << std::endl;
     var2SourceValue[src] = std::get<source>(edge);
     var2TargetValue[trg] = std::get<target>(edge);
   } else {
@@ -277,10 +366,103 @@ addEdge(TupleType const& edge)
     throw SubgraphQueryResultException(message);
   }
 
-  resultEdges.push_back( edge );
+  resultEdges.push_back(edge);
   currentEdge++;
 
   return true;
+}
+
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+std::pair<bool, SubgraphQueryResult<TupleType, source, target, time, duration>> 
+SubgraphQueryResult<TupleType, source, target, time, duration>::
+addEdge(TupleType const& edge) const
+{
+  if (currentEdge >= numEdges) {
+    std::string message = "SubgraphQueryResult::addEdge Tried to add an edge " 
+      "but the query has already been satisfied, i.e. currentEdge(" + 
+      boost::lexical_cast<std::string>(currentEdge) +
+      ") >= numEdges (" + boost::lexical_cast<std::string>(numEdges) + ")";
+    throw SubgraphQueryResultException(message);              
+  }
+
+  // We need to check if it fulfills the constraints of the edge description
+  // and also it fits the existing variable bindings.
+
+  // Checking against edge description constraints
+  EdgeDescriptionType const& edgeDescription = 
+    subgraphQuery->getEdgeDescription(currentEdge);
+
+  if (!edgeDescription.satisfies(edge, this->startTime)) {
+    std::cout << "Failed edgeDescription satisfies " << std::endl;
+    return std::pair<bool, SubgraphQueryResultType>(false, 
+      SubgraphQueryResultType());
+  }
+
+
+  std::string src = edgeDescription.getSource();
+  std::string trg = edgeDescription.getTarget();
+
+  //std::cout << " about to check time constraint " << std::endl;
+  /// Making sure we fulfill the time constraints
+  //if (!fulfillsTimeConstraint(edge)) {
+  //  std::cout << " failed time constraint " << std::endl;
+  //  return false;
+  //}
+  // TODO Add check for other constraints
+
+  SubgraphQueryResultType newResult(*this);
+
+  // Case when the source has been bound but the target has not
+  if (var2SourceValue.count(src) > 0 &&
+      var2TargetValue.count(trg) == 0)
+  {
+    
+    SourceType edgeSource = std::get<source>(edge);
+    
+    if (edgeSource == var2SourceValue.at(src)) {
+      
+      TargetType edgeTarget = std::get<target>(edge);
+      newResult.var2TargetValue[trg] = edgeTarget;
+      
+    } else {
+      std::cout << "Failed to match source variable binding " << std::endl;
+      return std::pair<bool, SubgraphQueryResultType>(false, 
+        SubgraphQueryResultType());
+    } 
+
+  } else if (var2SourceValue.count(src) == 0 && 
+             var2TargetValue.count(trg) > 0) {
+    
+    TargetType edgeTarget = std::get<target>(edge);
+    
+    if (edgeTarget == var2TargetValue.at(trg)) {
+      
+      SourceType edgeSource = std::get<source>(edge);
+      newResult.var2SourceValue[src] = edgeSource;
+        
+    } else {
+      std::cout << "Failed to match target variable binding " << std::endl;
+      return std::pair<bool, SubgraphQueryResultType>(false, 
+        SubgraphQueryResultType());
+    } 
+  } else if (var2SourceValue.count(src) == 0 &&
+             var2TargetValue.count(trg) == 0)
+  { 
+    //std::cout << "blah both 0 " << std::endl;
+    newResult.var2SourceValue[src] = std::get<source>(edge);
+    newResult.var2TargetValue[trg] = std::get<target>(edge);
+  } else {
+    std::string message = "SubgraphQueryResult::addEdge Tried to add an edge"
+      " but both the source and target have already been defined.  Make sure"
+      " this is a valid use case.";
+    throw SubgraphQueryResultException(message);
+  }
+
+  newResult.resultEdges.push_back(edge);
+  newResult.currentEdge++;
+
+  return std::pair<bool, SubgraphQueryResultType>(true, newResult);
 }
 
 template <typename TupleType, size_t source, size_t target,
@@ -297,10 +479,10 @@ getCurrentSource() const
     throw SubgraphQueryResultException(message);   
   }
 
-  std::string sourceVar = subgraphQuery.getEdgeDescription(
+  std::string sourceVar = subgraphQuery->getEdgeDescription(
                             currentEdge).getSource();
   if (var2SourceValue.count(sourceVar) > 0) {
-    return var2SourceValue[sourceVar];
+    return var2SourceValue.at(sourceVar);
   } else {
     return nullValue<SourceType>();
   }
@@ -320,10 +502,10 @@ getCurrentTarget() const
     throw SubgraphQueryResultException(message);   
   }
 
-  std::string targetVar = subgraphQuery.getEdgeDescription(
+  std::string targetVar = subgraphQuery->getEdgeDescription(
                             currentEdge).getTarget();
   if (var2TargetValue.count(targetVar) > 0) {
-    return var2TargetValue[targetVar];
+    return var2TargetValue.at(targetVar);
   } else {
     return nullValue<TargetType>();
   }
