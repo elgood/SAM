@@ -176,6 +176,10 @@ public:
    * Registers a subgraph query to run against the data
    */
   void registerQuery(QueryType query) {
+    if (!query.isFinalized()) {
+      throw GraphStoreException("Tried to add query that had not been"
+        " finalized");
+    }
     queries.push_back(query);
   }
 
@@ -183,7 +187,7 @@ public:
 
   inline size_t getTuplesReceived() { return tuplesReceived; }
 
-
+  uint64_t getNumResults() const { return resultMap->getNumResults(); }
 
 };
 

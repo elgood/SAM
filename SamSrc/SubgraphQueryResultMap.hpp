@@ -70,7 +70,7 @@ public:
   /**
    * Returns the number of completed results that have been created.
    */
-  uint64_t getNumResults() {
+  uint64_t getNumResults() const {
     return numQueryResults; 
   }
 
