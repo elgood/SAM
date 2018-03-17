@@ -128,3 +128,11 @@ BOOST_AUTO_TEST_CASE( test_conversion_function )
   BOOST_CHECK_CLOSE(static_cast<double>(convert(11111111111.9999999))
     / 111111111119999999,1, .00001);
 }
+
+BOOST_AUTO_TEST_CASE( test_last_octet_hash_function )
+{
+  LastOctetHashFunction hash;
+  BOOST_CHECK_EQUAL(hash("192.168.0.1"), 1);
+  BOOST_CHECK_EQUAL(hash("192.168.0.255"), 255);
+
+}

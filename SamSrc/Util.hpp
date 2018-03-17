@@ -105,6 +105,23 @@ public:
   }
 };
 
+/**
+ * This is used for testing purposes.  It assumes the strings are ip4 addresses.
+ * It just looks at the last octet and returns that.  This is useful so that
+ * we can create testing situations where we know where ip addresses will
+ * go by design, rather than randomly.
+ */
+class LastOctetHashFunction
+{
+public:
+  inline
+  uint64_t operator()(std::string const& s) const {
+    size_t index = s.find_last_of(".");
+    std::string lastOctet = s.substr(index + 1);
+    return boost::lexical_cast<uint64_t>(lastOctet);
+  }
+};
+
 class TimeConversionFunction
 {
 public:
@@ -173,7 +190,7 @@ std::string getIpString(std::string hostname) {
   return ip;
 }
 
-zmq::message_t fillZmqMessage(std::string& str)
+zmq::message_t fillZmqMessage(std::string const& str)
 {
   zmq::message_t message(str.length() + 1);
   snprintf((char*) message.data(), str.length() + 1, "%s", str.c_str());
