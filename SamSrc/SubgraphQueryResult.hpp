@@ -2,8 +2,8 @@
 #define SAM_SUBGRAPH_QUERY_RESULT_HPP
 
 #include "SubgraphQuery.hpp"
-#include "Netflow.hpp"
 #include "Null.hpp"
+#include "EdgeRequest.hpp"
 
 namespace sam {
 
@@ -38,6 +38,7 @@ public:
     SubgraphQueryResultType;
   typedef SubgraphQuery<TupleType, time, duration> SubgraphQueryType;
   typedef EdgeDescription<TupleType, time, duration> EdgeDescriptionType;
+  typedef EdgeRequest<TupleType, source, target> EdgeRequestType;
   
 private:
   /// The SubgraphQuery that this is a result for.
@@ -130,9 +131,28 @@ public:
    * We need to hash based on source if that is defined, target, if that
    * is defined, or both if both are defined.  This function looks at the
    * current edge (unprocessed) and computes the hash based on what is defined.
+   * Also, it adds an edgeRequest to the list parameter, edgeRequests, if
+   * the edge we are looking for will be found on another node.
+   * \param sourceHash The source hash function.
+   * \param targetHash The target hash function (usually the same as the souce
+   *                   hash function).
+   * \param edgeRequests A reference to a list of edge requests.  If the next
+   *                     edge to be satisfied will be found on another node,
+   *                     then an edge request is added to the list.
+   * \param nodeId The id of the node running this code.  Used to determine
+   *               if the next edge will be sent to this node by the 
+   *               partitioner (in ZeroMQPushPull).
+   * \param numNodes The number of nodes in the cluster.  Used to determin
+   *                 if the next edge will be sent to this node by the 
+   *                 partitioner (in ZeroMQPushPull).
    */
   template <typename SourceHF, typename TargetHF>
-  size_t hash(SourceHF const& sourceHash, TargetHF const& targetHash) const;
+  size_t hash(SourceHF const& sourceHash, 
+              TargetHF const& targetHash,
+              std::list<EdgeRequestType> & edgeRequests,
+              size_t nodeId,
+              size_t numNodes) 
+              const;
 
   /**
    * Returns true if the query has been satisfied.
@@ -178,21 +198,6 @@ private:
     
 };
 
-/*template <typename TupleType, size_t source, size_t target,
-          size_t time, size_t duration>
-SubgraphQueryResult<TupleType, source, target, time, duration>::
-SubgraphQueryResult(SubgraphQueryResult const& other) :
-  var2SourceValue(other.var2SourceValue),
-  var2TargetValue(other.var2TargetValue),
-  subgraphQuery(other.subgraphQuery),
-  resultEdges(other.resultEdges),
-  currentEdge(other.currentEdge),
-  numEdges(other.numEdges),
-  expireTime(other.expireTime),
-  startTime(other.startTime)
-{
-}*/
-
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration>
 SubgraphQueryResult<TupleType, source, target, time, duration>::
@@ -226,24 +231,90 @@ SubgraphQueryResult()
 
 
 
-
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration>
 template <typename SourceHF, typename TargetHF>
 size_t
 SubgraphQueryResult<TupleType, source, target, time, duration>::
-hash(SourceHF const& sourceHash, TargetHF const& targetHash) const
+hash(SourceHF const& sourceHash, 
+     TargetHF const& targetHash,
+     std::list<EdgeRequestType> & edgeRequests,
+     size_t nodeId,
+     size_t numNodes) 
+     const
 {
+  // Get the source that we are looking for.  If the source is unbound,
+  // then the null value is returned.  Otherwise the source is bound to
+  // a value, and the next tuple must have that value for the source.
   SourceType src = getCurrentSource();
+
+  // Get the target that we are looking for.  If the target is unbound,
+  // then the null value is returned.  Otherwise the target is bound to
+  // a valud, and the next tuple must have that value for the target.
   TargetType trg = getCurrentTarget();
+
   //std::cout << "src " << src << " trg " << trg << std::endl;
 
+  // Case when the source is unbound but the target is bound to a value. 
   if (isNull(src) && !isNull(trg)) {
+  
+    // If the target hashes to a different node, we need to make an edge
+    // request to that node.  
+    if (targetHash(trg) % numNodes != nodeId) {
+
+      EdgeRequestType edgeRequest;
+      edgeRequest.setTarget(trg);
+
+      // Add the edge request to the list of new edge requests.
+      edgeRequests.push_back(edgeRequest);
+    }
+
+    // Returns a hash of the target so that it can be placed in the correct
+    // bin in the SubgraphQueryResultMap.
     return targetHash(trg);
-  } else if (!isNull(src) && isNull(trg)) {
+
+  } else 
+  // Case when the target is unbound but the source is bound to a value.
+  if (!isNull(src) && isNull(trg)) {
+
+    // If the source hashes to a different node, we need to make an edge
+    // request to that node.
+    if (sourceHash(src) % numNodes != nodeId) {
+
+      EdgeRequestType edgeRequest;
+      edgeRequest.setSource(src);
+
+      // Add the edge request to the list of new edge requests.
+      edgeRequests.push_back(edgeRequest);
+
+    }
+
+    // Returns a hash of the source so that it can be placed in the correct
+    // bin in the SubgraphQueryResultMap.
     return sourceHash(src);
-  } else if (!isNull(src) && !isNull(trg)) {
+
+  } else 
+  // Case when the target and source are both bound to a value.
+  if (!isNull(src) && !isNull(trg)) {
+
+    // Need to make edge requests if both the source or target
+    // map to a different node.  If either one maps to this node,
+    // then we will get the edge.
+    if (sourceHash(src) % numNodes != nodeId &&
+        targetHash(trg) % numNodes != nodeId)
+    {
+      // It doesn't matter which node we send the edge request to
+      EdgeRequestType edgeRequest;
+      edgeRequest.setSource(src);
+      edgeRequest.setTarget(trg);
+      edgeRequests.push_back(edgeRequest);
+    }
+
+    // Returns a hash of the source combined with the hash of the target 
+    // so that it can be placed in the correct
+    // bin in the SubgraphQueryResultMap.
     return sourceHash(src) * targetHash(trg);
+
   } else {
     throw SubgraphQueryResultException("SubgraphQueryResult::hash When trying "
       "to calculate the hash, both source and target are unbound.");
@@ -394,7 +465,7 @@ addEdge(TupleType const& edge) const
     subgraphQuery->getEdgeDescription(currentEdge);
 
   if (!edgeDescription.satisfies(edge, this->startTime)) {
-    std::cout << "Failed edgeDescription satisfies " << std::endl;
+    //std::cout << "Failed edgeDescription satisfies " << std::endl;
     return std::pair<bool, SubgraphQueryResultType>(false, 
       SubgraphQueryResultType());
   }

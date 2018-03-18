@@ -16,8 +16,8 @@ public:
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
   typedef SubgraphQueryResult<TupleType, source, target, time,
                                        duration> QueryResultType;
-    
-
+  typedef EdgeRequest<TupleType, source, target> EdgeRequestType;  
+  
 private:
   SourceHF sourceHash;
   TargetHF targetHash;
@@ -44,28 +44,38 @@ private:
   /// An array of lists of results.
   std::list<QueryResultType> *alr;
 
+  size_t numNodes;
+  size_t nodeId;
+
 public:
   /**
-   * \param tableCapacity The size of the hash table that stores intermediate
-   *                      query results.
+   * \param numNodes How many nodes in the cluster.
+   * \param nodeId The node id of this node.
    * \param tableCapacity How many bins for intermediate query results.
    * \param resultsCapacity How many completed queries can be stored.
    */
-  SubgraphQueryResultMap( size_t tableCapacity,
+  SubgraphQueryResultMap( size_t numNodes,
+                          size_t nodeId,
+                          size_t tableCapacity,
                           size_t resultsCapacity );
 
   ~SubgraphQueryResultMap();
 
   /**
    * For the given tuple, checks against existing intermediate query results
-   * and adds the tuple if it satisfies the constraints.
+   * and adds the tuple if it satisfies the constraints.  When we advance
+   * the query and need to look for a new edge, and the edge is assigned
+   * to a different node, a new EdgeRequest is created.  These edge
+   * requests are added to the edgeRequests list.
    */
-  void process(TupleType const& tuple);
+  void process(TupleType const& tuple,
+               std::list<EdgeRequestType>& edgeRequests);
 
   /**
-   * Adds a new intermediate result 
+   * Adds a new intermediate result. 
    */ 
-  void add(QueryResultType const& result);
+  void add(QueryResultType const& result, 
+           std::list<EdgeRequestType>& edgeRequests);
 
   /**
    * Returns the number of completed results that have been created.
@@ -77,56 +87,44 @@ public:
 private:
   /**
    * Uses the source hash function to find intermediate query results that
-   * are looking for the source.
+   * are looking for the source.  New edge requests are added to the
+   * edgeRequests lists.
    */
-  void processSource(TupleType const& tuple);
+  void processSource(TupleType const& tuple, 
+                     std::list<EdgeRequestType>& edgeRequests);
 
   /**
    * Uses the dest hash function to find intermediate query results that
-   * are looking for the dest.
+   * are looking for the dest.New edge requests are added to the
+   * edgeRequests lists.
    */
-  void processTarget(TupleType const& tuple);
+  void processTarget(TupleType const& tuple,
+                     std::list<EdgeRequestType>& edgeRequests);
 
   /**
    * Uses a combination of the source and dest hash functions to find
    * intermediate query results that are looking both the source and dest.
+   * New edge requests are added to the
+   * edgeRequests lists.
    */
-  void processSourceTarget(TupleType const& tuple);
+  void processSourceTarget(TupleType const& tuple,
+                           std::list<EdgeRequestType>& edgeRequests);
 };
 
-template <typename TupleType, size_t source, size_t target,
-          size_t time, size_t duration,
-          typename SourceHF, typename TargetHF,
-          typename SourceEF, typename TargetEF>
-void
-SubgraphQueryResultMap<TupleType, source, target, time, duration,
-  SourceHF, TargetHF, SourceEF, TargetEF>::
-add(QueryResultType const& result)
-{
-  //std::cout << "Adding new intermediate result " << std::endl;
-  if (!result.complete()) {
-    //std::cout << "The result is not complete " << std::endl;
-    size_t newIndex = result.hash(sourceHash, targetHash) % tableCapacity;
-    mutexes[newIndex].lock();
-    alr[newIndex].push_back(result);
-    mutexes[newIndex].unlock(); 
-  } else {
-    //std::cout << "The result is complete " << std::endl;
-    size_t index = numQueryResults.fetch_add(1);
-    index = index % resultCapacity;
-    queryResults[index] = result;     
-  }
-}
-
+/// Constructor
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 SubgraphQueryResultMap<TupleType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
- SubgraphQueryResultMap( size_t tableCapacity,
+ SubgraphQueryResultMap( size_t numNodes,
+                         size_t nodeId,
+                         size_t tableCapacity,
                          size_t resultCapacity)
 {
+  this->numNodes = numNodes;
+  this->nodeId = nodeId;
   this->tableCapacity = tableCapacity;
   this->resultCapacity = resultCapacity;
 
@@ -138,7 +136,7 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
   alr = new std::list<QueryResultType>[tableCapacity];
 }
 
-
+/// Destructor
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
@@ -155,15 +153,46 @@ template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
+void
+SubgraphQueryResultMap<TupleType, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+add(QueryResultType const& result, std::list<EdgeRequestType>& edgeRequests)
+{
+  //std::cout << "Adding new intermediate result " << std::endl;
+  if (!result.complete()) {
+    //std::cout << "The result is not complete " << std::endl;
+
+    // The hash function also adds an edge request to the list if the
+    // thing we are looking for isn't going to come to this node.    
+    size_t newIndex = result.hash(sourceHash, targetHash,
+                                  edgeRequests, nodeId, numNodes) 
+                                  % tableCapacity;
+    mutexes[newIndex].lock();
+    alr[newIndex].push_back(result);
+    mutexes[newIndex].unlock(); 
+  } else {
+    //std::cout << "The result is complete " << std::endl;
+    size_t index = numQueryResults.fetch_add(1);
+    index = index % resultCapacity;
+    queryResults[index] = result;     
+  }
+}
+
+
+template <typename TupleType, size_t source, size_t target,
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF,
+          typename SourceEF, typename TargetEF>
 void 
 SubgraphQueryResultMap<TupleType, source, target, time, duration,
                         SourceHF, TargetHF, SourceEF, TargetEF>::
                             
-process(TupleType const& tuple)
+process(TupleType const& tuple, 
+        std::list<EdgeRequestType>& edgeRequests)
 {
-  processSource(tuple);
-  processTarget(tuple);
-  processSourceTarget(tuple);
+  processSource(tuple, edgeRequests);
+  processTarget(tuple, edgeRequests);
+  processSourceTarget(tuple, edgeRequests);
 }
 
 
@@ -173,7 +202,8 @@ template <typename TupleType, size_t source, size_t target,
           typename SourceEF, typename TargetEF>
 void SubgraphQueryResultMap<TupleType, source, target, time, duration,
                             SourceHF, TargetHF, SourceEF, TargetEF>::
-processSource(TupleType const& tuple)
+processSource(TupleType const& tuple,
+              std::list<EdgeRequestType>& edgeRequests)
 {
   
   SourceType src = std::get<source>(tuple);
@@ -190,6 +220,9 @@ processSource(TupleType const& tuple)
     //          << std::endl;
     if (l->noSamId(samId)) {
       //std::cout << "Adding edge in process Source " << std::endl;
+      // The following call tries to add the tuple to the existing 
+      // intermediate result, l.  If succesful, l remains the same
+      // but a new intermediate result is created.
       std::pair<bool, QueryResultType> p = l->addEdge(tuple);
       if (p.first) {
         //std::cout << "Original Tuple " << l->toString() << std::endl;
@@ -202,7 +235,7 @@ processSource(TupleType const& tuple)
   mutexes[index].unlock();
 
   for (auto l : rehash) {
-    add(l);
+    add(l, edgeRequests);
   }
 }
 
@@ -213,7 +246,8 @@ template <typename TupleType, size_t source, size_t target,
 void 
 SubgraphQueryResultMap<TupleType, source, target, time, duration,
                        SourceHF, TargetHF, SourceEF, TargetEF>::
-processTarget(TupleType const& tuple)
+processTarget(TupleType const& tuple,
+              std::list<EdgeRequestType>& edgeRequests)
 {
   TargetType trg = std::get<target>(tuple);
   size_t index = targetHash(trg) % tableCapacity;
@@ -236,7 +270,7 @@ processTarget(TupleType const& tuple)
   mutexes[index].unlock();
 
   for (auto l : rehash) {
-    add(l);
+    add(l, edgeRequests);
   }
     
 }
@@ -248,7 +282,8 @@ template <typename TupleType, size_t source, size_t target,
 void 
 SubgraphQueryResultMap<TupleType, source, target, time, duration,
                        SourceHF, TargetHF, SourceEF, TargetEF>::
-processSourceTarget(TupleType const& tuple)
+processSourceTarget(TupleType const& tuple,
+                    std::list<EdgeRequestType>& edgeRequests)
 {
   SourceType src = std::get<source>(tuple);
   TargetType trg = std::get<target>(tuple);
@@ -272,7 +307,7 @@ processSourceTarget(TupleType const& tuple)
   mutexes[index].unlock();
 
   for (auto l : rehash) {
-    add(l);
+    add(l, edgeRequests);
   }
 }
 

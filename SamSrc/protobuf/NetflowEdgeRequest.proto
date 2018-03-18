@@ -5,7 +5,7 @@ package sam;
 message NetflowEdgeRequest {
   string sourceIP = 1;
   string destIP = 2;
-  bool terminate = 3;
+  int32  returnNode = 3; // Where to send edges back to.
   
   message SimpleEdgeCondition {
     string field = 1;

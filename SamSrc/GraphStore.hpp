@@ -9,15 +9,16 @@
  */
 
 
-#include "EdgeRequestList.hpp"
 #include "IdGenerator.hpp"
 #include "Util.hpp"
 #include "AbstractConsumer.hpp"
 #include "CompressedSparse.hpp"
 #include "SubgraphQuery.hpp"
 #include "SubgraphQueryResultMap.hpp"
+#include "EdgeRequestMap.hpp"
 #include <zmq.hpp>
 #include <thread>
+#include <cstdlib>
 
 namespace sam {
 
@@ -37,8 +38,6 @@ public:
  * the index of the target of the edge.  time defines the index to the time
  * field in TupleType (every tuple must have a time field).
  *
- * Right now it is hardcoded for TupleTypes.  Hopefully later can be generalized
- * to handle other types of tuples.
  */
 template <typename TupleType, typename Tuplizer, 
           size_t source, size_t target, 
@@ -49,38 +48,54 @@ class GraphStore : public AbstractConsumer<TupleType>
 {
 public:
   typedef SubgraphQueryResultMap<TupleType, source, target, time, duration,
-    SourceHF, TargetHF, SourceEF, TargetEF> MapType;
+    SourceHF, TargetHF, SourceEF, TargetEF> ResultMapType;
 
   typedef SubgraphQuery<TupleType, time, duration> QueryType;
 
   typedef SubgraphQueryResult<TupleType, source, target, time, duration>
           ResultType;
 
+  typedef EdgeRequest<TupleType, source, target> EdgeRequestType;
 
+  typedef EdgeRequestMap<TupleType, source, target, SourceHF, TargetHF,
+    SourceEF, TargetEF> RequestMapType;
+
+  typedef typename std::tuple_element<source, TupleType>::type SourceType;
+  typedef typename std::tuple_element<target, TupleType>::type TargetType;
+
+  typedef CompressedSparse<TupleType, SourceIp, DestIp, TimeSeconds, 
+                          StringHashFunction, StringEqualityFunction> csrType;
+  typedef CompressedSparse<TupleType, DestIp, SourceIp, TimeSeconds, 
+                          StringHashFunction, StringEqualityFunction> cscType;
+ 
 private:
+
+  std::mutex generalLock;
+
+  SourceHF sourceHash;
+  TargetHF targetHash;
  
   /// The object that creates tuples from strings. 
   Tuplizer tuplizer;
 
   /// This stores the query results.  It maps source or dest to query results
   /// that are looking for that source or dest.
-  std::shared_ptr<MapType> resultMap;
+  std::shared_ptr<ResultMapType> resultMap;
 
-  /// This handles the requests we get from other nodes.
-  EdgeRequestList requestList; 
+  std::shared_ptr<RequestMapType> edgeRequestMap;
 
   /// Creates id for each tuple we get from other nodes
   SimpleIdGenerator idGenerator;
 
   /// There is another context in ZeroMQPushPull.  I think we can just
   /// instantiate another one here.
-  zmq::context_t* context = new zmq::context_t(1);
+  //zmq::context_t* context = new zmq::context_t(1);
+  zmq::context_t context = zmq::context_t(1);
 
   /// The push sockets in charge of pushing requests to other nodes.
   std::vector<std::shared_ptr<zmq::socket_t>> requestPushers;
 
   /// The push sockets in charge of pushing edges to other nodes.
-  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers;
   
   /// The thread that polls the request pull sockets.
   std::thread requestPullThread;
@@ -94,11 +109,9 @@ private:
   /// Used for testing to make sure we got expected number of tuples.
   size_t tuplesReceived = 0;
 
-  typedef CompressedSparse<TupleType, SourceIp, DestIp, TimeSeconds, 
-                          StringHashFunction, StringEqualityFunction> csrType;
-  typedef CompressedSparse<TupleType, DestIp, SourceIp, TimeSeconds, 
-                          StringHashFunction, StringEqualityFunction> cscType;
-  
+  // Flag to indicate if terminate has been called. 
+  bool terminated = false;
+   
   /// Compressed Sparse Row graph
   std::shared_ptr<csrType> csr;
 
@@ -114,13 +127,33 @@ private:
    */
   void deleteEdges();
 
-  void processRequests();
+  void processRequestAgainstGraph(EdgeRequestType const& edgeRequest) {
+    throw GraphStoreException("processRequestAgainstGraph Not implemented");
+  } 
   
-  void createPushSockets(
-    std::vector<std::string>& hostnames,
-    std::vector<size_t>& ports,
-    std::vector<std::shared_ptr<zmq::socket_t>>& pushers,
-    uint32_t hwm);
+  //void createPushSockets(
+  //  std::vector<std::string>& hostnames,
+  //  std::vector<size_t>& ports,
+  //  std::vector<std::shared_ptr<zmq::socket_t>>& pushers,
+  //  uint32_t hwm);
+
+
+  /**
+   * This goes through the list of new edge requests and sends them out to
+   * the appropriate nodes.
+   */
+  void processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests);
+
+
+  /**
+   * Sends the specified edgeRequest to the source node.
+   */
+  void sendMessageToSource(EdgeRequestType const& edgeRequest);
+
+  /**
+   * Sends the specified edgeRequest to the target node.
+   */
+  void sendMessageToTarget(EdgeRequestType const& edgeRequest);
 
 public:
 
@@ -183,7 +216,8 @@ public:
     queries.push_back(query);
   }
 
-  void checkSubgraphQueries(TupleType const& tuple);
+  void checkSubgraphQueries(TupleType const& tuple,
+                            std::list<EdgeRequestType>& edgeRequests);
 
   inline size_t getTuplesReceived() { return tuplesReceived; }
 
@@ -227,17 +261,106 @@ template <typename TupleType, typename Tuplizer,
 void 
 GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-checkSubgraphQueries(TupleType const& tuple) 
+checkSubgraphQueries(TupleType const& tuple,
+                     std::list<EdgeRequestType>& edgeRequests) 
 {
-
   double startTime = std::get<time>(tuple);
   for (QueryType const& query : queries) {
     if (query.satisfies(tuple, 0, startTime)) {
       ResultType queryResult(&query, tuple);
-      resultMap->add(queryResult);  
+      resultMap->add(queryResult,
+                     edgeRequests);  
     }
   }
 }
+
+/**
+ * Goes through the given edge requests that this node needs 
+ * and sends the requests out to the appropriate node.
+ */
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
+{
+  for(auto edgeRequest : edgeRequests) {
+
+    if (isNull(edgeRequest.getTarget()) && isNull(edgeRequest.getSource()))
+    {
+      throw GraphStoreException("In GraphStore::processEdgeRequests, both the"
+        " source and the target of an edge request was null.  Don't know what"
+        " do with that.");
+    }
+    else 
+    if (!isNull(edgeRequest.getTarget()) && isNull(edgeRequest.getSource()))
+    {
+      //If the source is not null but the target is, we send the edge request
+      //to whomever owns the source.
+      sendMessageToSource(edgeRequest);
+    }
+    else 
+    if (isNull(edgeRequest.getTarget()) && !isNull(edgeRequest.getSource()))
+    {
+      //If the target is not null but the source is, we send the edge request
+      //to whomever owns the target.
+      sendMessageToTarget(edgeRequest);
+    }
+    else 
+    if (!isNull(edgeRequest.getTarget()) && !isNull(edgeRequest.getSource()))
+    {
+      //If both source and target are not null, it doesn't really matter
+      //to which node we send the edge request, since both nodes will have
+      //matching edges.
+      
+      // load balancing by splitting our requests 
+      if (rand() % 2 == 0 )
+      {
+        sendMessageToSource(edgeRequest);
+      } else {
+        sendMessageToTarget(edgeRequest);
+      }
+    }
+  }
+}
+
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+sendMessageToSource(EdgeRequestType const& edgeRequest)
+{  
+  zmq::message_t message = edgeRequest.toZmqMessage();
+  SourceType src = edgeRequest.getSource();
+  size_t node = sourceHash(src) % numNodes;
+  requestPushers[node]->send(message);
+}
+
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void 
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+sendMessageToTarget(EdgeRequestType const& edgeRequest)
+{
+  zmq::message_t message = edgeRequest.toZmqMessage();
+  TargetType trg = edgeRequest.getTarget();
+  size_t node = targetHash(trg) % numNodes;
+  requestPushers[node]->send(message);
+}
+
+
 
 template <typename TupleType, typename Tuplizer, 
           size_t source, size_t target, 
@@ -249,27 +372,33 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consume(TupleType const& tuple)
 {
+  //printf("consume\n");
   // Adds the edge to the graph
+  generalLock.lock();
   addEdge(tuple);
+  generalLock.unlock();
+  //printf("added edge\n");
 
   // TODO Delete old edges, maybe
 
-  // Check against existing queryResults
-  resultMap->process(tuple);
+  // Check against existing queryResults.  The edgeRequest list is populated
+  // with edge requests when we find we need a tuple that will reside 
+  // elsewhere.
+  std::list<EdgeRequestType> edgeRequests;
+  resultMap->process(tuple, edgeRequests);
+  //printf("processed tuple\n");
+
+  // Send out the edge requests to the other nodes.
+  processEdgeRequests(edgeRequests);
+  //printf("processed edge requests\n");
+
+  // See if anybody needs this tuple and send it out to them.
+  edgeRequestMap->process(tuple);
+  //printf("request map process tuple\n");
 
   // Check against all registered queries
-  checkSubgraphQueries(tuple);
-
-  // TODO Check the edge to see if it fits any open requests
-  // remove this: sending all edges to the other nodes
-  for (int i = 0; i < numNodes; i++) {
-    if (i != nodeId) {
-      //printf("%lu sending message to node %i\n", nodeId, i);
-      zmq::message_t message = tupleToZmq(tuple);
-      //edgePushers[i]->send(message, ZMQ_NOBLOCK);
-      edgePushers[i]->send(message);
-    }
-  }
+  checkSubgraphQueries(tuple, edgeRequests);
+  //printf("checked subgraph queries\n");
 
   return true;
 }
@@ -284,31 +413,27 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate() 
 {
-  
-  // If terminate was called, we aren't going to receive any more
-  // edges, so we can push out the terminate signal to all the edge request
-  // channels. 
-  for(int i = 0; i < numNodes; i++) {
-    if (i != nodeId) {
-      zmq::message_t message = emptyZmqMessage();
-      requestPushers[i]->send(message);
+  if (!terminated) {  
+    // If terminate was called, we aren't going to receive any more
+    // edges, so we can push out the terminate signal to all the edge request
+    // channels. 
+    for(int i = 0; i < numNodes; i++) {
+      if (i != nodeId) {
+        zmq::message_t message = emptyZmqMessage();
+        requestPushers[i]->send(message);
+      }
     }
-  }
 
-  // Also since terminate was called, we can't fulfill any more
-  // edge requests, so we can push out the terminate signal to all
-  // edge channels.  The terminate signal is just an empty string.
-  for(int i = 0; i < numNodes; i++) {
-    if (i != nodeId) {
-      zmq::message_t message = emptyZmqMessage();
-      edgePushers[i]->send(message);
-    }
-  }
+    // The EdgeRequestMap has all the edge pushers.  We call terminate
+    // on the EdgeRequestMap to send out the terminate message.
+    edgeRequestMap->terminate();
 
-  // The two threads running the pull sockets should terminate after 
-  // receiving terminate messages from the other nodes.
-  requestPullThread.join();
-  edgePullThread.join();
+    // The two threads running the pull sockets should terminate after 
+    // receiving terminate messages from the other nodes.
+    requestPullThread.join();
+    edgePullThread.join();
+  }
+  terminated = true;
 }
 
 template <typename TupleType, typename Tuplizer, 
@@ -334,23 +459,21 @@ GraphStore(std::size_t numNodes,
   this->nodeId   = nodeId;
 
 
-  resultMap = std::make_shared< MapType>( tableCapacity, resultsCapacity );
+  resultMap = std::make_shared< ResultMapType>( numNodes, nodeId, 
+                                                tableCapacity, resultsCapacity);
+
+  edgeRequestMap = std::make_shared< RequestMapType>(
+    numNodes, nodeId, edgeHostnames, edgePorts, hwm, tableCapacity);
 
   csr = std::make_shared<csrType>(graphCapacity, timeWindow); 
   csc = std::make_shared<cscType>(graphCapacity, timeWindow); 
 
   // Resizing the push socket vectors to be the size of numNodes
   requestPushers.resize(numNodes);
-  edgePushers.resize(numNodes); 
 
-  createPushSockets(requestHostnames, requestPorts,
+  createPushSockets(&context, numNodes, nodeId, requestHostnames, requestPorts,
                     requestPushers, hwm);
 
-  //printf("Created request push sockets %lu\n", nodeId);
-  createPushSockets(edgeHostnames, edgePorts,
-                    edgePushers, hwm);
-  //printf("Created edge push sockets %lu\n", nodeId);
-  
   /// The requestPullFunction is responsible for polling all the edge request
   /// pull sockets.
   auto requestPullFunction = [this, requestHostnames, requestPorts, hwm]() 
@@ -370,7 +493,7 @@ GraphStore(std::size_t numNodes,
       if (i != this->nodeId) {
 
         // Creating the zmq pull socket.
-        zmq::socket_t* socket = new zmq::socket_t(*(this->context), ZMQ_PULL);
+        zmq::socket_t* socket = new zmq::socket_t((this->context), ZMQ_PULL);
         
         // Creating the address.  
         std::string ip = getIpString(requestHostnames[i]);
@@ -415,10 +538,24 @@ GraphStore(std::size_t numNodes,
           } else {
             char *buff = static_cast<char*>(message.data());
             std::string sEdgeRequest(buff);
-            //TODO
-            //TupleTypeEdgeRequest request;
-            //bool b = request.ParseFromString(sEdgeRequest);
-            //requestList.addRequest(request);
+            EdgeRequestType request(sEdgeRequest);
+
+            // When we get an edge request, we need to check against
+            // the graph (existing matches) and add it to the list 
+            // so that any new matches are caught.  Since there are
+            // two other threads that add to the graph 
+            // (the edgeRequest pull thread and the consume thread),
+            // we need a lock to make sure we don't miss edges are add
+            // edge multiple times. 
+            
+            generalLock.lock();
+
+            edgeRequestMap->addRequest(request);
+
+            processRequestAgainstGraph(request);
+
+            generalLock.unlock();
+
           }
         }
 
@@ -449,7 +586,7 @@ GraphStore(std::size_t numNodes,
     for(int i = 0; i < this->numNodes; i++) {
       if (i != this->nodeId)
       {
-        zmq::socket_t* socket = new zmq::socket_t(*(this->context), ZMQ_PULL);
+        zmq::socket_t* socket = new zmq::socket_t((this->context), ZMQ_PULL);
         std::string ip = getIpString(edgeHostnames[i]);
         std::string url = "";
         url = "tcp://" + ip + ":";
@@ -510,60 +647,9 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 ~GraphStore()
 {
+  terminate();
 }
 
-
-template <typename TupleType, typename Tuplizer,
-          size_t source, size_t target, 
-          size_t time, size_t duration,
-          typename SourceHF, typename TargetHF, 
-          typename SourceEF, typename TargetEF> 
-void
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
-  SourceHF, TargetHF, SourceEF, TargetEF>::
-createPushSockets(
-    std::vector<std::string>& hostnames,
-    std::vector<size_t>& ports,
-    std::vector<std::shared_ptr<zmq::socket_t>>& pushers,
-    uint32_t hwm)
-{
-  for (int i = 0; i < this->numNodes; i++) 
-  {
-    if (i != this->nodeId) // never need to send stuff to itself
-    {
-      //printf("createPushSockets nodeId %lu %d\n", this->nodeId, i);
-      /////////// Adding push sockets //////////////
-      auto pusher = std::shared_ptr<zmq::socket_t>(
-                      new zmq::socket_t(*context, ZMQ_PUSH));
-      //printf("createPushSockets nodeId %lu %d created socket\n", 
-      //        this->nodeId, i);
-
-      std::string ip = getIpString(hostnames[this->nodeId]);
-      std::string url = "";
-      url = "tcp://" + ip + ":";
-      try { 
-        url = url + boost::lexical_cast<std::string>(ports[i]);
-      } catch (std::exception e) {
-        throw GraphStoreException(e.what());
-      }
-
-      // The function complains if you use std::size_t, so be sure to use the
-      // uint32_t class member for hwm.
-      try {
-        pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
-      } catch (std::exception e) {
-        std::string message = std::string("Problem setting push socket's send")+
-          std::string(" high water mark: ") + e.what();
-        throw GraphStoreException(message);
-      }
-      //printf("createPushSockets nodeId %lu %d set socket option\n", 
-      //  this->nodeId, i);
-      pusher->bind(url);
-      //printf("createPushSockets nodeId %lu %d connect\n", this->nodeId, i);
-      pushers[i] = pusher;
-    } 
-  }
-}
 
 
 } // end namespace sam

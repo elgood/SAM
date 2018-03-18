@@ -14,7 +14,7 @@ struct F {
                            "bait,29986,1900,0,0,0,133,0,1,0,1,0,0"; 
   Netflow netflow1 = makeNetflow(netflowString1);
 
-  std::string netflowString2 = "1,1,82765.384094,2013-04-10 08:32:36,"
+  std::string netflowString2 = "1,1,82766.374094,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
                            "controller,29986,1900,0,0,0,133,0,1,0,1,0,0"; 
 
@@ -57,10 +57,14 @@ struct F {
 
 BOOST_FIXTURE_TEST_CASE( test_check_one_edge, F )
 {
+  // Creates a subgraph query with just one edge and checks that
+  // a query result after adding a netflow satisfies the query and 
+  // completes it.
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   query.addExpression(*endTimeExpressionE1);
   query.addExpression(*targetE1Bait);
-  
+ 
+  // Throws an error because query has not been finalized. 
   BOOST_CHECK_THROW( ResultType result(&query, netflow1),
                    SubgraphQueryResultException);
 
@@ -73,6 +77,8 @@ BOOST_FIXTURE_TEST_CASE( test_check_one_edge, F )
 
 BOOST_FIXTURE_TEST_CASE( test_check_two_edges, F )
 {
+  // target e1 bait
+  // target e2 controller
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   query.addExpression(*endTimeExpressionE1);
   query.addExpression(*targetE1Bait);
@@ -85,7 +91,7 @@ BOOST_FIXTURE_TEST_CASE( test_check_two_edges, F )
 
   BOOST_CHECK(!result.complete());
 
-  result.addEdge(netflow2);
+  result.addEdgeInPlace(netflow2);
 
   BOOST_CHECK(result.complete());
 

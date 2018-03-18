@@ -14,6 +14,8 @@ typedef SubgraphQueryResultMap<Netflow, SourceIp, DestIp,
   TimeSeconds, DurationSeconds, StringHashFunction, StringHashFunction,
   StringEqualityFunction, StringEqualityFunction> MapType;
 
+typedef MapType::EdgeRequestType EdgeRequestType;
+
 struct F {
   EdgeFunction starttimeFunction = EdgeFunction::StartTime;
   EdgeFunction endtimeFunction = EdgeFunction::EndTime;
@@ -52,7 +54,9 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
 {
   size_t tableCapacity = 1000;
   size_t resultCapacity = 1000;
-  MapType map(tableCapacity, resultCapacity); 
+  size_t numNodes = 1;
+  size_t nodeId = 0;
+  MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
 
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
@@ -60,6 +64,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   query.addExpression(*y2x);
   query.finalize();
 
+  std::list<EdgeRequestType> edgeRequests;
   size_t n = 10000;
   for(size_t i = 0; i < n; i++) 
   {
@@ -67,9 +72,10 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
     Netflow netflow = makeNetflow(0, str);
     SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
                         DurationSeconds> result(&query, netflow);
-    map.add(result);
+    map.add(result, edgeRequests);
   }
 
+  BOOST_CHECK_EQUAL(edgeRequests.size(), 0);
   BOOST_CHECK_EQUAL(map.getNumResults(), n);
  
 }
@@ -82,7 +88,9 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
 {
   size_t tableCapacity = 1000;
   size_t resultCapacity = 1000;
-  MapType map(tableCapacity, resultCapacity); 
+  size_t numNodes = 1;
+  size_t nodeId = 0;
+  MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
 
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
@@ -96,6 +104,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
   query.addExpression(*y2x);
   query.finalize();
 
+  std::list<EdgeRequestType> edgeRequests;
   size_t n = 10000;
   for(size_t i = 0; i < n; i++) 
   {
@@ -105,10 +114,11 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
     if (query.satisfies(netflow, 0, startTime)) { 
       SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
                           DurationSeconds> result(&query, netflow);
-      map.add(result);
+      map.add(result, edgeRequests);
     }
   }
 
+  BOOST_CHECK_EQUAL(edgeRequests.size(), 0);
   BOOST_CHECK_EQUAL(map.getNumResults(), 0);
  
 }
@@ -120,7 +130,9 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
 {
   size_t tableCapacity = 1000;
   size_t resultCapacity = 1000;
-  MapType map(tableCapacity, resultCapacity); 
+  size_t numNodes = 1;
+  size_t nodeId = 0;
+  MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
 
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
@@ -135,6 +147,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
   query.addExpression(*z2x);
   query.finalize();
 
+  std::list<EdgeRequestType> edgeRequests;
   size_t n = 10;
   for(size_t i = 0; i < n; i++) 
   {
@@ -142,9 +155,10 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
     Netflow netflow = makeNetflow(i, str);
     SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
                         DurationSeconds> result(&query, netflow);
-    map.add(result);
-    map.process(netflow);
+    map.add(result, edgeRequests);
+    map.process(netflow, edgeRequests);
   }
+  BOOST_CHECK_EQUAL(edgeRequests.size(), 0);
   BOOST_CHECK_EQUAL(map.getNumResults(), (n-1)*(n)/2);
  
 }

@@ -316,11 +316,11 @@ class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insert
   ::std::string* release_destip();
   void set_allocated_destip(::std::string* destip);
 
-  // bool terminate = 3;
-  void clear_terminate();
-  static const int kTerminateFieldNumber = 3;
-  bool terminate() const;
-  void set_terminate(bool value);
+  // int32 returnNode = 3;
+  void clear_returnnode();
+  static const int kReturnNodeFieldNumber = 3;
+  ::google::protobuf::int32 returnnode() const;
+  void set_returnnode(::google::protobuf::int32 value);
 
   // @@protoc_insertion_point(class_scope:sam.NetflowEdgeRequest)
  private:
@@ -329,7 +329,7 @@ class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insert
   ::google::protobuf::RepeatedPtrField< ::sam::NetflowEdgeRequest_SimpleEdgeCondition > conditions_;
   ::google::protobuf::internal::ArenaStringPtr sourceip_;
   ::google::protobuf::internal::ArenaStringPtr destip_;
-  bool terminate_;
+  ::google::protobuf::int32 returnnode_;
   mutable int _cached_size_;
   friend struct ::protobuf_NetflowEdgeRequest_2eproto::TableStruct;
   friend void ::protobuf_NetflowEdgeRequest_2eproto::InitDefaultsNetflowEdgeRequestImpl();
@@ -575,18 +575,18 @@ inline void NetflowEdgeRequest::set_allocated_destip(::std::string* destip) {
   // @@protoc_insertion_point(field_set_allocated:sam.NetflowEdgeRequest.destIP)
 }
 
-// bool terminate = 3;
-inline void NetflowEdgeRequest::clear_terminate() {
-  terminate_ = false;
+// int32 returnNode = 3;
+inline void NetflowEdgeRequest::clear_returnnode() {
+  returnnode_ = 0;
 }
-inline bool NetflowEdgeRequest::terminate() const {
-  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.terminate)
-  return terminate_;
+inline ::google::protobuf::int32 NetflowEdgeRequest::returnnode() const {
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.returnNode)
+  return returnnode_;
 }
-inline void NetflowEdgeRequest::set_terminate(bool value) {
+inline void NetflowEdgeRequest::set_returnnode(::google::protobuf::int32 value) {
   
-  terminate_ = value;
-  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.terminate)
+  returnnode_ = value;
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.returnNode)
 }
 
 // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;

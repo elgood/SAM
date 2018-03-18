@@ -13,6 +13,14 @@
 
 namespace sam {
 
+class UtilException : public std::runtime_error {
+public:
+  UtilException(char const * message) : std::runtime_error(message) { } 
+  UtilException(std::string message) : std::runtime_error(message) { } 
+};
+
+
+
 /**
  * Generates a subtuple based on the provided index_sequence.
  */
@@ -204,10 +212,6 @@ zmq::message_t fillZmqMessage(std::string const& str)
 zmq::message_t emptyZmqMessage() {
   std::string str = "";
   zmq::message_t message = fillZmqMessage(str);
-  //zmq::message_t message(str.length() + 1);
-  //fillZmqMessage(str, 
-  //snprintf ((char *) message.data(), str.length() + 1,
-  //          "%s", str.c_str());
   return message;
 }
 
@@ -240,6 +244,59 @@ size_t get_end_index(size_t num_elements, size_t stream_id,
     num_elements;
  
 }
+
+inline
+void
+createPushSockets(
+    zmq::context_t* context,
+    size_t numNodes,
+    size_t nodeId,
+    std::vector<std::string>& hostnames,
+    std::vector<size_t>& ports,
+    std::vector<std::shared_ptr<zmq::socket_t>>& pushers,
+    uint32_t hwm)
+{
+  pushers.resize(numNodes);
+  for (int i = 0; i < numNodes; i++) 
+  {
+    if (i != nodeId) // never need to send stuff to itself
+    {
+      //printf("createpushsockets nodeId %lu %d\n", nodeId, i);
+      /////////// adding push sockets //////////////
+      auto pusher = std::shared_ptr<zmq::socket_t>(
+                      new zmq::socket_t(*context, ZMQ_PUSH));
+      //printf("createpushsockets nodeId %lu %d created socket\n", 
+      //        nodeId, i);
+
+      std::string ip = getIpString(hostnames[nodeId]);
+      std::string url = "";
+      url = "tcp://" + ip + ":";
+      try { 
+        url = url + boost::lexical_cast<std::string>(ports[i]);
+      } catch (std::exception e) {
+        throw UtilException(e.what());
+      }
+
+      // the function complains if you use std::size_t, so be sure to use the
+      // uint32_t class member for hwm.
+      try {
+        pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+      } catch (std::exception e) {
+        std::string message = std::string("problem setting push socket's send")+
+          std::string(" high water mark: ") + e.what();
+        throw UtilException(message);
+      }
+      //printf("createpushsockets nodeId %lu %d set socket option\n", 
+      //    nodeId, i);
+      pusher->bind(url);
+      //printf("createpushsockets nodeId %lu %d connect\n", nodeId, i);
+      pushers[i] = pusher;
+    } 
+  }
+}
+
+
+  
 
 
 }

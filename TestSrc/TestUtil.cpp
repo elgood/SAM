@@ -136,3 +136,25 @@ BOOST_AUTO_TEST_CASE( test_last_octet_hash_function )
   BOOST_CHECK_EQUAL(hash("192.168.0.255"), 255);
 
 }
+
+BOOST_AUTO_TEST_CASE( test_createpushsockets )
+{
+  zmq::context_t context(1);
+  std::vector<std::string> hostnames;
+  std::vector<size_t> ports;
+  std::vector<std::shared_ptr<zmq::socket_t>> pushers;
+
+  hostnames.push_back("localhost");
+  hostnames.push_back("localhost");
+  ports.push_back(10000);
+  ports.push_back(10001);
+
+  int hwm = 1000;
+
+  size_t numNodes = 2;
+  size_t nodeId = 0;
+
+  createPushSockets(&context, numNodes, nodeId, hostnames, ports, pushers, hwm);
+
+
+}

@@ -48,7 +48,8 @@ private:
   /// The zmq context
   //std::shared_ptr<zmq::context_t> context = 
   //  std::shared_ptr<zmq::context_t>(new zmq::context_t(1));
-  zmq::context_t* context = new zmq::context_t(1);
+  //zmq::context_t* context = new zmq::context_t(1);
+  zmq::context_t context = zmq::context_t(1);
 
   /// A vector of all the push sockets
   std::vector<std::shared_ptr<zmq::socket_t> > pushers;
@@ -136,7 +137,7 @@ ZeroMQPushPull::ZeroMQPushPull(
 
       /////////// Adding push sockets //////////////
       auto pusher = std::shared_ptr<zmq::socket_t>(
-                      new zmq::socket_t(*context, ZMQ_PUSH));
+                      new zmq::socket_t(context, ZMQ_PUSH));
 
       std::string ip = getIpString(hostnames[nodeId]);
       std::string url = "tcp://" + ip + ":";
@@ -207,7 +208,7 @@ ZeroMQPushPull::ZeroMQPushPull(
       if (i != this->nodeId)
       {
         // Creating the zmq pull socket.
-        zmq::socket_t* socket = new zmq::socket_t(*(this->context), ZMQ_PULL);
+        zmq::socket_t* socket = new zmq::socket_t((this->context), ZMQ_PULL);
         std::string ip = getIpString(this->hostnames[i]);
         std::string url = "";
         url = "tcp://" + ip + ":";

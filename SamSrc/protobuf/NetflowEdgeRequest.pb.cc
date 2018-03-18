@@ -93,7 +93,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   ~0u,  // no _weak_field_map_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, sourceip_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, destip_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, terminate_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, returnnode_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::sam::NetflowEdgeRequest, conditions_),
 };
 static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
@@ -128,16 +128,16 @@ void protobuf_RegisterTypes(const ::std::string&) {
 void AddDescriptorsImpl() {
   InitDefaults();
   static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-      "\n\030NetflowEdgeRequest.proto\022\003sam\"\321\001\n\022Netf"
+      "\n\030NetflowEdgeRequest.proto\022\003sam\"\322\001\n\022Netf"
       "lowEdgeRequest\022\020\n\010sourceIP\030\001 \001(\t\022\016\n\006dest"
-      "IP\030\002 \001(\t\022\021\n\tterminate\030\003 \001(\010\022\?\n\ncondition"
-      "s\030\004 \003(\0132+.sam.NetflowEdgeRequest.SimpleE"
-      "dgeCondition\032E\n\023SimpleEdgeCondition\022\r\n\005f"
-      "ield\030\001 \001(\t\022\020\n\010operator\030\002 \001(\t\022\r\n\005rside\030\003 "
-      "\001(\005b\006proto3"
+      "IP\030\002 \001(\t\022\022\n\nreturnNode\030\003 \001(\005\022\?\n\nconditio"
+      "ns\030\004 \003(\0132+.sam.NetflowEdgeRequest.Simple"
+      "EdgeCondition\032E\n\023SimpleEdgeCondition\022\r\n\005"
+      "field\030\001 \001(\t\022\020\n\010operator\030\002 \001(\t\022\r\n\005rside\030\003"
+      " \001(\005b\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 251);
+      descriptor, 252);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "NetflowEdgeRequest.proto", &protobuf_RegisterTypes);
 }
@@ -514,7 +514,7 @@ void NetflowEdgeRequest::InitAsDefaultInstance() {
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int NetflowEdgeRequest::kSourceIPFieldNumber;
 const int NetflowEdgeRequest::kDestIPFieldNumber;
-const int NetflowEdgeRequest::kTerminateFieldNumber;
+const int NetflowEdgeRequest::kReturnNodeFieldNumber;
 const int NetflowEdgeRequest::kConditionsFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
@@ -540,14 +540,14 @@ NetflowEdgeRequest::NetflowEdgeRequest(const NetflowEdgeRequest& from)
   if (from.destip().size() > 0) {
     destip_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.destip_);
   }
-  terminate_ = from.terminate_;
+  returnnode_ = from.returnnode_;
   // @@protoc_insertion_point(copy_constructor:sam.NetflowEdgeRequest)
 }
 
 void NetflowEdgeRequest::SharedCtor() {
   sourceip_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   destip_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  terminate_ = false;
+  returnnode_ = 0;
   _cached_size_ = 0;
 }
 
@@ -593,7 +593,7 @@ void NetflowEdgeRequest::Clear() {
   conditions_.Clear();
   sourceip_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   destip_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  terminate_ = false;
+  returnnode_ = 0;
   _internal_metadata_.Clear();
 }
 
@@ -639,14 +639,14 @@ bool NetflowEdgeRequest::MergePartialFromCodedStream(
         break;
       }
 
-      // bool terminate = 3;
+      // int32 returnNode = 3;
       case 3: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(24u /* 24 & 0xFF */)) {
 
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-                 input, &terminate_)));
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &returnnode_)));
         } else {
           goto handle_unusual;
         }
@@ -710,9 +710,9 @@ void NetflowEdgeRequest::SerializeWithCachedSizes(
       2, this->destip(), output);
   }
 
-  // bool terminate = 3;
-  if (this->terminate() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteBool(3, this->terminate(), output);
+  // int32 returnNode = 3;
+  if (this->returnnode() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(3, this->returnnode(), output);
   }
 
   // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
@@ -758,9 +758,9 @@ void NetflowEdgeRequest::SerializeWithCachedSizes(
         2, this->destip(), target);
   }
 
-  // bool terminate = 3;
-  if (this->terminate() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(3, this->terminate(), target);
+  // int32 returnNode = 3;
+  if (this->returnnode() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(3, this->returnnode(), target);
   }
 
   // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
@@ -813,9 +813,11 @@ size_t NetflowEdgeRequest::ByteSizeLong() const {
         this->destip());
   }
 
-  // bool terminate = 3;
-  if (this->terminate() != 0) {
-    total_size += 1 + 1;
+  // int32 returnNode = 3;
+  if (this->returnnode() != 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::Int32Size(
+        this->returnnode());
   }
 
   int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
@@ -856,8 +858,8 @@ void NetflowEdgeRequest::MergeFrom(const NetflowEdgeRequest& from) {
 
     destip_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.destip_);
   }
-  if (from.terminate() != 0) {
-    set_terminate(from.terminate());
+  if (from.returnnode() != 0) {
+    set_returnnode(from.returnnode());
   }
 }
 
@@ -888,7 +890,7 @@ void NetflowEdgeRequest::InternalSwap(NetflowEdgeRequest* other) {
   conditions_.InternalSwap(&other->conditions_);
   sourceip_.Swap(&other->sourceip_);
   destip_.Swap(&other->destip_);
-  swap(terminate_, other->terminate_);
+  swap(returnnode_, other->returnnode_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_cached_size_, other->_cached_size_);
 }

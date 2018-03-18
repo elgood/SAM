@@ -15,15 +15,12 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
                    StringEqualityFunction, StringEqualityFunction>
         GraphStoreType;
 
+typedef GraphStoreType::EdgeRequestType EdgeRequestType;
+
 BOOST_AUTO_TEST_CASE( test_graph_store )
 {
   /// In this test we create a graphstore on two nodes (both local addresses).
   ///
-  int major, minor, patch;
-  zmq_version(&major, &minor, &patch);
-  std::cout << "ZMQ Version " << major << " " << minor << " " << patch 
-            << std::endl;
-
   size_t numNodes = 2;
   size_t nodeId0 = 0;
   size_t nodeId1 = 1;
@@ -54,13 +51,12 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
                           hwm, graphCapacity, 
                           tableCapacity, resultsCapacity, timeWindow); 
 
-
   // One thread runs this.
   auto graph_function0 = [graphStore0, n]()
                           
   {
     AbstractNetflowGenerator *generator0 = 
-      new UniformDestPort("192.168.0.1", 1);
+      new UniformDestPort("192.168.0.0", 1);
     
     for (int i = 0; i < n; i++) {
       std::string str = generator0->generate();
@@ -84,7 +80,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
                           
   {
     AbstractNetflowGenerator *generator1 = 
-      new UniformDestPort("192.168.0.2", 1);
+      new UniformDestPort("192.168.0.1", 1);
     
     for (int i = 0; i < n; i++) {
       std::string str = generator1->generate();
@@ -103,11 +99,29 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   thread0.join();
   thread1.join();
 
-  BOOST_CHECK_EQUAL(graphStore1->getTuplesReceived(), n);
+  // There is no query that forces communication, so the number of received
+  // tuples over zeromq should be zero.
+  BOOST_CHECK_EQUAL(graphStore0->getTuplesReceived(), 0);
+  BOOST_CHECK_EQUAL(graphStore1->getTuplesReceived(), 0);
 }
 
 
 struct SingleNodeFixture  {
+
+  size_t numNodes = 1;
+  size_t nodeId0 = 0;
+  size_t hwm = 1000;
+  size_t graphCapacity = 1000; //For csc and csr
+  size_t tableCapacity = 1000; //For SubgraphQueryResultMap results
+  size_t resultsCapacity = 1000; //For final results
+  double timeWindow = 100;
+
+
+  std::vector<std::string> requestHostnames;
+  std::vector<size_t> requestPorts;
+  std::vector<std::string> edgeHostnames;
+  std::vector<size_t> edgePorts;
+
   EdgeFunction starttimeFunction = EdgeFunction::StartTime;
   EdgeFunction endtimeFunction = EdgeFunction::EndTime;
   EdgeOperator equal_edge_operator = EdgeOperator::Assignment;
@@ -137,18 +151,6 @@ struct SingleNodeFixture  {
     generator = new UniformDestPort("192.168.0.2", 1);
 
 
-    size_t numNodes = 1;
-    size_t nodeId0 = 0;
-    std::vector<std::string> requestHostnames;
-    std::vector<size_t> requestPorts;
-    std::vector<std::string> edgeHostnames;
-    std::vector<size_t> edgePorts;
-    size_t hwm = 1000;
-    size_t graphCapacity = 1000; //For csc and csr
-    size_t tableCapacity = 1000; //For SubgraphQueryResultMap results
-    size_t resultsCapacity = 1000; //For final results
-    double timeWindow = 100;
-
     requestHostnames.push_back("localhost");
     requestPorts.push_back(10000);
     edgeHostnames.push_back("localhost");
@@ -168,10 +170,11 @@ struct SingleNodeFixture  {
     delete z2x;
     delete startY2Xboth;
     delete startZ2Xbeg;
-    //delete graphStore0;
     delete generator;
+    delete graphStore0;
   }
 };
+
 
 ///
 /// In this test the query is simply an edge such that every edge
@@ -179,7 +182,6 @@ struct SingleNodeFixture  {
 ///
 BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
 {
-
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
   query.addExpression(*startY2Xboth);
@@ -201,7 +203,17 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
   }
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), n);
+
+  graphStore0->terminate();
+
 }
+
+BOOST_FIXTURE_TEST_CASE( test_double_terminate, SingleNodeFixture )
+{
+  graphStore0->terminate();
+  graphStore0->terminate();
+}
+
 
 ///
 /// In this test the query is simply an edge such but the time constraints
@@ -209,7 +221,6 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
 ///
 BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
 {
-
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
   TimeEdgeExpression endTimeExpressionE1(endtimeFunction, e1, 
@@ -234,6 +245,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), 0);
  
 }
+
 
 ///
 /// In this test the query is two connected edges.
@@ -264,6 +276,5 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), (n-1)*(n)/2);
  
 }
-
 
 

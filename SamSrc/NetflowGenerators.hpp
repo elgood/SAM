@@ -56,6 +56,7 @@ public:
   virtual std::string generate() = 0;
 };
 
+
 /**
  * Evenly spreads out the traffic to one IP along n destination ports.
  * The strings generated are in VAST csv form.  There is no SamGenerateId
@@ -119,9 +120,17 @@ class OnePairSizeDist : public AbstractNetflowGenerator
 {
 private:
   std::random_device rd;
+
+  /// This is a particular type of random generator.  Mersenne Twister with
+  /// a state size of 19937 bits.
   std::mt19937 gen;
+
+  /// The destination IP for all generated netflows.
   std::string destIp;
+
+  /// The source IP for all generate netflows.
   std::string sourceIp;  
+  
   double meanDestFlow;
   double meanSourceFlow;
   double devDestFlow;
