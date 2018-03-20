@@ -80,6 +80,7 @@ BOOST_AUTO_TEST_CASE( test_netflow_conversion )
  */
 BOOST_AUTO_TEST_CASE( test_uniform_dest_port )
 {
+  // Creating a UniformDestPort generator with just one port.
   std::string destIp = "192.168.0.1";
   int numPorts = 1;
   UniformDestPort generator1(destIp, numPorts);
@@ -102,11 +103,16 @@ BOOST_AUTO_TEST_CASE( test_uniform_dest_port )
     portCounts[destPort]++;
   }
 
+  // This generator distributes the netflows evenly to all ports, so
+  // for any port, the ratio of count(port)/numIters should be equal
+  // to 1/numPorts.
   for ( auto p : portCounts ) {
     BOOST_CHECK_EQUAL( static_cast<double>(p.second) / numIters,
                        static_cast<double>(1) / numPorts);
   }
 
+  // Now we create a generator with 3 ports.  For some reason we do this
+  // j times. Perhaps just for the fun of it.
   for(int j = 0; j < 10; j++) {
     numPorts = 3;
     UniformDestPort generator2(destIp, numPorts);
@@ -126,11 +132,33 @@ BOOST_AUTO_TEST_CASE( test_uniform_dest_port )
     }
   }
 }
+/**
+ * Tests the UniformDestPort netflow generator using the generate(double)
+ * function that allows you to specify the time of the generated netflow.
+ */
+BOOST_AUTO_TEST_CASE( test_uniform_dest_port_set_time )
+{
+  std::string destIp = "192.168.0.1";
+  int numPorts = 1;
+  UniformDestPort generator1(destIp, numPorts);
+  int numIters = 100;
+  double time = 0.6;
+  double increment = 0.000001;
+
+  for(int i = 0; i < numIters; i++) {
+    std::string netflowStr = generator1.generate(time);
+    Netflow netflow = makeNetflow(i, netflowStr);
+    BOOST_CHECK_EQUAL(std::get<TimeSeconds>(netflow), time);
+    time = time + increment;
+  }
+
+}
+
 
 /**
- * Tests the OnePairSizeDist netflow generator.
- */
-BOOST_AUTO_TEST_CASE( test_one_pair_size_dist )
+ * A common fixture used for the OnePairSizeDist tests.
+ */ 
+struct OnePairFixture
 {
   std::string destIp   = "192.168.0.1";
   std::string sourceIp = "192.186.0.2";
@@ -138,17 +166,33 @@ BOOST_AUTO_TEST_CASE( test_one_pair_size_dist )
   double meanSourceFlowSize = 50.0;
   double devDestFlowSize    = 2.0;
   double devSourceFlowSize  = 3.0;
-
-  OnePairSizeDist generator(destIp, sourceIp, 
-                               meanDestFlowSize, meanSourceFlowSize,
-                               devDestFlowSize, devSourceFlowSize);
-
-  int numIter = 100000;
+  OnePairSizeDist* generator;
   std::vector<double> destFlowSizes;
   std::vector<double> sourceFlowSizes;
+
+  OnePairFixture()
+  {
+    generator = new OnePairSizeDist(destIp, sourceIp, 
+                               meanDestFlowSize, meanSourceFlowSize,
+                               devDestFlowSize, devSourceFlowSize);
+  }
+
+  ~OnePairFixture()
+  {
+    delete generator;
+  }
+};
+
+/**
+ * Tests the OnePairSizeDist netflow generator.
+ */
+BOOST_FIXTURE_TEST_CASE( test_one_pair_size_dist, OnePairFixture )
+{
+  int numIter = 100000;
   for(int i = 0; i < numIter; i++) 
   {
-    std::string netflowString = generator.generate();
+    std::string netflowString = generator->generate();
+    // i is the sam generated id
     Netflow netflow = makeNetflow(i, netflowString); 
     destFlowSizes.push_back(std::get<DestPayloadBytes>(netflow)); 
     sourceFlowSizes.push_back(std::get<SrcPayloadBytes>(netflow));
@@ -164,5 +208,20 @@ BOOST_AUTO_TEST_CASE( test_one_pair_size_dist )
   BOOST_CHECK_CLOSE(d1, devDestFlowSize, 5);
   BOOST_CHECK_CLOSE(d2, devSourceFlowSize, 5);
 
+}
+
+BOOST_FIXTURE_TEST_CASE( test_specify_time_one_pair, OnePairFixture )
+{
+  int numIter = 100;
+  double time = 0.5;
+  double increment = 0.333;
+  for(int i = 0; i < numIter; i++) 
+  {
+    std::string netflowString = generator->generate(time);
+    Netflow netflow = makeNetflow(i, netflowString); 
+    double netflowTime = std::get<TimeSeconds>(netflow);
+    BOOST_CHECK_EQUAL(netflowTime, time);
+    time = time + increment;
+  }
 }
 
