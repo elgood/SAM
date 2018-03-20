@@ -53,8 +53,27 @@ class AbstractNetflowGenerator {
 public:
   AbstractNetflowGenerator() {}
   virtual ~AbstractNetflowGenerator() {}
-  virtual std::string generate() = 0;
+
+  /**
+   * Generates a netflow formatted as a string.
+   * Unless this function is overridden The time is taken from the system clock.
+   * \return Returns a netflow as a string.
+   */
+  virtual std::string generate();
+
+  /**
+   * This function allows you to specify the time of the generated netflow.
+   * \param epochTime The time in seconds since the epoch. 
+   */
+  virtual std::string generate(double epochTime) = 0;
 };
+
+inline  
+std::string AbstractNetflowGenerator::generate()
+{
+  double epochTime = boost::lexical_cast<double>(secondsSinceEpoch());
+  return generate(epochTime);
+}
 
 
 /**
@@ -84,10 +103,14 @@ public:
     delete[] ports;
   }
 
-  std::string generate() 
+  std::string generate() {
+    return AbstractNetflowGenerator::generate();
+  }
+
+  std::string generate(double epochTime) 
   {
     std::string result;
-    result = secondsSinceEpoch() + ",";
+    result = boost::lexical_cast<std::string>(epochTime) + ",";
     result = result + "parseDate,dateTimeStr,ipLayerProtocol,";
     result = result + "ipLayerProtocolCode," + generateRandomIp() + ",";
     result = result + destIp + ",";
@@ -167,14 +190,19 @@ public:
   ~OnePairSizeDist() {
   }
 
-  std::string generate()
+  std::string generate() {
+    return AbstractNetflowGenerator::generate();
+  }
+
+
+  std::string generate(double epochTime)
   {
     int destPayloadBytes = static_cast<int>(destDist(gen));
     int sourcePayloadBytes = static_cast<int>(sourceDist(gen));
     int destTotalBytes = destPayloadBytes + 10;
     int sourceTotalBytes = sourcePayloadBytes + 10;
     std::string result;
-    result = secondsSinceEpoch() + ",";
+    result = boost::lexical_cast<std::string>(epochTime) + ",";
     result = result + "parseDate,dateTimeStr,ipLayerProtocol,";
     result = result + "ipLayerProtocolCode," + generateRandomIp() + ",";
     result = result + destIp + ",";
