@@ -172,7 +172,7 @@ struct OnePairFixture
 
   OnePairFixture()
   {
-    generator = new OnePairSizeDist(destIp, sourceIp, 
+    generator = new OnePairSizeDist(sourceIp, destIp, 
                                meanDestFlowSize, meanSourceFlowSize,
                                devDestFlowSize, devSourceFlowSize);
   }

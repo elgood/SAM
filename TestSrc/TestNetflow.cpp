@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflow )
 
   Netflow netflow = makeNetflow(s);
   BOOST_CHECK_EQUAL(45, std::get<SamGeneratedId>(netflow));
-  BOOST_CHECK_EQUAL(1, std::get<Label>(netflow));
+  BOOST_CHECK_EQUAL(1, std::get<SamLabel>(netflow));
   checkCommon(netflow);
 
 }
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflowWithoutLabel )
   Netflow netflow = makeNetflowWithoutLabel(generatedId, DEFAULT_LABEL, s);
  
   BOOST_CHECK_EQUAL(generatedId, std::get<SamGeneratedId>(netflow));
-  BOOST_CHECK_EQUAL(DEFAULT_LABEL, std::get<Label>(netflow));
+  BOOST_CHECK_EQUAL(DEFAULT_LABEL, std::get<SamLabel>(netflow));
   checkCommon(netflow);
 
 }
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflowWithLabel )
   int generatedId = 25;
   Netflow netflow = makeNetflowWithLabel(generatedId, s);
   
-  BOOST_CHECK_EQUAL(1, std::get<Label>(netflow)); 
+  BOOST_CHECK_EQUAL(1, std::get<SamLabel>(netflow)); 
   BOOST_CHECK_EQUAL(generatedId, std::get<SamGeneratedId>(netflow));
   checkCommon(netflow);
 }
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflow_noLabel )
   Netflow netflow = makeNetflow(generatedId, s);
  
    
-  BOOST_CHECK_EQUAL(DEFAULT_LABEL, std::get<Label>(netflow)); 
+  BOOST_CHECK_EQUAL(DEFAULT_LABEL, std::get<SamLabel>(netflow)); 
   BOOST_CHECK_EQUAL(generatedId, std::get<SamGeneratedId>(netflow));
   checkCommon(netflow);
 
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflow_withLabel )
   Netflow netflow = makeNetflow(generatedId, s);
  
    
-  BOOST_CHECK_EQUAL(1, std::get<Label>(netflow)); 
+  BOOST_CHECK_EQUAL(1, std::get<SamLabel>(netflow)); 
   BOOST_CHECK_EQUAL(generatedId, std::get<SamGeneratedId>(netflow));
   checkCommon(netflow);
 

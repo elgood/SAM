@@ -56,6 +56,7 @@ public:
           ResultType;
 
   typedef EdgeRequest<TupleType, source, target> EdgeRequestType;
+  typedef EdgeRequest<TupleType, target, source> CscEdgeRequestType;
 
   typedef EdgeRequestMap<TupleType, source, target, SourceHF, TargetHF,
     SourceEF, TargetEF> RequestMapType;
@@ -96,6 +97,7 @@ private:
   std::vector<std::shared_ptr<zmq::socket_t>> requestPushers;
 
   /// The push sockets in charge of pushing edges to other nodes.
+  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers;
   
   /// The thread that polls the request pull sockets.
   std::thread requestPullThread;
@@ -127,17 +129,8 @@ private:
    */
   void deleteEdges();
 
-  void processRequestAgainstGraph(EdgeRequestType const& edgeRequest) {
-    throw GraphStoreException("processRequestAgainstGraph Not implemented");
-  } 
+  void processRequestAgainstGraph(EdgeRequestType const& edgeRequest);
   
-  //void createPushSockets(
-  //  std::vector<std::string>& hostnames,
-  //  std::vector<size_t>& ports,
-  //  std::vector<std::shared_ptr<zmq::socket_t>>& pushers,
-  //  uint32_t hwm);
-
-
   /**
    * This goes through the list of new edge requests and sends them out to
    * the appropriate nodes.
@@ -219,6 +212,10 @@ public:
   void checkSubgraphQueries(TupleType const& tuple,
                             std::list<EdgeRequestType>& edgeRequests);
 
+  /**
+   * Returns how many tuples the graph store has received, either through
+   * consume or through edge requests.
+   */
   inline size_t getTuplesReceived() { return tuplesReceived; }
 
   uint64_t getNumResults() const { return resultMap->getNumResults(); }
@@ -268,6 +265,8 @@ checkSubgraphQueries(TupleType const& tuple,
   for (QueryType const& query : queries) {
     if (query.satisfies(tuple, 0, startTime)) {
       ResultType queryResult(&query, tuple);
+      printf("GraphStore adding queryResult %s\n", 
+        queryResult.toString().c_str());
       resultMap->add(queryResult,
                      edgeRequests);  
     }
@@ -288,7 +287,9 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
 {
+  printf("processEdgeRequests()\n");
   for(auto edgeRequest : edgeRequests) {
+    printf("edgeRequest %s\n", edgeRequest.toString().c_str());
 
     if (isNull(edgeRequest.getTarget()) && isNull(edgeRequest.getSource()))
     {
@@ -299,16 +300,16 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
     else 
     if (!isNull(edgeRequest.getTarget()) && isNull(edgeRequest.getSource()))
     {
-      //If the source is not null but the target is, we send the edge request
-      //to whomever owns the source.
-      sendMessageToSource(edgeRequest);
+      //If the target is not null but the source is, we send the edge request
+      //to whomever owns the target.
+      sendMessageToTarget(edgeRequest);
     }
     else 
     if (isNull(edgeRequest.getTarget()) && !isNull(edgeRequest.getSource()))
     {
-      //If the target is not null but the source is, we send the edge request
-      //to whomever owns the target.
-      sendMessageToTarget(edgeRequest);
+      //If the source is not null but the target is, we send the edge request
+      //to whomever owns the source.
+      sendMessageToSource(edgeRequest);
     }
     else 
     if (!isNull(edgeRequest.getTarget()) && !isNull(edgeRequest.getSource()))
@@ -326,6 +327,7 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
       }
     }
   }
+  printf("end of processEdgeRequests\n");
 }
 
 template <typename TupleType, typename Tuplizer, 
@@ -386,7 +388,7 @@ consume(TupleType const& tuple)
   // elsewhere.
   std::list<EdgeRequestType> edgeRequests;
   resultMap->process(tuple, edgeRequests);
-  //printf("processed tuple\n");
+  printf("resultMap->processed tuple in GraphStore::consume()\n");
 
   // Send out the edge requests to the other nodes.
   processEdgeRequests(edgeRequests);
@@ -394,7 +396,7 @@ consume(TupleType const& tuple)
 
   // See if anybody needs this tuple and send it out to them.
   edgeRequestMap->process(tuple);
-  //printf("request map process tuple\n");
+  printf("edge request map processed tuple\n");
 
   // Check against all registered queries
   checkSubgraphQueries(tuple, edgeRequests);
@@ -470,9 +472,12 @@ GraphStore(std::size_t numNodes,
 
   // Resizing the push socket vectors to be the size of numNodes
   requestPushers.resize(numNodes);
+  edgePushers.resize(numNodes);
 
   createPushSockets(&context, numNodes, nodeId, requestHostnames, requestPorts,
                     requestPushers, hwm);
+  createPushSockets(&context, numNodes, nodeId, edgeHostnames, edgePorts,
+                    edgePushers, hwm);
 
   /// The requestPullFunction is responsible for polling all the edge request
   /// pull sockets.
@@ -503,7 +508,9 @@ GraphStore(std::size_t numNodes,
           url = url + boost::lexical_cast<std::string>(
                               requestPorts[this->nodeId]);
         } catch (std::exception e) {
-          throw GraphStoreException(e.what());
+          std::string message = "Trouble with lexical cast:" + 
+            std::string(e.what());
+          throw GraphStoreException(message);
         }
 
         try {
@@ -593,7 +600,8 @@ GraphStore(std::size_t numNodes,
         try {
           url = url + boost::lexical_cast<std::string>(edgePorts[this->nodeId]);
         } catch (std::exception e) {
-          throw GraphStoreException(e.what());
+          std::string message = "Trouble lexical_cast: " +std::string(e.what());
+          throw GraphStoreException(message);
         }
         socket->connect(url);
         sockets.push_back(socket);
@@ -650,7 +658,53 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   terminate();
 }
 
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+void
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
+{
+  if (isNull(edgeRequest.getStartTime())) {
+    std::string message = "Tried to process an edge request that doesn't" 
+      " have the start time defined: " + edgeRequest.toString();
+    throw GraphStoreException(message);
+  }
+  if (isNull(edgeRequest.getStopTime())) {
+    std::string message = "Tried to process an edge request that doesn't"
+      " have the stop time defined: " + edgeRequest.toString();
+    throw GraphStoreException(message);
+  }
+  SourceType src = edgeRequest.getSource();
+  TargetType trg = edgeRequest.getTarget();
+  std::list<TupleType> foundEdges;
+  if (!isNull(src) && isNull(trg)) {
+    // The source is not null, so we look up the edges in the compressed
+    // sparse row graph
+    csr->findEdges(edgeRequest, foundEdges);
 
+  } else if (isNull(src) && !isNull(trg)) {
+    // The target is not null, so we look up by the target using the 
+    // compressed sparse column graph.  
+    csc->findEdges(edgeRequest, foundEdges);
+
+  } else if (!isNull(src) && !isNull(trg)) {
+    // Doesn't matter which one we look up, so look it up in csr
+    csr->findEdges(edgeRequest, foundEdges);
+  } else {
+    throw GraphStoreException("Tried to process an edge request but both " 
+      "the source and target were null");
+  }
+
+  size_t node = edgeRequest.getReturn();
+  for (auto edge : foundEdges) {
+    zmq::message_t message = tupleToZmq(edge);
+    edgePushers[node]->send(message);     
+  }
+}
 
 } // end namespace sam
 

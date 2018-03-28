@@ -158,7 +158,8 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 add(QueryResultType const& result, std::list<EdgeRequestType>& edgeRequests)
 {
-  //std::cout << "Adding new intermediate result " << std::endl;
+  printf("SubgraphQueryResultMap::add edge request size %lu\n", 
+    edgeRequests.size());
   if (!result.complete()) {
     //std::cout << "The result is not complete " << std::endl;
 
@@ -167,15 +168,23 @@ add(QueryResultType const& result, std::list<EdgeRequestType>& edgeRequests)
     size_t newIndex = result.hash(sourceHash, targetHash,
                                   edgeRequests, nodeId, numNodes) 
                                   % tableCapacity;
+    std::string requestString = "";
+    for(auto request : edgeRequests) {
+      requestString += request.toString() + "\n";
+    }
+    printf("SubgraphQueryResultMap::add result %s edgeRequests.size() %lu edge requests %s\n",result.toString().c_str(), edgeRequests.size(), requestString.c_str());
+            
     mutexes[newIndex].lock();
     alr[newIndex].push_back(result);
     mutexes[newIndex].unlock(); 
   } else {
+    printf("Complete query!\n");
     //std::cout << "The result is complete " << std::endl;
     size_t index = numQueryResults.fetch_add(1);
     index = index % resultCapacity;
     queryResults[index] = result;     
   }
+  printf("Exiting subgraphqueryresultmap::add\n");
 }
 
 
@@ -193,6 +202,7 @@ process(TupleType const& tuple,
   processSource(tuple, edgeRequests);
   processTarget(tuple, edgeRequests);
   processSourceTarget(tuple, edgeRequests);
+  printf("at end of SubgraphQueryResultMap::process()\n");
 }
 
 
@@ -235,7 +245,9 @@ processSource(TupleType const& tuple,
   mutexes[index].unlock();
 
   for (auto l : rehash) {
+    printf("Adding source\n");
     add(l, edgeRequests);
+    printf("Added source\n");
   }
 }
 
@@ -270,7 +282,9 @@ processTarget(TupleType const& tuple,
   mutexes[index].unlock();
 
   for (auto l : rehash) {
+    printf("Adding target\n");
     add(l, edgeRequests);
+    printf("Added target\n");
   }
     
 }
@@ -307,7 +321,9 @@ processSourceTarget(TupleType const& tuple,
   mutexes[index].unlock();
 
   for (auto l : rehash) {
+    printf("Adding sourcetarget\n");
     add(l, edgeRequests);
+    printf("Added sourcetarget\n");
   }
 }
 

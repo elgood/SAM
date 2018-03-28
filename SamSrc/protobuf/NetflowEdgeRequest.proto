@@ -5,7 +5,9 @@ package sam;
 message NetflowEdgeRequest {
   string sourceIP = 1;
   string destIP = 2;
-  int32  returnNode = 3; // Where to send edges back to.
+  double startTime = 3;
+  double stopTime = 4;
+  uint32  returnNode = 5; // Where to send edges back to.
   
   message SimpleEdgeCondition {
     string field = 1;
@@ -13,5 +15,5 @@ message NetflowEdgeRequest {
     int32 rside = 3;
   }
    
-  repeated SimpleEdgeCondition conditions = 4;
+  repeated SimpleEdgeCondition conditions = 6;
 }

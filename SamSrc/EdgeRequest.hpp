@@ -17,6 +17,10 @@ public:
     std::runtime_error(message) {}
 };
 
+/**
+ * This class doesn't really function.  The real EdgeRequests are 
+ * defined in specializations.
+ */
 template <typename TupleType, size_t source, size_t target>
 class EdgeRequest
 {
@@ -28,13 +32,22 @@ public:
 
   void setSource(SourceType src) {}
 
+  double setStartTime(double startTime) { }
+
   TargetType getTarget() const { return nullValue<TargetType>(); }
 
   SourceType getSource() const { return nullValue<SourceType>(); }
 
+  double getStartTime() const { return nullValue<double>(); }
+
   zmq::message_t toZmqMessage() const { return emptyZmqMessage(); }
 };
 
+
+/**
+ * EdgeRequest class for Netflows using SourceIp and DestIp as the
+ * source and target, repsectively.  It uses the generated google protobuf. 
+ */
 template <>
 class EdgeRequest<Netflow, SourceIp, DestIp>
 {
@@ -44,42 +57,44 @@ public:
   
 private:
   NetflowEdgeRequest request;
+
 public:
+  /**
+   * Default constructor.  All fields are set to the null value for each type.
+   */
   EdgeRequest() {
+    request.set_sourceip(nullValue<SourceType>());
+    request.set_destip(nullValue<TargetType>());
+    request.set_starttime(nullValue<double>());
+    request.set_stoptime(nullValue<double>());
+    request.set_returnnode(nullValue<uint32_t>());
+  }
+
+  EdgeRequest(std::string str) { request.ParseFromString(str); }
+
+  /////////// Set methods //////////////////
+  void setTarget(TargetType target) { request.set_destip(target); }
+  void setSource(SourceType source) { request.set_sourceip(source); }
+  void setStartTime(double startTime) { request.set_starttime(startTime); }
+  void setStopTime(double stopTime) { request.set_stoptime(stopTime); }
+
+  /**
+   * Sets to which node any edges that fulfill this edge request should be 
+   * sent to.
+   */
+  void setReturn(int id) { request.set_returnnode(id); }
     
-  }
-
-  EdgeRequest(std::string str) {
-    request.ParseFromString(str);
-  }
-
-  void setTarget(TargetType target) {
-    request.set_destip(target);
-  }
-
-  void setSource(SourceType source) {
-    request.set_sourceip(source);
-  }
-
-  TargetType getTarget() const {
-    return request.destip();
-  }
-
-  TargetType getSource() const {
-    return request.sourceip();
-  }
+  // Get Methods
+  TargetType getTarget() const { return request.destip(); }
+  TargetType getSource() const { return request.sourceip(); }
+  double getStartTime() const { return request.starttime(); }
+  double getStopTime() const { return request.stoptime(); }
 
   /**
    * Gets the node id of where this edge should be returned.
    */
-  int getReturn() const {
-    return request.returnnode();
-  }
-
-  void setReturn(int id) { 
-    request.set_returnnode(id);
-  }
-
+  uint32_t getReturn() const { return request.returnnode(); }
+    
   /**
    * Transforms this edge request into a zmq message that can be sent
    * along a socket.
@@ -103,7 +118,6 @@ public:
   }
 
 };
-
 
 }
 

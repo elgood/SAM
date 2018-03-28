@@ -173,7 +173,7 @@ public:
    * \param devSource The standard deviation of flow size from 
    *                  source/client.
    */
-  OnePairSizeDist(std::string destIp, std::string sourceIp,
+  OnePairSizeDist(std::string sourceIp, std::string destIp,
                       double meanDestFlow, double meanSourceFlow,
                       double devDestFlow, double devSourceFlow)
   {
@@ -204,7 +204,7 @@ public:
     std::string result;
     result = boost::lexical_cast<std::string>(epochTime) + ",";
     result = result + "parseDate,dateTimeStr,ipLayerProtocol,";
-    result = result + "ipLayerProtocolCode," + generateRandomIp() + ",";
+    result = result + "ipLayerProtocolCode," + sourceIp + ",";
     result = result + destIp + ",";
     result = result + boost::lexical_cast<std::string>(generateRandomPort());
     result = result + ",";

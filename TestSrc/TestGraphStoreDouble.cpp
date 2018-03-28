@@ -9,9 +9,31 @@
 
 using namespace sam;
 
+/**
+ * Manufactured hash function that sends 192.168.0.1 and 192.168.0.2
+ * to node 0 and 192.168.0.3 and 192.168.0.4 to node 1.
+ */
+class OneTwoThreeFourHashFunction
+{
+public:
+  inline
+  uint64_t operator()(std::string const& s) const {
+    size_t index = s.find_last_of(".");
+    printf("blah %s %s\n", s.c_str(), s.substr(index+1).c_str());
+    size_t lastOctet = boost::lexical_cast<size_t>(s.substr(index + 1));
+    if (lastOctet == 1 | lastOctet == 2) {
+      return 0; 
+    } else
+    if (lastOctet == 3 | lastOctet == 4) {
+      return 1; 
+    } 
+    return lastOctet;
+  }
+};
+
 typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp, 
                    TimeSeconds, DurationSeconds, 
-                   StringHashFunction, StringHashFunction, 
+                   OneTwoThreeFourHashFunction, OneTwoThreeFourHashFunction, 
                    StringEqualityFunction, StringEqualityFunction>
         GraphStoreType;
 
@@ -54,7 +76,6 @@ struct DoubleNodeFixture  {
   AbstractNetflowGenerator *generator0;
   AbstractNetflowGenerator *generator1;
    
-
   DoubleNodeFixture () {
     y2x = new EdgeExpression(nodey, e1, nodex);
     z2x = new EdgeExpression(nodez, e2, nodex);
@@ -106,7 +127,7 @@ struct DoubleNodeFixture  {
 /// This tests matching a single edge across two nodes.  This doesn't
 /// test the communication of edge requests since each node can
 /// process an edge by itself.
-BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
+/*BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 {
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   query.addExpression(*startY2Xboth);
@@ -138,7 +159,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 
   BOOST_CHECK_EQUAL(n, graphStore0->getNumResults());
   BOOST_CHECK_EQUAL(n, graphStore1->getNumResults());
-}
+}*/
 
 ///
 /// This test creates a two graphstores and we send each graphstore
@@ -207,29 +228,57 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   graphStore0->registerQuery(query);
   graphStore1->registerQuery(query);
 
-  int n = 0;
+  int n = 2;
   
-  auto graphFunction = [](GraphStoreType* graphStore,
+  auto graphFunction0 = [](GraphStoreType* graphStore,
     int n, AbstractNetflowGenerator* generator)
     
   {
+    double time = 0.0;
+   
+    std::string netflowString = "1,1,1.5,2013-04-10 08:32:36,"
+                             "20130410083236.384094,17,UDP,192.168.0.2,"
+                             "192.168.0.3,29986,1900,0,0,0,133,0,1,0,1,0,0";    
+    Netflow netflow = makeNetflow(netflowString);
+
     for (int i = 0; i < n; i++) {
-      std::string str = generator->generate();
-      Netflow n = makeNetflow(0, str);
+      std::string str = generator->generate(time);
+      Netflow n = makeNetflow(i, str);
       graphStore->consume(n);
+      time = time + 1.0;
+      if (i == 1) {
+        graphStore->consume(netflow);
+      }
     }
     graphStore->terminate();
 
   };
 
-  std::thread thread0(graphFunction, graphStore0, n, onePairGenerator0);
-  std::thread thread1(graphFunction, graphStore1, n, onePairGenerator1);
+  auto graphFunction1 = [](GraphStoreType* graphStore,
+    int n, AbstractNetflowGenerator* generator)
+    
+  {
+    double time = 0.0;
+    for (int i = 0; i < n; i++) {
+      std::string str = generator->generate(time);
+      Netflow n = makeNetflow(i, str);
+      graphStore->consume(n);
+      time = time + 1.0;
+    }
+    graphStore->terminate();
+
+  };
+
+
+  std::thread thread0(graphFunction0, graphStore0, n, onePairGenerator0);
+  std::thread thread1(graphFunction1, graphStore1, n, onePairGenerator1);
 
   thread0.join();
   thread1.join();
 
-  BOOST_CHECK_EQUAL(0, graphStore0->getNumResults());
-  BOOST_CHECK_EQUAL(0, graphStore1->getNumResults());
+  size_t totalResults = graphStore0->getNumResults() + 
+                        graphStore1->getNumResults();
+  BOOST_CHECK_EQUAL(1, totalResults);
 
   delete onePairGenerator0;
   delete onePairGenerator1;

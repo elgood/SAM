@@ -2,7 +2,7 @@
 #define NETFLOW_HPP
 
 #define SamGeneratedId                0 
-#define Label                         1 
+#define SamLabel                      1 
 #define TimeSeconds                   2
 #define ParseDate                     3
 #define DateTime                      4

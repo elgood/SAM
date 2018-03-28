@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE( test_sample )
     // Get the label
     // Doesn't really need a key, but provide one anyway to the template.
     std::string identifier = "identity";
-    auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
+    auto label = std::make_shared<Identity<Netflow, SamLabel, DestIp>>
     //auto label = new Identity<Netflow, Label, DestIp>
                 (nodeId, featureMap, identifier);
     receiver->registerConsumer(label);

@@ -60,7 +60,7 @@ void createPipeline(
   string identifier = "label";
 
   // Doesn't really need a key, but provide one anyway to the template.
-  auto label = std::make_shared<Identity<Netflow, Label, DestIp>>
+  auto label = std::make_shared<Identity<Netflow, SamLabel, DestIp>>
                 (nodeId, featureMap, identifier);
   if (readCSV != NULL) {
     readCSV->registerConsumer(label);

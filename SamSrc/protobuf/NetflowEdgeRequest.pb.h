@@ -276,10 +276,10 @@ class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insert
 
   // accessors -------------------------------------------------------
 
-  // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
+  // repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 6;
   int conditions_size() const;
   void clear_conditions();
-  static const int kConditionsFieldNumber = 4;
+  static const int kConditionsFieldNumber = 6;
   const ::sam::NetflowEdgeRequest_SimpleEdgeCondition& conditions(int index) const;
   ::sam::NetflowEdgeRequest_SimpleEdgeCondition* mutable_conditions(int index);
   ::sam::NetflowEdgeRequest_SimpleEdgeCondition* add_conditions();
@@ -316,11 +316,23 @@ class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insert
   ::std::string* release_destip();
   void set_allocated_destip(::std::string* destip);
 
-  // int32 returnNode = 3;
+  // double startTime = 3;
+  void clear_starttime();
+  static const int kStartTimeFieldNumber = 3;
+  double starttime() const;
+  void set_starttime(double value);
+
+  // double stopTime = 4;
+  void clear_stoptime();
+  static const int kStopTimeFieldNumber = 4;
+  double stoptime() const;
+  void set_stoptime(double value);
+
+  // uint32 returnNode = 5;
   void clear_returnnode();
-  static const int kReturnNodeFieldNumber = 3;
-  ::google::protobuf::int32 returnnode() const;
-  void set_returnnode(::google::protobuf::int32 value);
+  static const int kReturnNodeFieldNumber = 5;
+  ::google::protobuf::uint32 returnnode() const;
+  void set_returnnode(::google::protobuf::uint32 value);
 
   // @@protoc_insertion_point(class_scope:sam.NetflowEdgeRequest)
  private:
@@ -329,7 +341,9 @@ class NetflowEdgeRequest : public ::google::protobuf::Message /* @@protoc_insert
   ::google::protobuf::RepeatedPtrField< ::sam::NetflowEdgeRequest_SimpleEdgeCondition > conditions_;
   ::google::protobuf::internal::ArenaStringPtr sourceip_;
   ::google::protobuf::internal::ArenaStringPtr destip_;
-  ::google::protobuf::int32 returnnode_;
+  double starttime_;
+  double stoptime_;
+  ::google::protobuf::uint32 returnnode_;
   mutable int _cached_size_;
   friend struct ::protobuf_NetflowEdgeRequest_2eproto::TableStruct;
   friend void ::protobuf_NetflowEdgeRequest_2eproto::InitDefaultsNetflowEdgeRequestImpl();
@@ -575,21 +589,49 @@ inline void NetflowEdgeRequest::set_allocated_destip(::std::string* destip) {
   // @@protoc_insertion_point(field_set_allocated:sam.NetflowEdgeRequest.destIP)
 }
 
-// int32 returnNode = 3;
-inline void NetflowEdgeRequest::clear_returnnode() {
-  returnnode_ = 0;
+// double startTime = 3;
+inline void NetflowEdgeRequest::clear_starttime() {
+  starttime_ = 0;
 }
-inline ::google::protobuf::int32 NetflowEdgeRequest::returnnode() const {
+inline double NetflowEdgeRequest::starttime() const {
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.startTime)
+  return starttime_;
+}
+inline void NetflowEdgeRequest::set_starttime(double value) {
+  
+  starttime_ = value;
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.startTime)
+}
+
+// double stopTime = 4;
+inline void NetflowEdgeRequest::clear_stoptime() {
+  stoptime_ = 0;
+}
+inline double NetflowEdgeRequest::stoptime() const {
+  // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.stopTime)
+  return stoptime_;
+}
+inline void NetflowEdgeRequest::set_stoptime(double value) {
+  
+  stoptime_ = value;
+  // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.stopTime)
+}
+
+// uint32 returnNode = 5;
+inline void NetflowEdgeRequest::clear_returnnode() {
+  returnnode_ = 0u;
+}
+inline ::google::protobuf::uint32 NetflowEdgeRequest::returnnode() const {
   // @@protoc_insertion_point(field_get:sam.NetflowEdgeRequest.returnNode)
   return returnnode_;
 }
-inline void NetflowEdgeRequest::set_returnnode(::google::protobuf::int32 value) {
+inline void NetflowEdgeRequest::set_returnnode(::google::protobuf::uint32 value) {
   
   returnnode_ = value;
   // @@protoc_insertion_point(field_set:sam.NetflowEdgeRequest.returnNode)
 }
 
-// repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 4;
+// repeated .sam.NetflowEdgeRequest.SimpleEdgeCondition conditions = 6;
 inline int NetflowEdgeRequest::conditions_size() const {
   return conditions_.size();
 }
