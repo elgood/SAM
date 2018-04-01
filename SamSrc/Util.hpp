@@ -80,15 +80,6 @@ std::string toString(std::tuple<Tp...>const& t) {
   return result;
 }
 
-template<typename... Tp>
-inline zmq::message_t tupleToZmq(std::tuple<Tp...>const& t)
-{
-  std::string str = toString(t);
-  zmq::message_t message(str.size() + 1);
-  snprintf((char*) message.data(), str.size() + 1, "%s", str.c_str());
-  return message;
-}
-
 /**
  * Hash function for strings.
  */
@@ -198,12 +189,47 @@ std::string getIpString(std::string hostname) {
   return ip;
 }
 
+/**
+ * Given a string, creates a zmq message with the string as the data.
+ * \param str The string that is to be the data of the message.
+ * \return Returns a zmq::message_t with the string as the data.
+ */
 zmq::message_t fillZmqMessage(std::string const& str)
 {
-  zmq::message_t message(str.length() + 1);
-  snprintf((char*) message.data(), str.length() + 1, "%s", str.c_str());
+  zmq::message_t message(str.length());
+  char* dataptr = (char*) message.data();
+  std::copy(str.begin(), str.end(), dataptr);
   return message;
 }
+
+/**
+ * Given the zmq message, extract the data as a string.
+ * \param message The zmq to get the data from.
+ * \return Returns the zmq data as a string.
+ */
+std::string getStringFromZmqMessage( zmq::message_t const& message )
+{
+  // Reinterpret the void pointer to be an unsigned char pointer.
+  unsigned char const * dataptr = 
+    reinterpret_cast<unsigned char const*>(message.data());
+
+  // Creates a string with proper size so we can iterate over it and 
+  // copy in the values from the message.
+  std::string rString(message.size(), 'x');
+
+  std::copy(dataptr, &dataptr[message.size()], rString.begin());
+  return rString;
+}
+
+template<typename... Tp>
+inline zmq::message_t tupleToZmq(std::tuple<Tp...>const& t)
+{
+  std::string str = toString(t);
+  zmq::message_t message = fillZmqMessage(str);
+
+  return message;
+}
+
 
 /**
  * Creates an empty zmq message.  We use this to indicate a terminate
@@ -221,8 +247,8 @@ zmq::message_t emptyZmqMessage() {
  */
 bool isTerminateMessage(zmq::message_t& message)
 {
-  char* buff = static_cast<char*>(message.data());
-  return strcmp(buff, "") == 0;
+  if (message.size() == 0) return true;
+  return false;
 }
 
 inline
@@ -279,17 +305,17 @@ createPushSockets(
 
       // the function complains if you use std::size_t, so be sure to use the
       // uint32_t class member for hwm.
-      try {
+      /*try {
         pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
       } catch (std::exception e) {
         std::string message = std::string("problem setting push socket's send")+
           std::string(" high water mark: ") + e.what();
         throw UtilException(message);
-      }
-      //printf("createpushsockets nodeId %lu %d set socket option\n", 
-      //    nodeId, i);
-      pusher->bind(url);
-      //printf("createpushsockets nodeId %lu %d connect\n", nodeId, i);
+      }*/
+      //printf("createpushsockets url %s nodeId %lu %d set socket option\n", 
+      //    url.c_str(), nodeId, i);
+      pusher->connect(url);
+      //printf("createpushsockets nodeId %lu %d bind\n", nodeId, i);
       pushers[i] = pusher;
     } 
   }

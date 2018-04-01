@@ -19,7 +19,7 @@ public:
   inline
   uint64_t operator()(std::string const& s) const {
     size_t index = s.find_last_of(".");
-    printf("blah %s %s\n", s.c_str(), s.substr(index+1).c_str());
+    //printf("blah %s %s\n", s.c_str(), s.substr(index+1).c_str());
     size_t lastOctet = boost::lexical_cast<size_t>(s.substr(index + 1));
     if (lastOctet == 1 | lastOctet == 2) {
       return 0; 
@@ -41,6 +41,7 @@ typedef EdgeDescription<Netflow, TimeSeconds, DurationSeconds>
         EdgeDescriptionType;
 
 struct DoubleNodeFixture  {
+
 
   size_t numNodes = 2;
   size_t nodeId0 = 0;
@@ -127,7 +128,7 @@ struct DoubleNodeFixture  {
 /// This tests matching a single edge across two nodes.  This doesn't
 /// test the communication of edge requests since each node can
 /// process an edge by itself.
-/*BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
+BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 {
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   query.addExpression(*startY2Xboth);
@@ -159,7 +160,7 @@ struct DoubleNodeFixture  {
 
   BOOST_CHECK_EQUAL(n, graphStore0->getNumResults());
   BOOST_CHECK_EQUAL(n, graphStore1->getNumResults());
-}*/
+}
 
 ///
 /// This test creates a two graphstores and we send each graphstore
@@ -236,17 +237,18 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   {
     double time = 0.0;
    
-    std::string netflowString = "1,1,1.5,2013-04-10 08:32:36,"
+    std::string netflowString = "1,1,0.5,2013-04-10 08:32:36,"
                              "20130410083236.384094,17,UDP,192.168.0.2,"
                              "192.168.0.3,29986,1900,0,0,0,133,0,1,0,1,0,0";    
-    Netflow netflow = makeNetflow(netflowString);
 
+    size_t id = 0;
     for (int i = 0; i < n; i++) {
       std::string str = generator->generate(time);
-      Netflow n = makeNetflow(i, str);
+      Netflow n = makeNetflow(id++, str);
       graphStore->consume(n);
       time = time + 1.0;
-      if (i == 1) {
+      if (i == 0) {
+        Netflow netflow = makeNetflow(id++, netflowString);
         graphStore->consume(netflow);
       }
     }
@@ -275,6 +277,33 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
 
   thread0.join();
   thread1.join();
+
+  size_t totalEdgePulls0 = graphStore0->getTotalEdgePulls();
+  size_t totalEdgePulls1 = graphStore1->getTotalEdgePulls();
+  size_t totalEdgePushes0 = graphStore0->getTotalEdgePushes();
+  size_t totalEdgePushes1 = graphStore1->getTotalEdgePushes();
+  
+  //printf("TotalEdgePushes0 %lu\n", totalEdgePushes0);
+  //printf("TotalEdgePushes1 %lu\n", totalEdgePushes1);
+  //printf("TotalEdgePulls0 %lu\n", totalEdgePulls0);
+  //printf("TotalEdgePulls1 %lu\n", totalEdgePulls1);
+  BOOST_CHECK_EQUAL(totalEdgePulls0, totalEdgePushes1);
+  BOOST_CHECK_EQUAL(totalEdgePulls1, totalEdgePushes0);
+
+  size_t totalRequestPulls0 = graphStore0->getTotalRequestPulls();
+  size_t totalRequestPulls1 = graphStore1->getTotalRequestPulls();
+  size_t totalRequestPushes0 = graphStore0->getTotalRequestPushes();
+  size_t totalRequestPushes1 = graphStore1->getTotalRequestPushes();
+  
+  //printf("TotalRequestPushes0 %lu\n", totalRequestPushes0);
+  //printf("TotalRequestPushes1 %lu\n", totalRequestPushes1);
+  //printf("TotalRequestPulls0 %lu\n", totalRequestPulls0);
+  //printf("TotalRequestPulls1 %lu\n", totalRequestPulls1);
+  BOOST_CHECK_EQUAL(totalRequestPulls0, totalRequestPushes1);
+  BOOST_CHECK_EQUAL(totalRequestPulls1, totalRequestPushes0);
+
+
+
 
   size_t totalResults = graphStore0->getNumResults() + 
                         graphStore1->getNumResults();

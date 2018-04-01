@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE( test_sample )
   // valid if called from SAM/build with tests/TestCTU.  TODO:
   // make more robust to different locations of build directory 
   //std::string dataFile = "../TestSrc/Data/CTU1SampleAsVast.csv";
-  std::string dataFile = "../TestSrc/Data/147.32.84.229.csv";
+  std::string dataFile = "../../TestSrc/Data/147.32.84.229.csv";
   
   // Calculating some stats
   std::ifstream infile;

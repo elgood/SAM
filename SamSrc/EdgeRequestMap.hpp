@@ -7,7 +7,6 @@
 #include <atomic>
 #include <zmq.hpp>
 
-
 namespace sam {
 
 class EdgeRequestMapException : public std::runtime_error {
@@ -56,7 +55,7 @@ private:
   std::mutex* mutexes;
 
   /// Keeps track of how many edges we send
-  std::atomic<uint64_t> counter;
+  std::atomic<size_t> edgePushCounter;
 
   zmq::context_t context = zmq::context_t(1);
 
@@ -70,7 +69,8 @@ public:
    *  send edges to other nodes.
    * \param tableCapacity The size of the hash table.
    */
-   EdgeRequestMap(std::size_t numNodes,
+   EdgeRequestMap(
+                  std::size_t numNodes,
                   std::size_t nodeId,
                   std::vector<std::string> edgeHostnames,
                   std::vector<std::size_t> edgePorts,
@@ -95,8 +95,15 @@ public:
    */
   void process(TupleType const& tuple);
 
-  uint64_t getCounter() { return counter; }
+  /**
+   * Returns how many edges we've sent
+   */
+  size_t getTotalEdgePushes() { return edgePushCounter; }
 
+  /**
+   * Iterates through the edge push sockets and sends a terminate
+   * signal.
+   */
   void terminate() const;
 
 private:
@@ -128,7 +135,7 @@ template <typename TupleType, size_t source, size_t target,
           typename SourceEF, typename TargetEF>
 EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-EdgeRequestMap(
+EdgeRequestMap( 
                 std::size_t numNodes,
                 std::size_t nodeId,
                 std::vector<std::string> hostnames,
@@ -143,7 +150,7 @@ EdgeRequestMap(
   this->tableCapacity = tableCapacity;
   mutexes = new std::mutex[tableCapacity];
   ale = new std::list<EdgeRequestType>[tableCapacity];
-  counter = 0;
+  edgePushCounter = 0;
 }
 
 // Destructor 
@@ -207,7 +214,11 @@ EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 process(TupleType const& tuple)
 {
-  //printf("Process tuple %s\n", toString(tuple).c_str());
+  #ifdef DEBUG
+  printf("Node %lu EdgeRequestMap::process tuple %s\n", nodeId,
+    toString(tuple).c_str());
+  #endif
+  
   processSource(tuple);
   processTarget(tuple);
   processSourceTarget(tuple);
@@ -233,8 +244,12 @@ processSource(TupleType const& tuple)
     SourceType edgeRequestSrc = edgeRequest.getSource();
     //printf("edgeRequestSrc %s\n", edgeRequestSrc.c_str());
     if (sourceEquals(src, edgeRequestSrc)) {
-      int node = edgeRequest.getReturn();
-      counter.fetch_add(1);
+      size_t node = edgeRequest.getReturn();
+      edgePushCounter.fetch_add(1);
+      #ifdef DEBUG
+      printf("Node %lu->%lu sending edge %s\n", nodeId, node,
+        toString(tuple).c_str());
+      #endif
       pushers[node]->send(message);  
     }
   }
@@ -248,7 +263,10 @@ EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processTarget(TupleType const& tuple)
 {
-  //printf("processTarget\n");
+  #ifdef DEBUG
+  printf("Node %lu EdgeRequestMap::processTarget\n", nodeId);
+  #endif
+
   TargetType trg = std::get<target>(tuple);
   size_t index = targetHash(trg) % tableCapacity;
   zmq::message_t message = tupleToZmq(tuple);
@@ -263,9 +281,12 @@ processTarget(TupleType const& tuple)
       //printf("equals\n");
       int node = edgeRequest.getReturn();
       //printf("before send\n");
-      counter.fetch_add(1);
-      //printf("trg %s counter %llu\n", trg.c_str(), counter.load());
-      //printf("trg %s Sending to node %d\n", trg.c_str(), node);
+      edgePushCounter.fetch_add(1);
+      //printf("trg %s edgePushCounter %llu\n", trg.c_str(), edgePushCounter.load());
+      #ifdef DEBUG
+      printf("Node %lu EdgeRequestMap::processTarget trg %s Sending to node "
+        "%d\n", nodeId, trg.c_str(), node);
+      #endif
       pushers[node]->send(message);  
       //printf("after send\n");
     }
@@ -295,7 +316,7 @@ processSourceTarget(TupleType const& tuple)
         sourceEquals(src, edgeRequestSrc)) 
     {
       int node = edgeRequest.getReturn();
-      counter.fetch_add(1);
+      edgePushCounter.fetch_add(1);
       pushers[node]->send(message);  
     }
   }
@@ -309,9 +330,15 @@ EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate() const 
 {
-  for(int i = 0; i < this->numNodes; i++)
+  for(size_t i = 0; i < this->numNodes; i++)
   {
-    if (i != this->nodeId) {  
+    if (i != this->nodeId) { 
+
+      #ifdef DEBUG
+      printf("Node %lu EdgeRequestMap::terminate() sending terminate to %lu\n",
+        nodeId, i); 
+      #endif
+
       pushers[i]->send(emptyZmqMessage());
     }
   }

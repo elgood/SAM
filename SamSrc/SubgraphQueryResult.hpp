@@ -99,6 +99,10 @@ public:
   bool
   addEdgeInPlace(TupleType const& tuple);
 
+  bool boundSource() const {return !isNull(getCurrentSource()); }
+  bool boundTarget() const {return !isNull(getCurrentTarget()); }
+    
+
 
   /**
    * Returns true if the query has expired (meaning it can't be fulfilled
@@ -197,12 +201,10 @@ public:
 
 private:
 
-  /**
-   * Perfoms the check on whether the edge fulfills the time
-   * constraints.
-   */
-  //bool fulfillsTimeConstraint(TupleType const& edge);
   
+  void addTimeInfoFromCurrent(EdgeRequestType & edgeRequest,
+                              double previousStartTime) const;
+  double getPreviousStartTime() const;
     
 };
 
@@ -213,8 +215,11 @@ SubgraphQueryResult(SubgraphQueryType const* query,
                     TupleType firstEdge) :
   subgraphQuery(query)
 {
+  #ifdef DEBUG
   printf("Creating subgraphquery result, first edge: %s\n", 
     sam::toString(firstEdge).c_str());
+  #endif
+  
   //TODO: Maybe remove this to improve performance
   if (!query->isFinalized()) {
     throw SubgraphQueryResultException("Subgraph query passed to "
@@ -239,7 +244,37 @@ SubgraphQueryResult()
   subgraphQuery = nullptr;
 }
 
+template <typename TupleType, size_t source, size_t target,
+          size_t time, size_t duration>
+void
+SubgraphQueryResult<TupleType, source, target, time, duration>::
+addTimeInfoFromCurrent(EdgeRequestType & edgeRequest,
+                       double previousStartTime) const
+{
+  
 
+  EdgeDescriptionType desc = subgraphQuery->getEdgeDescription(currentEdge);
+  if (previousStartTime > desc.startTimeRange.first + startTime) {
+    edgeRequest.setStartTimeFirst(previousStartTime);
+  } else {
+    edgeRequest.setStartTimeFirst(desc.startTimeRange.first + startTime);
+  }
+  edgeRequest.setStartTimeSecond(desc.startTimeRange.second + startTime);
+  edgeRequest.setEndTimeFirst(desc.endTimeRange.first + startTime);
+  edgeRequest.setEndTimeSecond(desc.endTimeRange.second + startTime);
+}
+
+template <typename TupleType, size_t source, size_t target,
+          size_t time, size_t duration>
+double
+SubgraphQueryResult<TupleType, source, target, time, duration>::
+getPreviousStartTime() const
+{
+  if (resultEdges.size() > 0) {
+    return std::get<time>(resultEdges.at(resultEdges.size() - 1));
+  }
+  return std::numeric_limits<double>::lowest();
+}
 
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration>
@@ -263,9 +298,17 @@ hash(SourceHF const& sourceHash,
   // a valud, and the next tuple must have that value for the target.
   NodeType trg = getCurrentTarget();
 
-  printf("SubgraphQueryResult::hash src %s trg %s\n", src.c_str(), trg.c_str());
-  //std::cout << "src " << src << " trg " << trg << std::endl;
+  double previousTime = getPreviousStartTime();
 
+  EdgeDescriptionType desc = subgraphQuery->getEdgeDescription(currentEdge);
+
+  #ifdef DEBUG
+  printf("hash currentEdge %lu start time range %f %f stop time range %f %f\n",
+    currentEdge, desc.startTimeRange.first, desc.startTimeRange.second,
+    desc.endTimeRange.first, desc.endTimeRange.second);
+  printf("SubgraphQueryResult::hash src %s trg %s\n", src.c_str(), trg.c_str());
+  #endif
+  
   // Case when the source is unbound but the target is bound to a value. 
   if (isNull(src) && !isNull(trg)) {
   
@@ -275,6 +318,8 @@ hash(SourceHF const& sourceHash,
 
       EdgeRequestType edgeRequest;
       edgeRequest.setTarget(trg);
+      addTimeInfoFromCurrent(edgeRequest, previousTime);
+      edgeRequest.setReturn(nodeId);
 
       // Add the edge request to the list of new edge requests.
       edgeRequests.push_back(edgeRequest);
@@ -282,7 +327,6 @@ hash(SourceHF const& sourceHash,
 
     // Returns a hash of the target so that it can be placed in the correct
     // bin in the SubgraphQueryResultMap.
-    printf("returning targethash\n");
     return targetHash(trg);
 
   } else 
@@ -295,6 +339,8 @@ hash(SourceHF const& sourceHash,
 
       EdgeRequestType edgeRequest;
       edgeRequest.setSource(src);
+      addTimeInfoFromCurrent(edgeRequest, previousTime);
+      edgeRequest.setReturn(nodeId);
 
       // Add the edge request to the list of new edge requests.
       edgeRequests.push_back(edgeRequest);
@@ -303,7 +349,6 @@ hash(SourceHF const& sourceHash,
 
     // Returns a hash of the source so that it can be placed in the correct
     // bin in the SubgraphQueryResultMap.
-    printf("returning sourchash\n");
     return sourceHash(src);
 
   } else 
@@ -320,17 +365,17 @@ hash(SourceHF const& sourceHash,
       EdgeRequestType edgeRequest;
       edgeRequest.setSource(src);
       edgeRequest.setTarget(trg);
+      addTimeInfoFromCurrent(edgeRequest, previousTime);
+      edgeRequest.setReturn(nodeId);
       edgeRequests.push_back(edgeRequest);
     }
 
     // Returns a hash of the source combined with the hash of the target 
     // so that it can be placed in the correct
     // bin in the SubgraphQueryResultMap.
-    printf("returning sourchash * targethash\n");
     return sourceHash(src) * targetHash(trg);
 
   } else {
-    printf("Trouble in hash\n");
     std::string message = "SubgraphQueryResult::hash When trying "
       "to calculate the hash, both source and target are unbound.  ";
     try {
@@ -430,7 +475,10 @@ addEdgeInPlace(TupleType const& edge)
 
   std::string src = edgeDescription.getSource();
   std::string trg = edgeDescription.getTarget();
+
+  #ifdef DEBUG
   printf("addEdgeInPlace src %s trg %s\n", src.c_str(), trg.c_str());
+  #endif
 
   // Case when the source has been bound but the target has not
   if (var2BoundValue.count(src) > 0 &&
@@ -464,7 +512,12 @@ addEdgeInPlace(TupleType const& edge)
   } else if (var2BoundValue.count(src) == 0 &&
              var2BoundValue.count(trg) == 0)
   { 
-    printf("Setting %s->%s and %s->%s\n", src.c_str(), std::get<source>(edge).c_str(), trg.c_str(), std::get<target>(edge).c_str());
+    #ifdef DEBUG
+    printf("Setting %s->%s and %s->%s\n", src.c_str(), 
+      std::get<source>(edge).c_str(), trg.c_str(), 
+      std::get<target>(edge).c_str());
+    #endif
+
     var2BoundValue[src] = std::get<source>(edge);
     var2BoundValue[trg] = std::get<target>(edge);
   } else {
@@ -477,7 +530,10 @@ addEdgeInPlace(TupleType const& edge)
   resultEdges.push_back(edge);
   currentEdge++;
 
+  #ifdef DEBUG
   printf("Add edge in place returning true\n");
+  #endif
+
   return true;
 }
 
@@ -487,6 +543,11 @@ std::pair<bool, SubgraphQueryResult<TupleType, source, target, time, duration>>
 SubgraphQueryResult<TupleType, source, target, time, duration>::
 addEdge(TupleType const& edge) const
 {
+  #ifdef DEBUG
+  printf("SubgraphQueryResult::addEdge trying to add edge %s to result %s"
+    "blah\n",sam::toString(edge).c_str(), toString().c_str());
+  #endif
+    
   if (currentEdge >= numEdges) {
     std::string message = "SubgraphQueryResult::addEdge Tried to add an edge " 
       "but the query has already been satisfied, i.e. currentEdge(" + 
@@ -503,7 +564,6 @@ addEdge(TupleType const& edge) const
     subgraphQuery->getEdgeDescription(currentEdge);
 
   if (!edgeDescription.satisfies(edge, this->startTime)) {
-    //std::cout << "Failed edgeDescription satisfies " << std::endl;
     return std::pair<bool, SubgraphQueryResultType>(false, 
       SubgraphQueryResultType());
   }
@@ -535,7 +595,6 @@ addEdge(TupleType const& edge) const
       newResult.var2BoundValue[trg] = edgeTarget;
       
     } else {
-      std::cout << "Failed to match source variable binding " << std::endl;
       return std::pair<bool, SubgraphQueryResultType>(false, 
         SubgraphQueryResultType());
     } 
@@ -551,7 +610,6 @@ addEdge(TupleType const& edge) const
       newResult.var2BoundValue[src] = edgeSource;
         
     } else {
-      std::cout << "Failed to match target variable binding " << std::endl;
       return std::pair<bool, SubgraphQueryResultType>(false, 
         SubgraphQueryResultType());
     } 
@@ -590,12 +648,10 @@ getCurrentSource() const
 
   std::string sourceVar = subgraphQuery->getEdgeDescription(
                             currentEdge).getSource();
-  printf("getCurrentSource sourceVar %s\n", sourceVar.c_str());
   std::string blah = "getCurrentSource var2BoundValue:\n";
   for(auto p : var2BoundValue) {
     blah = blah + p.first + "->" + p.second + "\n";
   }
-  printf("%s\n", blah.c_str());
   if (var2BoundValue.count(sourceVar) > 0) {
     return var2BoundValue.at(sourceVar);
   } else {
@@ -619,7 +675,6 @@ getCurrentTarget() const
 
   std::string targetVar = subgraphQuery->getEdgeDescription(
                             currentEdge).getTarget();
-  printf("getCurrentTarget targetVar %s\n", targetVar.c_str());
   if (var2BoundValue.count(targetVar) > 0) {
     return var2BoundValue.at(targetVar);
   } else {

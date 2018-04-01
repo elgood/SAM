@@ -14,6 +14,10 @@
 
 using namespace sam;
 
+typedef CompressedSparse<Netflow, 
+   DestIp, SourceIp, TimeSeconds, DurationSeconds, 
+   StringHashFunction, StringEqualityFunction> GraphType;
+
 BOOST_AUTO_TEST_CASE( test_compressed_sparse_one_vertex )
 {
   /** 
@@ -21,9 +25,7 @@ BOOST_AUTO_TEST_CASE( test_compressed_sparse_one_vertex )
    */
   size_t capacity = 1000;
   double window = 1000; //Make big window so we don't lose anything
-  auto graph = new CompressedSparse<Netflow, 
-   DestIp, SourceIp, TimeSeconds, 
-   StringHashFunction, StringEqualityFunction>(capacity, window); 
+  auto graph = new GraphType(capacity, window); 
     
 
   int numThreads = 100;
@@ -62,11 +64,8 @@ BOOST_AUTO_TEST_CASE( test_compressed_sparse_many_vertices )
    */
   size_t capacity = 1000;
   double window = 1000; //Make big window so we don't lose anything
-  auto graph = new CompressedSparse<Netflow, 
-             SourceIp, DestIp, TimeSeconds, 
-             StringHashFunction, StringEqualityFunction>(capacity, window); 
-    
-
+  auto graph = new GraphType(capacity, window); 
+             
   int numThreads = 100;
   int numExamples = 1000;
   auto id = new std::atomic<int>(0);
@@ -107,10 +106,7 @@ BOOST_AUTO_TEST_CASE( test_compressed_sparse_small_capacity )
    */
   size_t capacity = 1;
   double window = 1000; //Make big window so we don't lose anything
-  auto graph = new CompressedSparse<Netflow, 
-             SourceIp, DestIp, TimeSeconds, 
-             StringHashFunction, StringEqualityFunction>(capacity, window); 
-    
+  auto graph = new GraphType(capacity, window); 
 
   int numThreads = 100;
   int numExamples = 1;
@@ -150,10 +146,7 @@ BOOST_AUTO_TEST_CASE( test_cleanup )
   size_t capacity = 1;
   double window = .00000000001; //Make small window
   //double window = .1; //Make small window
-  auto graph = new CompressedSparse<Netflow, 
-             DestIp, SourceIp, TimeSeconds, 
-             StringHashFunction, StringEqualityFunction>(capacity, window); 
-    
+  auto graph = new GraphType(capacity, window); 
 
   int numThreads = 10;
   int numExamples = 10000;

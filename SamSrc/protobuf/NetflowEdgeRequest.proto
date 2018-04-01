@@ -3,17 +3,19 @@ syntax = "proto3";
 package sam;
 
 message NetflowEdgeRequest {
-  string sourceIP = 1;
-  string destIP = 2;
-  double startTime = 3;
-  double stopTime = 4;
-  uint32  returnNode = 5; // Where to send edges back to.
+  double startTimeFirst = 1; // By when the edge should start
+  double startTimeSecond = 2; // Before when the edge should start
+  double endTimeFirst = 3; // By when the edge should end
+  double endTimeSecond = 4; // Before when the edge should end
+  uint32 returnNode = 5; // Where to send edges back to.
+  string sourceIP = 6;
+  string destIP = 7;
   
-  message SimpleEdgeCondition {
-    string field = 1;
-    string operator = 2;
-    int32 rside = 3;
-  }
+  //message SimpleEdgeCondition {
+  //  string field = 1;
+  //  string operator = 2;
+  //  int32 rside = 3;
+  //}
    
-  repeated SimpleEdgeCondition conditions = 6;
+  //repeated SimpleEdgeCondition conditions = 8;
 }

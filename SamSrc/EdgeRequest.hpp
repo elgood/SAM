@@ -65,18 +65,28 @@ public:
   EdgeRequest() {
     request.set_sourceip(nullValue<SourceType>());
     request.set_destip(nullValue<TargetType>());
-    request.set_starttime(nullValue<double>());
-    request.set_stoptime(nullValue<double>());
+    request.set_starttimefirst(nullValue<double>());
+    request.set_starttimesecond(nullValue<double>());
+    request.set_endtimefirst(nullValue<double>());
+    request.set_endtimesecond(nullValue<double>());
     request.set_returnnode(nullValue<uint32_t>());
   }
 
-  EdgeRequest(std::string str) { request.ParseFromString(str); }
+  EdgeRequest(std::string str) { 
+    request.ParseFromString(str); 
+  }
 
   /////////// Set methods //////////////////
   void setTarget(TargetType target) { request.set_destip(target); }
   void setSource(SourceType source) { request.set_sourceip(source); }
-  void setStartTime(double startTime) { request.set_starttime(startTime); }
-  void setStopTime(double stopTime) { request.set_stoptime(stopTime); }
+  void setStartTimeFirst(double startTime) { 
+    request.set_starttimefirst(startTime); 
+  }
+  void setStartTimeSecond(double startTime) { 
+    request.set_starttimesecond(startTime); 
+  }
+  void setEndTimeFirst(double endTime) { request.set_endtimefirst(endTime); }
+  void setEndTimeSecond(double endTime) { request.set_endtimesecond(endTime); }
 
   /**
    * Sets to which node any edges that fulfill this edge request should be 
@@ -87,8 +97,10 @@ public:
   // Get Methods
   TargetType getTarget() const { return request.destip(); }
   TargetType getSource() const { return request.sourceip(); }
-  double getStartTime() const { return request.starttime(); }
-  double getStopTime() const { return request.stoptime(); }
+  double getStartTimeFirst() const { return request.starttimefirst(); }
+  double getStartTimeSecond() const { return request.starttimesecond(); }
+  double getEndTimeFirst() const { return request.endtimefirst(); }
+  double getEndTimeSecond() const { return request.endtimesecond(); }
 
   /**
    * Gets the node id of where this edge should be returned.
@@ -107,13 +119,20 @@ public:
       throw NetflowEdgeRequestException("Trouble serializing " 
         "NetflowEdgeRequest"); 
     }
+
     return fillZmqMessage(str);
   }
 
   std::string toString() const
   {
     std::string rString = "Source: " + getSource() + 
-                          "Target: " + getTarget();
+      " Target: " + getTarget() + 
+      " Return: " + boost::lexical_cast<std::string>(getReturn()) +
+      " Start range: " + 
+        boost::lexical_cast<std::string>(getStartTimeFirst()) + "," 
+      + boost::lexical_cast<std::string>(getStartTimeSecond()) +
+      " End range: " + boost::lexical_cast<std::string>(getEndTimeFirst()) + 
+      "," + boost::lexical_cast<std::string>(getEndTimeSecond());
     return rString;
   }
 

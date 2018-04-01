@@ -101,8 +101,8 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
 
   // There is no query that forces communication, so the number of received
   // tuples over zeromq should be zero.
-  BOOST_CHECK_EQUAL(graphStore0->getTuplesReceived(), 0);
-  BOOST_CHECK_EQUAL(graphStore1->getTuplesReceived(), 0);
+  BOOST_CHECK_EQUAL(graphStore0->getTotalEdgePulls(), 0);
+  BOOST_CHECK_EQUAL(graphStore1->getTotalEdgePulls(), 0);
 }
 
 
@@ -115,7 +115,6 @@ struct SingleNodeFixture  {
   size_t tableCapacity = 1000; //For SubgraphQueryResultMap results
   size_t resultsCapacity = 1000; //For final results
   double timeWindow = 100;
-
 
   std::vector<std::string> requestHostnames;
   std::vector<size_t> requestPorts;

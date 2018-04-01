@@ -57,20 +57,22 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   map0.addRequest(edgeRequest0);
   map1.addRequest(edgeRequest1);
   
-  int n = 1000;
+  size_t n = 1000;
 
 
   auto mapFunction = [](MapType* map,
                         std::shared_ptr<AbstractNetflowGenerator> generator, 
-                        int n)
+                        size_t n)
   {
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
       std::string str = generator->generate();
       Netflow netflow = makeNetflow(i, str);
       map->process(netflow);
     }
     map->terminate();
-    //printf("Exiting PUSH thread\n");
+    #ifdef DEBUG
+    printf("Exiting PUSH thread\n");
+    #endif
   };
 
   auto pullFunction = [](
@@ -81,21 +83,27 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
     auto socket = std::make_shared<zmq::socket_t>(context, ZMQ_PULL);
     int hwm = 1000;
     socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
-    socket->connect(url);
+    socket->bind(url);
 
     zmq::message_t message;
     bool stop = false;
     while(!stop) {
       socket->recv(&message);
       if (isTerminateMessage(message)) {
-        //printf("pull thread url %s TERMINATE message\n", url.c_str());
+        #ifdef DEBUG
+        printf("pull thread url %s TERMINATE message\n", url.c_str());
+        #endif
         stop = true;
       } else {
-        //printf("pull thread url %s count %d\n", url.c_str(), *count);
+        #ifdef DEBUG
+        printf("pull thread url %s count %d\n", url.c_str(), *count);
+        #endif
         (*count)++;
       }
     }
-    //printf("Existing PULL thread url%s\n", url.c_str());
+    #ifdef DEBUG
+    printf("Existing PULL thread url%s\n", url.c_str());
+    #endif
   };
 
 
@@ -126,8 +134,8 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   pullthread0.join();
   pullthread1.join();
 
-  BOOST_CHECK_EQUAL(map0.getCounter(), n);
-  BOOST_CHECK_EQUAL(map1.getCounter(), n);
+  BOOST_CHECK_EQUAL(map0.getTotalEdgePushes(), n);
+  BOOST_CHECK_EQUAL(map1.getTotalEdgePushes(), n);
 
   //printf("At the end\n");
 

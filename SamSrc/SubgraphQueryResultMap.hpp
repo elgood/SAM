@@ -158,8 +158,12 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 add(QueryResultType const& result, std::list<EdgeRequestType>& edgeRequests)
 {
-  printf("SubgraphQueryResultMap::add edge request size %lu\n", 
-    edgeRequests.size());
+  #ifdef DEBUG
+  printf("Node %lu SubgraphQueryResultMap::add edge request size %lu\n",
+    nodeId, edgeRequests.size());
+  #endif
+  
+    
   if (!result.complete()) {
     //std::cout << "The result is not complete " << std::endl;
 
@@ -172,19 +176,23 @@ add(QueryResultType const& result, std::list<EdgeRequestType>& edgeRequests)
     for(auto request : edgeRequests) {
       requestString += request.toString() + "\n";
     }
-    printf("SubgraphQueryResultMap::add result %s edgeRequests.size() %lu edge requests %s\n",result.toString().c_str(), edgeRequests.size(), requestString.c_str());
+    #ifdef DEBUG
+    printf("Node %lu SubgraphQueryResultMap::add result %s "
+      "edgeRequests.size() %lu edge requests %s\n", nodeId, 
+      result.toString().c_str(), edgeRequests.size(), requestString.c_str());
+    #endif
             
     mutexes[newIndex].lock();
     alr[newIndex].push_back(result);
     mutexes[newIndex].unlock(); 
   } else {
-    printf("Complete query!\n");
-    //std::cout << "The result is complete " << std::endl;
+    #ifdef DEBUG
+    printf("Node %lu Complete query!\n", nodeId);
+    #endif
     size_t index = numQueryResults.fetch_add(1);
     index = index % resultCapacity;
     queryResults[index] = result;     
   }
-  printf("Exiting subgraphqueryresultmap::add\n");
 }
 
 
@@ -202,7 +210,6 @@ process(TupleType const& tuple,
   processSource(tuple, edgeRequests);
   processTarget(tuple, edgeRequests);
   processSourceTarget(tuple, edgeRequests);
-  printf("at end of SubgraphQueryResultMap::process()\n");
 }
 
 
@@ -225,29 +232,50 @@ processSource(TupleType const& tuple,
 
   size_t samId = std::get<0>(tuple);
 
-  for (auto l = alr[index].begin(); l != alr[index].end(); ++l ) {
-    //std::cout << "processSource considering tuple " << l->toString() 
-    //          << std::endl;
-    if (l->noSamId(samId)) {
-      //std::cout << "Adding edge in process Source " << std::endl;
-      // The following call tries to add the tuple to the existing 
-      // intermediate result, l.  If succesful, l remains the same
-      // but a new intermediate result is created.
-      std::pair<bool, QueryResultType> p = l->addEdge(tuple);
-      if (p.first) {
-        //std::cout << "Original Tuple " << l->toString() << std::endl;
-        //std::cout << "New Tuple " << p.second.toString() << std::endl;
-        rehash.push_back(p.second);
+  for (auto l = alr[index].begin(); 
+        l != alr[index].end(); ++l ) 
+  {
+    if (l->boundSource() && !l->boundTarget()) {
+      #ifdef DEBUG
+      printf("Node %lu SubgraphQueryResultMap::processSource considering %s\n",
+        nodeId, l->toString().c_str());
+      #endif
+
+      // Make sure none of the edges has the same samId as the current tuple
+      if (l->noSamId(samId)) {
+        //std::cout << "Adding edge in process Source " << std::endl;
+        // The following call tries to add the tuple to the existing 
+        // intermediate result, l.  If succesful, l remains the same
+        // but a new intermediate result is created.
+
+        #ifdef DEBUG
+        printf("Node %lu SubgraphQueryResultMap::processSource about to try"
+               " and add tuple\n", nodeId);
+        #endif
+        
+        std::pair<bool, QueryResultType> p = l->addEdge(tuple);
+        if (p.first) {
+          #ifdef DEBUG
+          printf("Node %lu SubgraphQueryResultMap::processSource added edge\n",
+            nodeId);
+          #endif
+          //std::cout << "Original Tuple " << l->toString() << std::endl;
+          //std::cout << "New Tuple " << p.second.toString() << std::endl;
+          rehash.push_back(p.second);
+        }
       }
     }
   }
 
   mutexes[index].unlock();
-
-  for (auto l : rehash) {
-    printf("Adding source\n");
+  
+  for (QueryResultType& l : rehash) {
+    #ifdef DEBUG
+    printf("Node %lu SubgraphqueryResultMap::processSource rehashing " 
+           "query result %s\n", nodeId, l.toString().c_str());
+    #endif
+    
     add(l, edgeRequests);
-    printf("Added source\n");
   }
 }
 
@@ -271,20 +299,21 @@ processTarget(TupleType const& tuple,
   size_t samId = std::get<0>(tuple);
 
   for (auto l = alr[index].begin(); l != alr[index].end(); ++l ) {
-    if (l->noSamId(samId)) {
-      std::pair<bool, QueryResultType> p = l->addEdge(tuple);
-      if (p.first) {
-        rehash.push_back(p.second);
-      } 
+
+    if (!l->boundSource() && l->boundTarget()) {
+      if (l->noSamId(samId)) {
+        std::pair<bool, QueryResultType> p = l->addEdge(tuple);
+        if (p.first) {
+          rehash.push_back(p.second);
+        } 
+      }
     }
   }
 
   mutexes[index].unlock();
 
   for (auto l : rehash) {
-    printf("Adding target\n");
     add(l, edgeRequests);
-    printf("Added target\n");
   }
     
 }
@@ -310,20 +339,26 @@ processSourceTarget(TupleType const& tuple,
   size_t samId = std::get<0>(tuple);
 
   for (auto l = alr[index].begin(); l != alr[index].end(); ++l ) {
-    if (l->noSamId(samId)) {
-      std::pair<bool, QueryResultType> p = l->addEdge(tuple);
-      if (p.first) {
-        rehash.push_back(p.second);
-      } 
+    
+    if (l->boundSource() && l->boundTarget()) {
+      #ifdef DEBUG
+      printf("Node %lu SubgraphQueryResultMap::processSourceTarget considering"
+        " %s\n", nodeId, l->toString().c_str());
+      #endif
+      
+      if (l->noSamId(samId)) {
+        std::pair<bool, QueryResultType> p = l->addEdge(tuple);
+        if (p.first) {
+          rehash.push_back(p.second);
+        } 
+      }
     }
   }
 
   mutexes[index].unlock();
 
   for (auto l : rehash) {
-    printf("Adding sourcetarget\n");
     add(l, edgeRequests);
-    printf("Added sourcetarget\n");
   }
 }
 
