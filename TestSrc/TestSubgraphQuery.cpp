@@ -8,6 +8,9 @@
 
 using namespace sam;
 
+typedef EdgeDescription<Netflow, TimeSeconds, DurationSeconds> 
+  EdgeDescriptionType;
+
 BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
 {
   // Prepares this subgraph query:
@@ -199,4 +202,39 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   BOOST_CHECK_EQUAL(query.getMaxTimeExtent(), 
     starttime_e2_value_end + maxOffset -
     (endtime_e1_value-maxOffset));
+}
+
+BOOST_AUTO_TEST_CASE( test_defined_start_undefined_end )
+{
+  // Here we test setting the start time but not the end time.  The 
+  
+  std::string x = "x";
+  std::string e = "e";
+  std::string y = "y";
+  EdgeExpression edge(x, e, y);
+  EdgeFunction starttime = EdgeFunction::StartTime;
+  EdgeOperator equal_edge_operator = EdgeOperator::Assignment;
+  double starttime_e1_value = 0;
+  TimeEdgeExpression starttimeExpression(starttime, e, equal_edge_operator, 
+                                starttime_e1_value);
+  
+   
+  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  query.addExpression(edge);
+  query.addExpression(starttimeExpression);
+ 
+  double maxOffset = 50;
+  query.setMaxOffset(50);
+  query.finalize();
+
+  EdgeDescriptionType const& edgeDesc = query.getEdgeDescription(0);
+
+  BOOST_CHECK_EQUAL(edgeDesc.getSource(), x);
+  BOOST_CHECK_EQUAL(edgeDesc.getEdgeId(), e);
+  BOOST_CHECK_EQUAL(edgeDesc.getTarget(), y);
+  BOOST_CHECK_EQUAL(edgeDesc.startTimeRange.first, 0);
+  BOOST_CHECK_EQUAL(edgeDesc.startTimeRange.second, 0);
+  BOOST_CHECK_EQUAL(edgeDesc.endTimeRange.first, 0);
+  BOOST_CHECK_EQUAL(edgeDesc.endTimeRange.second, maxOffset);
+
 }

@@ -178,7 +178,9 @@ public:
     bool ee = (endTimeRange.second != std::numeric_limits<double>::max());
     bool sb = (startTimeRange.first != std::numeric_limits<double>::lowest());
     bool se = (startTimeRange.second != std::numeric_limits<double>::max());
-
+    
+    //printf("fixTimeRange eb %d ee %d sb %d se %d\n", eb,ee,sb,se);
+    
     if (eb && ee && sb && se) {
       //do nothing
     } else if (eb && ee && sb && !se) {
@@ -321,15 +323,33 @@ public:
     double constraintStartTime_end = startTimeRange.second + startTime;
     double constraintEndTime_beg = endTimeRange.first + startTime;
     double constraintEndTime_end = endTimeRange.second + startTime;
+    
+    #ifdef DEBUG
+    printf("EdgeDescription::satisfiesTimeConstraints "
+      "edgeActualStartTime %f edgeActualEndTime %f "
+      "startTimeRange %f %f endTimeRange %f %f "
+      "constraintStartTime %f %f constraintEndTime %f %f\n",
+      edgeActualStartTime, edgeActualEndTime, 
+      startTimeRange.first, startTimeRange.second,
+      endTimeRange.first, endTimeRange.second,
+      constraintStartTime_beg, constraintStartTime_end,
+      constraintEndTime_beg, constraintEndTime_end);
+    #endif
 
     if (edgeActualStartTime >= constraintStartTime_beg &&
         edgeActualStartTime <= constraintStartTime_end &&
         edgeActualEndTime >= constraintEndTime_beg &&
         edgeActualEndTime <= constraintEndTime_end)
     {
+      #ifdef DEBUG
+      printf("EdgeDescription::satisfiesTimeConstraints returning true\n");
+      #endif
       return true;
     }
 
+    #ifdef DEBUG
+    printf("EdgeDescription::satisfiesTimeConstraints returning false\n");
+    #endif
     return false;
   }
 };

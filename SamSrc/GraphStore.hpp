@@ -68,6 +68,8 @@ public:
                           SourceHF, SourceEF> csrType;
   typedef CompressedSparse<TupleType, target, source, time, duration,
                           TargetHF, TargetEF> cscType;
+
+  typedef EdgeDescription<TupleType, time, duration> EdgeDescriptionType;
  
 private:
 
@@ -264,6 +266,7 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 addEdge(TupleType tuple) 
 {
+  std::lock_guard<std::mutex> lock(generalLock);
   csc->addEdge(tuple);
   csr->addEdge(tuple);
 }
@@ -293,20 +296,53 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 checkSubgraphQueries(TupleType const& tuple,
                      std::list<EdgeRequestType>& edgeRequests) 
 {
+  #ifdef DEBUG
+  printf("Node %lu GraphStore::checkSubgraphQueries tuple %s\n",
+    nodeId, sam::toString(tuple).c_str()); 
+  #endif
+
+  // The start time of the query result is the time field of the first 
+  // tuple in the query.  
   double startTime = std::get<time>(tuple);
   for (QueryType const& query : queries) {
     if (query.satisfies(tuple, 0, startTime)) {
-      ResultType queryResult(&query, tuple);
 
-      #ifdef DEBUG
-      printf("Node %lu GraphStore::checkSubgraphQueries adding queryResult " 
-        "%s\n", this->nodeId, queryResult.toString().c_str());
-      #endif
+      // We only want one node to own the query result, so we make sure
+      // that this node owns the source
+      SourceType src = std::get<source>(tuple);
+      if (sourceHash(src) % numNodes == nodeId) {
+        ResultType queryResult(&query, tuple);
 
-      resultMap->add(queryResult,
-                     edgeRequests);  
+        #ifdef DEBUG
+        printf("Node %lu GraphStore::checkSubgraphQueries adding queryResult " 
+          "%s\n", this->nodeId, queryResult.toString().c_str());
+        #endif
+
+        resultMap->add(queryResult, *csr, *csc, edgeRequests);  
+        
+        #ifdef DEBUG
+        printf("Node %lu GraphStore::checkSubgraphQueries added queryResult " 
+          "%s.  EdgeRequests.size() %lu\n", this->nodeId, 
+          queryResult.toString().c_str(), edgeRequests.size());
+        #endif
+      } else {
+
+        #ifdef DEBUG
+        printf("Node %lu GraphStore::checkSubgraphQueries this node didn't own"
+          "source in %s\n", this->nodeId, sam::toString(tuple).c_str());
+        #endif
+      }
     }
   }
+  #ifdef DEBUG
+  std::string message = "Node " + boost::lexical_cast<std::string>(nodeId) + 
+    " GraphStore::checkSubgraphQueries edgeRequests from tuple " +
+    sam::toString(tuple) + ": ";
+  for(auto edgeRequest : edgeRequests) {
+    message += edgeRequest.toString() + "    ";
+  }
+  printf("%s\n", message.c_str());
+  #endif
 }
 
 /**
@@ -323,8 +359,10 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
 {
+  std::lock_guard<std::mutex> lock(generalLock);
   #ifdef DEBUG
-  printf("Node %lu GraphStore::processEdgeRequests()\n", this->nodeId);
+  printf("Node %lu GraphStore::processEdgeRequests() there are %lu "
+    "edge requests\n", this->nodeId, edgeRequests.size());
   #endif
   
   // Don't want to issue more edge requests if we've been terminated.
@@ -363,7 +401,8 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
         //If both source and target are not null, it doesn't really matter
         //to which node we send the edge request, since both nodes will have
         //matching edges.
-        
+
+        //TODO partition info        
         // load balancing by splitting our requests 
         if (rand() % 2 == 0 )
         {
@@ -446,14 +485,12 @@ consume(TupleType const& tuple)
   std::get<0>(myTuple) = idGenerator.generate();
 
   #ifdef DEBUG
-  printf("Node %lu GraphStore::consume %s\n", nodeId, 
+  printf("Node %lu GraphStore::consume tuple %s\n", nodeId, 
     sam::toString(myTuple).c_str());
   #endif
 
   // Adds the edge to the graph
-  generalLock.lock();
   addEdge(myTuple);
-  generalLock.unlock();
 
   // TODO Delete old edges, maybe
 
@@ -461,27 +498,16 @@ consume(TupleType const& tuple)
   // with edge requests when we find we need a tuple that will reside 
   // elsewhere.
   std::list<EdgeRequestType> edgeRequests;
-  resultMap->process(myTuple, edgeRequests);
-
-  #ifdef DEBUG
-  printf("Node %lu resultMap->processed tuple in GraphStore::consume()\n", 
-    nodeId);
-  #endif
-
-  // Send out the edge requests to the other nodes.
-  processEdgeRequests(edgeRequests);
-  //printf("processed edge requests\n");
+  resultMap->process(myTuple, *csr, *csc, edgeRequests);
 
   // See if anybody needs this tuple and send it out to them.
   edgeRequestMap->process(myTuple);
 
-  #ifdef DEBUG
-  printf("Node %lu GraphStore::consume edge request map processed tuple\n", 
-    nodeId);
-  #endif
-
   // Check against all registered queries
   checkSubgraphQueries(myTuple, edgeRequests);
+
+  // Send out the edge requests to the other nodes.
+  processEdgeRequests(edgeRequests);
 
   return true;
 }
@@ -772,13 +798,14 @@ GraphStore(
               sam::toString(tuple).c_str());
             #endif
 
+            // Do we need to do this?
             // Add the edge to the graph
-            addEdge(tuple); 
+            addEdge(tuple);
 
             // Process the new edge over results and see if it satifies
             // queries.  If it does, there may be new edge requests.
             std::list<EdgeRequestType> edgeRequests;
-            resultMap->process(tuple, edgeRequests);
+            resultMap->process(tuple, *csr, *csc, edgeRequests);
 
             // Send out the edge requests to the other nodes.
             processEdgeRequests(edgeRequests);
@@ -896,11 +923,19 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
     printf("Node %lu GraphStore::processRequestAgainstGraph sending edge %s\n",
       nodeId, sam::toString(edge).c_str());
     #endif
+    SourceType src = std::get<source>(edge);
+    TargetType trg = std::get<target>(edge);
+    size_t srcHash = sourceHash(src) % numNodes;
+    size_t trgHash = targetHash(trg) % numNodes;
 
-    zmq::message_t message = tupleToZmq(edge);
+    // Only send the message of the node won't get the message anyway.
+    if (srcHash != node && trgHash != node) {
 
-    edgePushCounter.fetch_add(1);
-    edgePushers[node]->send(message);     
+      zmq::message_t message = tupleToZmq(edge);
+
+      edgePushCounter.fetch_add(1);
+      edgePushers[node]->send(message);     
+    }
   }
 }
 

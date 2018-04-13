@@ -71,22 +71,6 @@ private:
    */
   void cleanupEdges(size_t index);
 
-  /**
-   * Called by the public findEdges methods, this is the logic common
-   * to both.
-   * \param src The source to look up, or nullValue<NodeType>() if not set.
-   * \param trg The target to look up, or nullValue<NodeType>() if not set.
-   * \param startTimeFirst By when the edge should have started 
-   * \param startTimeSecond Before when the edge should have started
-   * \param endTimeFirst By when the edge should have finished.
-   * \param endTimeSecond Before when the edge should have finished. 
-   * \param foundEdges We add an edges found to this list.
-   */
-  void findEdges(NodeType const& src, NodeType const& trg, 
-                 double startTimeFirst, double startTimeSecond,
-                 double endTimeFirst, double endTimeSecond,
-                 std::list<TupleType>& foundEdges) const;
-
 public:
 
   /**
@@ -122,6 +106,22 @@ public:
   void findEdges(ReversedEdgeRequestType const& edgeRequest,
                  std::list<TupleType>& foundEdges) const;
 
+
+  /**
+   * Called by the public findEdges methods, this is the logic common
+   * to both.
+   * \param src The source to look up, or nullValue<NodeType>() if not set.
+   * \param trg The target to look up, or nullValue<NodeType>() if not set.
+   * \param startTimeFirst By when the edge should have started 
+   * \param startTimeSecond Before when the edge should have started
+   * \param endTimeFirst By when the edge should have finished.
+   * \param endTimeSecond Before when the edge should have finished. 
+   * \param foundEdges We add an edges found to this list.
+   */
+  void findEdges(NodeType const& src, NodeType const& trg, 
+                 double startTimeFirst, double startTimeSecond,
+                 double endTimeFirst, double endTimeSecond,
+                 std::list<TupleType>& foundEdges) const;
 
 
   /** 
@@ -293,15 +293,23 @@ const
                 }
               }
               #ifdef DEBUG
-              printf("CompressedSparse::findEdges pass after checking"
+              printf("CompressedSparse::findEdges pass after checking "
                 "source/target: %d\n", passed);
               #endif
 
               if (passed) {
-                // Check that the time is after starttime and 
-                // before stoptime
                 double candTime = std::get<time>(*it);
                 double candDuration = std::get<duration>(*it);
+                // Check that the time is after starttime and 
+                // before stoptime
+                #ifdef DEBUG
+                printf("CompressedSparse::findEdges candTime %f "
+                  "candDuration %f "
+                  "startTimeFirst %f startTimeSecond %f "
+                  "endTimeFirst %f endTimeSecond %f\n",
+                  candTime, candDuration, startTimeFirst, startTimeSecond,
+                  endTimeFirst, endTimeSecond);
+                #endif
                 if (candTime < startTimeFirst ||
                     candTime > startTimeSecond ||
                     candTime + candDuration < endTimeFirst ||

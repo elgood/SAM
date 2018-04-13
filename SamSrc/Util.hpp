@@ -10,8 +10,11 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <zmq.hpp>
+#include <mutex>
+
 
 namespace sam {
+
 
 class UtilException : public std::runtime_error {
 public:
@@ -100,7 +103,8 @@ class StringHashFunction
 public:
   inline
   uint64_t operator()(std::string const& s) const {
-    return hashFunction(s);
+    return std::hash<std::string>{}(s);
+    //return hashFunction(s);
   }
 };
 

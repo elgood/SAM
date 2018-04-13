@@ -232,25 +232,28 @@ EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processSource(TupleType const& tuple)
 {
-  //printf("processSource\n");
   SourceType src = std::get<source>(tuple);
-  //printf("src %s\n", src.c_str());
+  TargetType trg = std::get<target>(tuple);
   size_t index = sourceHash(src) % tableCapacity;
-  zmq::message_t message = tupleToZmq(tuple);
 
   for (auto edgeRequest : ale[index])
   {
-    //printf("processSource %s\n", edgeRequest.toString().c_str());
     SourceType edgeRequestSrc = edgeRequest.getSource();
-    //printf("edgeRequestSrc %s\n", edgeRequestSrc.c_str());
     if (sourceEquals(src, edgeRequestSrc)) {
+      
       size_t node = edgeRequest.getReturn();
-      edgePushCounter.fetch_add(1);
-      #ifdef DEBUG
-      printf("Node %lu->%lu sending edge %s\n", nodeId, node,
-        toString(tuple).c_str());
-      #endif
-      pushers[node]->send(message);  
+      // TODO: Partition info
+      if (targetHash(trg) % numNodes != node) {
+        zmq::message_t message = tupleToZmq(tuple);
+        edgePushCounter.fetch_add(1);
+
+        #ifdef DEBUG
+        printf("Node %lu->%lu EdgeRequestMap::processSource sending edge %s\n",
+           nodeId, node, toString(tuple).c_str());
+        #endif
+
+        pushers[node]->send(message);  
+      }
     }
   }
 }
@@ -267,28 +270,34 @@ processTarget(TupleType const& tuple)
   printf("Node %lu EdgeRequestMap::processTarget\n", nodeId);
   #endif
 
+  SourceType src = std::get<source>(tuple);
   TargetType trg = std::get<target>(tuple);
   size_t index = targetHash(trg) % tableCapacity;
-  zmq::message_t message = tupleToZmq(tuple);
-  //printf("trg %s index %lu\n", trg.c_str(), index);
 
   for (auto edgeRequest : ale[index])
   {
-    //printf("processTarget %s\n", edgeRequest.toString().c_str());
     TargetType edgeRequestTrg = edgeRequest.getTarget();
-    //printf("%s %s\n", trg.c_str(), edgeRequestTrg.c_str());
     if (targetEquals(trg, edgeRequestTrg)) {
-      //printf("equals\n");
-      int node = edgeRequest.getReturn();
-      //printf("before send\n");
-      edgePushCounter.fetch_add(1);
-      //printf("trg %s edgePushCounter %llu\n", trg.c_str(), edgePushCounter.load());
+
+      size_t node = edgeRequest.getReturn();
+      // TODO: Partition info
       #ifdef DEBUG
-      printf("Node %lu EdgeRequestMap::processTarget trg %s Sending to node "
-        "%d\n", nodeId, trg.c_str(), node);
+      printf("Node %lu EdgeRequestMap::processTarget sourceHash(src) mod "
+        "numNodes  %llu node %lu\n", nodeId, sourceHash(src) % numNodes, node);
       #endif
-      pushers[node]->send(message);  
-      //printf("after send\n");
+
+
+      if (sourceHash(src) % numNodes != node) {
+        zmq::message_t message = tupleToZmq(tuple);
+        edgePushCounter.fetch_add(1);
+
+        #ifdef DEBUG
+        printf("Node %lu->%lu EdgeRequestMap::processTarget sending edge %s\n",
+          nodeId, node, toString(tuple).c_str());
+        #endif
+
+        pushers[node]->send(message);  
+      }
     }
   }
 }
@@ -315,9 +324,15 @@ processSourceTarget(TupleType const& tuple)
     if (targetEquals(trg, edgeRequestTrg) &&
         sourceEquals(src, edgeRequestSrc)) 
     {
-      int node = edgeRequest.getReturn();
-      edgePushCounter.fetch_add(1);
-      pushers[node]->send(message);  
+      size_t node = edgeRequest.getReturn();
+
+      // TODO: Partition info
+      if (sourceHash(src) % numNodes != node &&
+          targetHash(trg) % numNodes != node)
+      {
+        edgePushCounter.fetch_add(1);
+        pushers[node]->send(message);  
+      }
     }
   }
 }

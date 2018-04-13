@@ -30,11 +30,14 @@ public:
   ZeroMQPushPullException(std::string message) : std::runtime_error(message) {}
 };
 
+template <typename TupleType, typename Tuplizer, typename HF>
 class ZeroMQPushPull : public AbstractConsumer<std::string>, 
-                       public BaseProducer<Netflow>
+                       public BaseProducer<TupleType>
 {
 private:
-  SimpleIdGenerator idGenerator; ///> Generates unique id for each netflow
+  HF hash; ///> Hashes
+  Tuplizer tuplizer; ///> Converts from string to tuple
+  SimpleIdGenerator idGenerator; ///> Generates unique id for each tuple
   volatile bool stopPull = false; ///> Allows exit from pullThread
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
@@ -46,19 +49,10 @@ private:
   size_t metricInterval = 100000; ///> How many seen before spitting metrics out
 
   /// The zmq context
-  //std::shared_ptr<zmq::context_t> context = 
-  //  std::shared_ptr<zmq::context_t>(new zmq::context_t(1));
-  //zmq::context_t* context = new zmq::context_t(1);
   zmq::context_t context = zmq::context_t(1);
 
   /// A vector of all the push sockets
   std::vector<std::shared_ptr<zmq::socket_t> > pushers;
-
-  /// A vector of all the pull sockets
-  //std::vector<std::shared_ptr<zmq::socket_t> > pullers;
-  
-  /// Keeps track of how many items have been seen.
-  //std::vector<std::shared_ptr<std::atomic<std::uint32_t> > > pullCounters;
 
   // The thread that polls the pull sockets
   std::thread pullThread;
@@ -105,7 +99,8 @@ private:
   
 };
 
-ZeroMQPushPull::ZeroMQPushPull(
+template <typename TupleType, typename Tuplizer, typename HF>
+ZeroMQPushPull<TupleType, Tuplizer, HF>::ZeroMQPushPull(
                  std::size_t queueLength,
                  std::size_t numNodes, 
                  std::size_t nodeId, 
@@ -113,7 +108,7 @@ ZeroMQPushPull::ZeroMQPushPull(
                  std::vector<std::size_t> ports, 
                  std::size_t hwm)
   :
-  BaseProducer(queueLength)
+  BaseProducer<TupleType>(queueLength)
 {
   //std::cout << "Entering ZeroMQPushPull constructor" << std::endl; 
   this->numNodes  = numNodes;
@@ -130,10 +125,6 @@ ZeroMQPushPull::ZeroMQPushPull(
   for (int i =0; i < numNodes; i++) 
   {
     if (i != nodeId) {
-      //std::cout << "i " << i << std::endl;
-      //auto counter = std::shared_ptr<std::atomic<std::uint32_t> >(
-      //                new std::atomic<std::uint32_t>(0));
-      //pullCounters.push_back( counter );   
 
       /////////// Adding push sockets //////////////
       auto pusher = std::shared_ptr<zmq::socket_t>(
@@ -161,25 +152,6 @@ ZeroMQPushPull::ZeroMQPushPull(
       }
       pushers[i] = pusher;
 
-      //////////// Adding pull sockets //////////////
-      //auto puller = std::shared_ptr<zmq::socket_t>(
-      //                new zmq::socket_t(*context, ZMQ_PULL));
-
-      //ip = getIpString(hostnames[i]);
-      //url = "tcp://" + ip + ":";
-      //try {
-      //  url = url + boost::lexical_cast<std::string>(ports[nodeId]);
-      //} catch (std::exception e) {
-      //  throw ZeroMQPushPullException(e.what()); 
-      //}
-      //puller->setsockopt(ZMQ_RCVHWM, &this->hwm, sizeof(this->hwm));
-      //puller->connect(url);
-
-      //pullers.push_back(puller);
-
-      /////////////  Adding the poll item //////////
-      //items.get()[i].socket = *puller;
-      //items.get()[i].events = ZMQ_POLLIN;
     }
   }
 
@@ -251,11 +223,10 @@ ZeroMQPushPull::ZeroMQPushPull(
           if (isTerminateMessage(message)) {
             terminate[i] = true;
           } else {
-            char *buff = static_cast<char*>(message.data());
-            std::string sNetflow(buff); 
-            uint32_t id = idGenerator.generate();
-            Netflow netflow = makeNetflow(id, sNetflow);
-            this->parallelFeed(netflow);
+            std::string s = getStringFromZmqMessage(message);
+            size_t id = idGenerator.generate();
+            TupleType tuple = tuplizer(id, s);
+            this->parallelFeed(tuple);
           }
         }
         if (terminate[i]) numStop++; 
@@ -269,13 +240,15 @@ ZeroMQPushPull::ZeroMQPushPull(
   };
 
   pullThread = std::thread(pullFunction); 
-  
-  //std::cout << "Exiting ZeroMQPushPull constructor" << std::endl; 
 }
 
-
-void ZeroMQPushPull::terminate() {
+template <typename TupleType, typename Tuplizer, typename HF>
+void ZeroMQPushPull<TupleType, Tuplizer, HF>::terminate() {
   
+  for (auto consumer : this->consumers) {
+    consumer->terminate();
+  }
+
   // If terminate was called, we aren't going to receive any more
   // data, so we can push out the terminate signal to all pull sockets. 
   for(int i = 0; i < numNodes; i++) {
@@ -291,10 +264,13 @@ void ZeroMQPushPull::terminate() {
 }
 
 
-
-bool ZeroMQPushPull::consume(std::string const& s)
+template <typename TupleType, typename Tuplizer, typename HF>
+bool ZeroMQPushPull<TupleType, Tuplizer, HF>::consume(std::string const& s)
 {
-  //std::cout << "ZeroMQPushPull::consume " << toString(n) << std::endl;
+  #ifdef DEBUG
+  printf("Node %lu ZeroMQPushPull::consume string %s\n", nodeId, s.c_str());
+  #endif
+
   // Keep track how many netflows have come through this method.
   consumeCount++;
   if (consumeCount % metricInterval == 0) {
@@ -318,32 +294,26 @@ bool ZeroMQPushPull::consume(std::string const& s)
   std::string source = item;
   std::getline(ss, item, ','); //dest ip
   std::string dest = item;
-  size_t node1 = std::hash<std::string>{}(source) % numNodes;
-  size_t node2 = std::hash<std::string>{}(dest) % numNodes;
+  size_t node1 = hash(source) % numNodes;
+  size_t node2 = hash(dest) % numNodes;
 
-  size_t lengthString = s.size();
-  zmq::message_t message1(lengthString + 1);
-  snprintf ((char *) message1.data(), lengthString + 1 ,
-              "%s", s.c_str());
+  zmq::message_t message = fillZmqMessage(s);
   if (node1 != this->nodeId) { // Don't send data to ourselves.
-    pushers[node1]->send(message1);
+    pushers[node1]->send(message);
   } else {
     uint32_t id = idGenerator.generate();
-    Netflow netflow = makeNetflow(id, s);
-    this->parallelFeed(netflow);
+    TupleType tuple = tuplizer(id, s);
+    this->parallelFeed(tuple);
   }
 
   // Don't send message twice
   if (node1 != node2) {
-    zmq::message_t message2(lengthString + 1);
-    snprintf ((char *) message2.data(), lengthString + 1 ,
-                "%s", s.c_str());
     if (node2 != this->nodeId) {  
-      pushers[node2]->send(message2);
+      pushers[node2]->send(message);
     } else {
       uint32_t id = idGenerator.generate();
-      Netflow netflow = makeNetflow(id, s);
-      this->parallelFeed(netflow);
+      TupleType tuple = tuplizer(id, s);
+      this->parallelFeed(tuple);
     }
   }
   return true;

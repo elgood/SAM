@@ -52,11 +52,14 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
+        PartitionType;
+
 void createPipeline(
                  std::shared_ptr<ReadCSV> readCSV,
                  std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
-                 std::shared_ptr<ZeroMQPushPull> pushpull,
+                 std::shared_ptr<PartitionType> pushpull,
                  std::size_t queueLength,
                  std::size_t numNodes,
                  std::size_t nodeId,
@@ -730,7 +733,7 @@ int main(int argc, char** argv) {
     // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
     // getting the data from the receiver (e.g. a socket or a file) and then
     // publishing it in a load-balanced way to the cluster.
-    auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
+    auto consumer = std::make_shared<PartitionType>(queueLength,
                                    numNodes, 
                                    nodeId, 
                                    hostnames, 

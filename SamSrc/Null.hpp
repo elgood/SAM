@@ -24,7 +24,7 @@ std::string nullValue<std::string>() { return ""; }
  * Returns true if the value  
  */
 template <typename T>
-bool isNull(T t) {
+bool isNull(T const& t) {
   return t == nullValue<T>();
 }
 

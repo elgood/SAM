@@ -10,14 +10,30 @@
 
 #include <vector>
 #include <string>
+#include <thread>
+#include <functional>
+#include <mutex>
 
 #include "AbstractConsumer.hpp"
-#include <boost/thread/thread.hpp>
+#include "Util.hpp"
+//#include <boost/thread/thread.hpp>
 
 namespace sam {
 
 template <typename T>
 class BaseProducer {
+private:
+  // These are the threads we use for parallelizing the parallelFeed
+  // function.  
+  std::vector<std::thread> threads;
+
+  // The function that each of the threads run in the parallelFeed function.
+  std::function<void(size_t)> parallelFeedFunction;
+
+  // Multiple threads access the parallelFeed method.  This mutex prevents
+  // problems
+  std::mutex lock;
+
 protected:
 	/// The list of consumers that consume from output from this producer
 	std::vector<std::shared_ptr<AbstractConsumer<T>>> consumers;
@@ -36,7 +52,7 @@ protected:
 
 public:
   //BaseProducer();
-	BaseProducer(int queueLength);
+	BaseProducer(size_t queueLength);
 	virtual ~BaseProducer();
 
   /**
@@ -44,26 +60,42 @@ public:
    * \param consumer The object that consumes the output of this producer.
    */
 	void registerConsumer(std::shared_ptr<AbstractConsumer<T>> consumer);
-  
-  bool deregisterConsumer(std::shared_ptr<AbstractConsumer<T>> consumer);
-  
+
+  /**
+   * Removes the consumer from list of consumers. (Note: not implemented)
+   */  
+  void deregisterConsumer(std::shared_ptr<AbstractConsumer<T>> consumer);
+ 
+  /**
+   * Gets the number of consumers that are registered to this class.
+   */ 
   size_t getNumConsumers() const;
+
+  /**
+   * Gets the ith consumer from the list of consumers.
+   */
   std::shared_ptr<const AbstractConsumer<T>> getConsumer(size_t i);
 
+  /**
+   * Feeds the provided item to each of the consumers in parallel.
+   */
   void parallelFeed(T const& s);
 
   size_t getNumReadItems() const { return numReadItems; }
 
 };
 
-//template <typename T>
-//BaseProducer<T>::BaseProducer() : BaseProducer(1) {}
-
 template <typename T>
-BaseProducer<T>::BaseProducer(int queueLength) {
+BaseProducer<T>::BaseProducer(size_t queueLength) {
 	this->queueLength = queueLength;
 	inputQueue = new T[queueLength];
   numItems = 0;
+
+  parallelFeedFunction = [this](size_t threadId) {
+    for (size_t i = 0; i < this->queueLength; i++) {
+      this->consumers[threadId]->consume(this->inputQueue[i]);
+    }
+  };
 }
 
 template <typename T>
@@ -76,13 +108,15 @@ void BaseProducer<T>::registerConsumer(
   std::shared_ptr<AbstractConsumer<T>> consumer)
 {
 	consumers.push_back(consumer);
+  threads.resize(consumers.size());
 }
 
 template <typename T>
-bool BaseProducer<T>::deregisterConsumer(
+void BaseProducer<T>::deregisterConsumer(
   std::shared_ptr<AbstractConsumer<T>> consumer)
 {
-  return false;
+  throw std::logic_error("BaseProducer::deregisterConsumer is not"
+    " implemented");
 }
 
 template <typename T>
@@ -90,44 +124,32 @@ size_t BaseProducer<T>::getNumConsumers() const { return consumers.size(); }
 
 template <typename T>
 void BaseProducer<T>::parallelFeed(T const& item) {
-  //std::cout << "In parallelfeed " << std::endl;
-
-  numReadItems++;
+  lock.lock();
   
-  inputQueue[numItems] = T(item);
+  numReadItems++;
+  inputQueue[numItems] = item; // T(item);
   numItems++;
+
+  //  this->queueLength));
   if (numItems >= queueLength) {
-    //std::cout << "parallelfeed " << numItems << " " << queueLength << std::endl;
-
-    boost::thread_group threads;
-    for (int i = 0; i < consumers.size(); i++) {
-     
-      threads.create_thread([this, i]()
-        {
-
-          for (int j = 0; j < this->queueLength; j++) {
-            this->consumers[i]->consume(inputQueue[j]);
-            
-          }
-        }
-
-      );
-      
+    for(size_t i = 0; i < consumers.size(); i++) {
+      threads[i] = std::thread(parallelFeedFunction, i);
     }
-    //REMOVE serial implementation for debugging
-    //for (int j = 0; j < this->queueLength; j++) {
-    //  for (int i = 0; i < consumers.size(); i++) {
-    //    //std::cout << "i j " << i << " " << j << " blahblahblah" << std::endl;
-    //    this->consumers[i]->consume(inputQueue[j]);
-    //    //std::cout << "after consume" << std::endl;
-    //  }
-    //} //END REMOVE
-    numItems = 0;
-    threads.join_all();
 
-  }
-  //std::cout << "exiting parallelfeed " << numReadItems << " " << numItems 
-  //          << std::endl;
+    for(size_t i = 0; i < consumers.size(); i++) {
+      threads[i].join();
+    }
+    // Serial for debugging
+    //for(size_t i = 0; i < consumers.size(); i++) {
+    //  for(size_t j = 0; j < this->queueLength; j++) {
+    //    consumers[i]->consume(inputQueue[j]);
+    //  }
+    //}
+    numItems = 0;
+  } 
+
+  lock.unlock();
+
 
 }
 

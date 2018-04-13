@@ -127,6 +127,10 @@ public:
    * Sets the maximum time difference in seconds between start and end times.
    */
   void setMaxOffset(double offset) { 
+    if (finalized) {
+      throw SubgraphQueryException("Tried to set max offset, but the query"
+        " has already been finalized."); 
+    }
     if (offset < 0) {
       std::string message = "Tried to set offset to negative number " +
         boost::lexical_cast<std::string>(offset);
@@ -152,6 +156,7 @@ public:
    * variable bindings).
    * \param tuple The Tuple under question.
    * \param index The index of the edge description in sortedEdges.
+   * \param startTime The time that the edge begins
    */
   bool satisfies(TupleType const& tuple, size_t index, double startTime) const; 
 

@@ -4,6 +4,7 @@
 #include <string>
 #include <boost/test/unit_test.hpp>
 
+
 using namespace sam;
 
 BOOST_AUTO_TEST_CASE( test_string_null )
@@ -16,3 +17,4 @@ BOOST_AUTO_TEST_CASE( test_string_null )
   std::string blah = "blah";
   BOOST_CHECK(!isNull(blah));
 }
+

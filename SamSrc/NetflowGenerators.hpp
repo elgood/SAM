@@ -135,6 +135,49 @@ private:
 };
 
 /**
+ * Creates completely random source and destination ip addresses
+ */
+class RandomGenerator : public AbstractNetflowGenerator
+{
+private:
+
+public:
+  /**
+   * Constructor.
+   */
+  RandomGenerator() {}
+
+  /**
+   * Destructor.
+   */
+  ~RandomGenerator() {}
+
+  std::string generate() {
+    return AbstractNetflowGenerator::generate();
+  }
+
+  std::string generate(double epochTime) {
+    std::string result;
+    result = boost::lexical_cast<std::string>(epochTime) + ",";
+    result = result + "parseDate,dateTimeStr,ipLayerProtocol,";
+    result = result + "ipLayerProtocolCode," + generateRandomIp() + ",";
+    result = result + generateRandomIp() + ",";
+    result = result + boost::lexical_cast<std::string>(generateRandomPort());
+    result = result + ",";
+    
+    // Get the port number for this iteration
+    result = result + boost::lexical_cast<std::string>(generateRandomPort());
+    result = result + ",";
+    result = result + "1,1,1,";
+    result = result + "1,1,";
+    result = result + "1,1,";
+    result = result + "1,1,";
+    result = result + "1";
+    return result;
+  }
+};
+
+/**
  * This generates traffic between one pair of one client and one server.
  * You can specify mean and deviation for a normal distribution for the
  * payload size for both the client and the server.

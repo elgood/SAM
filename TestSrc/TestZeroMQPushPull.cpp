@@ -9,6 +9,9 @@
 
 using namespace sam;
 
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
+        PartitionType;
+
 BOOST_AUTO_TEST_CASE( test_graph_store )
 {
   int major, minor, patch;
@@ -16,7 +19,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   std::cout << "ZMQ Version " << major << " " << minor << " " << patch 
             << std::endl;
 
-  size_t queueLength = 100;
+  size_t queueLength = 1;
   size_t numNodes = 2;
   size_t nodeId0 = 0;
   size_t nodeId1 = 1;
@@ -29,51 +32,34 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   hostnames.push_back("localhost");
   ports.push_back(10001);
 
-  int n = 10;
+  size_t n = 10000;
 
-  ZeroMQPushPull* pushPull0 = new ZeroMQPushPull(queueLength,
+  AbstractNetflowGenerator* generator0 = new UniformDestPort("192.168.0.1", 1);
+  AbstractNetflowGenerator* generator1 = new UniformDestPort("192.168.0.2", 1);
+   
+  PartitionType* pushPull0 = new PartitionType(queueLength,
                                     numNodes, nodeId0,
                                     hostnames, ports,
                                     hwm);
 
-  auto function0 = [pushPull0, n]()
-                          
-  {
-    AbstractNetflowGenerator *generator0 = 
-      new UniformDestPort("192.168.0.1", 1);
-    
-    for (int i = 0; i < n; i++) {
-      std::string str = generator0->generate();
-      pushPull0->consume(str);
-    }
-    pushPull0->terminate();
-    
-    delete generator0;
-  };
-
-  ZeroMQPushPull* pushPull1 = new ZeroMQPushPull(queueLength,
+  PartitionType* pushPull1 = new PartitionType(queueLength,
                                     numNodes, nodeId1,
                                     hostnames, ports,
                                     hwm);
 
-  auto function1 = [pushPull1, n]()
-                          
+
+  auto function = [n](AbstractNetflowGenerator *generator,
+                      PartitionType* pushPull)
   {
-    AbstractNetflowGenerator *generator1 = 
-      new UniformDestPort("192.168.0.2", 1);
-    
-    for (int i = 0; i < n; i++) {
-      std::string str = generator1->generate();
-      pushPull1->consume(str);
+    for(size_t i = 0; i < n; i++) {
+      std::string str = generator->generate();
+      pushPull->consume(str);
     }
-    pushPull1->terminate();
-    
-    delete generator1;
+    pushPull->terminate();
   };
 
-
-  std::thread thread0(function0);
-  std::thread thread1(function1);
+  std::thread thread0(function, generator0, pushPull0);
+  std::thread thread1(function, generator1, pushPull1);
 
   thread0.join();
   thread1.join();
@@ -86,6 +72,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
 
   delete pushPull0;
   delete pushPull1;
-
+  delete generator0;
+  delete generator1;
 }
 

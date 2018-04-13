@@ -123,7 +123,7 @@ struct DoubleNodeFixture  {
   }
 };
 
-
+/*
 ///
 /// This tests matching a single edge across two nodes.  This doesn't
 /// test the communication of edge requests since each node can
@@ -138,29 +138,49 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
   graphStore0->registerQuery(query);
   graphStore1->registerQuery(query);
 
+
+  size_t expected0 = 0;
+  size_t expected1 = 0;
   int n = 1000;
 
   auto graphFunction = [](GraphStoreType* graphStore, int n,
-                            AbstractNetflowGenerator* generator)
+                            AbstractNetflowGenerator* generator,
+                            size_t threadId, size_t* expected)
   {
+    OneTwoThreeFourHashFunction hash;
+
     for (int i = 0; i < n; i++) {
       std::string str = generator->generate();
-      Netflow n = makeNetflow(0, str);
-      graphStore->consume(n);
+      Netflow netflow = makeNetflow(0, str);
+
+      // We are simulating the partitioning, so only send netflows
+      // that would be sent with partitioning in place.
+      std::string source = std::get<SourceIp>(netflow);
+      std::string target = std::get<DestIp>(netflow);
+      size_t sourceHash = hash(source) % 2;
+      size_t targetHash = hash(target) % 2;
+  
+      if (sourceHash == threadId || targetHash == threadId) {
+        graphStore->consume(netflow);
+      }
+      if (sourceHash == threadId) {
+        (*expected)++;
+      }
+
     }
     graphStore->terminate();
 
   };
 
-  std::thread thread0(graphFunction, graphStore0, n, generator0);
-  std::thread thread1(graphFunction, graphStore1, n, generator1);
+  std::thread thread0(graphFunction, graphStore0, n, generator0, 0, &expected0);
+  std::thread thread1(graphFunction, graphStore1, n, generator1, 1, &expected1);
 
   thread0.join();
   thread1.join();
 
-  BOOST_CHECK_EQUAL(n, graphStore0->getNumResults());
-  BOOST_CHECK_EQUAL(n, graphStore1->getNumResults());
-}
+  BOOST_CHECK_EQUAL(expected0, graphStore0->getNumResults());
+  BOOST_CHECK_EQUAL(expected1, graphStore1->getNumResults());
+}*/
 
 ///
 /// This test creates a two graphstores and we send each graphstore
@@ -173,7 +193,6 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 ///  
 BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
 {
-
   AbstractNetflowGenerator *onePairGenerator0 = 
       new OnePairSizeDist("192.168.0.1","192.168.0.2", 1.0, 1.0, 1.0, 1.0);
   AbstractNetflowGenerator *onePairGenerator1 = 
@@ -230,7 +249,8 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   graphStore1->registerQuery(query);
 
   int n = 2;
-  
+ 
+  // This function sends the extra netflow to bridge the two data streams. 
   auto graphFunction0 = [](GraphStoreType* graphStore,
     int n, AbstractNetflowGenerator* generator)
     

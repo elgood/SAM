@@ -57,17 +57,30 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   map0.addRequest(edgeRequest0);
   map1.addRequest(edgeRequest1);
   
-  size_t n = 1000;
+  size_t n = 1;
 
 
   auto mapFunction = [](MapType* map,
                         std::shared_ptr<AbstractNetflowGenerator> generator, 
-                        size_t n)
+                        size_t n,
+                        size_t id)
   {
-    for (size_t i = 0; i < n; i++) {
+    LastOctetHashFunction hash;
+    size_t i = 0;
+    while (i < n) {
       std::string str = generator->generate();
       Netflow netflow = makeNetflow(i, str);
       map->process(netflow);
+
+      // If the hash of the source ip equals the other node, then
+      // we don't send the edge since it should have gotten it, so
+      // we only increment the counter when we get a netflow where the source
+      // and target both hash to the given node (thread).
+      if (hash(std::get<SourceIp>(netflow)) % 2 == id) {
+        i++;
+      }
+    }
+    for (size_t i = 0; i < n; i++) {
     }
     map->terminate();
     #ifdef DEBUG
@@ -117,8 +130,8 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
     boost::lexical_cast<std::string>(edgePorts[1]);
 
 
-  std::thread pushthread0(mapFunction, &map0, generator0, n);
-  std::thread pushthread1(mapFunction, &map1, generator1, n);
+  std::thread pushthread0(mapFunction, &map0, generator0, n, 0);
+  std::thread pushthread1(mapFunction, &map1, generator1, n, 1);
   int receiveCount0 = 0;
   int receiveCount1 = 0;
   std::thread pullthread0(pullFunction, 

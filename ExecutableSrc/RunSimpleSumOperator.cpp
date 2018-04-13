@@ -30,6 +30,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
+        PartitionType;
+
 int main(int argc, char** argv) {
 
 #ifdef DEBUG
@@ -129,7 +132,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto consumer = std::make_shared<ZeroMQPushPull>(queueLength,
+  auto consumer = std::make_shared<PartitionType>(queueLength,
                                numNodes, 
                                nodeId, 
                                hostnames, 
