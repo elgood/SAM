@@ -225,3 +225,29 @@ BOOST_FIXTURE_TEST_CASE( test_specify_time_one_pair, OnePairFixture )
   }
 }
 
+/**
+ * Tests the generating from a pool of random vertices.
+ */
+BOOST_AUTO_TEST_CASE( test_random_pool_generator )
+{
+  size_t numIter = 1000;
+  size_t numVertices = 11;
+  RandomPoolGenerator generator(numVertices);
+  for(size_t i = 0; i < numIter; i++)
+  {
+    std::string str = generator.generate();
+    Netflow netflow = makeNetflow(i, str);
+    std::string source = std::get<SourceIp>(netflow);
+    std::string target = std::get<DestIp>(netflow);
+    size_t sourceInt = boost::lexical_cast<size_t>(source.substr(4));
+    size_t targetInt = boost::lexical_cast<size_t>(target.substr(4));
+    BOOST_CHECK(sourceInt < numVertices);
+    BOOST_CHECK(sourceInt >= 0);
+    BOOST_CHECK(targetInt < numVertices);
+    BOOST_CHECK(targetInt >= 0);
+
+
+  }
+}
+
+

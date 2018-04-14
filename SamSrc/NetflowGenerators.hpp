@@ -178,6 +178,70 @@ public:
 };
 
 /**
+ * Chooses at random source and destination from a small set of n vertices.
+ * The source and target Ips have the form node<x>, where <x> is from 0 to
+ * n-1.  Right now the class allows edges that have target and destination
+ * as the same.
+ */
+class RandomPoolGenerator : public AbstractNetflowGenerator
+{
+private:
+  /// The number of vertices.
+  size_t numVertices;
+
+public:
+  /**
+   * Constructor.
+   */
+  RandomPoolGenerator(size_t n) {
+    this->numVertices = n;
+  }
+
+  /**
+   * Destructor.
+   */
+  ~RandomPoolGenerator() {}
+
+  /**
+   * Uses AbstractNetflowGenerator::generate, which calls generate(epochTime)
+   * with the current clock time.
+   */
+  std::string generate() {
+    return AbstractNetflowGenerator::generate();
+  }
+
+  std::string generate(double epochTime) {
+
+    size_t sourceInt = rand() % numVertices;
+    size_t targetInt = rand() % numVertices;
+  
+    std::string sourceStr = "node" + 
+      boost::lexical_cast<std::string>(sourceInt);
+    std::string targetStr = "node" + 
+      boost::lexical_cast<std::string>(targetInt);
+
+    std::string result;
+    result = boost::lexical_cast<std::string>(epochTime) + ",";
+    result = result + "parseDate,dateTimeStr,ipLayerProtocol,";
+    result = result + "ipLayerProtocolCode," + sourceStr + ",";
+    result = result + targetStr + ",";
+    result = result + boost::lexical_cast<std::string>(generateRandomPort());
+    result = result + ",";
+    
+    // Get the port number for this iteration
+    result = result + boost::lexical_cast<std::string>(generateRandomPort());
+    result = result + ",";
+    result = result + "1,1,1,";
+    result = result + "1,1,";
+    result = result + "1,1,";
+    result = result + "1,1,";
+    result = result + "1";
+    return result;
+  }
+};
+
+
+/**
  * This generates traffic between one pair of one client and one server.
  * You can specify mean and deviation for a normal distribution for the
  * payload size for both the client and the server.
