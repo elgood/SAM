@@ -105,6 +105,22 @@ public:
     return numQueryResults; 
   }
 
+  size_t getNumIntermediateResults() const {
+    size_t total = 0;
+    for(size_t i = 0; i < tableCapacity; i++) {
+      total += alr[i].size();
+    }
+    return total;
+  }
+
+  size_t getResultCapacity() const {
+    return resultCapacity;
+  }
+
+  QueryResultType getResult(size_t index) const {
+    return queryResults[index];
+  }
+
 private:
   /**
    * Adds a new intermediate result. 

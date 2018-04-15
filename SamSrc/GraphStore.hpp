@@ -191,7 +191,6 @@ public:
    */
   void addEdge(TupleType n);
 
-
   bool consume(TupleType const& tuple);
 
   /**
@@ -221,6 +220,9 @@ public:
   inline size_t getEdgesPulled() { return edgePullCounter; }
 
   size_t getNumResults() const { return resultMap->getNumResults(); }
+  size_t getNumIntermediateResults() const { 
+    return resultMap->getNumIntermediateResults();
+  }
 
   /**
    * Returns the total number of edges that this node has sent over the
@@ -252,6 +254,10 @@ public:
    */
   size_t getTotalRequestPulls() {
     return requestPullCounter.load();
+  }
+
+  ResultType getResult(size_t index) const {
+    return resultMap->getResult(index);
   }
 
 };

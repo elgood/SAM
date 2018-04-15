@@ -44,6 +44,7 @@ private:
   std::vector<std::string> hostnames; ///> The hostnames of all the nodes
   std::vector<std::size_t> ports;  ///> The ports of all the nodes
   uint32_t hwm;  ///> The high water mark
+  bool terminated = false;
 
   size_t consumeCount = 0; ///> How many items this node has seen through feed()
   size_t metricInterval = 100000; ///> How many seen before spitting metrics out
@@ -79,6 +80,7 @@ public:
 
   virtual ~ZeroMQPushPull()
   {
+    terminate();
   }
   
   virtual bool consume(std::string const& netflow);
@@ -245,22 +247,28 @@ ZeroMQPushPull<TupleType, Tuplizer, HF>::ZeroMQPushPull(
 template <typename TupleType, typename Tuplizer, typename HF>
 void ZeroMQPushPull<TupleType, Tuplizer, HF>::terminate() {
   
-  for (auto consumer : this->consumers) {
-    consumer->terminate();
-  }
-
-  // If terminate was called, we aren't going to receive any more
-  // data, so we can push out the terminate signal to all pull sockets. 
-  for(int i = 0; i < numNodes; i++) {
-    if (i != nodeId) {
-      zmq::message_t message = emptyZmqMessage();
-      pushers[i]->send(message);
+  if (!terminated) {
+    
+    for (auto consumer : this->consumers) {
+      consumer->terminate();
     }
+
+    // If terminate was called, we aren't going to receive any more
+    // data, so we can push out the terminate signal to all pull sockets. 
+    for(int i = 0; i < numNodes; i++) {
+      if (i != nodeId) {
+        zmq::message_t message = emptyZmqMessage();
+        pushers[i]->send(message);
+      }
+    }
+
+    // The thread running the pull sockets should terminate after 
+    // receiving terminate messages from the other nodes.
+    pullThread.join();
   }
 
-  // The thread running the pull sockets should terminate after 
-  // receiving terminate messages from the other nodes.
-  pullThread.join();
+  terminated = true;
+
 }
 
 

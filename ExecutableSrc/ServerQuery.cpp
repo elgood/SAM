@@ -213,8 +213,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  vector<string> hostnames(numNodes); // A vector of hosts in the cluster
-  vector<std::size_t> ports(numNodes); // Vector of ports to use in the cluster
+  vector<string> hostnames(numNodes); // A hosts in the cluster
+  vector<std::size_t> ports(numNodes); // All the ports to use in the cluster
 
   if (numNodes == 1) { // Case when we are operating on one node
     hostnames[0] = "127.0.0.1";

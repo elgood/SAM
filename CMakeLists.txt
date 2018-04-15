@@ -91,10 +91,10 @@ foreach(exeSrc ${EXE_SRCS})
 
   target_link_libraries(${exeName} SamLib)
   target_link_libraries(${exeName} pthread)
-  #target_link_libraries(${exeName} ${BOOST_PROGRAM_OPTIONS_LIBRARY})
   target_link_libraries(${exeName} ${ZMQ_LIBRARIES})
   target_link_libraries(${exeName} ${Boost_LIBRARIES})
   target_link_libraries(${exeName} ${PROTOBUF_LIBRARIES})
+  target_link_libraries(${exeName} ProtoLib)
 
   set_target_properties(${exeName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 endforeach(exeSrc)

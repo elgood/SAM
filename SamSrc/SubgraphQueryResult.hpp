@@ -195,7 +195,13 @@ public:
   std::string toString() const {
     std::string rString = "Result Edges: ";
     for(TupleType const& t : resultEdges) {
-      rString = rString + "ResultTuple " + sam::toString(t) + " ";  
+      rString = rString + " ResultTuple " + 
+        "Id " + boost::lexical_cast<std::string>(std::get<0>(t)) +
+        " Time " + boost::lexical_cast<std::string>(std::get<time>(t)) +
+        " Duration " + boost::lexical_cast<std::string>(std::get<duration>(t)) +
+        " Source " + boost::lexical_cast<std::string>(std::get<source>(t)) +
+        " Target " + boost::lexical_cast<std::string>(std::get<target>(t));
+      //rString = rString + "ResultTuple " + sam::toString(t) + " ";  
     }
     rString += " var2BoundValue ";
     for(auto key : var2BoundValue) {
@@ -226,6 +232,10 @@ public:
   bool isNull() const 
   {
     return subgraphQuery == nullptr;
+  }
+
+  TupleType getResultTuple(size_t i) const {
+    return resultEdges[i];
   }
 
 private:
@@ -591,6 +601,12 @@ addEdgeInPlace(TupleType const& edge)
   printf("Add edge in place returning true\n");
   #endif
 
+  std::string edgeKey = 
+    boost::lexical_cast<std::string>(std::get<source>(edge)) +
+    boost::lexical_cast<std::string>(std::get<target>(edge)) +
+    boost::lexical_cast<std::string>(std::get<time>(edge)) +
+    boost::lexical_cast<std::string>(std::get<duration>(edge));
+  seenEdges.insert(edgeKey);
   return true;
 }
 
@@ -628,6 +644,16 @@ addEdge(TupleType const& edge)
 
     // We need to check if it fulfills the constraints of the edge description
     // and also it fits the existing variable bindings.
+
+    if (currentEdge > 1) {
+      double previousTime = std::get<time>(resultEdges[currentEdge - 1]);
+      double currentTime = std::get<time>(edge); 
+      
+      if (currentTime < previousTime) {
+        return std::pair<bool, SubgraphQueryResultType>(false, 
+          SubgraphQueryResultType());
+      }
+    }
 
     // Checking against edge description constraints
     EdgeDescriptionType const& edgeDescription = 
