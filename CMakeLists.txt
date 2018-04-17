@@ -17,7 +17,7 @@ include_directories("${STRING_INCLUDE_PATH}/dummy/../")
 
 ######################## Boost ######################
 
-SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_62_0")
+SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_66_0")
 find_package(Boost REQUIRED system thread program_options serialization
               unit_test_framework)
 include_directories(${Boost_INCLUDE_DIRS})
@@ -112,10 +112,11 @@ foreach(testSrc ${TEST_SRCS})
   add_executable(${testName} ${testSrc})
 
   target_link_libraries(${testName} SamLib)
-  target_link_libraries(${testName} boost_unit_test_framework)
-  target_link_libraries(${testName} boost_system)
+  target_link_libraries(${testName} ${Boost_LIBRARIES})
+  #target_link_libraries(${testName} boost_unit_test_framework)
+  #target_link_libraries(${testName} boost_system)
   target_link_libraries(${testName} pthread)
-  target_link_libraries(${testName} boost_thread)
+  #target_link_libraries(${testName} boost_thread)
   target_link_libraries(${testName} ${ZMQ_LIBRARIES})
   target_link_libraries(${testName} ${PROTOBUF_LIBRARIES})
   target_link_libraries(${testName} ProtoLib)

@@ -1,8 +1,9 @@
 /*
- * RunTriangles.cpp
- * Creates a number of triangles to test out scalability of subgraph queries.
+ * RunTrianglesComplex.cpp
+ * This creates many more triangles than the simple test.  It has a pool of
+ * n vertices and creates edges within that pool.  
  *
- *  Created on: April 14, 2018
+ *  Created on: April 16, 2018
  *      Author: elgood
  */
 
@@ -37,8 +38,11 @@ typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
         PartitionType;
 
+typedef GraphStoreType::ResultType ResultType;  
 
 int main(int argc, char** argv) {
+
+  srand (time(NULL));
 
   /// Parameters
   size_t numNodes; ///> The number of nodes in the cluster
@@ -51,11 +55,14 @@ int main(int argc, char** argv) {
   size_t tableCapacity; ///> For SubgraphQueryResultMap intermediate results
   size_t resultsCapacity; ///> For final results
   double timeWindow; ///> For graphStore
-  size_t numTriangles; ///> How many triangles to generate
+  size_t numVertices; ///> How many vertices in the graph
   size_t numNetflows; ///> How netflows to generate
+  double queryTimeWindow; ///> Amount of time within a triangle can occur.
+  double timeIncrement; ///> Time between edge creation
 
-  po::options_description desc("This code creates a specified number of"
-    " number of triangles along with some random background traffic.");
+  po::options_description desc("This code creates a set of vertices "
+    " and generates edges amongst that set.  It finds triangels among the"
+    " edges");
   desc.add_options()
     ("help", "help message")
     ("numNodes", po::value<size_t>(&numNodes)->default_value(1), 
@@ -87,10 +94,15 @@ int main(int argc, char** argv) {
       po::value<double>(&timeWindow)->default_value(100),
       "How big of a time window before intermediate results expire "
       "(default: 100).")
-    ("numTriangles",
-      po::value<size_t>(&numTriangles)->default_value(1000),
-      "How many triangles to create (default: 1000).  To make things "
-      "simple, make sure numNetflows is divisible by numTriangles")
+    ("queryTimeWindow",
+      po::value<double>(&queryTimeWindow)->default_value(10),
+      "Time window for the query to be satisfied (default: 10).")
+    ("timeIncrement",
+      po::value<double>(&timeIncrement)->default_value(0.1),
+      "Time in seconds between edge creations (default 0.1).")
+    ("numVertices",
+      po::value<size_t>(&numVertices)->default_value(1000),
+      "How many vertices are in the graph.")
     ("numNetflows",
       po::value<size_t>(&numNetflows)->default_value(10000),
       "How many netflows to generate (default: 10000")
@@ -107,11 +119,11 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  // To make things simpler, make sure numTriangles evenly divices numTuples.
-  size_t modValue = numNetflows / numTriangles;
-
-  // Setting up the random netflow generator
-  AbstractNetflowGenerator* generator = new RandomGenerator();
+  // Setting up the random pool generator
+  AbstractNetflowGenerator* generator = new RandomPoolGenerator(numVertices);
+  
+  // Used at the end to clear things out
+  AbstractNetflowGenerator *otherGenerator = new RandomGenerator(); 
 
   // All the hosts in the cluster.  The names are created with a 
   // concatenation of prefix with integer id of the node.
@@ -166,6 +178,7 @@ int main(int argc, char** argv) {
   EdgeFunction endtimeFunction = EdgeFunction::EndTime;
   EdgeOperator equal_edge_operator = EdgeOperator::Assignment;
   EdgeOperator greater_edge_operator = EdgeOperator::GreaterThan;
+  EdgeOperator less_edge_operator = EdgeOperator::LessThan;
 
   std::string e0 = "e0";
   std::string e1 = "e1";
@@ -180,6 +193,15 @@ int main(int argc, char** argv) {
   TimeEdgeExpression startE0Both(starttimeFunction, e0, equal_edge_operator, 0);
   TimeEdgeExpression startE1Both(starttimeFunction,e1,greater_edge_operator, 0);
   TimeEdgeExpression startE2Both(starttimeFunction,e2,greater_edge_operator, 0);
+  TimeEdgeExpression endE0First(endtimeFunction, e0, greater_edge_operator, 0);
+  TimeEdgeExpression endE0Second(endtimeFunction, e0, less_edge_operator, 
+    queryTimeWindow);
+  TimeEdgeExpression endE1First(endtimeFunction, e1, greater_edge_operator, 0);
+  TimeEdgeExpression endE1Second(endtimeFunction, e1, less_edge_operator, 
+    queryTimeWindow);
+  TimeEdgeExpression endE2First(endtimeFunction, e2, greater_edge_operator, 0);
+  TimeEdgeExpression endE2Second(endtimeFunction, e2, less_edge_operator,
+    queryTimeWindow);
 
   SubgraphQueryType query;
   query.addExpression(x2y);
@@ -188,12 +210,18 @@ int main(int argc, char** argv) {
   query.addExpression(startE0Both);
   query.addExpression(startE1Both);
   query.addExpression(startE2Both);
+  query.addExpression(endE0First);
+  query.addExpression(endE0Second);
+  query.addExpression(endE1First);
+  query.addExpression(endE1Second);
+  query.addExpression(endE2First);
+  query.addExpression(endE2Second);
   query.finalize();
 
   graphStore->registerQuery(query);
 
   double time = 0.0;
-  double increment = 0.1;
+  double increment = timeIncrement;
   size_t triangleCounter = 0;
 
   auto t1 = std::chrono::high_resolution_clock::now();
@@ -205,60 +233,48 @@ int main(int argc, char** argv) {
     }
     std::string str = generator->generate(time);
     time += increment;
-  
-    if (i % modValue == 0) {
-      std::string nodex = "nodex_" +
-        boost::lexical_cast<std::string>(triangleCounter) +
-        "_" + boost::lexical_cast<std::string>(nodeId);
-      std::string nodey = "nodey_" +
-        boost::lexical_cast<std::string>(triangleCounter) +
-        "_" + boost::lexical_cast<std::string>(nodeId);
-      std::string nodez = "nodez_" +
-        boost::lexical_cast<std::string>(triangleCounter) +
-        "_" + boost::lexical_cast<std::string>(nodeId);
-
-      Netflow netflow0 = makeNetflow(0, str);
-      std::get<SourceIp>(netflow0) = nodex;
-      std::get<DestIp>(netflow0) = nodey;
-
-      // We create a triangle by adding two more edges.
-      std::string str1 = generator->generate(time);
-      time += increment;
-      std::string str2 = generator->generate(time);
-      time += increment;
-      Netflow netflow1 = makeNetflow(0, str1);
-      Netflow netflow2 = makeNetflow(0, str2);
-      std::get<SourceIp>(netflow1) = nodey;
-      std::get<DestIp>(netflow1) = nodez;
-      std::get<SourceIp>(netflow2) = nodez;
-      std::get<DestIp>(netflow2) = nodex;
-
-      std::string str0 = sam::toString(netflow0);
-      str1 = sam::toString(netflow1);
-      str2 = sam::toString(netflow2);
-
-      // Remove the id at the begining
-      str0 = str0.substr(2);
-      str1 = str1.substr(2);
-      str2 = str2.substr(2);
-
-      pushPull->consume(str0);
-      pushPull->consume(str1);
-      pushPull->consume(str2);
-
-      triangleCounter++;
-
-    } else {
-      pushPull->consume(str);
-    }
+    pushPull->consume(str);
   }
+
+  for(size_t i = 0; i < 100; i++) {
+    std::string str = otherGenerator->generate(time);
+    time += increment;
+    pushPull->consume(str);
+  }
+  
   auto t2 = std::chrono::high_resolution_clock::now();
   duration<double> time_space = duration_cast<duration<double>>(t2-t1);
   std::cout << "Time: " << time_space.count() << " seconds" << std::endl;
 
-  printf("Node %lu generated %lu triangles and found %lu triangles\n",
-    nodeId, numTriangles, graphStore->getNumResults());
+  printf("Node %lu found %lu triangles\n",
+    nodeId, graphStore->getNumResults());
+
+  size_t numResults = (graphStore->getNumResults() < resultsCapacity) ?
+    graphStore->getNumResults() : resultsCapacity;
+
+  for(size_t i = 0; i < numResults; i++)
+  {
+    ResultType result = graphStore->getResult(i);
+    //printf("%s\n", result.toString().c_str());
+    Netflow n0 = result.getResultTuple(0);
+    Netflow n1 = result.getResultTuple(1);
+    Netflow n2 = result.getResultTuple(2);
+    double starttime0 = std::get<TimeSeconds>(n0);
+    double starttime1 = std::get<TimeSeconds>(n1);
+    double starttime2 = std::get<TimeSeconds>(n2);
+    if (starttime0 > starttime1) {
+      printf("problem startime0 > starttime1 %s\n", result.toString().c_str());
+    }
+    if (starttime1 > starttime2) {
+      printf("problem startime1 > starttime2 %s\n", result.toString().c_str());
+    }
+    if (starttime2 - starttime0 >= queryTimeWindow ) {
+      printf("problem startime2 - starttime0 > %f %s\n", queryTimeWindow,
+        result.toString().c_str());
+    }
+  }
 
   delete pushPull;
   delete generator;
+  delete otherGenerator;
 }
