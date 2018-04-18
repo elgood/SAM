@@ -203,6 +203,7 @@ public:
         " Target " + boost::lexical_cast<std::string>(std::get<target>(t));
       //rString = rString + "ResultTuple " + sam::toString(t) + " ";  
     }
+    rString += " startTime" + boost::lexical_cast<std::string>(startTime);
     rString += " var2BoundValue ";
     for(auto key : var2BoundValue) {
       rString += key.first + "->" + key.second + " ";

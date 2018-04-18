@@ -47,7 +47,8 @@ using namespace std::chrono;
 //using namespace mlpack;
 //using namespace mlpack::naive_bayes;
 
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
+typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, 
+        NetflowTuplizer, StringHashFunction>
         PartitionType;
 
 void createPipeline(

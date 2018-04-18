@@ -30,10 +30,15 @@ public:
   ZeroMQPushPullException(std::string message) : std::runtime_error(message) {}
 };
 
-template <typename TupleType, typename Tuplizer, typename HF>
+template <typename TupleType, size_t source, size_t target, 
+          typename Tuplizer, typename HF>
 class ZeroMQPushPull : public AbstractConsumer<std::string>, 
                        public BaseProducer<TupleType>
 {
+public:
+  typedef typename std::tuple_element<source, TupleType>::type SourceType;
+  typedef typename std::tuple_element<target, TupleType>::type TargetType;
+
 private:
   HF hash; ///> Hashes
   Tuplizer tuplizer; ///> Converts from string to tuple
@@ -101,8 +106,9 @@ private:
   
 };
 
-template <typename TupleType, typename Tuplizer, typename HF>
-ZeroMQPushPull<TupleType, Tuplizer, HF>::ZeroMQPushPull(
+template <typename TupleType, size_t source, size_t target, 
+          typename Tuplizer, typename HF>
+ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
                  std::size_t queueLength,
                  std::size_t numNodes, 
                  std::size_t nodeId, 
@@ -228,6 +234,12 @@ ZeroMQPushPull<TupleType, Tuplizer, HF>::ZeroMQPushPull(
             std::string s = getStringFromZmqMessage(message);
             size_t id = idGenerator.generate();
             TupleType tuple = tuplizer(id, s);
+            
+            #ifdef DEBUG
+            printf("Node %lu pullThread received tuple %s ", this->nodeId,
+              sam::toString(tuple).c_str());
+            #endif
+            
             this->parallelFeed(tuple);
           }
         }
@@ -244,9 +256,10 @@ ZeroMQPushPull<TupleType, Tuplizer, HF>::ZeroMQPushPull(
   pullThread = std::thread(pullFunction); 
 }
 
-template <typename TupleType, typename Tuplizer, typename HF>
-void ZeroMQPushPull<TupleType, Tuplizer, HF>::terminate() {
-  
+template <typename TupleType, size_t source, size_t target, 
+          typename Tuplizer, typename HF>
+void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate() 
+{
   if (!terminated) {
     
     for (auto consumer : this->consumers) {
@@ -272,11 +285,21 @@ void ZeroMQPushPull<TupleType, Tuplizer, HF>::terminate() {
 }
 
 
-template <typename TupleType, typename Tuplizer, typename HF>
-bool ZeroMQPushPull<TupleType, Tuplizer, HF>::consume(std::string const& s)
+template <typename TupleType, size_t source, size_t target, 
+          typename Tuplizer, typename HF>
+bool ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::
+consume(std::string const& s)
 {
+  TupleType tuple = tuplizer(0, s);
+
+  #ifdef CHECK
+  // ZeroMQPushPull::consum should only get a string without an id.
+  printf("define check here\n");
+  #endif
+
   #ifdef DEBUG
-  printf("Node %lu ZeroMQPushPull::consume string %s\n", nodeId, s.c_str());
+  printf("Node %lu ZeroMQPushPull::consume string %s "
+   " tuple %s\n", nodeId, s.c_str(), sam::toString(tuple).c_str());
   #endif
 
   // Keep track how many netflows have come through this method.
@@ -288,9 +311,12 @@ bool ZeroMQPushPull<TupleType, Tuplizer, HF>::consume(std::string const& s)
     printf("%s", debugMessage.c_str());
   }
 
+  SourceType src = std::get<source>(tuple);
+  SourceType trg = std::get<target>(tuple);
+
   // Get the source and dest ips.  We send the netflow twice, once to each
   // node responsible for the found ips.
-  std::stringstream ss(s);
+  /*std::stringstream ss(s);
   std::string item;
   std::getline(ss, item, ','); //label
   std::getline(ss, item, ','); //time
@@ -302,23 +328,51 @@ bool ZeroMQPushPull<TupleType, Tuplizer, HF>::consume(std::string const& s)
   std::string source = item;
   std::getline(ss, item, ','); //dest ip
   std::string dest = item;
-  size_t node1 = hash(source) % numNodes;
-  size_t node2 = hash(dest) % numNodes;
+  */
+
+  size_t node1 = hash(src) % numNodes;
+  size_t node2 = hash(trg) % numNodes;
+
+  #ifdef DEBUG
+  printf("Node %lu ZeroMQPushPull %s hash(%s) %llu hash(%s) %llu "
+    "numNodes %lu node1 %lu node2 %lu\n", nodeId, s.c_str(), src.c_str(),
+    hash(src), trg.c_str(), hash(trg), numNodes, node1, node2);
+  #endif
 
   zmq::message_t message = fillZmqMessage(s);
   if (node1 != this->nodeId) { // Don't send data to ourselves.
+    #ifdef DEBUG
+    printf("Node %lu ZeroMQPushPull::consume because of source "
+           "sending to %lu %s\n",
+           nodeId, node1, s.c_str());
+    #endif
+
     pushers[node1]->send(message);
   } else {
+    #ifdef DEBUG
+    printf("Node %lu ZeroMQPushPull::consume sending to parallel feed %s\n",
+           nodeId, s.c_str());
+    #endif
+
     uint32_t id = idGenerator.generate();
-    TupleType tuple = tuplizer(id, s);
     this->parallelFeed(tuple);
   }
 
   // Don't send message twice
   if (node1 != node2) {
     if (node2 != this->nodeId) {  
+
+      #ifdef DEBUG
+      printf("Node %lu ZeroMQPushPull::consume sending to %lu %s\n",
+             nodeId, node2, s.c_str());
+      #endif
+      
       pushers[node2]->send(message);
     } else {
+      #ifdef DEBUG
+      printf("Node %lu ZeroMQPushPull::consume sending to parallel feed %s\n",
+             nodeId, s.c_str());
+      #endif
       uint32_t id = idGenerator.generate();
       TupleType tuple = tuplizer(id, s);
       this->parallelFeed(tuple);

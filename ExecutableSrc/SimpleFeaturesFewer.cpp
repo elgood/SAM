@@ -29,6 +29,7 @@
 #include "CollapsedConsumer.hpp"
 #include "Identity.hpp"
 #include "AbstractDataSource.hpp"
+#include "Netflow.hpp"
 
 using std::string;
 using std::vector;
@@ -40,7 +41,8 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
+typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
+        NetflowTuplizer, StringHashFunction>
         PartitionType;
 
 void createPipeline(

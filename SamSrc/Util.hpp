@@ -11,6 +11,7 @@
 #include <netdb.h>
 #include <zmq.hpp>
 #include <mutex>
+#include <list>
 
 
 namespace sam {
@@ -325,7 +326,114 @@ createPushSockets(
   }
 }
 
+template<typename TupleType, size_t source, size_t target, size_t time,
+         size_t duration>
+size_t numTriangles(std::vector<TupleType> l, double queryTime)
+{
+  typedef typename std::tuple_element<source, TupleType>::type SourceType;
+  typedef typename std::tuple_element<target, TupleType>::type TargetType;
 
+  struct PartialTriangle {
+    size_t numEdges = 0;
+    TupleType netflow1;
+    TupleType netflow2;
+  };
+
+  std::sort(l.begin(), l.end(), [](TupleType const& t1, 
+                                   TupleType const& t2) ->bool
+  {
+    return std::get<time>(t1) < std::get<time>(t2);  
+  });
+
+  for (size_t i = 0; i < l.size(); i++) {
+    std::get<0>(l[i]) = i;
+  }
+
+  std::list<PartialTriangle> partialTriangles;
+
+  size_t numTriangles = 0;
+
+  for (auto tuple : l) 
+  {
+    PartialTriangle p;
+    p.numEdges = 1;
+    p.netflow1 = tuple;
+    
+    partialTriangles.push_back(p);
+    
+    for (auto partial : partialTriangles) {
+      if (partial.numEdges == 1) {
+        auto id1 = std::get<0>(partial.netflow1);
+        auto id2 = std::get<0>(tuple);
+        if (id1 != id2) {
+
+          auto trg1 = std::get<target>(partial.netflow1);
+          auto src2 = std::get<source>(tuple);
+          //printf("trg1 %s src2 %s\n", trg1.c_str(), src2.c_str());
+          if (trg1 == src2) {
+            double t1 = std::get<time>(partial.netflow1);
+            double t2 = std::get<time>(tuple);
+            if (t1 <= t2) {
+              double dur = std::get<duration>(tuple);
+              if (t2 + dur - t1 < queryTime) {
+                PartialTriangle newPartial;
+                newPartial.numEdges = 2;
+                newPartial.netflow1 = partial.netflow1;
+                newPartial.netflow2 = tuple;  
+                //printf("newpartial %f %s %s, "
+                //       " %f %s %s\n",
+                //       std::get<time>(newPartial.netflow1),
+                //       std::get<source>(newPartial.netflow1).c_str(),
+                //       std::get<target>(newPartial.netflow1).c_str(),
+                //       std::get<time>(newPartial.netflow2),
+                //       std::get<source>(newPartial.netflow2).c_str(),
+                //       std::get<target>(newPartial.netflow2).c_str());
+                partialTriangles.push_back(newPartial);
+              }
+            }
+          }
+        }
+      }
+      else if (partial.numEdges == 2) {
+        auto id1 = std::get<0>(partial.netflow1);
+        auto id2 = std::get<0>(partial.netflow2);
+        auto id3 = std::get<0>(tuple);
+        if (id1 != id3 && id2 != id3) {
+          auto trg2 = std::get<target>(partial.netflow2);
+          auto src3 = std::get<source>(tuple);
+          if (trg2 == src3) {
+            auto trg3 = std::get<target>(tuple) ;
+            auto src1 = std::get<source>(partial.netflow1);
+            if (trg3 == src1) {
+              double t1 = std::get<time>(partial.netflow1);
+              double t2 = std::get<time>(partial.netflow2);
+              double t3 = std::get<time>(tuple);
+              double dur = std::get<duration>(tuple);
+              if (t3 >= t2 && t3 + dur -t1 <= queryTime) {
+                #ifdef DEBUG
+                printf("edge1 %f %s %s, "
+                       "edge2 %f %s %s, "
+                       "edge3 %f %s %s\n",
+                       std::get<time>(partial.netflow1),
+                       std::get<source>(partial.netflow1).c_str(),
+                       std::get<target>(partial.netflow1).c_str(),
+                       std::get<time>(partial.netflow2),
+                       std::get<source>(partial.netflow2).c_str(),
+                       std::get<target>(partial.netflow2).c_str(),
+                       std::get<time>(tuple),
+                       std::get<source>(tuple).c_str(),
+                       std::get<target>(tuple).c_str());
+                #endif
+                numTriangles++;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return numTriangles;
+}
   
 
 

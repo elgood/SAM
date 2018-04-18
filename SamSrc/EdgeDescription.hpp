@@ -308,6 +308,10 @@ public:
    * this edge description.
    */
   bool satisfies(TupleType const& tuple, double startTime) const {
+    #ifdef DEBUG
+    printf("EdgeDescription::satisfies tuple: %s startTime: %f\n",
+      sam::toString(tuple).c_str(), startTime);
+    #endif
     if (!satisfiesTimeConstraints(tuple, startTime)) {
       return false;
     }
@@ -325,10 +329,12 @@ public:
     double constraintEndTime_end = endTimeRange.second + startTime;
     
     #ifdef DEBUG
-    printf("EdgeDescription::satisfiesTimeConstraints "
+    printf("EdgeDescription::satisfiesTimeConstraints tuple %s "
+      "startTime %f "
       "edgeActualStartTime %f edgeActualEndTime %f "
       "startTimeRange %f %f endTimeRange %f %f "
       "constraintStartTime %f %f constraintEndTime %f %f\n",
+      sam::toString(tuple).c_str(), startTime,
       edgeActualStartTime, edgeActualEndTime, 
       startTimeRange.first, startTimeRange.second,
       endTimeRange.first, endTimeRange.second,

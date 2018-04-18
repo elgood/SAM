@@ -13,7 +13,8 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
+typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, 
+        NetflowTuplizer, StringHashFunction>
         PartitionType;
 
 int main(int argc, char** argv)

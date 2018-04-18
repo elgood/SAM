@@ -26,11 +26,12 @@ typedef GraphStoreType::ResultType ResultType;
 
 typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
+typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer, 
+                       StringHashFunction>
         PartitionType;
 
 
-BOOST_AUTO_TEST_CASE( test_triangles_exact )
+/*BOOST_AUTO_TEST_CASE( test_triangles_exact )
 {
   /// In this test, we create two threads that generate random netflows.
   /// Each thread has a ZeroMQPushPull object that consumes the netflows,
@@ -281,7 +282,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   printf("deleting generator1\n");
   delete generator1;
   printf("exiting\n");
-}
+}*/
 
 
 BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
@@ -424,8 +425,13 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   double time = 0.0;
   double increment = 0.1;
 
+  std::vector<Netflow> netflowList;
+  std::mutex lock;
+
   // The lambda function
-  auto generateFunction = [numTuples, &time, increment](
+  auto generateFunction = [numTuples, &time, increment,
+                           &netflowList, &lock]
+                           (
                              PartitionType* pushPull,
                              AbstractNetflowGenerator* generator,
                              std::shared_ptr<GraphStoreType> graphStore,
@@ -443,6 +449,10 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
       std::string str = generator->generate(time);
       time += increment;
       pushPull->consume(str);
+      Netflow netflow = makeNetflow(i, str);
+      lock.lock();
+      netflowList.push_back(netflow);
+      lock.unlock();
     }
 
     for(size_t i = 0; i < 1000; i++) {
@@ -529,9 +539,11 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
     BOOST_CHECK(starttime2 - starttime0 < 10);
   }
 
+  size_t calculatedNumTriangles = 
+    sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
+                      DurationSeconds>(netflowList, 10);
 
-  // Both threads creates numTriangles triangles.
-  //BOOST_CHECK_EQUAL(2 * numTriangles, totalResults); 
+  BOOST_CHECK_EQUAL(calculatedNumTriangles, totalResults);
 
   delete pushPull0;
   delete pushPull1;

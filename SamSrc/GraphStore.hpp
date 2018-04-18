@@ -316,6 +316,15 @@ checkSubgraphQueries(TupleType const& tuple,
       // We only want one node to own the query result, so we make sure
       // that this node owns the source
       SourceType src = std::get<source>(tuple);
+      
+      #ifdef DEBUG
+      printf("Node %lu GraphStore::checkSubgraphQueries src %s "
+        "soruceHash(src) %llu numNodes %lu sourceHash(src) mod numNodes %llu\n",
+        nodeId, src.c_str(), sourceHash(src), numNodes, 
+        sourceHash(src) % numNodes);
+      #endif
+
+
       if (sourceHash(src) % numNodes == nodeId) {
         ResultType queryResult(&query, tuple);
 

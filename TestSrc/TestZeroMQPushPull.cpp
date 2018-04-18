@@ -9,7 +9,8 @@
 
 using namespace sam;
 
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, StringHashFunction>
+typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer, 
+                       StringHashFunction>
         PartitionType;
 
 BOOST_AUTO_TEST_CASE( test_graph_store )
