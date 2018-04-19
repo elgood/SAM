@@ -12,6 +12,7 @@
 #include <zmq.hpp>
 #include <mutex>
 #include <list>
+#include <memory>
 
 
 namespace sam {

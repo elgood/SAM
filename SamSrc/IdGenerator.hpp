@@ -2,6 +2,7 @@
 #define ID_GENERATOR_HPP
 
 #include <atomic>
+#include <cstddef>
 
 namespace sam {
 
@@ -24,7 +25,7 @@ public:
 class SimpleIdGenerator: public AbstractIdGenerator
 {
 private:
-  static std::atomic<std::uint32_t> counter;
+  static std::atomic<uint32_t> counter;
 
 public:
   SimpleIdGenerator() : AbstractIdGenerator() {}
