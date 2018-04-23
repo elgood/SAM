@@ -7,7 +7,7 @@
 
 using namespace sam;
 
-
+zmq::context_t context(1);
 
 
 typedef EdgeRequestMap<Netflow, SourceIp, DestIp,
@@ -15,7 +15,6 @@ typedef EdgeRequestMap<Netflow, SourceIp, DestIp,
   StringEqualityFunction, StringEqualityFunction> MapType;
 
 typedef MapType::EdgeRequestType EdgeRequestType;
-
 
 BOOST_AUTO_TEST_CASE( test_edge_request_map )
 {
@@ -31,10 +30,19 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   uint32_t hwm = 1000;
   size_t tableCapacity = 1000;
 
-  MapType map0(numNodes, nodeId0, edgeHostnames, edgePorts, hwm, 
-                      tableCapacity);
-  MapType map1(numNodes, nodeId1, edgeHostnames, edgePorts, hwm, 
-                      tableCapacity);
+  zmq::context_t context = zmq::context_t(1);
+
+  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers0;
+  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers1;
+  createPushSockets(&context, numNodes, nodeId0, edgeHostnames, edgePorts,
+                    edgePushers0, hwm);
+  createPushSockets(&context, numNodes, nodeId1, edgeHostnames, edgePorts,
+                    edgePushers1, hwm);
+  
+  MapType map0(context, numNodes, nodeId0, edgeHostnames, edgePorts, hwm, 
+                      tableCapacity, edgePushers0);
+  MapType map1(context, numNodes, nodeId1, edgeHostnames, edgePorts, hwm, 
+                      tableCapacity, edgePushers1);
 
 
   // Two generators for each thread 
@@ -96,7 +104,7 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
     auto socket = std::make_shared<zmq::socket_t>(context, ZMQ_PULL);
     int hwm = 1000;
     socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
-    socket->bind(url);
+    socket->connect(url);
 
     zmq::message_t message;
     bool stop = false;

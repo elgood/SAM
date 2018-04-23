@@ -93,8 +93,7 @@ private:
 
   /// There is another context in ZeroMQPushPull.  I think we can just
   /// instantiate another one here.
-  //zmq::context_t* context = new zmq::context_t(1);
-  zmq::context_t context = zmq::context_t(1);
+  zmq::context_t& context; 
 
   /// The push sockets in charge of pushing requests to other nodes.
   std::vector<std::shared_ptr<zmq::socket_t>> requestPushers;
@@ -114,7 +113,9 @@ private:
   /// Used for testing to make sure we got expected number of tuples.
   size_t tuplesReceived = 0;
 
-  volatile bool terminated = false; ///> Flag indicating terminate was called.
+  /// Flag indicating terminate was called.
+  std::atomic<bool> terminated; 
+  
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
   std::vector<QueryType> queries; ///> The list of queries to run.
@@ -172,6 +173,7 @@ public:
    * \param timeWindow How long do we keep edges.
    */
   GraphStore(
+             zmq::context_t& _context,
              std::size_t numNodes,
              std::size_t nodeId,
              std::vector<std::string> requestHostnames,
@@ -453,11 +455,13 @@ sendMessageToSource(EdgeRequestType const& edgeRequest)
   #ifdef DEBUG
   printf("Node %lu->%lu GraphStore::sendMessageToSource Sending EdgeRequest: "
          "%s terminated %d\n", nodeId, node, edgeRequest.toString().c_str(), 
-         terminated);
+         terminated.load());
   #endif
 
   requestPushCounter.fetch_add(1);
-  requestPushers[node]->send(message);
+  if (!terminated) {
+    requestPushers[node]->send(message);
+  }
 }
 
 template <typename TupleType, typename Tuplizer, 
@@ -480,7 +484,9 @@ sendMessageToTarget(EdgeRequestType const& edgeRequest)
   #endif
   
   requestPushCounter.fetch_add(1);
-  requestPushers[node]->send(message);
+  if (!terminated) {
+    requestPushers[node]->send(message);
+  }
 }
 
 
@@ -538,17 +544,18 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 terminate() 
 {
   if (!terminated) {  
+
     terminated = true;
     // If terminate was called, we aren't going to receive any more
     // edges, so we can push out the terminate signal to all the edge request
     // channels. 
     zmq::message_t message = emptyZmqMessage();
-    for(int i = 0; i < numNodes; i++) {
+    for(size_t i = 0; i < numNodes; i++) {
       if (i != nodeId) {
 
         #ifdef DEBUG
-        printf("Node %lu GraphStore::terminate Sending terminate message\n",
-          this->nodeId);
+        printf("Node %lu GraphStore::terminate sending terminate message"
+          " to requestPusher %lu\n", this->nodeId, i);
         #endif
 
         requestPushers[i]->send(message);
@@ -560,7 +567,7 @@ terminate()
     #ifdef DEBUG
     printf("Node %lu requestPullThread joined\n", nodeId);
     #endif
-    
+ 
     // The EdgeRequestMap has all the edge pushers.  We call terminate
     // on the EdgeRequestMap to send out the terminate message.
     edgeRequestMap->terminate();
@@ -585,7 +592,7 @@ template <typename TupleType, typename Tuplizer,
           typename SourceEF, typename TargetEF> 
 GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-GraphStore(
+GraphStore(  zmq::context_t& _context,
              std::size_t numNodes,
              std::size_t nodeId,
              std::vector<std::string> requestHostnames,
@@ -597,7 +604,9 @@ GraphStore(
              std::size_t tableCapacity, //For SubgraphQueryResultMap
              std::size_t resultsCapacity, //For SubgraphQueryResultMap
              double timeWindow) 
+: context(_context)
 {
+  terminated = false;
   this->numNodes = numNodes;
   this->nodeId   = nodeId;
 
@@ -609,12 +618,6 @@ GraphStore(
   resultMap = std::make_shared< ResultMapType>( numNodes, nodeId, 
                                                 tableCapacity, resultsCapacity);
 
-  edgeRequestMap = std::make_shared< RequestMapType>(
-    numNodes, nodeId, edgeHostnames, edgePorts, hwm, tableCapacity);
-
-  csr = std::make_shared<csrType>(graphCapacity, timeWindow); 
-  csc = std::make_shared<cscType>(graphCapacity, timeWindow); 
-
   // Resizing the push socket vectors to be the size of numNodes
   requestPushers.resize(numNodes);
   edgePushers.resize(numNodes);
@@ -623,6 +626,14 @@ GraphStore(
                     requestPushers, hwm);
   createPushSockets(&context, numNodes, nodeId, edgeHostnames, edgePorts,
                     edgePushers, hwm);
+
+
+  edgeRequestMap = std::make_shared< RequestMapType>( context,
+    numNodes, nodeId, edgeHostnames, edgePorts, hwm, tableCapacity,
+    edgePushers);
+
+  csr = std::make_shared<csrType>(graphCapacity, timeWindow); 
+  csc = std::make_shared<cscType>(graphCapacity, timeWindow); 
 
   std::atomic<size_t>* requestPullCounterPtr = &requestPullCounter;
 
@@ -668,8 +679,13 @@ GraphStore(
             std::string(" send high water mark: ") + e.what();
           throw GraphStoreException(message);
         }
-        
-        socket->bind(url);
+       
+        try { 
+          socket->connect(url);
+        } catch (std::exception e) {
+          std::string message = "Couldn't connect to url " + url;
+          throw GraphStoreException(message);
+        }
         sockets.push_back(socket);
 
         pollItems[numAdded].socket = *socket;
@@ -766,10 +782,16 @@ GraphStore(
         try {
           url = url + boost::lexical_cast<std::string>(edgePorts[this->nodeId]);
         } catch (std::exception e) {
-          std::string message = "Trouble lexical_cast: " +std::string(e.what());
+          std::string message = "Trouble with lexical_cast: " +
+            std::string(e.what());
           throw GraphStoreException(message);
         }
-        socket->bind(url);
+        try {
+          socket->connect(url);
+        } catch (std::exception e) {
+          std::string message = "Couldn't connect to url " + url;
+          throw GraphStoreException(message);
+        }
         sockets.push_back(socket);
 
         pollItems[numAdded].socket = *socket;
@@ -782,6 +804,9 @@ GraphStore(
     zmq::message_t message;
     bool stop = false;
     while (!stop) {
+      #ifdef DEBUG
+      printf("Node %lu edgePullFunction before poll\n", this->nodeId);
+      #endif
       size_t numStop = 0;
       int rvalue = zmq::poll(pollItems, this->numNodes - 1, 1);
       for (size_t i = 0; i < this->numNodes - 1; i++) {
@@ -790,12 +815,18 @@ GraphStore(
           if (isTerminateMessage(message)) {
             
             #ifdef DEBUG
-            printf("Node %lu receive a terminate message from %lu\n",
+            printf("Node %lu GraphStore::edgePullThread received a terminate "
+                   "message from %lu\n",
               this->nodeId, i);
             #endif
 
             terminate[i] = true;
           } else {
+            #ifdef DEBUG
+            printf("Node %lu GraphStore::edgePullFunction else\n", 
+              this->nodeId);
+            #endif
+
             // Increment the counter indicating we got another edge by pulling.
             edgePullCounter.fetch_add(1);
 
@@ -809,18 +840,28 @@ GraphStore(
             TupleType tuple = tuplizer(id, str);
 
             #ifdef DEBUG
-            printf("Node %lu received a tuple %s\n", this->nodeId,
-              sam::toString(tuple).c_str());
+            printf("Node %lu GraphStore::edgePullFunction received a tuple "
+              "%s\n", this->nodeId, sam::toString(tuple).c_str());
             #endif
 
             // Do we need to do this?
             // Add the edge to the graph
             addEdge(tuple);
 
+            #ifdef DEBUG
+            printf("Node %lu GraphStore::edgePullFunction added edge %s\n",
+              this->nodeId, sam::toString(tuple).c_str());
+            #endif
+
             // Process the new edge over results and see if it satifies
             // queries.  If it does, there may be new edge requests.
             std::list<EdgeRequestType> edgeRequests;
             resultMap->process(tuple, *csr, *csc, edgeRequests);
+
+            #ifdef DEBUG
+            printf("Node %lu GraphStore::edgePullFunction processed edge %s\n",
+              this->nodeId, sam::toString(tuple).c_str());
+            #endif
 
             // Send out the edge requests to the other nodes.
             processEdgeRequests(edgeRequests);
@@ -832,14 +873,14 @@ GraphStore(
       if (numStop == this->numNodes - 1 && this->terminated) stop = true;
     }
 
+    #ifdef DEBUG
+    printf("Node %lu exiting edge pull thread\n", this->nodeId);
+    #endif
     
     for (auto socket : sockets) {
       delete socket;
     }
     
-    #ifdef DEBUG
-    printf("Node %lu exiting edge pull thread\n", this->nodeId);
-    #endif
   };
 
   edgePullThread = std::thread(edgePullFunction);
@@ -855,6 +896,9 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 ~GraphStore()
 {
   terminate();
+  #ifdef DEBUG
+  printf("Node %lu end of ~GraphStore\n", nodeId);
+  #endif
 }
 
 template <typename TupleType, typename Tuplizer, 
@@ -934,10 +978,6 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
   #endif
 
   for (auto edge : foundEdges) {
-    #ifdef DEBUG
-    printf("Node %lu GraphStore::processRequestAgainstGraph sending edge %s\n",
-      nodeId, sam::toString(edge).c_str());
-    #endif
     SourceType src = std::get<source>(edge);
     TargetType trg = std::get<target>(edge);
     size_t srcHash = sourceHash(src) % numNodes;
@@ -949,7 +989,13 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
       zmq::message_t message = tupleToZmq(edge);
 
       edgePushCounter.fetch_add(1);
-      edgePushers[node]->send(message);     
+      #ifdef DEBUG
+      printf("Node %lu->%lu GraphStore::processAgainstGraph sending edge %s\n",
+        nodeId, node, sam::toString(edge).c_str());
+      #endif
+      if (!terminated) {
+        edgePushers[node]->send(message);     
+      }
     }
   }
 }

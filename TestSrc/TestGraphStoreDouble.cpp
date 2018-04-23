@@ -1,4 +1,7 @@
 #define BOOST_TEST_MAIN TestGraphStore
+
+#define DEBUG
+
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include <string>
@@ -7,7 +10,10 @@
 #include "NetflowGenerators.hpp"
 #include <zmq.hpp>
 
+
 using namespace sam;
+
+zmq::context_t context(1);
 
 /**
  * Manufactured hash function that sends 192.168.0.1 and 192.168.0.2
@@ -97,12 +103,14 @@ struct DoubleNodeFixture  {
     generator0 = new UniformDestPort("192.168.0.0", 1);
     generator1 = new UniformDestPort("192.168.0.1", 1);
       
-    graphStore0 = new GraphStoreType(numNodes, nodeId0, 
+    graphStore0 = new GraphStoreType(context, 
+                            numNodes, nodeId0, 
                             requestHostnames, requestPorts,
                             edgeHostnames, edgePorts,
                             hwm, graphCapacity, 
                             tableCapacity, resultsCapacity, timeWindow); 
-    graphStore1 = new GraphStoreType(numNodes, nodeId1, 
+    graphStore1 = new GraphStoreType(context, 
+                            numNodes, nodeId1, 
                             requestHostnames, requestPorts,
                             edgeHostnames, edgePorts,
                             hwm, graphCapacity, 
@@ -123,7 +131,7 @@ struct DoubleNodeFixture  {
   }
 };
 
-/*
+
 ///
 /// This tests matching a single edge across two nodes.  This doesn't
 /// test the communication of edge requests since each node can
@@ -180,7 +188,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 
   BOOST_CHECK_EQUAL(expected0, graphStore0->getNumResults());
   BOOST_CHECK_EQUAL(expected1, graphStore1->getNumResults());
-}*/
+}
 
 ///
 /// This test creates a two graphstores and we send each graphstore
@@ -331,4 +339,5 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
 
   delete onePairGenerator0;
   delete onePairGenerator1;
+  printf("End of test\n");
 }

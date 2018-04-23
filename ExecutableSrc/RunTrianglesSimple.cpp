@@ -42,6 +42,8 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
         NetflowTuplizer, StringHashFunction>
         PartitionType;
 
+zmq::context_t context(1);
+
 
 int main(int argc, char** argv) {
 
@@ -143,7 +145,7 @@ int main(int argc, char** argv) {
   }
 
   // Setting up the ZeroMQPushPull object
-  PartitionType* pushPull = new PartitionType(queueLength,
+  PartitionType* pushPull = new PartitionType(context, queueLength,
                                     numNodes, nodeId,
                                     hostnames, ports,
                                     hwm);
@@ -157,6 +159,7 @@ int main(int argc, char** argv) {
   }
 
   auto graphStore = std::make_shared<GraphStoreType>(
+     context,
      numNodes, nodeId,
      hostnames, requestPorts,
      hostnames, edgePorts,

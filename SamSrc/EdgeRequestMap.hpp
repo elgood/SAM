@@ -6,6 +6,7 @@
 #include "Util.hpp"
 #include <atomic>
 #include <zmq.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace sam {
 
@@ -57,7 +58,7 @@ private:
   /// Keeps track of how many edges we send
   std::atomic<size_t> edgePushCounter;
 
-  zmq::context_t context = zmq::context_t(1);
+  zmq::context_t& context;// = zmq::context_t(1);
 
   /// This has all the push sockets that we use to send edges to other nodes.
   std::vector<std::shared_ptr<zmq::socket_t>> pushers;
@@ -70,12 +71,14 @@ public:
    * \param tableCapacity The size of the hash table.
    */
    EdgeRequestMap(
+                  zmq::context_t& _context,
                   std::size_t numNodes,
                   std::size_t nodeId,
                   std::vector<std::string> edgeHostnames,
                   std::vector<std::size_t> edgePorts,
                   uint32_t hwm,
-                  size_t tableCapacity);
+                  size_t tableCapacity,
+                  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers);
 
   /**
    * Destructor.
@@ -104,7 +107,7 @@ public:
    * Iterates through the edge push sockets and sends a terminate
    * signal.
    */
-  void terminate() const;
+  void terminate();
 
 private:
   /**
@@ -127,6 +130,7 @@ private:
    */
   void processSourceTarget(TupleType const& tuple);
 
+  std::atomic<bool> terminated;
 };
 
 // Constructor 
@@ -136,17 +140,22 @@ template <typename TupleType, size_t source, size_t target,
 EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 EdgeRequestMap( 
+                zmq::context_t& _context,
                 std::size_t numNodes,
                 std::size_t nodeId,
                 std::vector<std::string> hostnames,
                 std::vector<std::size_t> ports,
                 uint32_t hwm,
-                size_t tableCapacity)
+                size_t tableCapacity,
+                std::vector<std::shared_ptr<zmq::socket_t>> edgePushers)
+: context(_context)
 {
+  terminated = false;
   this->numNodes = numNodes;
   this->nodeId = nodeId;
-  createPushSockets(&context, numNodes, nodeId, hostnames, ports,
-                    this->pushers, hwm);
+  pushers = edgePushers;
+  //createPushSockets(&context, numNodes, nodeId, hostnames, ports,
+  //                  this->pushers, hwm);
   this->tableCapacity = tableCapacity;
   mutexes = new std::mutex[tableCapacity];
   ale = new std::list<EdgeRequestType>[tableCapacity];
@@ -163,6 +172,10 @@ EdgeRequestMap<TupleType, source, target,
 {
   delete[] mutexes;
   delete[] ale;
+  terminate();
+  #ifdef DEBUG
+  printf("Node %lu end of ~EdgeRequestMap\n", nodeId);
+  #endif
 }
 
 
@@ -245,14 +258,18 @@ processSource(TupleType const& tuple)
       // TODO: Partition info
       if (targetHash(trg) % numNodes != node) {
         zmq::message_t message = tupleToZmq(tuple);
-        edgePushCounter.fetch_add(1);
 
-        #ifdef DEBUG
-        printf("Node %lu->%lu EdgeRequestMap::processSource sending edge %s\n",
-           nodeId, node, toString(tuple).c_str());
-        #endif
-
-        pushers[node]->send(message);  
+        
+        if (!terminated) {
+          edgePushCounter.fetch_add(1);
+          #ifdef DEBUG
+          printf("Node %lu->%lu EdgeRequestMap::processSource sending"
+            " edge %s\n", nodeId, node, toString(tuple).c_str());
+          #endif
+          if (!terminated) {
+            pushers[node]->send(message);  
+          }
+        }
       }
     }
   }
@@ -295,8 +312,10 @@ processTarget(TupleType const& tuple)
         printf("Node %lu->%lu EdgeRequestMap::processTarget sending edge %s\n",
           nodeId, node, toString(tuple).c_str());
         #endif
-
-        pushers[node]->send(message);  
+        
+        if (!terminated) {
+          pushers[node]->send(message);  
+        }
       }
     }
   }
@@ -331,7 +350,15 @@ processSourceTarget(TupleType const& tuple)
           targetHash(trg) % numNodes != node)
       {
         edgePushCounter.fetch_add(1);
-        pushers[node]->send(message);  
+
+        #ifdef DEBUG
+        printf("Node %lu->%lu EdgeRequestMap::processSourceTarget sending "
+          "edge %s\n", nodeId, node, toString(tuple).c_str());
+        #endif
+
+        if (!terminated) {
+          pushers[node]->send(message);  
+        }
       }
     }
   }
@@ -343,20 +370,31 @@ template <typename TupleType, size_t source, size_t target,
 void
 EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-terminate() const 
+terminate()
 {
-  for(size_t i = 0; i < this->numNodes; i++)
-  {
-    if (i != this->nodeId) { 
+  if (!terminated) {
+    for(size_t i = 0; i < this->numNodes; i++)
+    {
+      if (i != this->nodeId) { 
 
-      #ifdef DEBUG
-      printf("Node %lu EdgeRequestMap::terminate() sending terminate to %lu\n",
-        nodeId, i); 
-      #endif
-
-      pushers[i]->send(emptyZmqMessage());
+        #ifdef DEBUG
+        printf("Node %lu EdgeRequestMap::terminate() sending terminate to %lu\n",
+          nodeId, i); 
+        #endif
+        
+        try {
+          pushers[i]->send(emptyZmqMessage());
+        } catch (std::exception e) {
+          std::string message = "Couldn't send termination message "
+            + boost::lexical_cast<std::string>(nodeId) + "->" 
+            + boost::lexical_cast<std::string>(i) + " because of "
+            + e.what();
+          throw EdgeRequestMapException(message);
+        }
+      }
     }
   }
+  terminated = true;
 }
 
 

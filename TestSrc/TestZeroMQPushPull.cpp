@@ -13,6 +13,8 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
                        StringHashFunction>
         PartitionType;
 
+zmq::context_t context(1);
+
 BOOST_AUTO_TEST_CASE( test_graph_store )
 {
   int major, minor, patch;
@@ -38,12 +40,12 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   AbstractNetflowGenerator* generator0 = new UniformDestPort("192.168.0.1", 1);
   AbstractNetflowGenerator* generator1 = new UniformDestPort("192.168.0.2", 1);
    
-  PartitionType* pushPull0 = new PartitionType(queueLength,
+  PartitionType* pushPull0 = new PartitionType(context, queueLength,
                                     numNodes, nodeId0,
                                     hostnames, ports,
                                     hwm);
 
-  PartitionType* pushPull1 = new PartitionType(queueLength,
+  PartitionType* pushPull1 = new PartitionType(context, queueLength,
                                     numNodes, nodeId1,
                                     hostnames, ports,
                                     hwm);

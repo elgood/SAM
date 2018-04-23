@@ -15,6 +15,8 @@
 
 using namespace sam;
 
+zmq::context_t context(1);
+
 typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
@@ -31,7 +33,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
         PartitionType;
 
 
-/*BOOST_AUTO_TEST_CASE( test_triangles_exact )
+BOOST_AUTO_TEST_CASE( test_triangles_exact )
 {
   /// In this test, we create two threads that generate random netflows.
   /// Each thread has a ZeroMQPushPull object that consumes the netflows,
@@ -67,14 +69,14 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
   // Sometimes it doesn't catch the triangles at the end because things 
   // terminate too quickly.  This adds a little buffer at the end where
   // no triangles occur.
-  size_t numExtra = 100;
+  size_t numExtra = 10000;
 
-  PartitionType* pushPull0 = new PartitionType(queueLength,
+  PartitionType* pushPull0 = new PartitionType(context, queueLength,
                                     numNodes, nodeId0,
                                     hostnames, ports,
                                     hwm);
 
-  PartitionType* pushPull1 = new PartitionType(queueLength,
+  PartitionType* pushPull1 = new PartitionType(context, queueLength,
                                     numNodes, nodeId1,
                                     hostnames, ports,
                                     hwm);
@@ -100,6 +102,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
 
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
+                          context,
                           numNodes, nodeId0,
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
@@ -107,6 +110,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
                           tableCapacity, resultsCapacity, timeWindow);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
+                          context,
                           numNodes, nodeId1,
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
@@ -282,7 +286,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
   printf("deleting generator1\n");
   delete generator1;
   printf("exiting\n");
-}*/
+}
 
 
 BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
@@ -319,12 +323,12 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   // no triangles occur.
   //size_t numExtra = 100;
 
-  PartitionType* pushPull0 = new PartitionType(queueLength,
+  PartitionType* pushPull0 = new PartitionType(context, queueLength,
                                     numNodes, nodeId0,
                                     hostnames, ports,
                                     hwm);
 
-  PartitionType* pushPull1 = new PartitionType(queueLength,
+  PartitionType* pushPull1 = new PartitionType(context, queueLength,
                                     numNodes, nodeId1,
                                     hostnames, ports,
                                     hwm);
@@ -350,6 +354,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
+                          context,
                           numNodes, nodeId0,
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
@@ -357,6 +362,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           tableCapacity, resultsCapacity, timeWindow);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
+                          context,
                           numNodes, nodeId1,
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
@@ -441,11 +447,11 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
     AbstractNetflowGenerator *otherGenerator = 
       new RandomGenerator();
     for(size_t i = 0; i < numTuples; i++) {
-      if (i % 10 == 0) {
-        printf("nodeId %lu i %lu\n", nodeId, i);
-        printf("nodeId %lu Num intermediate results %lu\n", nodeId, 
-          graphStore->getNumIntermediateResults());
-      }
+      //if (i % 10 == 0) {
+      //  printf("nodeId %lu i %lu\n", nodeId, i);
+      //  printf("nodeId %lu Num intermediate results %lu\n", nodeId, 
+      //    graphStore->getNumIntermediateResults());
+      //}
       std::string str = generator->generate(time);
       time += increment;
       pushPull->consume(str);

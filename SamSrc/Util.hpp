@@ -311,17 +311,24 @@ createPushSockets(
 
       // the function complains if you use std::size_t, so be sure to use the
       // uint32_t class member for hwm.
-      /*try {
+      try {
         pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
       } catch (std::exception e) {
         std::string message = std::string("problem setting push socket's send")+
           std::string(" high water mark: ") + e.what();
         throw UtilException(message);
-      }*/
+      }
       //printf("createpushsockets url %s nodeId %lu %d set socket option\n", 
       //    url.c_str(), nodeId, i);
-      pusher->connect(url);
-      //printf("createpushsockets nodeId %lu %d bind\n", nodeId, i);
+      //pusher->connect(url);
+      try {
+        pusher->bind(url);
+      } catch (std::exception e) {
+        std::string message = "Node " +
+          boost::lexical_cast<std::string>(nodeId) +
+          " couldn't bind to url " + url + ": " + e.what();
+        throw UtilException(message);
+      }
       pushers[i] = pusher;
     } 
   }

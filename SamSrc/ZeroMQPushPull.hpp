@@ -55,7 +55,7 @@ private:
   size_t metricInterval = 100000; ///> How many seen before spitting metrics out
 
   /// The zmq context
-  zmq::context_t context = zmq::context_t(1);
+  zmq::context_t& context; // = zmq::context_t(1);
 
   /// A vector of all the push sockets
   std::vector<std::shared_ptr<zmq::socket_t> > pushers;
@@ -76,7 +76,8 @@ public:
    * \param ports The ports to connect to for each node in the cluster.
    * \param hwm The high water mark.
    */
-  ZeroMQPushPull(std::size_t queueLength,
+  ZeroMQPushPull(zmq::context_t& context,
+                 std::size_t queueLength,
                  std::size_t numNodes, 
                  std::size_t nodeId, 
                  std::vector<std::string> hostnames, 
@@ -86,6 +87,9 @@ public:
   virtual ~ZeroMQPushPull()
   {
     terminate();
+    #ifdef DEBUG
+    printf("Node %lu end of ~ZeroMQPushPull\n", nodeId);
+    #endif
   }
   
   virtual bool consume(std::string const& netflow);
@@ -109,13 +113,14 @@ private:
 template <typename TupleType, size_t source, size_t target, 
           typename Tuplizer, typename HF>
 ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
+                 zmq::context_t& _context,
                  std::size_t queueLength,
                  std::size_t numNodes, 
                  std::size_t nodeId, 
                  std::vector<std::string> hostnames, 
                  std::vector<std::size_t> ports, 
                  std::size_t hwm)
-  :
+  : context(_context),
   BaseProducer<TupleType>(queueLength)
 {
   //std::cout << "Entering ZeroMQPushPull constructor" << std::endl; 

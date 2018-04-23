@@ -17,6 +17,8 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
         NetflowTuplizer, StringHashFunction>
         PartitionType;
 
+zmq::context_t context(1);
+
 int main(int argc, char** argv)
 {
   std::string ip; ///> The ip to read the nc data from.
@@ -87,7 +89,7 @@ int main(int argc, char** argv)
     }
   }
 
-  auto consumer = std::make_shared<PartitionType>(queueLength,
+  auto consumer = std::make_shared<PartitionType>(context, queueLength,
                                numNodes,
                                nodeId,
                                hostnames,

@@ -377,6 +377,10 @@ processAgainstGraph(
 
     for (; !frontier->isNull(); ++frontier) 
     {
+      #ifdef DEBUG 
+      printf("Node %lu SubgraphQueryResultMap::processAgainstGraph in "
+        "frontier for loop\n", this->nodeId);
+      #endif
       // Only look at the graph if the result is not complete.
       if (!frontier->complete()) {
         std::list<TupleType> foundEdges;
@@ -416,6 +420,11 @@ processAgainstGraph(
             //newFrontier = rehash.end();
           }
         }
+        #ifdef DEBUG
+        printf("Node %lu SubgraphQueryResultMap::processAgainstGraph at end of"
+          " for loop over found edges\n", nodeId);
+        #endif
+
       }
     }
     //At this point frontier should be pointing at a null element.
@@ -501,10 +510,19 @@ processSource(TupleType const& tuple,
           //std::cout << "New Tuple " << p.second.toString() << std::endl;
           rehash.push_back(p.second);
         }
+      } else {
+        #ifdef DEBUG
+        printf("Node %lu SubgraphQueryResultMap::processSource had the id "
+          "already \n", this->nodeId);
+        #endif
       }
     }
   }
 
+  #ifdef DEBUG
+  printf("Node %lu SubgraphQueryResultMap::processSource about to unlock "
+    "mutex\n", nodeId);
+  #endif
   mutexes[index].unlock();
 
   // See if the graph can further the queries
