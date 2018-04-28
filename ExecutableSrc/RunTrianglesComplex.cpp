@@ -8,6 +8,8 @@
  */
 
 //#define DEBUG
+#define TIMING
+#define DETAIL_TIMING
 
 #include "GraphStore.hpp"
 #include "EdgeDescription.hpp"
@@ -62,6 +64,7 @@ int main(int argc, char** argv) {
   size_t numNetflows; ///> How netflows to generate
   double queryTimeWindow; ///> Amount of time within a triangle can occur.
   double timeIncrement; ///> Time between edge creation
+  size_t numThreads; ///> Number of threads for for loops
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangels among the"
@@ -109,6 +112,9 @@ int main(int argc, char** argv) {
     ("numNetflows",
       po::value<size_t>(&numNetflows)->default_value(10000),
       "How many netflows to generate (default: 10000")
+    ("numThreads",
+      po::value<size_t>(&numThreads)->default_value(1),
+      "How many threads to use for parallel for loops.")
   ;
 
   // Parse the command line variables
@@ -172,7 +178,7 @@ int main(int argc, char** argv) {
      hostnames, requestPorts,
      hostnames, edgePorts,
      hwm, graphCapacity,
-     tableCapacity, resultsCapacity, timeWindow);
+     tableCapacity, resultsCapacity, timeWindow, numThreads);
 
   // Set up GraphStore object to get input from ZeroMQPushPull objects
   pushPull->registerConsumer(graphStore);
@@ -255,6 +261,28 @@ int main(int argc, char** argv) {
 
   size_t numResults = (graphStore->getNumResults() < resultsCapacity) ?
     graphStore->getNumResults() : resultsCapacity;
+
+  #ifdef TIMING
+  printf("Node %lu Timing total consume time: %f\n", nodeId, 
+    graphStore->getTotalTimeConsume());
+  printf("Node %lu Timing edge pull thread time: %f\n", nodeId, 
+    graphStore->getTotalTimeEdgePullThread());
+  printf("Node %lu Timing request pull thread time: %f\n", nodeId, 
+    graphStore->getTotalTimeRequestPullThread());
+  #endif
+
+  #ifdef DETAIL_TIMING
+  printf("Node %lu Detail Timing total add edge consume time: %f\n", nodeId,
+    graphStore->getTotalTimeConsumeAddEdge());
+  printf("Node %lu Detail Timing total result map process consume time: %f\n", 
+    nodeId, graphStore->getTotalTimeConsumeResultMapProcess());
+  printf("Node %lu Detail Timing total processAgainstGraph time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessAgainstGraph());
+  printf("Node %lu Detail Timing total processSourceLoop1 time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessSourceLoop1());
+  printf("Node %lu Detail Timing total processSourceLoop2 time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessSourceLoop2());
+  #endif
 
   for(size_t i = 0; i < numResults; i++)
   {

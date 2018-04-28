@@ -73,6 +73,17 @@ public:
  
 private:
 
+  #ifdef TIMING
+  double totalTimeConsume = 0; 
+  double totalTimeEdgePullThread = 0;
+  double totalTimeRequestPullThread = 0;
+  #endif
+
+  #ifdef DETAIL_TIMING
+  double totalTimeConsumeAddEdge = 0;
+  double totalTimeConsumeResultMapProcess = 0; 
+  #endif
+
   std::mutex generalLock;
 
   SourceHF sourceHash;
@@ -115,6 +126,9 @@ private:
 
   /// Flag indicating terminate was called.
   std::atomic<bool> terminated; 
+
+  /// How many threads to use for parallel for loops.
+  size_t numThreads;
   
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
@@ -171,6 +185,7 @@ public:
    * \param resultsCapacity How many completed queries can be stored in
    *          SubgraphQueryResultMap.
    * \param timeWindow How long do we keep edges.
+   * \param numThreads How many threads to use for parallel for loops.
    */
   GraphStore(
              zmq::context_t& _context,
@@ -184,7 +199,8 @@ public:
              size_t graphCapacity,
              size_t tableCapacity,
              size_t resultsCapacity,
-             double timeWindow);
+             double timeWindow,
+             size_t numThreads);
 
   ~GraphStore();
 
@@ -261,6 +277,35 @@ public:
   ResultType getResult(size_t index) const {
     return resultMap->getResult(index);
   }
+
+
+  #ifdef TIMING
+  double getTotalTimeConsume() const { return totalTimeConsume; }
+  double getTotalTimeEdgePullThread() const { return totalTimeEdgePullThread; }
+  double getTotalTimeRequestPullThread() const { 
+    return totalTimeRequestPullThread; 
+  }
+  #endif
+
+  #ifdef DETAIL_TIMING
+  double getTotalTimeConsumeAddEdge() const {
+    return totalTimeConsumeAddEdge;
+  }
+  double getTotalTimeConsumeResultMapProcess() const {
+    return totalTimeConsumeResultMapProcess;
+  }
+  double getTotalTimeProcessAgainstGraph() const {
+    return resultMap->getTotalTimeProcessAgainstGraph(); 
+  }
+  double getTotalTimeProcessSourceLoop1() const {
+    return resultMap->getTotalTimeProcessSourceLoop1();
+  }
+  double getTotalTimeProcessSourceLoop2() const {
+    return resultMap->getTotalTimeProcessSourceLoop2();
+  }
+
+  #endif
+
 
 };
 
@@ -501,6 +546,10 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consume(TupleType const& tuple)
 {
+  #ifdef TIMING
+  auto timestamp_consume1 = std::chrono::high_resolution_clock::now();
+  #endif
+
   TupleType myTuple = tuple;
   // Give the tuple a new id
   std::get<0>(myTuple) = idGenerator.generate();
@@ -510,16 +559,45 @@ consume(TupleType const& tuple)
     sam::toString(myTuple).c_str());
   #endif
 
+
   // Adds the edge to the graph
+  #ifdef DETAIL_TIMING
+  auto t1 = std::chrono::high_resolution_clock::now();
+  #endif
+
   addEdge(myTuple);
 
+  #ifdef DETAIL_TIMING
+  auto t2 = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> tdiff = 
+    std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+  double timeConsumeAddEdge = tdiff.count(); 
+  totalTimeConsumeAddEdge += timeConsumeAddEdge;
+  #endif
+
+
   // TODO Delete old edges, maybe
+
 
   // Check against existing queryResults.  The edgeRequest list is populated
   // with edge requests when we find we need a tuple that will reside 
   // elsewhere.
+  #ifdef DETAIL_TIMING
+  t1 = std::chrono::high_resolution_clock::now();
+  #endif
+
   std::list<EdgeRequestType> edgeRequests;
   resultMap->process(myTuple, *csr, *csc, edgeRequests);
+
+  #ifdef DETAIL_TIMING
+  t2 = std::chrono::high_resolution_clock::now();
+  tdiff = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+  double timeConsumeResultMapProcess = tdiff.count(); 
+  totalTimeConsumeResultMapProcess += timeConsumeResultMapProcess;
+  #endif
+
+
+
 
   // See if anybody needs this tuple and send it out to them.
   edgeRequestMap->process(myTuple);
@@ -529,6 +607,15 @@ consume(TupleType const& tuple)
 
   // Send out the edge requests to the other nodes.
   processEdgeRequests(edgeRequests);
+
+  #ifdef TIMING
+  auto timestamp_consume2 = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> time_space = 
+    std::chrono::duration_cast<std::chrono::duration<double>>(
+      timestamp_consume2 - timestamp_consume1);
+  double time_consume = time_space.count(); 
+  totalTimeConsume += time_consume;
+  #endif
 
   return true;
 }
@@ -603,20 +690,23 @@ GraphStore(  zmq::context_t& _context,
              std::size_t graphCapacity, //How many bins for csr and csc
              std::size_t tableCapacity, //For SubgraphQueryResultMap
              std::size_t resultsCapacity, //For SubgraphQueryResultMap
-             double timeWindow) 
+             double timeWindow,
+             size_t numThreads) 
 : context(_context)
 {
   terminated = false;
   this->numNodes = numNodes;
   this->nodeId   = nodeId;
+  this->numThreads = numThreads;
 
   edgePushCounter = 0;
   edgePullCounter = 0;
   requestPushCounter = 0;
   requestPullCounter = 0;
 
-  resultMap = std::make_shared< ResultMapType>( numNodes, nodeId, 
-                                                tableCapacity, resultsCapacity);
+  resultMap = 
+    std::make_shared< ResultMapType>( numNodes, nodeId, 
+      tableCapacity, resultsCapacity, numThreads);
 
   // Resizing the push socket vectors to be the size of numNodes
   requestPushers.resize(numNodes);
@@ -642,6 +732,9 @@ GraphStore(  zmq::context_t& _context,
   auto requestPullFunction = [this, requestHostnames, requestPorts, hwm,
     requestPullCounterPtr]() 
   {
+    #ifdef TIMING
+    auto t1 = std::chrono::high_resolution_clock::now();
+    #endif
     // All sockets passed to zmq_poll() function must belong to the same
     // thread calling zmq_poll().  Below we create the poll items and the
     // pull sockets.
@@ -757,6 +850,13 @@ GraphStore(  zmq::context_t& _context,
       delete socket;
     }
 
+    #ifdef TIMING
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_space = 
+      std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+    double timeRequestPullThread = time_space.count(); 
+    totalTimeRequestPullThread += timeRequestPullThread;
+    #endif
   };
 
   requestPullThread = std::thread(requestPullFunction);
@@ -766,6 +866,10 @@ GraphStore(  zmq::context_t& _context,
   auto edgePullFunction = [this, edgeHostnames, 
                            edgePorts, hwm]() 
   {
+    #ifdef TIMING
+    auto t1 = std::chrono::high_resolution_clock::now();
+    #endif
+
     zmq::pollitem_t pollItems[this->numNodes - 1];
     std::vector<zmq::socket_t*> sockets;
 
@@ -881,6 +985,13 @@ GraphStore(  zmq::context_t& _context,
       delete socket;
     }
     
+    #ifdef TIMING
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_space = 
+      std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+    double timeEdgePullThread = time_space.count(); 
+    totalTimeEdgePullThread += timeEdgePullThread;
+    #endif
   };
 
   edgePullThread = std::thread(edgePullFunction);

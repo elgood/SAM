@@ -158,13 +158,14 @@ int main(int argc, char** argv) {
     edgePorts[i]    = startingPort + 2*numNodes + i; 
   }
 
+  size_t numThreads = 1;
   auto graphStore = std::make_shared<GraphStoreType>(
      context,
      numNodes, nodeId,
      hostnames, requestPorts,
      hostnames, edgePorts,
      hwm, graphCapacity,
-     tableCapacity, resultsCapacity, timeWindow);
+     tableCapacity, resultsCapacity, timeWindow, numThreads);
 
   // Set up GraphStore object to get input from ZeroMQPushPull objects
   pushPull->registerConsumer(graphStore);

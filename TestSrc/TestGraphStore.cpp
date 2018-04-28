@@ -160,11 +160,13 @@ struct SingleNodeFixture  {
     edgeHostnames.push_back("localhost");
     edgePorts.push_back(10002);
 
+    size_t numThreads = 1;
+
     graphStore0 = new GraphStoreType(context, numNodes, nodeId0, 
                             requestHostnames, requestPorts,
                             edgeHostnames, edgePorts,
                             hwm, graphCapacity, 
-                            tableCapacity, resultsCapacity, timeWindow); 
+                            tableCapacity, resultsCapacity, timeWindow, numThreads); 
 
 
   }

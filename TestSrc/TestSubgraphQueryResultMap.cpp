@@ -73,7 +73,8 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   size_t resultCapacity = 1000;
   size_t numNodes = 1;
   size_t nodeId = 0;
-  MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
+  size_t numThreads = 1;
+  MapType map(numNodes, nodeId, tableCapacity, resultCapacity, numThreads); 
 
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
@@ -107,7 +108,8 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
   size_t resultCapacity = 1000;
   size_t numNodes = 1;
   size_t nodeId = 0;
-  MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
+  size_t numThreads = 1;
+  MapType map(numNodes, nodeId, tableCapacity, resultCapacity, numThreads); 
 
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
@@ -149,7 +151,8 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
   size_t resultCapacity = 1000;
   size_t numNodes = 1;
   size_t nodeId = 0;
-  MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
+  size_t numThreads = 1;
+  MapType map(numNodes, nodeId, tableCapacity, resultCapacity, numThreads); 
 
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
@@ -240,7 +243,8 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   size_t resultCapacity = 1000;
   size_t numNodes = 1;
   size_t nodeId = 0;
-  MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
+  size_t numThreads = 1;
+  MapType map(numNodes, nodeId, tableCapacity, resultCapacity, numThreads); 
 
   map.add(result, *csr, *csc, edgeRequests);
   map.process(netflow1, *csr, *csc, edgeRequests);

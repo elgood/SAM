@@ -1,4 +1,3 @@
-//#define DEBUG
 
 #define BOOST_TEST_MAIN TestTriangles
 #include <boost/test/unit_test.hpp>
@@ -12,8 +11,11 @@
 #include "SubgraphQuery.hpp"
 #include <zmq.hpp>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 using namespace sam;
+using namespace std::chrono;
 
 zmq::context_t context(1);
 
@@ -62,8 +64,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   ports.push_back(10001);
 
   // To make things simpler, make sure numTriangles evenly divides numTuples
-  size_t numTuples = 100;
-  size_t numTriangles = 10;
+  size_t numTuples = 1000;
+  size_t numTriangles = 500;
   size_t modValue = numTuples / numTriangles;
 
   // Sometimes it doesn't catch the triangles at the end because things 
@@ -100,6 +102,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   edgeHostnames.push_back("localhost");
   edgePorts.push_back(10005);
 
+  size_t numThreads = 1;
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
                           context,
@@ -107,7 +110,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
                           hwm, graphCapacity,
-                          tableCapacity, resultsCapacity, timeWindow);
+                          tableCapacity, resultsCapacity, timeWindow,
+                          numThreads);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
                           context,
@@ -115,7 +119,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
                           hwm, graphCapacity,
-                          tableCapacity, resultsCapacity, timeWindow);
+                          tableCapacity, resultsCapacity, timeWindow,
+                          numThreads);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects
@@ -164,7 +169,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   BOOST_CHECK_EQUAL(edge2.source, nodez);
 
   double time = 0.0;
-  double increment = 0.1;
+  double increment = 0.01;
+
 
   // The lambda function
   auto generateFunction = [numTuples, numTriangles, modValue, numExtra,
@@ -174,8 +180,26 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
                              size_t nodeId)
   {
 
-    int triangleCounter = 0;
+     
+    auto starttime = std::chrono::high_resolution_clock::now();
+
+    size_t totalTuples = 0;
+    size_t triangleCounter = 0;
     for(size_t i = 0; i < numTuples; i++) {
+        
+      auto currenttime = std::chrono::high_resolution_clock::now();
+      duration<double> diff = duration_cast<duration<double>>(
+        currenttime - starttime);
+      //printf("nodeId %lu diff %f i * increment %f\n", nodeId, 
+      //  diff.count(), i * increment);
+      if (diff.count() < i * increment) {
+        size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+        //printf("nodeId %lu diff %f i * increment %f numMilliseconds %lu\n", 
+        //  nodeId, diff.count(), i * increment, numMilliseconds);
+        std::this_thread::sleep_for(
+          std::chrono::milliseconds(numMilliseconds));
+      }
+
       std::string str = generator->generate(time);
       time += increment;
       
@@ -224,12 +248,20 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
         pushPull->consume(str1);
         pushPull->consume(str2);
 
+        totalTuples += 3;
         triangleCounter++;
       } else {
+        totalTuples++;
         pushPull->consume(str);
       }
 
     }
+
+    auto endtime = std::chrono::high_resolution_clock::now();
+    duration<double> diffTimeRegTuples = duration_cast<duration<double>>(
+      endtime - starttime);
+    printf("Time for node %lu for %lu tuples (time increament %f): %f\n", 
+            nodeId, totalTuples, increment, diffTimeRegTuples.count());
 
     for(size_t i = 0; i < numExtra; i++) {
       //printf("node id %lu i %lu\n", nodeId, i);
@@ -238,6 +270,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
       pushPull->consume(str);
     }
     pushPull->terminate();
+    
 
   };
 
@@ -352,6 +385,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   edgeHostnames.push_back("localhost");
   edgePorts.push_back(10005);
 
+  size_t numThreads = 1;
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
                           context,
@@ -359,7 +393,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
                           hwm, graphCapacity,
-                          tableCapacity, resultsCapacity, timeWindow);
+                          tableCapacity, resultsCapacity, timeWindow,
+                          numThreads);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
                           context,
@@ -367,7 +402,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           requestHostnames, requestPorts,
                           edgeHostnames, edgePorts,
                           hwm, graphCapacity,
-                          tableCapacity, resultsCapacity, timeWindow);
+                          tableCapacity, resultsCapacity, timeWindow,
+                          numThreads);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects
@@ -429,7 +465,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   BOOST_CHECK_EQUAL(edge2.source, nodez);
 
   double time = 0.0;
-  double increment = 0.1;
+  double increment = 0.01;
 
   std::vector<Netflow> netflowList;
   std::mutex lock;
@@ -444,9 +480,26 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                              size_t nodeId)
   {
 
+    auto starttime = std::chrono::high_resolution_clock::now();
     AbstractNetflowGenerator *otherGenerator = 
       new RandomGenerator();
     for(size_t i = 0; i < numTuples; i++) {
+
+      auto currenttime = std::chrono::high_resolution_clock::now();
+      duration<double> diff = duration_cast<duration<double>>(
+        currenttime - starttime);
+      //printf("nodeId %lu diff %f i * increment %f\n", nodeId, 
+      //  diff.count(), i * increment);
+      if (diff.count() < i * increment) {
+        size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+        //printf("nodeId %lu diff %f i * increment %f numMilliseconds %lu\n", 
+        //  nodeId, diff.count(), i * increment, numMilliseconds);
+        std::this_thread::sleep_for(
+          std::chrono::milliseconds(numMilliseconds));
+      }
+
+
+
       //if (i % 10 == 0) {
       //  printf("nodeId %lu i %lu\n", nodeId, i);
       //  printf("nodeId %lu Num intermediate results %lu\n", nodeId, 
@@ -556,3 +609,4 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   delete generator0;
   delete generator1;
 }
+

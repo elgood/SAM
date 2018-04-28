@@ -102,19 +102,21 @@ struct DoubleNodeFixture  {
 
     generator0 = new UniformDestPort("192.168.0.0", 1);
     generator1 = new UniformDestPort("192.168.0.1", 1);
+     
+    size_t numThreads = 1; 
       
     graphStore0 = new GraphStoreType(context, 
                             numNodes, nodeId0, 
                             requestHostnames, requestPorts,
                             edgeHostnames, edgePorts,
                             hwm, graphCapacity, 
-                            tableCapacity, resultsCapacity, timeWindow); 
+                            tableCapacity, resultsCapacity, timeWindow, numThreads); 
     graphStore1 = new GraphStoreType(context, 
                             numNodes, nodeId1, 
                             requestHostnames, requestPorts,
                             edgeHostnames, edgePorts,
                             hwm, graphCapacity, 
-                            tableCapacity, resultsCapacity, timeWindow); 
+                            tableCapacity, resultsCapacity, timeWindow, numThreads); 
   
 
   }
