@@ -67,8 +67,16 @@ private:
   #ifdef DETAIL_TIMING
   double totalTimeProcessAgainstGraph = 0;
   double totalAddSimpleTime = 0;
+  double totalTimeProcessSource = 0;
+  double totalTimeProcessTarget = 0;
+  double totalTimeProcessSourceTarget = 0;
+  double totalTimeProcessSourceProcessAgainstGraph = 0;
   double totalTimeProcessSourceLoop1 = 0;
   double totalTimeProcessSourceLoop2 = 0;
+  double totalTimeProcessTargetLoop1 = 0;
+  double totalTimeProcessTargetLoop2 = 0;
+  double totalTimeProcessSourceTargetLoop1 = 0;
+  double totalTimeProcessSourceTargetLoop2 = 0;
   #endif
 
 public:
@@ -150,13 +158,37 @@ public:
   double getTotalAddSimpleTime() const {
     return totalAddSimpleTime;
   }
-
+  double getTotalTimeProcessSource() const {
+    return totalTimeProcessSource;
+  }
+  double getTotalTimeProcessTarget() const {
+    return totalTimeProcessTarget;
+  }
+  double getTotalTimeProcessSourceTarget() const {
+    return totalTimeProcessSourceTarget;
+  }
+  double getTotalTimeProcessSourceProcessAgainstGraph() const {
+    return totalTimeProcessSourceProcessAgainstGraph;
+  }
   double getTotalTimeProcessSourceLoop1() const {
     return totalTimeProcessSourceLoop1;
   }
   double getTotalTimeProcessSourceLoop2() const {
     return totalTimeProcessSourceLoop2;
   }
+  double getTotalTimeProcessTargetLoop1() const {
+    return totalTimeProcessTargetLoop1;
+  }
+  double getTotalTimeProcessTargetLoop2() const {
+    return totalTimeProcessTargetLoop2;
+  }
+  double getTotalTimeProcessSourceTargetLoop1() const {
+    return totalTimeProcessTargetLoop1;
+  }
+  double getTotalTimeProcessSourceTargetLoop2() const {
+    return totalTimeProcessTargetLoop2;
+  }
+
   #endif
 
 private:
@@ -421,9 +453,19 @@ process(TupleType const& tuple,
         std::list<EdgeRequestType>& edgeRequests)
 {
   std::lock_guard<std::mutex> lock(generalLock);
+
+  DETAIL_TIMING_BEG
   processSource(tuple, csr, csc, edgeRequests);
+  DETAIL_TIMING_END(totalTimeProcessSource)
+
+  DETAIL_TIMING_BEG
   processTarget(tuple, csr, csc, edgeRequests);
+  DETAIL_TIMING_END(totalTimeProcessTarget)
+
+  DETAIL_TIMING_BEG
   processSourceTarget(tuple, csr, csc, edgeRequests);
+  DETAIL_TIMING_END(totalTimeProcessSourceTarget)
+
   #ifdef DEBUG
   printf("Node %lu End of SubgraphQueryResultMap edgeRequests.size() %lu\n",
     nodeId, edgeRequests.size());
@@ -561,6 +603,9 @@ processSource(TupleType const& tuple,
               CscType const& csc,
               std::list<EdgeRequestType>& edgeRequests)
 {
+  #ifdef DETAIL_TIMING
+  auto beforeLoop1 = std::chrono::high_resolution_clock::now();
+  #endif
   
   SourceType src = std::get<source>(tuple);
   size_t index = sourceHash(src) % tableCapacity;
@@ -575,15 +620,16 @@ processSource(TupleType const& tuple,
 
   std::mutex rehashMutex;
 
-  #ifdef DETAIL_TIMING
-  auto beforeLoop1 = std::chrono::high_resolution_clock::now();
-  #endif
 
   auto processSourcef1 = [this, &tuple, &rehashMutex, &rehash, index, 
     samId, currentTime]
     (size_t threadId) 
   {
 
+    #ifdef DETAIL_METRICS2
+    printf("Node %lu thread %lu list size processSourceLoop1 %lu\n",
+      nodeId, threadId, aalr[index][threadId].size()); 
+    #endif
     for (auto l = this->aalr[index][threadId].begin();
           l != this->aalr[index][threadId].end(); )
     {
@@ -654,8 +700,22 @@ processSource(TupleType const& tuple,
   totalTimeProcessSourceLoop1 += tdiffloop1.count();
   #endif
 
+  
+  #ifdef DETAIL_TIMING
+  auto beforeProcessAgainstGraph = std::chrono::high_resolution_clock::now();
+  #endif
+
   // See if the graph can further the queries
   processAgainstGraph(rehash, csr, csc);
+
+  #ifdef DETAIL_TIMING
+  auto afterProcessAgainstGraph = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> tdiffProcessAgainstGraph =
+    std::chrono::duration_cast<std::chrono::duration<double>>(
+      afterProcessAgainstGraph - beforeProcessAgainstGraph);
+  totalTimeProcessSourceProcessAgainstGraph += tdiffProcessAgainstGraph.count();
+  #endif
+
 
   #ifdef DETAIL_TIMING
   auto beforeLoop2 = std::chrono::high_resolution_clock::now();
@@ -718,6 +778,10 @@ processTarget(TupleType const& tuple,
   double currentTime = std::get<time>(tuple);
 
   std::mutex rehashMutex;
+
+  #ifdef DETAIL_TIMING
+  auto beforeLoop1 = std::chrono::high_resolution_clock::now();
+  #endif
 
   auto processTargetf1 = [this, &tuple, &rehashMutex, &rehash, index, 
     samId, currentTime]
@@ -787,21 +851,20 @@ processTarget(TupleType const& tuple,
     threads[i].join();
   }
 
-  /*for (auto l = aalr[index].begin(); l != aalr[index].end(); ++l ) {
-
-    if (!l->boundSource() && l->boundTarget()) {
-      if (l->noSamId(samId)) {
-        std::pair<bool, QueryResultType> p = l->addEdge(tuple);
-        if (p.first) {
-          rehash.push_back(p.second);
-        } 
-      }
-    }
-  }*/
-
+  #ifdef DETAIL_TIMING
+  auto afterLoop1 = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> tdiffloop1 =
+    std::chrono::duration_cast<std::chrono::duration<double>>(afterLoop1-
+      beforeLoop1);
+  totalTimeProcessTargetLoop1 += tdiffloop1.count();
+  #endif
 
   // See if the graph can further the queries
   processAgainstGraph(rehash, csr, csc);
+
+  #ifdef DETAIL_TIMING
+  auto beforeLoop2 = std::chrono::high_resolution_clock::now();
+  #endif
 
   for (auto result : rehash) {
     #ifdef DEBUG
@@ -812,7 +875,16 @@ processTarget(TupleType const& tuple,
 
     add(result, edgeRequests);
   }
-    
+ 
+  #ifdef DETAIL_TIMING
+  auto afterLoop2 = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> tdiffloop2 =
+    std::chrono::duration_cast<std::chrono::duration<double>>(afterLoop2-
+      beforeLoop2);
+  totalTimeProcessTargetLoop2 += tdiffloop2.count();
+  #endif
+
+   
 }
 
 template <typename TupleType, size_t source, size_t target,
@@ -827,6 +899,10 @@ processSourceTarget(TupleType const& tuple,
                     CscType const& csc,
                     std::list<EdgeRequestType>& edgeRequests)
 {
+  #ifdef DETAIL_TIMING
+  auto beforeLoop1 = std::chrono::high_resolution_clock::now();
+  #endif
+
   SourceType src = std::get<source>(tuple);
   TargetType trg = std::get<target>(tuple);
   size_t index = (targetHash(trg) * sourceHash(src)) % tableCapacity;
@@ -856,7 +932,8 @@ processSourceTarget(TupleType const& tuple,
     {
       if (l->isExpired(currentTime)) {
         #ifdef DEBUG
-        printf("Node %lu thread %lu SubgraphQueryResultMap::processTarget "
+        printf("Node %lu thread %lu "
+          "SubgraphQueryResultMap::processSourceTarget "
           "deleting expired result %s\n", nodeId, threadId, 
           l->toString().c_str());
         #endif
@@ -864,7 +941,7 @@ processSourceTarget(TupleType const& tuple,
       } else {
         if (l->boundSource() && l->boundTarget()) {
           #ifdef DEBUG
-          printf("Node %lu SubgraphQueryResultMap::processTarget "
+          printf("Node %lu SubgraphQueryResultMap::processSourceTarget "
                  "considering %s\n", nodeId, l->toString().c_str());
           #endif
 
@@ -876,16 +953,16 @@ processSourceTarget(TupleType const& tuple,
             // but a new intermediate result is created.
 
             #ifdef DEBUG
-            printf("Node %lu SubgraphQueryResultMap::processTarget about to try"
-                   " and add tuple\n", nodeId);
+            printf("Node %lu SubgraphQueryResultMap::processSourceTarget about"
+                   " to try and add tuple\n", nodeId);
             #endif
             
             std::pair<bool, QueryResultType> p = l->addEdge(tuple);
             if (p.first) {
 
               #ifdef DEBUG
-              printf("Node %lu SubgraphQueryResultMap::processTarget added "
-                "edge\n", nodeId);
+              printf("Node %lu SubgraphQueryResultMap::processSourceTarget "
+                "added edge\n", nodeId);
               #endif
 
               rehashMutex.lock();
@@ -894,8 +971,8 @@ processSourceTarget(TupleType const& tuple,
             }
           } else {
             #ifdef DEBUG
-            printf("Node %lu SubgraphQueryResultMap::processTarget had the id "
-              "already \n", this->nodeId);
+            printf("Node %lu SubgraphQueryResultMap::processSourceTarget had "
+              "the id already \n", this->nodeId);
             #endif
           }
         }
@@ -913,31 +990,23 @@ processSourceTarget(TupleType const& tuple,
     threads[i].join();
   }
 
-  /*std::list<QueryResultType> rehash;
+  #ifdef DETAIL_TIMING
+  auto afterLoop1 = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> tdiffloop1 =
+    std::chrono::duration_cast<std::chrono::duration<double>>(afterLoop1-
+      beforeLoop1);
+  totalTimeProcessSourceTargetLoop1 += tdiffloop1.count();
+  #endif
 
-  size_t samId = std::get<0>(tuple);
 
-  for (auto l = aalr[index].begin(); l != aalr[index].end(); ++l ) {
-    
-    if (l->boundSource() && l->boundTarget()) {
-      #ifdef DEBUG
-      printf("Node %lu SubgraphQueryResultMap::processSourceTarget considering"
-        " %s\n", nodeId, l->toString().c_str());
-      #endif
-      
-      if (l->noSamId(samId)) {
-        std::pair<bool, QueryResultType> p = l->addEdge(tuple);
-        if (p.first) {
-          rehash.push_back(p.second);
-        } 
-      }
-    }
-  }*/
-
-  //mutexes[index].unlock();
 
   // See if the graph can further the queries
   processAgainstGraph(rehash, csr, csc);
+
+  #ifdef DETAIL_TIMING
+  auto beforeLoop2 = std::chrono::high_resolution_clock::now();
+  #endif
+
 
   for (auto result : rehash) {
 
@@ -948,6 +1017,17 @@ processSourceTarget(TupleType const& tuple,
 
     add(result, edgeRequests);
   }
+
+  #ifdef DETAIL_TIMING
+  auto afterLoop2 = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> tdiffloop2 =
+    std::chrono::duration_cast<std::chrono::duration<double>>(afterLoop2-
+      beforeLoop2);
+  totalTimeProcessSourceTargetLoop2 += tdiffloop2.count();
+  #endif
+
+
+
 }
 
 

@@ -18,6 +18,26 @@
 namespace sam {
 
 
+#ifdef DETAIL_TIMING
+  auto detailTimingBegin = std::chrono::high_resolution_clock::now();
+  auto detailTimingEnd = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> detailTimingDiff;
+  #define DETAIL_TIMING_BEG \
+  detailTimingBegin = std::chrono::high_resolution_clock::now();
+
+  #define DETAIL_TIMING_END(var) \
+  detailTimingEnd = std::chrono::high_resolution_clock::now();\
+  detailTimingDiff = std::chrono::duration_cast<std::chrono::duration<double>>(\
+    detailTimingEnd - detailTimingBegin);\
+  var += detailTimingDiff.count();
+
+#else
+  #define DETAIL_TIMING_BEG()
+  #define DETAIL_TIMING_END(var)
+#endif
+
+
+
 class UtilException : public std::runtime_error {
 public:
   UtilException(char const * message) : std::runtime_error(message) { } 

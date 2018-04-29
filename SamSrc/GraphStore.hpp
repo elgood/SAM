@@ -297,11 +297,35 @@ public:
   double getTotalTimeProcessAgainstGraph() const {
     return resultMap->getTotalTimeProcessAgainstGraph(); 
   }
+  double getTotalTimeProcessSource() const {
+    return resultMap->getTotalTimeProcessSource();
+  }
+  double getTotalTimeProcessTarget() const {
+    return resultMap->getTotalTimeProcessTarget();
+  }
+  double getTotalTimeProcessSourceTarget() const {
+    return resultMap->getTotalTimeProcessSourceTarget();
+  }
+  double getTotalTimeProcessSourceProcessAgainstGraph() const {
+    return resultMap->getTotalTimeProcessSourceProcessAgainstGraph();
+  }
   double getTotalTimeProcessSourceLoop1() const {
     return resultMap->getTotalTimeProcessSourceLoop1();
   }
   double getTotalTimeProcessSourceLoop2() const {
     return resultMap->getTotalTimeProcessSourceLoop2();
+  }
+  double getTotalTimeProcessTargetLoop1() const {
+    return resultMap->getTotalTimeProcessTargetLoop1();
+  }
+  double getTotalTimeProcessTargetLoop2() const {
+    return resultMap->getTotalTimeProcessTargetLoop2();
+  }
+  double getTotalTimeProcessSourceTargetLoop1() const {
+    return resultMap->getTotalTimeProcessSourceTargetLoop1();
+  }
+  double getTotalTimeProcessSourceTargetLoop2() const {
+    return resultMap->getTotalTimeProcessSourceTargetLoop2();
   }
 
   #endif

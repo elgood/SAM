@@ -10,6 +10,7 @@
 //#define DEBUG
 #define TIMING
 #define DETAIL_TIMING
+//#define DETAIL_METRICS2
 
 #include "GraphStore.hpp"
 #include "EdgeDescription.hpp"
@@ -63,8 +64,8 @@ int main(int argc, char** argv) {
   size_t numVertices; ///> How many vertices in the graph
   size_t numNetflows; ///> How netflows to generate
   double queryTimeWindow; ///> Amount of time within a triangle can occur.
-  double timeIncrement; ///> Time between edge creation
   size_t numThreads; ///> Number of threads for for loops
+  double rate; ///> Netflows per second
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangels among the"
@@ -103,9 +104,6 @@ int main(int argc, char** argv) {
     ("queryTimeWindow",
       po::value<double>(&queryTimeWindow)->default_value(10),
       "Time window for the query to be satisfied (default: 10).")
-    ("timeIncrement",
-      po::value<double>(&timeIncrement)->default_value(0.1),
-      "Time in seconds between edge creations (default 0.1).")
     ("numVertices",
       po::value<size_t>(&numVertices)->default_value(1000),
       "How many vertices are in the graph.")
@@ -115,6 +113,9 @@ int main(int argc, char** argv) {
     ("numThreads",
       po::value<size_t>(&numThreads)->default_value(1),
       "How many threads to use for parallel for loops.")
+    ("rate",
+      po::value<double>(&rate)->default_value(100),
+      "Rate at which netflows are provided.")
   ;
 
   // Parse the command line variables
@@ -200,10 +201,13 @@ int main(int argc, char** argv) {
   EdgeExpression x2y(nodex, e0, nodey);
   EdgeExpression y2z(nodey, e1, nodez);
   EdgeExpression z2x(nodez, e2, nodex);
-  TimeEdgeExpression startE0Both(starttimeFunction, e0, equal_edge_operator, 0);
-  TimeEdgeExpression startE1Both(starttimeFunction,e1,greater_edge_operator, 0);
-  TimeEdgeExpression startE2Both(starttimeFunction,e2,greater_edge_operator, 0);
-  TimeEdgeExpression endE0First(endtimeFunction, e0, greater_edge_operator, 0);
+  TimeEdgeExpression startE0First(starttimeFunction, e0, equal_edge_operator, 0);
+  TimeEdgeExpression startE1First(starttimeFunction,e1,greater_edge_operator, 0);
+  TimeEdgeExpression startE2First(starttimeFunction,e2,greater_edge_operator, 0);
+  TimeEdgeExpression startE0Second(starttimeFunction, e0, less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression startE1Second(starttimeFunction,e1,less_edge_operator, queryTimeWindow);
+  TimeEdgeExpression startE2Second(starttimeFunction,e2,less_edge_operator, queryTimeWindow);
+  /*TimeEdgeExpression endE0First(endtimeFunction, e0, greater_edge_operator, 0);
   TimeEdgeExpression endE0Second(endtimeFunction, e0, less_edge_operator, 
     queryTimeWindow);
   TimeEdgeExpression endE1First(endtimeFunction, e1, greater_edge_operator, 0);
@@ -211,50 +215,70 @@ int main(int argc, char** argv) {
     queryTimeWindow);
   TimeEdgeExpression endE2First(endtimeFunction, e2, greater_edge_operator, 0);
   TimeEdgeExpression endE2Second(endtimeFunction, e2, less_edge_operator,
-    queryTimeWindow);
+    queryTimeWindow);*/
 
   SubgraphQueryType query;
   query.addExpression(x2y);
   query.addExpression(y2z);
   query.addExpression(z2x);
-  query.addExpression(startE0Both);
-  query.addExpression(startE1Both);
-  query.addExpression(startE2Both);
-  query.addExpression(endE0First);
-  query.addExpression(endE0Second);
-  query.addExpression(endE1First);
-  query.addExpression(endE1Second);
-  query.addExpression(endE2First);
-  query.addExpression(endE2Second);
+  query.addExpression(startE0First);
+  query.addExpression(startE1First);
+  query.addExpression(startE2First);
+  query.addExpression(startE0Second);
+  query.addExpression(startE1Second);
+  query.addExpression(startE2Second);
   query.finalize();
 
   graphStore->registerQuery(query);
 
   double time = 0.0;
-  double increment = timeIncrement;
   size_t triangleCounter = 0;
+
+  double increment = 0.1;
+  if (rate > 0) {
+    increment = 1 / rate;
+  }
 
   auto t1 = std::chrono::high_resolution_clock::now();
 
   for(size_t i = 0; i < numNetflows; i++)
   {
     if (i % 1000 == 0) {
-      printf("RunTriangle iteration %lu\n", i);
+      auto currenttime = std::chrono::high_resolution_clock::now();
+      double expectedTime = i * increment;
+      double actualTime = duration_cast<duration<double>>(currenttime - t1).count();
+      printf("RunTriangle iteration %lu.  Expected time: %f Actual time: %f\n", i,
+        expectedTime, actualTime);
     }
+    if (rate > 0) {
+      auto currenttime = std::chrono::high_resolution_clock::now();
+      duration<double> diff = duration_cast<duration<double>>(currenttime - t1);
+      if (diff.count() < i * increment) {
+        size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+        std::this_thread::sleep_for(
+          std::chrono::milliseconds(numMilliseconds));
+      }
+    }
+
     std::string str = generator->generate(time);
     time += increment;
     pushPull->consume(str);
   }
+  auto t2 = std::chrono::high_resolution_clock::now();
 
-  for(size_t i = 0; i < 100; i++) {
+  size_t additionalNetflows = 1000;
+  for(size_t i = 0; i < additionalNetflows; i++) {
     std::string str = otherGenerator->generate(time);
     time += increment;
     pushPull->consume(str);
   }
   
-  auto t2 = std::chrono::high_resolution_clock::now();
   duration<double> time_space = duration_cast<duration<double>>(t2-t1);
-  std::cout << "Time: " << time_space.count() << " seconds" << std::endl;
+  double totalTime = time_space.count(); 
+  printf("Node %lu Time: %f seconds\n", nodeId, totalTime);
+  printf("Node %lu Experimental rate: %f\n", nodeId, 
+    static_cast<double>(numNetflows) / totalTime);
+  printf("Node %lu Specified rate: %f\n", nodeId, rate);  
 
   printf("Node %lu found %lu triangles\n",
     nodeId, graphStore->getNumResults());
@@ -278,10 +302,26 @@ int main(int argc, char** argv) {
     nodeId, graphStore->getTotalTimeConsumeResultMapProcess());
   printf("Node %lu Detail Timing total processAgainstGraph time: %f\n",
     nodeId, graphStore->getTotalTimeProcessAgainstGraph());
+  printf("Node %lu Detail Timing total processSource time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessSource());
+  printf("Node %lu Detail Timing total processTarget time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessTarget());
+  printf("Node %lu Detail Timing total processSourceTarget time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessSourceTarget());
+  printf("Node %lu Detail Timing total processSourceProcessAgainstGraph time: "
+    "%f\n", nodeId, graphStore->getTotalTimeProcessSourceProcessAgainstGraph());
   printf("Node %lu Detail Timing total processSourceLoop1 time: %f\n",
     nodeId, graphStore->getTotalTimeProcessSourceLoop1());
   printf("Node %lu Detail Timing total processSourceLoop2 time: %f\n",
     nodeId, graphStore->getTotalTimeProcessSourceLoop2());
+  printf("Node %lu Detail Timing total processTargetLoop1 time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessTargetLoop1());
+  printf("Node %lu Detail Timing total processTargetLoop2 time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessTargetLoop2());
+  printf("Node %lu Detail Timing total processSourceTargetLoop1 time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessSourceTargetLoop1());
+  printf("Node %lu Detail Timing total processSourceTargetLoop2 time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessSourceTargetLoop2());
   #endif
 
   for(size_t i = 0; i < numResults; i++)
