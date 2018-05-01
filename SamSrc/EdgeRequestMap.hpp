@@ -63,6 +63,9 @@ private:
   /// This has all the push sockets that we use to send edges to other nodes.
   std::vector<std::shared_ptr<zmq::socket_t>> pushers;
 
+  // Comes from GraphStore
+  std::mutex& terminationLock;
+
 public:
   /**
    * Constructor.  
@@ -78,7 +81,8 @@ public:
                   std::vector<std::size_t> edgePorts,
                   uint32_t hwm,
                   size_t tableCapacity,
-                  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers);
+                  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers,
+                  std::mutex& terminationLock);
 
   /**
    * Destructor.
@@ -147,8 +151,9 @@ EdgeRequestMap(
                 std::vector<std::size_t> ports,
                 uint32_t hwm,
                 size_t tableCapacity,
-                std::vector<std::shared_ptr<zmq::socket_t>> edgePushers)
-: context(_context)
+                std::vector<std::shared_ptr<zmq::socket_t>> edgePushers,
+                std::mutex& _terminationLock)
+: context(_context), terminationLock(_terminationLock)
 {
   terminated = false;
   this->numNodes = numNodes;
@@ -266,9 +271,11 @@ processSource(TupleType const& tuple)
           printf("Node %lu->%lu EdgeRequestMap::processSource sending"
             " edge %s\n", nodeId, node, toString(tuple).c_str());
           #endif
+          terminationLock.lock();
           if (!terminated) {
             pushers[node]->send(message);  
           }
+          terminationLock.unlock();
         }
       }
     }
@@ -312,10 +319,12 @@ processTarget(TupleType const& tuple)
         printf("Node %lu->%lu EdgeRequestMap::processTarget sending edge %s\n",
           nodeId, node, toString(tuple).c_str());
         #endif
-        
+       
+        terminationLock.lock(); 
         if (!terminated) {
           pushers[node]->send(message);  
         }
+        terminationLock.unlock();
       }
     }
   }
@@ -355,10 +364,12 @@ processSourceTarget(TupleType const& tuple)
         printf("Node %lu->%lu EdgeRequestMap::processSourceTarget sending "
           "edge %s\n", nodeId, node, toString(tuple).c_str());
         #endif
-
+        
+        terminationLock.lock();
         if (!terminated) {
           pushers[node]->send(message);  
         }
+        terminationLock.unlock();
       }
     }
   }
@@ -372,6 +383,9 @@ EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate()
 {
+  #ifdef DEBUG
+  printf("Node %lu entering EdgeRequestMap::terminate\n", nodeId);
+  #endif
   if (!terminated) {
     for(size_t i = 0; i < this->numNodes; i++)
     {
@@ -395,6 +409,9 @@ terminate()
     }
   }
   terminated = true;
+  #ifdef DEBUG
+  printf("Node %lu exiting EdgeRequestMap::terminate\n", nodeId);
+  #endif
 }
 
 

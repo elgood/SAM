@@ -35,7 +35,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
         PartitionType;
 
 
-BOOST_AUTO_TEST_CASE( test_triangles_exact )
+/*BOOST_AUTO_TEST_CASE( test_triangles_exact )
 {
   /// In this test, we create two threads that generate random netflows.
   /// Each thread has a ZeroMQPushPull object that consumes the netflows,
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   printf("deleting generator1\n");
   delete generator1;
   printf("exiting\n");
-}
+}*/
 
 
 BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
@@ -484,27 +484,17 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
     AbstractNetflowGenerator *otherGenerator = 
       new RandomGenerator();
     for(size_t i = 0; i < numTuples; i++) {
+      printf("NodeId %lu i %lu\n", nodeId, i);
 
       auto currenttime = std::chrono::high_resolution_clock::now();
       duration<double> diff = duration_cast<duration<double>>(
         currenttime - starttime);
-      //printf("nodeId %lu diff %f i * increment %f\n", nodeId, 
-      //  diff.count(), i * increment);
       if (diff.count() < i * increment) {
         size_t numMilliseconds = (i * increment - diff.count()) * 1000;
-        //printf("nodeId %lu diff %f i * increment %f numMilliseconds %lu\n", 
-        //  nodeId, diff.count(), i * increment, numMilliseconds);
         std::this_thread::sleep_for(
           std::chrono::milliseconds(numMilliseconds));
       }
 
-
-
-      //if (i % 10 == 0) {
-      //  printf("nodeId %lu i %lu\n", nodeId, i);
-      //  printf("nodeId %lu Num intermediate results %lu\n", nodeId, 
-      //    graphStore->getNumIntermediateResults());
-      //}
       std::string str = generator->generate(time);
       time += increment;
       pushPull->consume(str);
@@ -515,6 +505,16 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
     }
 
     for(size_t i = 0; i < 1000; i++) {
+      auto currenttime = std::chrono::high_resolution_clock::now();
+      duration<double> diff = duration_cast<duration<double>>(
+        currenttime - starttime);
+      if (diff.count() < i * increment + numTuples * increment) {
+        size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+        std::this_thread::sleep_for(
+          std::chrono::milliseconds(numMilliseconds));
+      }
+
+     
       std::string str = otherGenerator->generate(time);
       time += increment;
       pushPull->consume(str);

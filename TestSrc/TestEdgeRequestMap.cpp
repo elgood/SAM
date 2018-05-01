@@ -38,11 +38,14 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
                     edgePushers0, hwm);
   createPushSockets(&context, numNodes, nodeId1, edgeHostnames, edgePorts,
                     edgePushers1, hwm);
+ 
+  std::mutex termination0;
+  std::mutex termination1;
   
   MapType map0(context, numNodes, nodeId0, edgeHostnames, edgePorts, hwm, 
-                      tableCapacity, edgePushers0);
+                      tableCapacity, edgePushers0, termination0);
   MapType map1(context, numNodes, nodeId1, edgeHostnames, edgePorts, hwm, 
-                      tableCapacity, edgePushers1);
+                      tableCapacity, edgePushers1, termination1);
 
 
   // Two generators for each thread 

@@ -32,7 +32,7 @@ namespace sam {
   var += detailTimingDiff.count();
 
 #else
-  #define DETAIL_TIMING_BEG()
+  #define DETAIL_TIMING_BEG
   #define DETAIL_TIMING_END(var)
 #endif
 

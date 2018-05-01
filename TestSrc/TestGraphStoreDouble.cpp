@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestGraphStore
 
-#define DEBUG
+//#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
@@ -12,6 +12,7 @@
 
 
 using namespace sam;
+using namespace std::chrono;
 
 zmq::context_t context(1);
 
@@ -110,13 +111,15 @@ struct DoubleNodeFixture  {
                             requestHostnames, requestPorts,
                             edgeHostnames, edgePorts,
                             hwm, graphCapacity, 
-                            tableCapacity, resultsCapacity, timeWindow, numThreads); 
+                            tableCapacity, resultsCapacity, 
+                            timeWindow, numThreads); 
     graphStore1 = new GraphStoreType(context, 
                             numNodes, nodeId1, 
                             requestHostnames, requestPorts,
                             edgeHostnames, edgePorts,
                             hwm, graphCapacity, 
-                            tableCapacity, resultsCapacity, timeWindow, numThreads); 
+                            tableCapacity, resultsCapacity, 
+                            timeWindow, numThreads); 
   
 
   }
@@ -260,23 +263,40 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
 
   int n = 2;
  
+  double time = 0.0;
+  double increment = 1.0;
+
   // This function sends the extra netflow to bridge the two data streams. 
-  auto graphFunction0 = [](GraphStoreType* graphStore,
+  auto graphFunction0 = [&time, increment](GraphStoreType* graphStore,
     int n, AbstractNetflowGenerator* generator)
     
   {
     double time = 0.0;
    
+    auto starttime = std::chrono::high_resolution_clock::now();
+
     std::string netflowString = "1,1,0.5,2013-04-10 08:32:36,"
                              "20130410083236.384094,17,UDP,192.168.0.2,"
                              "192.168.0.3,29986,1900,0,0,0,133,0,1,0,1,0,0";    
 
     size_t id = 0;
     for (int i = 0; i < n; i++) {
+
+      auto currenttime = std::chrono::high_resolution_clock::now();
+      duration<double> diff = duration_cast<duration<double>>(
+          currenttime - starttime);
+     
+      if (diff.count() < i * increment) {
+        size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+        std::this_thread::sleep_for(
+          std::chrono::milliseconds(numMilliseconds));
+      } 
+
       std::string str = generator->generate(time);
+      time = time + increment;
+
       Netflow n = makeNetflow(id++, str);
       graphStore->consume(n);
-      time = time + 1.0;
       if (i == 0) {
         Netflow netflow = makeNetflow(id++, netflowString);
         graphStore->consume(netflow);
@@ -286,16 +306,31 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
 
   };
 
-  auto graphFunction1 = [](GraphStoreType* graphStore,
+  auto graphFunction1 = [&time, increment](GraphStoreType* graphStore,
     int n, AbstractNetflowGenerator* generator)
     
   {
-    double time = 0.0;
+
+    auto starttime = std::chrono::high_resolution_clock::now();
+
     for (int i = 0; i < n; i++) {
+
+      auto currenttime = std::chrono::high_resolution_clock::now();
+      duration<double> diff = duration_cast<duration<double>>(
+          currenttime - starttime);
+     
+      if (diff.count() < i * increment) {
+        size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+        std::this_thread::sleep_for(
+          std::chrono::milliseconds(numMilliseconds));
+      } 
+
+
       std::string str = generator->generate(time);
+      time += increment;
+
       Netflow n = makeNetflow(i, str);
       graphStore->consume(n);
-      time = time + 1.0;
     }
     graphStore->terminate();
 
