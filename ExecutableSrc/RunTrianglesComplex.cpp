@@ -44,10 +44,10 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
 
 typedef GraphStoreType::ResultType ResultType;  
 
-zmq::context_t context;
 
 int main(int argc, char** argv) {
 
+  zmq::context_t *context = new zmq::context_t(1);
   srand (time(NULL));
 
   /// Parameters
@@ -66,6 +66,7 @@ int main(int argc, char** argv) {
   double queryTimeWindow; ///> Amount of time within a triangle can occur.
   size_t numThreads; ///> Number of threads for for loops
   double rate; ///> Netflows per second
+  bool check;
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangels among the"
@@ -116,6 +117,8 @@ int main(int argc, char** argv) {
     ("rate",
       po::value<double>(&rate)->default_value(100),
       "Rate at which netflows are provided.")
+    ("check", po::bool_switch(&check)->default_value(false),
+      "Performs check of results")
   ;
 
   // Parse the command line variables
@@ -160,7 +163,7 @@ int main(int argc, char** argv) {
   }
 
   // Setting up the ZeroMQPushPull object
-  PartitionType* pushPull = new PartitionType(context, queueLength,
+  PartitionType* pushPull = new PartitionType(*context, queueLength,
                                     numNodes, nodeId,
                                     hostnames, ports,
                                     hwm);
@@ -174,7 +177,7 @@ int main(int argc, char** argv) {
   }
 
   auto graphStore = std::make_shared<GraphStoreType>(
-     context,
+     *context,
      numNodes, nodeId,
      hostnames, requestPorts,
      hostnames, edgePorts,
@@ -243,12 +246,14 @@ int main(int argc, char** argv) {
 
   for(size_t i = 0; i < numNetflows; i++)
   {
+    printf("NodeId %lu i %lu\n", nodeId, i);
     if (i % 1000 == 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
       double expectedTime = i * increment;
-      double actualTime = duration_cast<duration<double>>(currenttime - t1).count();
-      printf("RunTriangle iteration %lu.  Expected time: %f Actual time: %f\n", i,
-        expectedTime, actualTime);
+      double actualTime = 
+        duration_cast<duration<double>>(currenttime - t1).count();
+      printf("RunTriangle iteration %lu.  Expected time: %f Actual time:"
+             " %f\n", i, expectedTime, actualTime);
     }
     if (rate > 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
@@ -324,25 +329,30 @@ int main(int argc, char** argv) {
     nodeId, graphStore->getTotalTimeProcessSourceTargetLoop2());
   #endif
 
-  for(size_t i = 0; i < numResults; i++)
-  {
-    ResultType result = graphStore->getResult(i);
-    //printf("%s\n", result.toString().c_str());
-    Netflow n0 = result.getResultTuple(0);
-    Netflow n1 = result.getResultTuple(1);
-    Netflow n2 = result.getResultTuple(2);
-    double starttime0 = std::get<TimeSeconds>(n0);
-    double starttime1 = std::get<TimeSeconds>(n1);
-    double starttime2 = std::get<TimeSeconds>(n2);
-    if (starttime0 > starttime1) {
-      printf("problem startime0 > starttime1 %s\n", result.toString().c_str());
-    }
-    if (starttime1 > starttime2) {
-      printf("problem startime1 > starttime2 %s\n", result.toString().c_str());
-    }
-    if (starttime2 - starttime0 >= queryTimeWindow ) {
-      printf("problem startime2 - starttime0 > %f %s\n", queryTimeWindow,
-        result.toString().c_str());
+  
+  if (check) {
+    for(size_t i = 0; i < numResults; i++)
+    {
+      ResultType result = graphStore->getResult(i);
+      //printf("%s\n", result.toString().c_str());
+      Netflow n0 = result.getResultTuple(0);
+      Netflow n1 = result.getResultTuple(1);
+      Netflow n2 = result.getResultTuple(2);
+      double starttime0 = std::get<TimeSeconds>(n0);
+      double starttime1 = std::get<TimeSeconds>(n1);
+      double starttime2 = std::get<TimeSeconds>(n2);
+      if (starttime0 > starttime1) {
+        printf("problem startime0 > starttime1 %s\n", 
+          result.toString().c_str());
+      }
+      if (starttime1 > starttime2) {
+        printf("problem startime1 > starttime2 %s\n", 
+          result.toString().c_str());
+      }
+      if (starttime2 - starttime0 >= queryTimeWindow ) {
+        printf("problem startime2 - starttime0 > %f %s\n", queryTimeWindow,
+          result.toString().c_str());
+      }
     }
   }
 

@@ -350,9 +350,17 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 addEdge(TupleType tuple) 
 {
+  #ifdef DEBUG
+  printf("Node %lu entering GraphStore::addEdge tuple %s\n", nodeId, 
+    sam::toString(tuple).c_str());
+  #endif
   //std::lock_guard<std::mutex> lock(generalLock);
   csc->addEdge(tuple);
   csr->addEdge(tuple);
+  #ifdef DEBUG
+  printf("Node %lu exiting GraphStore::addEdge tuple %s\n", nodeId, 
+    sam::toString(tuple).c_str());
+  #endif
 }
 
 template <typename TupleType, typename Tuplizer, 
@@ -595,19 +603,20 @@ consume(TupleType const& tuple)
 
 
   // Adds the edge to the graph
-  #ifdef DETAIL_TIMING
-  auto t1 = std::chrono::high_resolution_clock::now();
-  #endif
-
+  //#ifdef DETAIL_TIMING
+  //auto t1 = std::chrono::high_resolution_clock::now();
+  //#endif
+  DETAIL_TIMING_BEG
   addEdge(myTuple);
-
-  #ifdef DETAIL_TIMING
-  auto t2 = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> tdiff = 
-    std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-  double timeConsumeAddEdge = tdiff.count(); 
-  totalTimeConsumeAddEdge += timeConsumeAddEdge;
-  #endif
+  printf("blahblahaddEdge\n");
+  DETAIL_TIMING_END(totalTimeConsumeAddEdge)
+  //#ifdef DETAIL_TIMING
+  //auto t2 = std::chrono::high_resolution_clock::now();
+  //std::chrono::duration<double> tdiff = 
+  //  std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+  //double timeConsumeAddEdge = tdiff.count(); 
+  //totalTimeConsumeAddEdge += timeConsumeAddEdge;
+  //#endif
 
 
   // TODO Delete old edges, maybe
@@ -616,19 +625,18 @@ consume(TupleType const& tuple)
   // Check against existing queryResults.  The edgeRequest list is populated
   // with edge requests when we find we need a tuple that will reside 
   // elsewhere.
-  #ifdef DETAIL_TIMING
-  t1 = std::chrono::high_resolution_clock::now();
-  #endif
-
+  DETAIL_TIMING_BEG
+  printf("blahblahedgerequests\n");
   std::list<EdgeRequestType> edgeRequests;
+  printf("after blahblahedgerequests\n");
   resultMap->process(myTuple, *csr, *csc, edgeRequests);
-
-  #ifdef DETAIL_TIMING
+  DETAIL_TIMING_END(totalTimeConsumeResultMapProcess)
+  /*#ifdef DETAIL_TIMING
   t2 = std::chrono::high_resolution_clock::now();
   tdiff = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
   double timeConsumeResultMapProcess = tdiff.count(); 
   totalTimeConsumeResultMapProcess += timeConsumeResultMapProcess;
-  #endif
+  #endif*/
 
 
 
@@ -649,6 +657,10 @@ consume(TupleType const& tuple)
       timestamp_consume2 - timestamp_consume1);
   double time_consume = time_space.count(); 
   totalTimeConsume += time_consume;
+  #endif
+
+  #ifdef DEBUG
+  printf("Node %lu exiting GraphStore::consume\n", nodeId);
   #endif
 
   return true;

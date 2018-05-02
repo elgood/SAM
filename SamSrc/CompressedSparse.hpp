@@ -350,6 +350,10 @@ void
 CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
   TupleType tuple)
 {
+  #ifdef DEBUG
+  printf("CompressedSparse::addEdge tuple %s\n",  sam::toString(tuple).c_str());
+  #endif
+
   // Updating time in a somewhat unsafe manner that should generally work.
   //uint64_t tupleTime = convert(std::get<time>(tuple));
   double tupleTime = std::get<time>(tuple);
