@@ -790,8 +790,10 @@ SubgraphQueryResult<TupleType, source, target,
 getCurrentSource() const
 {
   if (currentEdge >= numEdges) {
-    std::string message = "SubgraphQueryResult::getCurrentSource Tried to"
-      " access an edge that is past the index of numEdges";
+    std::string message = "SubgraphQueryResult::getCurrentSource "
+      "Tried to access an edge that is past the index of numEdges: "
+      "currentEdge " + boost::lexical_cast<std::string>(currentEdge) +
+      " numEdges " + boost::lexical_cast<std::string>(numEdges);
     throw SubgraphQueryResultException(message);   
   }
 
@@ -840,7 +842,9 @@ getCurrentStartTimeFirst() const
 {
   if (currentEdge >= numEdges) {
     std::string message = "SubgraphQueryResult::getCurrentStartTimeFirst "
-      "Tried to access an edge that is past the index of numEdges";
+      "Tried to access an edge that is past the index of numEdges: "
+      "currentEdge " + boost::lexical_cast<std::string>(currentEdge) +
+      " numEdges " + boost::lexical_cast<std::string>(numEdges);
     throw SubgraphQueryResultException(message);   
   }
 

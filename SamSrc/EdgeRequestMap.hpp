@@ -232,7 +232,7 @@ EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 process(TupleType const& tuple)
 {
-  printf("blahprocess\n");
+  //printf("blahprocess\n");
   #ifdef DEBUG
   printf("Node %lu EdgeRequestMap::process tuple %s\n", nodeId,
     toString(tuple).c_str());

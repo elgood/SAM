@@ -265,6 +265,7 @@ template <typename TupleType, size_t source, size_t target,
           typename Tuplizer, typename HF>
 void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate() 
 {
+  printf("Node %lu ZeroMQPushPull::terminate called\n", nodeId);
   if (!terminated) {
     
     for (auto consumer : this->consumers) {

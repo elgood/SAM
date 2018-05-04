@@ -71,6 +71,12 @@ private:
    */
   void cleanupEdges(size_t index);
 
+  #ifdef METRICS
+  mutable size_t totalEdgesAdded = 0;
+  mutable size_t totalEdgesDeleted = 0; 
+  #endif
+
+
 public:
 
   /**
@@ -128,6 +134,12 @@ public:
    * Counts the number of edges in the graph.  Linear operation.
    */
   size_t countEdges() const;
+
+  #ifdef METRICS
+  size_t getTotalEdgesAdded() const { return totalEdgesAdded; }
+  size_t getTotalEdgesDeleted() const { return totalEdgesDeleted; }
+  #endif
+
 };
 
 template <typename TupleType, size_t source, size_t target, 
@@ -330,6 +342,7 @@ const
               #endif
               
               it = l.erase(it);
+              METRICS_INCREMENT(this->totalEdgesDeleted)
             }
           }
         }
@@ -353,6 +366,7 @@ CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
   #ifdef DEBUG
   printf("CompressedSparse::addEdge tuple %s\n",  sam::toString(tuple).c_str());
   #endif
+  METRICS_INCREMENT(totalEdgesAdded)
 
   // Updating time in a somewhat unsafe manner that should generally work.
   //uint64_t tupleTime = convert(std::get<time>(tuple));
@@ -422,6 +436,7 @@ cleanupEdges( size_t index )
     while (l.size() > 0 && 
            currentTime.load() - std::get<time>(l.front()) > window) {
       l.pop_front();
+      METRICS_INCREMENT(totalEdgesDeleted)
     }
   }
   

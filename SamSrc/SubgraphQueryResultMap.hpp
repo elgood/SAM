@@ -7,6 +7,12 @@
 
 namespace sam {
 
+class SubgraphQueryResultMapException : public std::runtime_error
+{
+public:
+  SubgraphQueryResultMapException(std::string str) : std::runtime_error(str) {}
+};
+
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
@@ -77,6 +83,11 @@ private:
   double totalTimeProcessTargetLoop2 = 0;
   double totalTimeProcessSourceTargetLoop1 = 0;
   double totalTimeProcessSourceTargetLoop2 = 0;
+  #endif
+
+  #ifdef METRICS
+  size_t totalResultsDeleted = 0;
+  size_t totalResultsCreated = 0;
   #endif
 
 public:
@@ -191,6 +202,14 @@ public:
 
   #endif
 
+
+  #ifdef METRICS
+
+  size_t getTotalResultsDeleted() const { return totalResultsDeleted; }
+  size_t getTotalResultsCreated() const { return totalResultsCreated; }
+
+  #endif
+
 private:
   /**
    * Adds a new intermediate result. 
@@ -199,9 +218,6 @@ private:
    */ 
   void add(QueryResultType const& result, 
            std::list<EdgeRequestType>& edgeRequests);
-
-
-
 
   /**
    * Uses the source hash function to find intermediate query results that
@@ -355,7 +371,10 @@ add(QueryResultType const& result,
               
       mutexes[newIndex][minIndex].lock();
       aalr[newIndex][minIndex].push_back(localQueryResult);
-      mutexes[newIndex][minIndex].unlock(); 
+      mutexes[newIndex][minIndex].unlock();
+
+      METRICS_INCREMENT(totalResultsCreated)
+ 
     } else {
       #ifdef DEBUG
       printf("Node %lu Complete query! %s\n", nodeId, 
@@ -429,9 +448,13 @@ add(QueryResultType const& result,
     mutexes[newIndex][minIndex].lock();
     aalr[newIndex][minIndex].push_back(result);
     mutexes[newIndex][minIndex].unlock(); 
+
+    METRICS_INCREMENT(totalResultsCreated)
+
   } else {
     #ifdef DEBUG
-    printf("Node %lu Complete query! %s\n", nodeId, result.toString().c_str());
+    printf("Node %lu Complete query! %s\n", nodeId, 
+      result.toString().c_str();
     #endif
     size_t index = numQueryResults.fetch_add(1);
     index = index % resultCapacity;
@@ -454,17 +477,38 @@ process(TupleType const& tuple,
 {
   std::lock_guard<std::mutex> lock(generalLock);
 
-  DETAIL_TIMING_BEG
+  #ifdef DETAIL_TIMING
+  auto t1 = std::chrono::high_resolution_clock::now();
+  #endif
   processSource(tuple, csr, csc, edgeRequests);
-  DETAIL_TIMING_END(totalTimeProcessSource)
+  #ifdef DETAIL_TIMING
+  auto t2 = std::chrono::high_resolution_clock::now();
+  auto diff = std::chrono::duration_cast<std::chrono::duration<double>>(
+    t2 - t1);
+  totalTimeProcessSource += diff.count();
+  #endif
 
-  DETAIL_TIMING_BEG
+  #ifdef DETAIL_TIMING
+  t1 = std::chrono::high_resolution_clock::now();
+  #endif
   processTarget(tuple, csr, csc, edgeRequests);
-  DETAIL_TIMING_END(totalTimeProcessTarget)
+  #ifdef DETAIL_TIMING
+  t2 = std::chrono::high_resolution_clock::now();
+  diff = std::chrono::duration_cast<std::chrono::duration<double>>(
+    t2 - t1);
+  totalTimeProcessTarget += diff.count();
+  #endif
 
-  DETAIL_TIMING_BEG
+  #ifdef DETAIL_TIMING
+  t1 = std::chrono::high_resolution_clock::now();
+  #endif
   processSourceTarget(tuple, csr, csc, edgeRequests);
-  DETAIL_TIMING_END(totalTimeProcessSourceTarget)
+  #ifdef DETAIL_TIMING
+  t2 = std::chrono::high_resolution_clock::now();
+  diff = std::chrono::duration_cast<std::chrono::duration<double>>(
+    t2 - t1);
+  totalTimeProcessSourceTarget += diff.count();
+  #endif
 
   #ifdef DEBUG
   printf("Node %lu End of SubgraphQueryResultMap edgeRequests.size() %lu\n",
@@ -519,13 +563,19 @@ processAgainstGraph(
       // Only look at the graph if the result is not complete.
       if (!frontier->complete()) {
         std::list<TupleType> foundEdges;
-        csr.findEdges(frontier->getCurrentSource(),
+        try {
+          csr.findEdges(frontier->getCurrentSource(),
                       frontier->getCurrentTarget(),
                       frontier->getCurrentStartTimeFirst(),
                       frontier->getCurrentStartTimeSecond(),
                       frontier->getCurrentEndTimeFirst(),
                       frontier->getCurrentEndTimeSecond(),
                       foundEdges);
+        } catch (std::exception e) {
+          std::string message = "SubgraphQueryResultMap::"
+            "processAgainstGraph caught exception: " + std::string(e.what());
+          throw SubgraphQueryResultMapException(message);
+        }
 
         #ifdef DEBUG
         printf("Node %lu SubgraphQueryResultMap::processAgainstGraph "
@@ -604,9 +654,9 @@ processSource(TupleType const& tuple,
               std::list<EdgeRequestType>& edgeRequests)
 {
   #ifdef DETAIL_TIMING
-  auto beforeLoop1 = std::chrono::high_resolution_clock::now();
+  auto t1 = std::chrono::high_resolution_clock::now();
   #endif
-  
+ 
   SourceType src = std::get<source>(tuple);
   size_t index = sourceHash(src) % tableCapacity;
 
@@ -630,6 +680,9 @@ processSource(TupleType const& tuple,
     printf("Node %lu thread %lu list size processSourceLoop1 %lu\n",
       nodeId, threadId, aalr[index][threadId].size()); 
     #endif
+
+    mutexes[index][threadId].lock();
+
     for (auto l = this->aalr[index][threadId].begin();
           l != this->aalr[index][threadId].end(); )
     {
@@ -640,6 +693,7 @@ processSource(TupleType const& tuple,
           l->toString().c_str());
         #endif
         l = this->aalr[index][threadId].erase(l);
+        METRICS_INCREMENT(this->totalResultsDeleted)
       } else {
         if (l->boundSource() && !l->boundTarget()) {
           #ifdef DEBUG
@@ -682,6 +736,8 @@ processSource(TupleType const& tuple,
       }
     }
 
+    mutexes[index][threadId].unlock();
+
   };
 
   for (size_t i = 0; i < numThreads; i++) {
@@ -691,43 +747,31 @@ processSource(TupleType const& tuple,
   for (size_t i = 0; i < numThreads; i++) {
     threads[i].join();
   }
-
   #ifdef DETAIL_TIMING
-  auto afterLoop1 = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> tdiffloop1 =
-    std::chrono::duration_cast<std::chrono::duration<double>>(afterLoop1-
-      beforeLoop1);
-  totalTimeProcessSourceLoop1 += tdiffloop1.count();
+  auto t2 = std::chrono::high_resolution_clock::now();
+  auto diff = std::chrono::duration_cast<std::chrono::duration<double>>(
+    t2 - t1);
+  totalTimeProcessSourceLoop1 += diff.count();
   #endif
+ 
 
-  
-  #ifdef DETAIL_TIMING
-  auto beforeProcessAgainstGraph = std::chrono::high_resolution_clock::now();
-  #endif
 
   // See if the graph can further the queries
+  #ifdef DETAIL_TIMING
+  t1 = std::chrono::high_resolution_clock::now();
+  #endif
   processAgainstGraph(rehash, csr, csc);
-
   #ifdef DETAIL_TIMING
-  auto afterProcessAgainstGraph = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> tdiffProcessAgainstGraph =
-    std::chrono::duration_cast<std::chrono::duration<double>>(
-      afterProcessAgainstGraph - beforeProcessAgainstGraph);
-  totalTimeProcessSourceProcessAgainstGraph += tdiffProcessAgainstGraph.count();
+  t2 = std::chrono::high_resolution_clock::now();
+  diff = std::chrono::duration_cast<std::chrono::duration<double>>(
+    t2 - t1);
+  totalTimeProcessSourceProcessAgainstGraph += diff.count();
   #endif
 
 
   #ifdef DETAIL_TIMING
-  auto beforeLoop2 = std::chrono::high_resolution_clock::now();
+  t1 = std::chrono::high_resolution_clock::now();
   #endif
-
-
-  auto processSourcef2 = []()
-  {
-
-
-  };
-  
   for (QueryResultType& result : rehash) {
     #ifdef DEBUG
     printf("Node %lu SubgraphqueryResultMap::processSource rehashing " 
@@ -736,16 +780,12 @@ processSource(TupleType const& tuple,
     
     add(result, edgeRequests);
   }
-
   #ifdef DETAIL_TIMING
-  auto afterLoop2 = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> tdiffloop2 =
-    std::chrono::duration_cast<std::chrono::duration<double>>(afterLoop2-
-      beforeLoop2);
-  totalTimeProcessSourceLoop2 += tdiffloop2.count();
+  t2 = std::chrono::high_resolution_clock::now();
+  diff = std::chrono::duration_cast<std::chrono::duration<double>>(
+    t2 - t1);
+  totalTimeProcessSourceLoop2 += diff.count();
   #endif
-
-
 
 }
 
@@ -788,6 +828,8 @@ processTarget(TupleType const& tuple,
     (size_t threadId) 
   {
 
+    mutexes[index][threadId].lock();
+
     for (auto l = this->aalr[index][threadId].begin();
           l != this->aalr[index][threadId].end(); )
     {
@@ -798,6 +840,7 @@ processTarget(TupleType const& tuple,
           l->toString().c_str());
         #endif
         l = this->aalr[index][threadId].erase(l);
+        METRICS_INCREMENT(totalResultsDeleted)
       } else {
         if (!l->boundSource() && l->boundTarget()) {
           #ifdef DEBUG
@@ -839,6 +882,9 @@ processTarget(TupleType const& tuple,
         ++l;
       }
     }
+
+    mutexes[index][threadId].unlock();
+
 
   };
 
@@ -927,6 +973,7 @@ processSourceTarget(TupleType const& tuple,
     (size_t threadId) 
   {
 
+    mutexes[index][threadId].lock();
     for (auto l = this->aalr[index][threadId].begin();
           l != this->aalr[index][threadId].end(); )
     {
@@ -938,6 +985,7 @@ processSourceTarget(TupleType const& tuple,
           l->toString().c_str());
         #endif
         l = this->aalr[index][threadId].erase(l);
+        METRICS_INCREMENT(totalResultsDeleted)
       } else {
         if (l->boundSource() && l->boundTarget()) {
           #ifdef DEBUG
@@ -979,6 +1027,7 @@ processSourceTarget(TupleType const& tuple,
         ++l;
       }
     }
+    mutexes[index][threadId].unlock();
 
   };
 

@@ -10,6 +10,7 @@
 //#define DEBUG
 #define TIMING
 #define DETAIL_TIMING
+#define METRICS
 //#define DETAIL_METRICS2
 
 #include "GraphStore.hpp"
@@ -46,6 +47,8 @@ typedef GraphStoreType::ResultType ResultType;
 
 
 int main(int argc, char** argv) {
+	
+  try {
 
   zmq::context_t *context = new zmq::context_t(1);
   srand (time(NULL));
@@ -204,12 +207,24 @@ int main(int argc, char** argv) {
   EdgeExpression x2y(nodex, e0, nodey);
   EdgeExpression y2z(nodey, e1, nodez);
   EdgeExpression z2x(nodez, e2, nodex);
-  TimeEdgeExpression startE0First(starttimeFunction, e0, equal_edge_operator, 0);
-  TimeEdgeExpression startE1First(starttimeFunction,e1,greater_edge_operator, 0);
-  TimeEdgeExpression startE2First(starttimeFunction,e2,greater_edge_operator, 0);
-  TimeEdgeExpression startE0Second(starttimeFunction, e0, less_edge_operator,queryTimeWindow);
-  TimeEdgeExpression startE1Second(starttimeFunction,e1,less_edge_operator, queryTimeWindow);
-  TimeEdgeExpression startE2Second(starttimeFunction,e2,less_edge_operator, queryTimeWindow);
+  TimeEdgeExpression startE0First(starttimeFunction, e0, 
+                                  equal_edge_operator, 0);
+  TimeEdgeExpression startE1First(starttimeFunction,e1,
+                                  greater_edge_operator, 0);
+  TimeEdgeExpression startE2First(starttimeFunction,e2,
+                                  greater_edge_operator, 0);
+  TimeEdgeExpression startE0Second(starttimeFunction, e0, 
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression startE1Second(starttimeFunction,e1,
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression startE2Second(starttimeFunction,e2,
+                                   less_edge_operator, queryTimeWindow);
+  TimeEdgeExpression endE0Second(endtimeFunction, e0, 
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression endE1Second(endtimeFunction,e1,
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression endE2Second(endtimeFunction,e2,
+                                   less_edge_operator, queryTimeWindow);
   /*TimeEdgeExpression endE0First(endtimeFunction, e0, greater_edge_operator, 0);
   TimeEdgeExpression endE0Second(endtimeFunction, e0, less_edge_operator, 
     queryTimeWindow);
@@ -230,6 +245,9 @@ int main(int argc, char** argv) {
   query.addExpression(startE0Second);
   query.addExpression(startE1Second);
   query.addExpression(startE2Second);
+  query.addExpression(endE0Second);
+  query.addExpression(endE1Second);
+  query.addExpression(endE2Second);
   query.finalize();
 
   graphStore->registerQuery(query);
@@ -246,7 +264,7 @@ int main(int argc, char** argv) {
 
   for(size_t i = 0; i < numNetflows; i++)
   {
-    printf("NodeId %lu i %lu\n", nodeId, i);
+    //printf("NodeId %lu i %lu\n", nodeId, i);
     if (i % 1000 == 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
       double expectedTime = i * increment;
@@ -267,7 +285,13 @@ int main(int argc, char** argv) {
 
     std::string str = generator->generate(time);
     time += increment;
-    pushPull->consume(str);
+
+    try {
+      pushPull->consume(str);
+    } catch (std::bad_alloc e) {
+      printf("Node %lu caught a bad_alloc exception after calling "
+        "pushPull->consume(str) where str = %s\n", nodeId, str.c_str());
+    }
   }
   auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -277,6 +301,8 @@ int main(int argc, char** argv) {
     time += increment;
     pushPull->consume(str);
   }
+
+  pushPull->terminate();
   
   duration<double> time_space = duration_cast<duration<double>>(t2-t1);
   double totalTime = time_space.count(); 
@@ -329,6 +355,41 @@ int main(int argc, char** argv) {
     nodeId, graphStore->getTotalTimeProcessSourceTargetLoop2());
   #endif
 
+  #ifdef METRICS
+  printf("Node %lu ResultMap results added: %lu\n", nodeId,
+    graphStore->getTotalResultsCreatedInResultMap());
+  printf("Node %lu ResultMap results deleted: %lu\n", nodeId,
+    graphStore->getTotalResultsDeletedInResultMap());
+  printf("Node %lu Csr edges added: %lu\n", nodeId,
+    graphStore->getTotalEdgesAddedInCsr());
+  printf("Node %lu Csr edges deleted: %lu\n", nodeId,
+    graphStore->getTotalEdgesDeletedInCsr());
+  printf("Node %lu Csc edges added: %lu\n", nodeId,
+    graphStore->getTotalEdgesAddedInCsc());
+  printf("Node %lu Csc edges deleted: %lu\n", nodeId,
+    graphStore->getTotalEdgesDeletedInCsc());
+  #endif
+
+  #ifdef DETAIL_TIMING
+  /*std::list<double> const& consumeTimes = graphStore->getConsumeTimes();
+  double average = std::accumulate(consumeTimes.begin(),
+                               consumeTimes.end(), 0.0) / consumeTimes.size();
+
+  std::list<double> diff;
+  std::transform(consumeTimes.begin(), consumeTimes.end(), diff.begin(),
+                 std::bind2nd(std::minus<double>(), average));
+  double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0);
+  double stdev = std::sqrt(sq_sum / consumeTimes.size());
+  size_t i = 0;
+  printf("Node %lu expected iteration time %f\n", nodeId, 1.0/rate);
+  for (double t : consumeTimes) {
+    if (t > average + 2 * stdev) {
+      printf("Node %lu Consume time outside 2 stddev (i, time): %lu %f\n", 
+        nodeId, i, t);
+    }
+    i++;
+  }*/
+  #endif
   
   if (check) {
     for(size_t i = 0; i < numResults; i++)
@@ -359,4 +420,9 @@ int main(int argc, char** argv) {
   delete pushPull;
   delete generator;
   delete otherGenerator;
+
+  } catch (std::bad_alloc e) {
+    printf("caught bad alloc in main\n");
+  }
+
 }

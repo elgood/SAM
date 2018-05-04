@@ -82,6 +82,9 @@ private:
   #ifdef DETAIL_TIMING
   double totalTimeConsumeAddEdge = 0;
   double totalTimeConsumeResultMapProcess = 0; 
+
+  // A list of consume times
+  std::list<double> consumeTimes;
   #endif
 
   //std::mutex generalLock;
@@ -144,12 +147,6 @@ private:
   std::atomic<size_t> edgePullCounter; ///> Count of how many edges we pull
   std::atomic<size_t> requestPushCounter; ///>Count of how many requests we send
   std::atomic<size_t> requestPullCounter; ///>Count of how many requests we pull
-
-  /**
-   * Called by addEdge, which has the current time.  Edges older than maximum
-   * allowed are deleted.
-   */
-  void deleteEdges();
 
   void processRequestAgainstGraph(EdgeRequestType const& edgeRequest);
   
@@ -335,6 +332,31 @@ public:
     return resultMap->getTotalTimeProcessSourceTargetLoop2();
   }
 
+  std::list<double> const& getConsumeTimes() const {
+    return consumeTimes;
+  }
+
+  #endif
+
+  #ifdef METRICS
+  size_t getTotalResultsCreatedInResultMap() const {
+    return resultMap->getTotalResultsCreated();
+  }
+  size_t getTotalResultsDeletedInResultMap() const {
+    return resultMap->getTotalResultsDeleted();
+  }
+  size_t getTotalEdgesAddedInCsr() const {
+    return csr->getTotalEdgesAdded();
+  }
+  size_t getTotalEdgesDeletedInCsr() const {
+    return csr->getTotalEdgesDeleted();
+  }
+  size_t getTotalEdgesAddedInCsc() const {
+    return csc->getTotalEdgesAdded();
+  }
+  size_t getTotalEdgesDeletedInCsc() const {
+    return csc->getTotalEdgesDeleted();
+  }
   #endif
 
 
@@ -363,19 +385,6 @@ addEdge(TupleType tuple)
   #endif
 }
 
-template <typename TupleType, typename Tuplizer, 
-          size_t source, size_t target, 
-          size_t time, size_t duration,
-          typename SourceHF, typename TargetHF, 
-          typename SourceEF, typename TargetEF> 
-void 
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
-  SourceHF, TargetHF, SourceEF, TargetEF>::
-deleteEdges() 
-{
-
-
-}
 
 template <typename TupleType, typename Tuplizer, 
           size_t source, size_t target, 
@@ -588,6 +597,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consume(TupleType const& tuple)
 {
+  //std::lock_guard<std::mutex> lock(generalLock);
+
   #ifdef TIMING
   auto timestamp_consume1 = std::chrono::high_resolution_clock::now();
   #endif
@@ -603,43 +614,18 @@ consume(TupleType const& tuple)
 
 
   // Adds the edge to the graph
-  //#ifdef DETAIL_TIMING
-  //auto t1 = std::chrono::high_resolution_clock::now();
-  //#endif
-  DETAIL_TIMING_BEG
+  DETAIL_TIMING_BEG1
   addEdge(myTuple);
-  printf("blahblahaddEdge\n");
-  DETAIL_TIMING_END(totalTimeConsumeAddEdge)
-  //#ifdef DETAIL_TIMING
-  //auto t2 = std::chrono::high_resolution_clock::now();
-  //std::chrono::duration<double> tdiff = 
-  //  std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-  //double timeConsumeAddEdge = tdiff.count(); 
-  //totalTimeConsumeAddEdge += timeConsumeAddEdge;
-  //#endif
-
-
-  // TODO Delete old edges, maybe
-
+  //printf("blahblahaddEdge\n");
+  DETAIL_TIMING_END1(totalTimeConsumeAddEdge)
 
   // Check against existing queryResults.  The edgeRequest list is populated
   // with edge requests when we find we need a tuple that will reside 
   // elsewhere.
-  DETAIL_TIMING_BEG
-  printf("blahblahedgerequests\n");
+  DETAIL_TIMING_BEG2
   std::list<EdgeRequestType> edgeRequests;
-  printf("after blahblahedgerequests\n");
   resultMap->process(myTuple, *csr, *csc, edgeRequests);
-  DETAIL_TIMING_END(totalTimeConsumeResultMapProcess)
-  /*#ifdef DETAIL_TIMING
-  t2 = std::chrono::high_resolution_clock::now();
-  tdiff = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-  double timeConsumeResultMapProcess = tdiff.count(); 
-  totalTimeConsumeResultMapProcess += timeConsumeResultMapProcess;
-  #endif*/
-
-
-
+  DETAIL_TIMING_END2(totalTimeConsumeResultMapProcess)
 
   // See if anybody needs this tuple and send it out to them.
   edgeRequestMap->process(myTuple);
@@ -657,6 +643,11 @@ consume(TupleType const& tuple)
       timestamp_consume2 - timestamp_consume1);
   double time_consume = time_space.count(); 
   totalTimeConsume += time_consume;
+
+  #ifdef DETAIL_TIMING
+  consumeTimes.push_back(time_consume);
+  #endif
+
   #endif
 
   #ifdef DEBUG
@@ -843,6 +834,9 @@ GraphStore(  zmq::context_t& _context,
     bool stop = false;
 
     while (!stop) {
+
+      //std::lock_guard<std::mutex> lock(generalLock);
+
       int rValue = zmq::poll(pollItems, this->numNodes -1, 1);
       int numStop = 0;
       for (size_t i = 0; i < this->numNodes -1; i++) {
@@ -933,10 +927,9 @@ GraphStore(  zmq::context_t& _context,
   auto edgePullFunction = [this, edgeHostnames, 
                            edgePorts, hwm]() 
   {
-    DETAIL_TIMING_BEG
-    //#ifdef TIMING
-    //auto t1 = std::chrono::high_resolution_clock::now();
-    //#endif
+    #ifdef TIMING
+    auto t1 = std::chrono::high_resolution_clock::now();
+    #endif
 
     zmq::pollitem_t pollItems[this->numNodes - 1];
     std::vector<zmq::socket_t*> sockets;
@@ -976,6 +969,8 @@ GraphStore(  zmq::context_t& _context,
     zmq::message_t message;
     bool stop = false;
     while (!stop) {
+
+      //std::lock_guard<std::mutex> lock(generalLock);
       //#ifdef DEBUG
       //printf("Node %lu edgePullFunction before poll\n", this->nodeId);
       //#endif
@@ -1018,7 +1013,7 @@ GraphStore(  zmq::context_t& _context,
 
             // Do we need to do this?
             // Add the edge to the graph
-            addEdge(tuple);
+            //addEdge(tuple);
 
             #ifdef DEBUG
             printf("Node %lu GraphStore::edgePullFunction added edge %s\n",
@@ -1053,13 +1048,13 @@ GraphStore(  zmq::context_t& _context,
       delete socket;
     }
     
-    DETAIL_TIMING_END(totalTimeEdgePullThread);
-    //auto t2 = std::chrono::high_resolution_clock::now();
-    //std::chrono::duration<double> time_space = 
-    //  std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-    //double timeEdgePullThread = time_space.count(); 
-    //totalTimeEdgePullThread += timeEdgePullThread;
-    //#endif
+    #ifdef TIMING
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_space = 
+      std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+    double timeEdgePullThread = time_space.count(); 
+    totalTimeEdgePullThread += timeEdgePullThread;
+    #endif
   };
 
   edgePullThread = std::thread(edgePullFunction);

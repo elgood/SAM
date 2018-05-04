@@ -19,23 +19,41 @@ namespace sam {
 
 
 #ifdef DETAIL_TIMING
+  #define DETAIL_TIMING_BEG1 \
   auto detailTimingBegin = std::chrono::high_resolution_clock::now();
-  auto detailTimingEnd = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> detailTimingDiff;
-  #define DETAIL_TIMING_BEG \
+  
+  #define DETAIL_TIMING_BEG2 \
   detailTimingBegin = std::chrono::high_resolution_clock::now();
 
-  #define DETAIL_TIMING_END(var) \
+  #define DETAIL_TIMING_END1(var) \
+  auto detailTimingEnd = std::chrono::high_resolution_clock::now();\
+  auto detailTimingDiff = std::chrono::duration_cast<std::chrono::duration<double>>(\
+    detailTimingEnd - detailTimingBegin);\
+  var += detailTimingDiff.count();
+
+  #define DETAIL_TIMING_END2(var) \
   detailTimingEnd = std::chrono::high_resolution_clock::now();\
   detailTimingDiff = std::chrono::duration_cast<std::chrono::duration<double>>(\
     detailTimingEnd - detailTimingBegin);\
   var += detailTimingDiff.count();
-
 #else
-  #define DETAIL_TIMING_BEG
-  #define DETAIL_TIMING_END(var)
+  #define DETAIL_TIMING_BEG1
+  #define DETAIL_TIMING_BEG2
+  #define DETAIL_TIMING_END1(var)
+  #define DETAIL_TIMING_END2(var)
 #endif
 
+#ifdef METRICS
+  #define METRICS_INCREMENT(var) var++;
+#else
+  #define METRICS_INCREMENT(var) 
+#endif
+
+#ifdef DEBUG
+  #define DEBUG_PRINT(blah) printf(blah);
+#else
+  #define DEBUG_PRINT(blah) 
+#endif
 
 
 class UtilException : public std::runtime_error {
