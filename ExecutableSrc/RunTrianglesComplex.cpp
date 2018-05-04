@@ -10,7 +10,7 @@
 //#define DEBUG
 #define TIMING
 #define DETAIL_TIMING
-#define METRICS
+//#define METRICS
 //#define DETAIL_METRICS2
 
 #include "GraphStore.hpp"
