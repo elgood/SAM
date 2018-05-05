@@ -398,7 +398,7 @@ terminate()
         #endif
         
         try {
-          pushers[i]->send(emptyZmqMessage());
+          pushers[i]->send(terminateZmqMessage());
         } catch (std::exception e) {
           std::string message = "Couldn't send termination message "
             + boost::lexical_cast<std::string>(nodeId) + "->" 

@@ -459,7 +459,7 @@ add(QueryResultType const& result,
   } else {
     #ifdef DEBUG
     printf("Node %lu Complete query! %s\n", nodeId, 
-      result.toString().c_str();
+      result.toString().c_str());
     #endif
     size_t index = numQueryResults.fetch_add(1);
     index = index % resultCapacity;

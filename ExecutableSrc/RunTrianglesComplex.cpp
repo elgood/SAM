@@ -10,7 +10,7 @@
 //#define DEBUG
 #define TIMING
 #define DETAIL_TIMING
-//#define METRICS
+#define METRICS
 //#define DETAIL_METRICS2
 
 #include "GraphStore.hpp"
@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
   size_t numThreads; ///> Number of threads for for loops
   double rate; ///> Netflows per second
   bool check;
+  size_t additionalNetflows; ///> Number of additional netflows
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangels among the"
@@ -117,6 +118,9 @@ int main(int argc, char** argv) {
     ("numThreads",
       po::value<size_t>(&numThreads)->default_value(1),
       "How many threads to use for parallel for loops.")
+    ("additionalNetflows",
+      po::value<size_t>(&additionalNetflows)->default_value(1000),
+      "Number of additional netflows to add at the end to flush out results.")
     ("rate",
       po::value<double>(&rate)->default_value(100),
       "Rate at which netflows are provided.")
@@ -264,7 +268,7 @@ int main(int argc, char** argv) {
 
   for(size_t i = 0; i < numNetflows; i++)
   {
-    //printf("NodeId %lu i %lu\n", nodeId, i);
+    printf("NodeId %lu generating tuple i %lu\n", nodeId, i);
     if (i % 1000 == 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
       double expectedTime = i * increment;
@@ -295,8 +299,8 @@ int main(int argc, char** argv) {
   }
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  size_t additionalNetflows = 1000;
   for(size_t i = 0; i < additionalNetflows; i++) {
+    printf("NodeId %lu generating additional tuple i %lu\n", nodeId, i);
     std::string str = otherGenerator->generate(time);
     time += increment;
     pushPull->consume(str);

@@ -678,9 +678,9 @@ terminate()
     // If terminate was called, we aren't going to receive any more
     // edges, so we can push out the terminate signal to all the edge request
     // channels. 
-    zmq::message_t message = emptyZmqMessage();
     for(size_t i = 0; i < numNodes; i++) {
       if (i != nodeId) {
+        zmq::message_t message = terminateZmqMessage();
 
         #ifdef DEBUG
         printf("Node %lu GraphStore::terminate sending terminate message"
@@ -816,6 +816,10 @@ GraphStore(  zmq::context_t& _context,
         }
        
         try { 
+          #ifdef DEBUG
+          printf("Node %lu GraphStore request pull function connecting "
+            "to %s\n", this->nodeId, url.c_str());
+          #endif
           socket->connect(url);
         } catch (std::exception e) {
           std::string message = "Couldn't connect to url " + url;
@@ -850,7 +854,7 @@ GraphStore(  zmq::context_t& _context,
             #endif
 
             terminate[i] = true;
-          } else {
+          } else if (message.size() > 0) {
           
             requestPullCounterPtr->fetch_add(1);
 
@@ -895,6 +899,11 @@ GraphStore(  zmq::context_t& _context,
             #endif
 
 
+          } else {
+            #ifdef DEBUG
+            printf("Node %lu GraphStore::requestPullFunction received mystery "
+              "message %s\n", getStringFromZmqMessage(message).c_str());
+            #endif
           }
         }
 
@@ -952,6 +961,10 @@ GraphStore(  zmq::context_t& _context,
           throw GraphStoreException(message);
         }
         try {
+          #ifdef DEBUG
+          printf("Node %lu GraphStore edge pull function connecting "
+            "to %s\n", this->nodeId, url.c_str());
+          #endif
           socket->connect(url);
         } catch (std::exception e) {
           std::string message = "Couldn't connect to url " + url;
@@ -988,7 +1001,7 @@ GraphStore(  zmq::context_t& _context,
             #endif
 
             terminate[i] = true;
-          } else {
+          } else if (message.size() > 0) {
             #ifdef DEBUG
             printf("Node %lu GraphStore::edgePullFunction else\n", 
               this->nodeId);
@@ -1033,7 +1046,13 @@ GraphStore(  zmq::context_t& _context,
             // Send out the edge requests to the other nodes.
             processEdgeRequests(edgeRequests);
 
+          } else {
+            #ifdef DEBUG
+            printf("Node %lu GraphStore::edgePullFunction received mystery "
+              "message %s\n", getStringFromZmqMessage(message).c_str());
+            #endif
           }
+
         }
         if (terminate[i]) numStop++;
       }

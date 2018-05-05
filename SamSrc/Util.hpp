@@ -274,7 +274,6 @@ inline zmq::message_t tupleToZmq(std::tuple<Tp...>const& t)
   return message;
 }
 
-
 /**
  * Creates an empty zmq message.  We use this to indicate a terminate
  * message.
@@ -286,11 +285,28 @@ zmq::message_t emptyZmqMessage() {
 }
 
 /**
+ * Creates a zmq message that means terimate
+ */
+zmq::message_t terminateZmqMessage() {
+  return emptyZmqMessage();
+  //std::string str = "terminate";
+  //zmq::message_t message = fillZmqMessage(str);
+  //return message;
+}
+
+
+
+/**
  * Checks if the zmq message is a terminate message. A terminate message
  * is one with an empty string.
  */
 bool isTerminateMessage(zmq::message_t& message)
 {
+  //std::string str = getStringFromZmqMessage(message);
+  //if (str.compare("terminate") == 0) {
+  //  return true;
+  //}
+  //return false;
   if (message.size() == 0) return true;
   return false;
 }
@@ -360,6 +376,10 @@ createPushSockets(
       //    url.c_str(), nodeId, i);
       //pusher->connect(url);
       try {
+        #ifdef DEBUG
+        printf("Node %lu createPushSockets binding to %s\n", nodeId, 
+          url.c_str());
+        #endif
         pusher->bind(url);
       } catch (std::exception e) {
         std::string message = "Node " +
