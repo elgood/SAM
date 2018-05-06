@@ -87,6 +87,7 @@ private:
   std::list<double> consumeTimes;
   #endif
 
+  size_t consumeCount = 0;
 
   //std::mutex generalLock;
 
@@ -600,15 +601,21 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 consume(TupleType const& tuple)
 {
 
+
+
   auto consumeFunction = [this](TupleType const& tuple) {
     this->consumeDoesTheWork(tuple);  
   };
 
-  threads[currentThread].join();
+  if (consumeCount >= numThreads) {
+    threads[currentThread].join();
+  }
   threads[currentThread] = std::thread(consumeFunction, tuple);
   currentThread++;
 
   if (currentThread >= numThreads) currentThread = 0;
+
+  consumeCount++;
 
   return true;
 }
@@ -1116,6 +1123,15 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 ~GraphStore()
 {
   terminate();
+
+  for (auto & thread : threads) {
+    try {
+      thread.join();
+    } catch (std::exception e) {
+
+    }
+  }
+
   #ifdef DEBUG
   printf("Node %lu end of ~GraphStore\n", nodeId);
   #endif
