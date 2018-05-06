@@ -87,6 +87,7 @@ private:
   std::list<double> consumeTimes;
   #endif
 
+
   //std::mutex generalLock;
 
   /// Once the terminate signal has been given, we don't want to push out
@@ -139,6 +140,8 @@ private:
 
   /// How many threads to use for parallel for loops.
   size_t numThreads;
+  size_t currentThread = 0;
+  std::vector<std::thread> threads;
   
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
@@ -214,6 +217,7 @@ public:
   void addEdge(TupleType n);
 
   bool consume(TupleType const& tuple);
+  bool consumeDoesTheWork(TupleType const& tuple);
 
   /**
    * Called by producer to indicate that no more data is coming and that this
@@ -585,6 +589,29 @@ sendMessageToTarget(EdgeRequestType const& edgeRequest)
   terminationLock.unlock();
 }
 
+template <typename TupleType, typename Tuplizer, 
+          size_t source, size_t target, 
+          size_t time, size_t duration,
+          typename SourceHF, typename TargetHF, 
+          typename SourceEF, typename TargetEF> 
+bool
+GraphStore<TupleType, Tuplizer, source, target, time, duration,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+consume(TupleType const& tuple)
+{
+
+  auto consumeFunction = [this](TupleType const& tuple) {
+    this->consumeDoesTheWork(tuple);  
+  };
+
+  threads[currentThread].join();
+  threads[currentThread] = std::thread(consumeFunction, tuple);
+  currentThread++;
+
+  if (currentThread >= numThreads) currentThread = 0;
+
+  return true;
+}
 
 
 template <typename TupleType, typename Tuplizer, 
@@ -595,9 +622,8 @@ template <typename TupleType, typename Tuplizer,
 bool 
 GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-consume(TupleType const& tuple)
+consumeDoesTheWork(TupleType const& tuple)
 {
-  //std::lock_guard<std::mutex> lock(generalLock);
 
   #ifdef TIMING
   auto timestamp_consume1 = std::chrono::high_resolution_clock::now();
@@ -616,7 +642,6 @@ consume(TupleType const& tuple)
   // Adds the edge to the graph
   DETAIL_TIMING_BEG1
   addEdge(myTuple);
-  //printf("blahblahaddEdge\n");
   DETAIL_TIMING_END1(totalTimeConsumeAddEdge)
 
   // Check against existing queryResults.  The edgeRequest list is populated
@@ -644,9 +669,9 @@ consume(TupleType const& tuple)
   double time_consume = time_space.count(); 
   totalTimeConsume += time_consume;
 
-  #ifdef DETAIL_TIMING
-  consumeTimes.push_back(time_consume);
-  #endif
+    #ifdef DETAIL_TIMING
+    consumeTimes.push_back(time_consume);
+    #endif
 
   #endif
 
@@ -736,6 +761,8 @@ GraphStore(  zmq::context_t& _context,
              size_t numThreads) 
 : context(_context)
 {
+  threads.resize(numThreads);
+
   terminated = false;
   this->numNodes = numNodes;
   this->nodeId   = nodeId;
