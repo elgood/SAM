@@ -68,8 +68,9 @@ private:
   /**
    * For the given slot in the hash table (alle), we clear out edges that 
    * have expired (i.e. older than currentTime - window).
+   * \return Returns the number edges deleted.
    */
-  void cleanupEdges(size_t index);
+  size_t cleanupEdges(size_t index);
 
   #ifdef METRICS
   mutable size_t totalEdgesAdded = 0;
@@ -89,8 +90,9 @@ public:
   
   /**
    * Adds the given tuple to the graph.
+   * \return Returns a number representing the amount of work.
    */
-  void addEdge(TupleType tuple);
+  size_t addEdge(TupleType tuple);
 
   /**
    * Finds all edges that fulfill the given edgeRequest.
@@ -359,7 +361,7 @@ const
 template <typename TupleType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
-void 
+size_t 
 CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
   TupleType tuple)
 {
@@ -384,6 +386,7 @@ CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
   // as tuple's source, this is set to true.
   bool found = false;
   std::list<TupleType>* emptyListPtr = 0;
+  size_t work = alle[index].size();
   for (auto & l : alle[index]) {
     if (l.size() > 0) {
       try {
@@ -409,6 +412,7 @@ CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
   // as tuple, then we need to create a new list or use an empty one.
   if (!found) {
 
+    work += 1;
     // If we found an empty list, use that list.
     if (emptyListPtr) {
       emptyListPtr->push_back(tuple);
@@ -419,27 +423,30 @@ CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
     }
   } else {
     // If we did find a list, we can clean up edges that have expired.
-    cleanupEdges(index);
+    work += cleanupEdges(index);
   }
+  return work;
 }
 
 template <typename TupleType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
-void
+size_t
 CompressedSparse<TupleType, source, target, time, duration, HF, EF>::
 cleanupEdges( size_t index )
 {
   // Should only be called by addEdge and (maybe) findEdges, 
   // which has this slot (alle[index]) locked out.
+  size_t work = 0;
   for( auto & l : alle[index]) {
     while (l.size() > 0 && 
            currentTime.load() - std::get<time>(l.front()) > window) {
+      work++;
       l.pop_front();
       METRICS_INCREMENT(totalEdgesDeleted)
     }
   }
-  
+  return work;
 }
 
 

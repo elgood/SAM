@@ -138,6 +138,22 @@ BOOST_AUTO_TEST_CASE( test_compressed_sparse_small_capacity )
   BOOST_CHECK_EQUAL(count, numThreads * numExamples);
 }
 
+BOOST_AUTO_TEST_CASE( test_work )
+{
+  /// Adding the first edge should be one unit of work
+  size_t capacity = 1;
+  double window = .00000000001; //Make small window
+  auto graph = new GraphType(capacity, window); 
+
+  UniformDestPort generator("192.168.0." + 
+    boost::lexical_cast<std::string>(1), 1);
+  Netflow netflow = makeNetflow(0, generator.generate());
+  
+  size_t work = graph->addEdge(netflow);
+  BOOST_CHECK_EQUAL(work, 1);
+
+}
+
 BOOST_AUTO_TEST_CASE( test_cleanup )
 {
   /**
@@ -151,10 +167,11 @@ BOOST_AUTO_TEST_CASE( test_cleanup )
   int numThreads = 10;
   int numExamples = 10000;
   auto id = new std::atomic<int>(0);
+  auto work = new std::atomic<size_t>(0);
 
   std::vector<std::thread> threads;
   for (int i = 0; i < numThreads; i++) {
-    threads.push_back(std::thread([graph, id, i, numExamples]() {
+    threads.push_back(std::thread([graph, id, i, numExamples, work]() {
 
       //UniformDestPort generator("192.168.0.1", 1); 
       UniformDestPort generator("192.168.0." + 
@@ -162,11 +179,10 @@ BOOST_AUTO_TEST_CASE( test_cleanup )
 
       for (int j =0; j < numExamples; j++) {
         Netflow netflow = makeNetflow(id->fetch_add(1), generator.generate());
-        graph->addEdge(netflow);
+        work->fetch_add(graph->addEdge(netflow));
       }
        
     }));
-
   }
 
   for (int i = 0; i < numThreads; i++) {
@@ -178,5 +194,14 @@ BOOST_AUTO_TEST_CASE( test_cleanup )
   // be deleted because the window is so small.
   std::cout << "count " << count << std::endl;
   BOOST_CHECK(count <  numThreads * 5);
+
+  // Since the capacity is 1, all of the edges should go to the same list
+  // in alle, so the process should be add edge (1 work unit) and delete old
+  // edge (1 work unit).  So the total amount of work should be close to 
+  // 2 * number of edges added.
+  //std::cout << "work " << work->load() << " 2 * numExamples * numThreads "
+  //          << 2 * numExamples * numThreads << std::endl;
+  //BOOST_CHECK(work->load() < 2 * numExamples * numThreads * 10);
+  //BOOST_CHECK(work->load() > 2 * numExamples * numThreads * 10 - numThreads);
 }
 

@@ -372,7 +372,7 @@ template <typename TupleType, typename Tuplizer,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
-void 
+size_t 
 GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 addEdge(TupleType tuple) 
@@ -382,12 +382,13 @@ addEdge(TupleType tuple)
     sam::toString(tuple).c_str());
   #endif
   //std::lock_guard<std::mutex> lock(generalLock);
-  csc->addEdge(tuple);
-  csr->addEdge(tuple);
+  size_t workCsc = csc->addEdge(tuple);
+  size_t workCsr = csr->addEdge(tuple);
   #ifdef DEBUG
   printf("Node %lu exiting GraphStore::addEdge tuple %s\n", nodeId, 
     sam::toString(tuple).c_str());
   #endif
+  return workCsc + workCsr;
 }
 
 
@@ -601,9 +602,7 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 consume(TupleType const& tuple)
 {
 
-
-
-  auto consumeFunction = [this](TupleType const& tuple) {
+  /*auto consumeFunction = [this](TupleType const& tuple) {
     this->consumeDoesTheWork(tuple);  
   };
 
@@ -614,7 +613,8 @@ consume(TupleType const& tuple)
   currentThread++;
 
   if (currentThread >= numThreads) currentThread = 0;
-
+  */
+  consumeDoesTheWork(tuple);
   consumeCount++;
 
   return true;
@@ -648,7 +648,7 @@ consumeDoesTheWork(TupleType const& tuple)
 
   // Adds the edge to the graph
   DETAIL_TIMING_BEG1
-  addEdge(myTuple);
+  size_t workAddEdge = addEdge(myTuple);
   DETAIL_TIMING_END1(totalTimeConsumeAddEdge)
 
   // Check against existing queryResults.  The edgeRequest list is populated
