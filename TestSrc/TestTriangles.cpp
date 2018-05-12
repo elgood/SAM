@@ -1,5 +1,7 @@
-
 #define BOOST_TEST_MAIN TestTriangles
+
+//#define DEBUG
+
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include <string>
@@ -35,7 +37,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
         PartitionType;
 
 
-/*BOOST_AUTO_TEST_CASE( test_triangles_exact )
+BOOST_AUTO_TEST_CASE( test_triangles_exact )
 {
   /// In this test, we create two threads that generate random netflows.
   /// Each thread has a ZeroMQPushPull object that consumes the netflows,
@@ -190,12 +192,8 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
       auto currenttime = std::chrono::high_resolution_clock::now();
       duration<double> diff = duration_cast<duration<double>>(
         currenttime - starttime);
-      //printf("nodeId %lu diff %f i * increment %f\n", nodeId, 
-      //  diff.count(), i * increment);
       if (diff.count() < i * increment) {
         size_t numMilliseconds = (i * increment - diff.count()) * 1000;
-        //printf("nodeId %lu diff %f i * increment %f numMilliseconds %lu\n", 
-        //  nodeId, diff.count(), i * increment, numMilliseconds);
         std::this_thread::sleep_for(
           std::chrono::milliseconds(numMilliseconds));
       }
@@ -240,10 +238,8 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
         str1 = str1.substr(2);
         str2 = str2.substr(2);
        
-        #ifdef DEBUG 
-        printf("Creating triangle: str %s str1 %s str2 %s\n", 
+        DEBUG_PRINT("Creating triangle: str %s str1 %s str2 %s\n", 
           str0.c_str(), str1.c_str(), str2.c_str());
-        #endif
         pushPull->consume(str0);
         pushPull->consume(str1);
         pushPull->consume(str2);
@@ -319,7 +315,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
   printf("deleting generator1\n");
   delete generator1;
   printf("exiting\n");
-}*/
+}
 
 
 BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
@@ -484,7 +480,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
     AbstractNetflowGenerator *otherGenerator = 
       new RandomGenerator();
     for(size_t i = 0; i < numTuples; i++) {
-      printf("NodeId %lu i %lu\n", nodeId, i);
+      DEBUG_PRINT("NodeId %lu i %lu\n", nodeId, i);
 
       auto currenttime = std::chrono::high_resolution_clock::now();
       duration<double> diff = duration_cast<duration<double>>(

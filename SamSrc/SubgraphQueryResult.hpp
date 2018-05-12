@@ -193,6 +193,12 @@ public:
    * Returns a string representation of the query result
    */
   std::string toString() const {
+    if (resultEdges.size() != currentEdge) {
+      std::string message = "resultEdges.size() was not equal to currentEdge " +
+        boost::lexical_cast<std::string>(resultEdges.size()) + " != " +
+        boost::lexical_cast<std::string>(currentEdge);
+      throw SubgraphQueryResultException(message); 
+    }
     std::string rString = "Result Edges: ";
     for(TupleType const& t : resultEdges) {
       rString = rString + " ResultTuple " + 
@@ -516,6 +522,14 @@ bool
 SubgraphQueryResult<TupleType, source, target, time, duration>::
 addEdgeInPlace(TupleType const& edge)
 {
+  if (resultEdges.size() != currentEdge) {
+    std::string message = "addEdgeInPlace resultEdges.size() was not equal"
+      " to currentEdge " +
+      boost::lexical_cast<std::string>(resultEdges.size()) + " != " +
+      boost::lexical_cast<std::string>(currentEdge);
+    throw SubgraphQueryResultException(message); 
+  }
+
   if (currentEdge >= numEdges) {
     std::string message = "SubgraphQueryResult::addEdge Tried to add an edge " 
       "but the query has already been satisfied, i.e. currentEdge(" + 

@@ -937,9 +937,9 @@ GraphStore(  zmq::context_t& _context,
       if (numStop == this->numNodes - 1) stop = true;
     }
 
-    #ifdef DEBUG
+    //#ifdef DEBUG
     printf("Node %lu exiting requestPullThread\n", this->nodeId);
-    #endif
+    //#endif
 
     for (auto socket : sockets) {
       delete socket;
@@ -1084,9 +1084,9 @@ GraphStore(  zmq::context_t& _context,
       if (numStop == this->numNodes - 1 && this->terminated) stop = true;
     }
 
-    #ifdef DEBUG
+    //#ifdef DEBUG
     printf("Node %lu exiting edge pull thread\n", this->nodeId);
-    #endif
+    //#endif
     
     for (auto socket : sockets) {
       delete socket;
