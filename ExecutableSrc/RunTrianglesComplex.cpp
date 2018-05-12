@@ -7,7 +7,7 @@
  *      Author: elgood
  */
 
-//#define DEBUG
+#define DEBUG
 #define TIMING
 #define DETAIL_TIMING
 #define METRICS
@@ -343,20 +343,12 @@ int main(int argc, char** argv) {
     nodeId, graphStore->getTotalTimeProcessTarget());
   printf("Node %lu Detail Timing total processSourceTarget time: %f\n",
     nodeId, graphStore->getTotalTimeProcessSourceTarget());
-  printf("Node %lu Detail Timing total processSourceProcessAgainstGraph time: "
-    "%f\n", nodeId, graphStore->getTotalTimeProcessSourceProcessAgainstGraph());
+  printf("Node %lu Detail Timing total processProcessAgainstGraph time: "
+    "%f\n", nodeId, graphStore->getTotalTimeProcessProcessAgainstGraph());
   printf("Node %lu Detail Timing total processSourceLoop1 time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessSourceLoop1());
+    nodeId, graphStore->getTotalTimeProcessLoop1());
   printf("Node %lu Detail Timing total processSourceLoop2 time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessSourceLoop2());
-  printf("Node %lu Detail Timing total processTargetLoop1 time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessTargetLoop1());
-  printf("Node %lu Detail Timing total processTargetLoop2 time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessTargetLoop2());
-  printf("Node %lu Detail Timing total processSourceTargetLoop1 time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessSourceTargetLoop1());
-  printf("Node %lu Detail Timing total processSourceTargetLoop2 time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessSourceTargetLoop2());
+    nodeId, graphStore->getTotalTimeProcessLoop2());
   #endif
 
   #ifdef METRICS

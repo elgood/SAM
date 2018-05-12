@@ -1,5 +1,6 @@
 #define BOOST_TEST_MAIN TestSubgraphQueryResultMap
 
+
 #include <boost/test/unit_test.hpp>
 #include "Util.hpp"
 #include "SubgraphQuery.hpp"
@@ -7,6 +8,7 @@
 #include "SubgraphQueryResultMap.hpp"
 #include "Netflow.hpp"
 #include "NetflowGenerators.hpp"
+
 
 using namespace sam;
 
@@ -62,6 +64,7 @@ struct F {
   }
 
 };
+
 
 ///
 /// In this test the query is simply an edge such that every edge

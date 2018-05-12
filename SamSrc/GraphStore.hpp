@@ -214,8 +214,10 @@ public:
 
   /**
    * Adds the tuple to the graph store.
+   * \return Returns a number representing (roughly) the amount of work it 
+   *   took to add the edge.
    */
-  void addEdge(TupleType n);
+  size_t addEdge(TupleType n);
 
   bool consume(TupleType const& tuple);
   bool consumeDoesTheWork(TupleType const& tuple);
@@ -315,26 +317,14 @@ public:
   double getTotalTimeProcessSourceTarget() const {
     return resultMap->getTotalTimeProcessSourceTarget();
   }
-  double getTotalTimeProcessSourceProcessAgainstGraph() const {
-    return resultMap->getTotalTimeProcessSourceProcessAgainstGraph();
+  double getTotalTimeProcessProcessAgainstGraph() const {
+    return resultMap->getTotalTimeProcessProcessAgainstGraph();
   }
-  double getTotalTimeProcessSourceLoop1() const {
-    return resultMap->getTotalTimeProcessSourceLoop1();
+  double getTotalTimeProcessLoop1() const {
+    return resultMap->getTotalTimeProcessLoop1();
   }
-  double getTotalTimeProcessSourceLoop2() const {
-    return resultMap->getTotalTimeProcessSourceLoop2();
-  }
-  double getTotalTimeProcessTargetLoop1() const {
-    return resultMap->getTotalTimeProcessTargetLoop1();
-  }
-  double getTotalTimeProcessTargetLoop2() const {
-    return resultMap->getTotalTimeProcessTargetLoop2();
-  }
-  double getTotalTimeProcessSourceTargetLoop1() const {
-    return resultMap->getTotalTimeProcessSourceTargetLoop1();
-  }
-  double getTotalTimeProcessSourceTargetLoop2() const {
-    return resultMap->getTotalTimeProcessSourceTargetLoop2();
+  double getTotalTimeProcessLoop2() const {
+    return resultMap->getTotalTimeProcessLoop2();
   }
 
   std::list<double> const& getConsumeTimes() const {
@@ -656,7 +646,8 @@ consumeDoesTheWork(TupleType const& tuple)
   // elsewhere.
   DETAIL_TIMING_BEG2
   std::list<EdgeRequestType> edgeRequests;
-  resultMap->process(myTuple, *csr, *csc, edgeRequests);
+  size_t workResultMapProcess = 
+    resultMap->process(myTuple, *csr, *csc, edgeRequests);
   DETAIL_TIMING_END2(totalTimeConsumeResultMapProcess)
 
   // See if anybody needs this tuple and send it out to them.

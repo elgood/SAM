@@ -50,9 +50,9 @@ namespace sam {
 #endif
 
 #ifdef DEBUG
-  #define DEBUG_PRINT(blah) printf(blah);
+  #define DEBUG_PRINT(message, ...) printf(message, __VA_ARGS__);
 #else
-  #define DEBUG_PRINT(blah) 
+  #define DEBUG_PRINT(message, ...) 
 #endif
 
 

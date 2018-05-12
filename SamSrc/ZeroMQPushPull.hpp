@@ -237,11 +237,14 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
       zmq::message_t message;
       int rValue = zmq::poll(pollItems, this->numNodes -1, 1);
       int numStop = 0;
-      for (int i = 0; i < this->numNodes -1; i++) {
+      for (size_t i = 0; i < this->numNodes -1; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
 
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
+            DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received terminate "
+              "from %lu\n", this->nodeId, i)
+
             #ifdef DEBUG
             printf("Node %lu ZeroMQPushPull pullThread received terminate "
               "from %lu\n", this->nodeId, i);
