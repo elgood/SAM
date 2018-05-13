@@ -81,6 +81,9 @@ private:
   #ifdef DETAIL_TIMING
   double totalTimeConsumeAddEdge = 0;
   double totalTimeConsumeResultMapProcess = 0; 
+  double totalTimeConsumeEdgeRequestMapProcess = 0;
+  double totalTimeConsumeCheckSubgraphQueries = 0;
+  double totalTimeConsumeProcessEdgeRequests = 0;
 
   // A list of consume times
   std::list<double> consumeTimes;
@@ -632,7 +635,8 @@ consumeDoesTheWork(TupleType const& tuple)
   // Adds the edge to the graph
   DETAIL_TIMING_BEG1
   size_t workAddEdge = addEdge(myTuple);
-  DETAIL_TIMING_END1(totalTimeConsumeAddEdge)
+  DETAIL_TIMING_END_TOL1(totalTimeConsumeAddEdge, 0.05, 
+                     "GraphStore::consume addEdge")
 
 
   // Check against existing queryResults.  The edgeRequest list is populated
@@ -642,16 +646,27 @@ consumeDoesTheWork(TupleType const& tuple)
   std::list<EdgeRequestType> edgeRequests;
   size_t workResultMapProcess = 
     resultMap->process(myTuple, *csr, *csc, edgeRequests);
-  DETAIL_TIMING_END2(totalTimeConsumeResultMapProcess)
+  DETAIL_TIMING_END_TOL2(totalTimeConsumeResultMapProcess, 0.05,
+                     "GraphStore::consume resultMap->process")
 
   // See if anybody needs this tuple and send it out to them.
+  DETAIL_TIMING_BEG2
   size_t workEdgeRequestMap = edgeRequestMap->process(myTuple);
+  DETAIL_TIMING_END_TOL2(totalTimeConsumeEdgeRequestMapProcess, 0.05,
+                     "GraphStore::consume edgeRequestMap->process")
 
   // Check against all registered queries
+
+  DETAIL_TIMING_BEG2
   size_t workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
+  DETAIL_TIMING_END_TOL2(totalTimeConsumeCheckSubgraphQueries, 0.05,
+                     "GraphStore::consume checkSubgraphQueries")
 
   // Send out the edge requests to the other nodes.
+  DETAIL_TIMING_BEG2
   size_t workProcessEdgeRequests = processEdgeRequests(edgeRequests);
+  DETAIL_TIMING_END_TOL2(totalTimeConsumeProcessEdgeRequests, 0.05,
+                     "GraphStore::consume processEdgeRequests")
 
   #ifdef TIMING
   auto timestamp_consume2 = std::chrono::high_resolution_clock::now();

@@ -1,5 +1,7 @@
 #define BOOST_TEST_MAIN TestEdgeRequestList
 
+#define DEBUG
+
 #include <boost/test/unit_test.hpp>
 #include "EdgeRequestMap.hpp"
 #include "NetflowGenerators.hpp"
