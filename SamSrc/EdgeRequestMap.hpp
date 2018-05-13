@@ -99,8 +99,9 @@ public:
    * Given the tuple, finds if there are any open edge requests that are 
    * satisfied with the given tuple. If so, sends them on to the appropriate
    * node using the push sockets. 
+   * \return Returns a number representing the amount of work done.
    */
-  void process(TupleType const& tuple);
+  size_t process(TupleType const& tuple);
 
   /**
    * Returns how many edges we've sent
@@ -118,21 +119,21 @@ private:
    * Uses the source hash function on the tuple to find any edge requests
    * that are looking for the tuple's source.
    */
-  void processSource(TupleType const& tuple);
+  size_t processSource(TupleType const& tuple);
 
 
   /**
    * Uses the target hash function on the tuple to find any edge requests
    * that are looking for the tuple's target.
    */
-  void processTarget(TupleType const& tuple);
+  size_t processTarget(TupleType const& tuple);
 
 
   /**
    * Uses the source and target hash function on the tuple to find any 
    * edge requests that are looking for both the tuple's source and target.
    */
-  void processSourceTarget(TupleType const& tuple);
+  size_t processSourceTarget(TupleType const& tuple);
 
   std::atomic<bool> terminated;
 };
@@ -227,26 +228,50 @@ addRequest(EdgeRequestType request)
 template <typename TupleType, size_t source, size_t target,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
-void
+size_t
 EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 process(TupleType const& tuple)
 {
-  //printf("blahprocess\n");
-  #ifdef DEBUG
-  printf("Node %lu EdgeRequestMap::process tuple %s\n", nodeId,
+  DEBUG_PRINT("Node %lu EdgeRequestMap::process(tuple) tuple: %s\n", nodeId,
     toString(tuple).c_str());
-  #endif
-  
-  processSource(tuple);
-  processTarget(tuple);
-  processSourceTarget(tuple);
+ 
+  size_t totalWork = 0; 
+  totalWork += processSource(tuple);
+  totalWork += processTarget(tuple);
+  totalWork += processSourceTarget(tuple);
+  return totalWork;
 }
+
+
+//TODO: General processSource, processTarget, processSourceTarget
+// to use just one function.  Beginnings is below.
+/*template <typename TupleType, size_t source, size_t target,
+          typename SourceHF, typename TargetHF,
+          typename SourceEF, typename TargetEF>
+size_t
+EdgeRequestMap<TupleType, source, target,
+  SourceHF, TargetHF, SourceEF, TargetEF>::
+process(TupleType const& tuple,
+        std::function<size_t(TupleType const&)> indexFunction,
+        std::function<bool(TupleType const&)> checkFunction)
+{
+  size_t index = indexFunction(tuple);
+
+  for(auto edgeRequest : ale[index])
+  {
+    if(checkFunction(tuple)) {
+
+
+    }
+
+  }
+}*/
 
 template <typename TupleType, size_t source, size_t target,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
-void
+size_t
 EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processSource(TupleType const& tuple)
@@ -255,8 +280,11 @@ processSource(TupleType const& tuple)
   TargetType trg = std::get<target>(tuple);
   size_t index = sourceHash(src) % tableCapacity;
 
+  size_t totalWork = 0;
+
   for (auto edgeRequest : ale[index])
   {
+    totalWork++;
     SourceType edgeRequestSrc = edgeRequest.getSource();
     if (sourceEquals(src, edgeRequestSrc)) {
       
@@ -268,10 +296,8 @@ processSource(TupleType const& tuple)
         
         if (!terminated) {
           edgePushCounter.fetch_add(1);
-          #ifdef DEBUG
-          printf("Node %lu->%lu EdgeRequestMap::processSource sending"
+          DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::processSource sending"
             " edge %s\n", nodeId, node, toString(tuple).c_str());
-          #endif
           terminationLock.lock();
           if (!terminated) {
             pushers[node]->send(message);  
@@ -281,45 +307,42 @@ processSource(TupleType const& tuple)
       }
     }
   }
+  return totalWork;
 }
 
 template <typename TupleType, size_t source, size_t target,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
-void
+size_t
 EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processTarget(TupleType const& tuple)
 {
-  #ifdef DEBUG
-  printf("Node %lu EdgeRequestMap::processTarget\n", nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu EdgeRequestMap::processTarget\n", nodeId);
 
   SourceType src = std::get<source>(tuple);
   TargetType trg = std::get<target>(tuple);
   size_t index = targetHash(trg) % tableCapacity;
 
+  size_t totalWork = 0;
+
   for (auto edgeRequest : ale[index])
   {
+    totalWork++;
     TargetType edgeRequestTrg = edgeRequest.getTarget();
     if (targetEquals(trg, edgeRequestTrg)) {
 
       size_t node = edgeRequest.getReturn();
       // TODO: Partition info
-      #ifdef DEBUG
-      printf("Node %lu EdgeRequestMap::processTarget sourceHash(src) mod "
+      DEBUG_PRINT("Node %lu EdgeRequestMap::processTarget sourceHash(src) mod "
         "numNodes  %llu node %lu\n", nodeId, sourceHash(src) % numNodes, node);
-      #endif
-
 
       if (sourceHash(src) % numNodes != node) {
         zmq::message_t message = tupleToZmq(tuple);
         edgePushCounter.fetch_add(1);
 
-        #ifdef DEBUG
-        printf("Node %lu->%lu EdgeRequestMap::processTarget sending edge %s\n",
-          nodeId, node, toString(tuple).c_str());
-        #endif
+        DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::processTarget sending"
+          " edge %s\n", nodeId, node, toString(tuple).c_str());
        
         terminationLock.lock(); 
         if (!terminated) {
@@ -329,25 +352,27 @@ processTarget(TupleType const& tuple)
       }
     }
   }
+  return totalWork;
 }
 
 template <typename TupleType, size_t source, size_t target,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
-void
+size_t
 EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processSourceTarget(TupleType const& tuple)
 {
-  //printf("processSourceTarget\n");
   SourceType src = std::get<source>(tuple);
   TargetType trg = std::get<target>(tuple);
   size_t index = (sourceHash(src) * targetHash(trg)) % tableCapacity;
   zmq::message_t message = tupleToZmq(tuple);
 
+  size_t totalWork = 0;
+
   for (auto edgeRequest : ale[index])
   {
-    //printf("processSourceTarget %s\n", edgeRequest.toString().c_str());
+    totalWork++;
     TargetType edgeRequestTrg = edgeRequest.getTarget();
     SourceType edgeRequestSrc = edgeRequest.getSource();
     if (targetEquals(trg, edgeRequestTrg) &&
@@ -361,10 +386,8 @@ processSourceTarget(TupleType const& tuple)
       {
         edgePushCounter.fetch_add(1);
 
-        #ifdef DEBUG
-        printf("Node %lu->%lu EdgeRequestMap::processSourceTarget sending "
+        DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::processSourceTarget sending "
           "edge %s\n", nodeId, node, toString(tuple).c_str());
-        #endif
         
         terminationLock.lock();
         if (!terminated) {
@@ -374,6 +397,7 @@ processSourceTarget(TupleType const& tuple)
       }
     }
   }
+  return totalWork;
 }
 
 template <typename TupleType, size_t source, size_t target,
@@ -384,18 +408,14 @@ EdgeRequestMap<TupleType, source, target,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate()
 {
-  #ifdef DEBUG
-  printf("Node %lu entering EdgeRequestMap::terminate\n", nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu entering EdgeRequestMap::terminate\n", nodeId);
   if (!terminated) {
     for(size_t i = 0; i < this->numNodes; i++)
     {
       if (i != this->nodeId) { 
 
-        #ifdef DEBUG
-        printf("Node %lu EdgeRequestMap::terminate() sending terminate to %lu\n",
-          nodeId, i); 
-        #endif
+        DEBUG_PRINT("Node %lu EdgeRequestMap::terminate() sending terminate"
+          " to %lu\n", nodeId, i); 
         
         try {
           pushers[i]->send(terminateZmqMessage());
@@ -410,9 +430,7 @@ terminate()
     }
   }
   terminated = true;
-  #ifdef DEBUG
-  printf("Node %lu exiting EdgeRequestMap::terminate\n", nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu exiting EdgeRequestMap::terminate\n", nodeId);
 }
 
 

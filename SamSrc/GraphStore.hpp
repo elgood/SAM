@@ -28,7 +28,6 @@ public:
   GraphStoreException(std::string message) : std::runtime_error(message) { } 
 };
 
-
 /**
  * A dynamic graph that allows you to add edges.  Deleting edges occurs
  * when the edges become too old as determined by the time duration of queries.
@@ -158,7 +157,7 @@ private:
    * This goes through the list of new edge requests and sends them out to
    * the appropriate nodes.
    */
-  void processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests);
+  size_t processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests);
 
 
   /**
@@ -239,7 +238,7 @@ public:
     queries.push_back(query);
   }
 
-  void checkSubgraphQueries(TupleType const& tuple,
+  size_t checkSubgraphQueries(TupleType const& tuple,
                             std::list<EdgeRequestType>& edgeRequests);
 
   /**
@@ -387,56 +386,50 @@ template <typename TupleType, typename Tuplizer,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
-void 
+size_t 
 GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 checkSubgraphQueries(TupleType const& tuple,
                      std::list<EdgeRequestType>& edgeRequests) 
 {
-  #ifdef DEBUG
-  printf("Node %lu GraphStore::checkSubgraphQueries tuple %s\n",
+  DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries tuple %s\n",
     nodeId, sam::toString(tuple).c_str()); 
-  #endif
+
+  size_t totalWork = 0;
 
   // The start time of the query result is the time field of the first 
   // tuple in the query.  
   double startTime = std::get<time>(tuple);
   for (QueryType const& query : queries) {
+    totalWork++;
     if (query.satisfies(tuple, 0, startTime)) {
 
       // We only want one node to own the query result, so we make sure
       // that this node owns the source
       SourceType src = std::get<source>(tuple);
       
-      #ifdef DEBUG
-      printf("Node %lu GraphStore::checkSubgraphQueries src %s "
+      DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries src %s "
         "soruceHash(src) %llu numNodes %lu sourceHash(src) mod numNodes %llu\n",
         nodeId, src.c_str(), sourceHash(src), numNodes, 
         sourceHash(src) % numNodes);
-      #endif
 
 
       if (sourceHash(src) % numNodes == nodeId) {
         ResultType queryResult(&query, tuple);
 
-        #ifdef DEBUG
-        printf("Node %lu GraphStore::checkSubgraphQueries adding queryResult " 
-          "%s\n", this->nodeId, queryResult.toString().c_str());
-        #endif
+        DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries adding"
+          " queryResult %s\n", this->nodeId, queryResult.toString().c_str());
 
         resultMap->add(queryResult, *csr, *csc, edgeRequests);  
         
-        #ifdef DEBUG
-        printf("Node %lu GraphStore::checkSubgraphQueries added queryResult " 
-          "%s.  EdgeRequests.size() %lu\n", this->nodeId, 
+        DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries added"
+          " queryResult %s.  EdgeRequests.size() %lu\n", this->nodeId, 
           queryResult.toString().c_str(), edgeRequests.size());
-        #endif
       } else {
 
-        #ifdef DEBUG
-        printf("Node %lu GraphStore::checkSubgraphQueries this node didn't own"
-          "source in %s\n", this->nodeId, sam::toString(tuple).c_str());
-        #endif
+        DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries this node "
+          "didn't own source in %s\n", this->nodeId, 
+          sam::toString(tuple).c_str());
       }
     }
   }
@@ -449,6 +442,7 @@ checkSubgraphQueries(TupleType const& tuple,
   }
   printf("%s\n", message.c_str());
   #endif
+  return totalWork;
 }
 
 /**
@@ -460,7 +454,7 @@ template <typename TupleType, typename Tuplizer,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
-void
+size_t
 GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
@@ -519,9 +513,9 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
       }
     }
   }
-  #ifdef DEBUG
-  printf("Node %lu end of GraphStore::processEdgeRequests\n", this->nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu end of GraphStore::processEdgeRequests\n", 
+              this->nodeId);
+  return edgeRequests.size();
 }
 
 template <typename TupleType, typename Tuplizer, 
@@ -621,6 +615,7 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consumeDoesTheWork(TupleType const& tuple)
 {
+  size_t totalWork = 0;
 
   #ifdef TIMING
   auto timestamp_consume1 = std::chrono::high_resolution_clock::now();
@@ -630,16 +625,15 @@ consumeDoesTheWork(TupleType const& tuple)
   // Give the tuple a new id
   std::get<0>(myTuple) = idGenerator.generate();
 
-  #ifdef DEBUG
-  printf("Node %lu GraphStore::consume tuple %s\n", nodeId, 
+  DEBUG_PRINT("Node %lu GraphStore::consume tuple %s\n", nodeId, 
     sam::toString(myTuple).c_str());
-  #endif
 
 
   // Adds the edge to the graph
   DETAIL_TIMING_BEG1
   size_t workAddEdge = addEdge(myTuple);
   DETAIL_TIMING_END1(totalTimeConsumeAddEdge)
+
 
   // Check against existing queryResults.  The edgeRequest list is populated
   // with edge requests when we find we need a tuple that will reside 
@@ -651,13 +645,13 @@ consumeDoesTheWork(TupleType const& tuple)
   DETAIL_TIMING_END2(totalTimeConsumeResultMapProcess)
 
   // See if anybody needs this tuple and send it out to them.
-  edgeRequestMap->process(myTuple);
+  size_t workEdgeRequestMap = edgeRequestMap->process(myTuple);
 
   // Check against all registered queries
-  checkSubgraphQueries(myTuple, edgeRequests);
+  size_t workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
 
   // Send out the edge requests to the other nodes.
-  processEdgeRequests(edgeRequests);
+  size_t workProcessEdgeRequests = processEdgeRequests(edgeRequests);
 
   #ifdef TIMING
   auto timestamp_consume2 = std::chrono::high_resolution_clock::now();
@@ -667,15 +661,24 @@ consumeDoesTheWork(TupleType const& tuple)
   double time_consume = time_space.count(); 
   totalTimeConsume += time_consume;
 
-    #ifdef DETAIL_TIMING
-    consumeTimes.push_back(time_consume);
-    #endif
+  #ifdef DETAIL_TIMING
+  consumeTimes.push_back(time_consume);
+  #endif
 
+  #ifdef DETAIL_METRICS
+  totalWork = workAddEdge + workResultMapProcess + workEdgeRequestMap + 
+              workCheckSubgraphQueries + workProcessEdgeRequests;
+  printf("Node %lu GraphStore::consume DETAIL_METRICS work %lu time %f\n",
+         nodeId, totalWork, time_consume);
+
+  #endif
+  
   #endif
 
   #ifdef DEBUG
   printf("Node %lu exiting GraphStore::consume\n", nodeId);
   #endif
+
 
   return true;
 }
