@@ -368,7 +368,7 @@ int main(int argc, char** argv) {
   #endif
 
   #ifdef DETAIL_TIMING
-  std::list<double> const& consumeTimes = graphStore->getConsumeTimes();
+  /*std::list<double> const& consumeTimes = graphStore->getConsumeTimes();
   double average = std::accumulate(consumeTimes.begin(),
                                consumeTimes.end(), 0.0) / consumeTimes.size();
 
@@ -385,7 +385,7 @@ int main(int argc, char** argv) {
         nodeId, i, t);
     }
     i++;
-  }
+  }*/
   #endif
   
   if (check) {

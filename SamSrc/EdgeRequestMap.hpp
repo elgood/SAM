@@ -137,26 +137,6 @@ private:
   double totalTimePush = 0;
   #endif
 
-  /**
-   * Uses the source hash function on the tuple to find any edge requests
-   * that are looking for the tuple's source.
-   */
-  //size_t processSource(TupleType const& tuple);
-
-
-  /**
-   * Uses the target hash function on the tuple to find any edge requests
-   * that are looking for the tuple's target.
-   */
-  //size_t processTarget(TupleType const& tuple);
-
-
-  /**
-   * Uses the source and target hash function on the tuple to find any 
-   * edge requests that are looking for both the tuple's source and target.
-   */
-  //size_t processSourceTarget(TupleType const& tuple);
-
   std::atomic<bool> terminated;
 };
 
@@ -342,9 +322,6 @@ process(TupleType const& tuple)
   totalWork += process(tuple, targetIndexFunction, targetCheckFunction);
   totalWork += process(tuple, sourceTargetIndexFunction, 
                        sourceTargetCheckFunction);
-  //totalWork += processSource(tuple);
-  //totalWork += processTarget(tuple);
-  //totalWork += processSourceTarget(tuple);
   return totalWork;
 }
 
@@ -382,142 +359,8 @@ process(TupleType const& tuple,
       }
     }
   }
+  return ale[index].size();
 }
-/*
-template <typename TupleType, size_t source, size_t target,
-          typename SourceHF, typename TargetHF,
-          typename SourceEF, typename TargetEF>
-size_t
-EdgeRequestMap<TupleType, source, target,
-  SourceHF, TargetHF, SourceEF, TargetEF>::
-processSource(TupleType const& tuple)
-{
-  SourceType src = std::get<source>(tuple);
-  TargetType trg = std::get<target>(tuple);
-  size_t index = sourceHash(src) % tableCapacity;
-
-  size_t totalWork = 0;
-
-  for (auto edgeRequest : ale[index])
-  {
-    totalWork++;
-    SourceType edgeRequestSrc = edgeRequest.getSource();
-    if (sourceEquals(src, edgeRequestSrc)) {
-      
-      size_t node = edgeRequest.getReturn();
-      // TODO: Partition info
-      if (targetHash(trg) % numNodes != node) {
-        zmq::message_t message = tupleToZmq(tuple);
-
-        
-        if (!terminated) {
-          edgePushCounter.fetch_add(1);
-          DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::processSource sending"
-            " edge %s\n", nodeId, node, toString(tuple).c_str());
-          terminationLock.lock();
-          if (!terminated) {
-            pushers[node]->send(message);  
-          }
-          terminationLock.unlock();
-        }
-      }
-    }
-  }
-  return totalWork;
-}
-
-template <typename TupleType, size_t source, size_t target,
-          typename SourceHF, typename TargetHF,
-          typename SourceEF, typename TargetEF>
-size_t
-EdgeRequestMap<TupleType, source, target,
-  SourceHF, TargetHF, SourceEF, TargetEF>::
-processTarget(TupleType const& tuple)
-{
-  DEBUG_PRINT("Node %lu EdgeRequestMap::processTarget\n", nodeId);
-
-  SourceType src = std::get<source>(tuple);
-  TargetType trg = std::get<target>(tuple);
-  size_t index = targetHash(trg) % tableCapacity;
-
-  size_t totalWork = 0;
-
-  for (auto edgeRequest : ale[index])
-  {
-    totalWork++;
-    TargetType edgeRequestTrg = edgeRequest.getTarget();
-
-    DEBUG_PRINT("Node %lu EdgeRequestMap::processTarget trg %s "
-      "edgeRequestTrg %s\n", this->nodeId, trg.c_str(), edgeRequestTrg.c_str());
-    if (targetEquals(trg, edgeRequestTrg)) {
-
-      size_t node = edgeRequest.getReturn();
-      // TODO: Partition info
-      DEBUG_PRINT("Node %lu EdgeRequestMap::processTarget sourceHash(src) mod "
-        "numNodes  %lu node %lu\n", nodeId, sourceHash(src) % numNodes, node);
-
-      if (sourceHash(src) % numNodes != node) {
-        zmq::message_t message = tupleToZmq(tuple);
-        edgePushCounter.fetch_add(1);
-
-        DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::processTarget sending"
-          " edge %s\n", nodeId, node, toString(tuple).c_str());
-       
-        terminationLock.lock(); 
-        if (!terminated) {
-          pushers[node]->send(message);  
-        }
-        terminationLock.unlock();
-      }
-    }
-  }
-  return totalWork;
-}
-
-template <typename TupleType, size_t source, size_t target,
-          typename SourceHF, typename TargetHF,
-          typename SourceEF, typename TargetEF>
-size_t
-EdgeRequestMap<TupleType, source, target,
-  SourceHF, TargetHF, SourceEF, TargetEF>::
-processSourceTarget(TupleType const& tuple)
-{
-  SourceType src = std::get<source>(tuple);
-  TargetType trg = std::get<target>(tuple);
-  size_t index = (sourceHash(src) * targetHash(trg)) % tableCapacity;
-  zmq::message_t message = tupleToZmq(tuple);
-
-  size_t totalWork = 0;
-
-  for (auto edgeRequest : ale[index])
-  {
-    totalWork++;
-    TargetType edgeRequestTrg = edgeRequest.getTarget();
-    SourceType edgeRequestSrc = edgeRequest.getSource();
-    if (targetEquals(trg, edgeRequestTrg) &&
-        sourceEquals(src, edgeRequestSrc)) 
-    {
-      size_t node = edgeRequest.getReturn();
-
-      // TODO: Partition info
-      if (sourceHash(src) % numNodes != node &&
-          targetHash(trg) % numNodes != node)
-      {
-        edgePushCounter.fetch_add(1);
-
-        DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::processSourceTarget sending "
-          "edge %s\n", nodeId, node, toString(tuple).c_str());
-        
-        terminationLock.lock();
-        if (!terminated) {
-          pushers[node]->send(message);  
-        }
-        terminationLock.unlock();
-      }
-    }
-  }
-  return totalWork;
-}*/
 
 template <typename TupleType, size_t source, size_t target,
           typename SourceHF, typename TargetHF,
