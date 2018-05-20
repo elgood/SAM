@@ -12,6 +12,8 @@
 #define DETAIL_TIMING
 #define METRICS
 #define DETAIL_METRICS
+#define NOBLOCK
+//#define NOBLOCK_WHILE
 //#define DETAIL_METRICS2
 
 #include "GraphStore.hpp"
@@ -267,9 +269,12 @@ int main(int argc, char** argv) {
 
   auto t1 = std::chrono::high_resolution_clock::now();
 
+  size_t numDropped = 0;
+
   for(size_t i = 0; i < numNetflows; i++)
   {
-    DEBUG_PRINT("NodeId %lu generating tuple i %lu\n", nodeId, i);
+    bool drop = false;
+    printf("NodeId %lu generating tuple i %lu\n", nodeId, i);
     if (i % 1000 == 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
       double expectedTime = i * increment;
@@ -285,17 +290,25 @@ int main(int argc, char** argv) {
         size_t numMilliseconds = (i * increment - diff.count()) * 1000;
         std::this_thread::sleep_for(
           std::chrono::milliseconds(numMilliseconds));
+      } else {
+        //if (i * increment - diff.count > dropTolerance) {
+        //drop = true;
+        //}
       }
     }
 
-    std::string str = generator->generate(time);
-    time += increment;
+    if (!drop) {
+      std::string str = generator->generate(time);
+      time += increment;
 
-    try {
-      pushPull->consume(str);
-    } catch (std::bad_alloc e) {
-      printf("Node %lu caught a bad_alloc exception after calling "
-        "pushPull->consume(str) where str = %s\n", nodeId, str.c_str());
+      try {
+        pushPull->consume(str);
+      } catch (std::bad_alloc e) {
+        printf("Node %lu caught a bad_alloc exception after calling "
+          "pushPull->consume(str) where str = %s\n", nodeId, str.c_str());
+      }
+    } else {
+      numDropped++;
     }
   }
   auto t2 = std::chrono::high_resolution_clock::now();
@@ -318,6 +331,7 @@ int main(int argc, char** argv) {
 
   printf("Node %lu found %lu triangles\n",
     nodeId, graphStore->getNumResults());
+  printf("Node %lu num dropped netflows %lu\n", nodeId, numDropped);
 
   size_t numResults = (graphStore->getNumResults() < resultsCapacity) ?
     graphStore->getNumResults() : resultsCapacity;
@@ -365,6 +379,13 @@ int main(int argc, char** argv) {
     graphStore->getTotalEdgesAddedInCsc());
   printf("Node %lu Csc edges deleted: %lu\n", nodeId,
     graphStore->getTotalEdgesDeletedInCsc());
+  printf("Node %lu total GraphStore edge push fails: %lu\n", nodeId,
+    graphStore->getEdgePushFails());
+  printf("Node %lu total GraphStore request fails: %lu\n", nodeId,
+    graphStore->getRequestFails());
+  printf("Node %lu total EdgeRequestMap push fails: %lu\n", nodeId,
+    graphStore->getEdgeRequestMapPushFails());
+
   #endif
 
   #ifdef DETAIL_TIMING

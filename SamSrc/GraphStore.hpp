@@ -153,6 +153,8 @@ private:
   std::atomic<size_t> edgePullCounter; ///> Count of how many edges we pull
   std::atomic<size_t> requestPushCounter; ///>Count of how many requests we send
   std::atomic<size_t> requestPullCounter; ///>Count of how many requests we pull
+  std::atomic<size_t> requestFails; ///> Count request sends failed.
+  std::atomic<size_t> edgePushFails; ///> Cound edge sends failed.
 
   void processRequestAgainstGraph(EdgeRequestType const& edgeRequest);
   
@@ -285,6 +287,25 @@ public:
    */
   size_t getTotalRequestPulls() {
     return requestPullCounter.load();
+  }
+
+  /**
+   * Returns the total number of times that send messages on the request
+   * push sockets failed.
+   */
+  size_t getRequestFails() { return requestFails.load(); }
+
+  /**
+   * Returns the total number of times that send messages on the edge push
+   * sockets failed.
+   */
+  size_t getEdgePushFails() { return edgePushFails.load(); }
+
+  /**
+   * Returns how many push fails occurred for the EdgeRequestMap.
+   */
+  size_t getEdgeRequestMapPushFails() {
+    edgeRequestMap->getPushFails();
   }
 
   ResultType getResult(size_t index) const {
@@ -538,16 +559,32 @@ sendMessageToSource(EdgeRequestType const& edgeRequest)
   std::string str = getStringFromZmqMessage( message );
   EdgeRequestType edgeRequest1(str);
 
-
+  double placeholder = 0;
+  DETAIL_TIMING_BEG1
   terminationLock.lock();
+  DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
+    "GraphStore::sendMessageToSource obtaining lock exceeded "
+    "tolerance")
   if (!terminated) {
     requestPushCounter.fetch_add(1);
-    #ifdef DEBUG
-    printf("Node %lu->%lu GraphStore::sendMessageToSource Sending EdgeRequest: "
-           "%s terminated %d\n", nodeId, node, edgeRequest.toString().c_str(), 
-           terminated.load());
-    #endif
+    DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToSource Sending" 
+           "EdgeRequest: %s\n", 
+           nodeId, node, edgeRequest.toString().c_str());
+    DETAIL_TIMING_BEG1
+    #ifdef NOBLOCK
+    bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
+    if (!sent) requestFails.fetch_add(1);
+    #elif defined NOBLOCK_WHILE
+    bool sent = false;
+    while(!sent) {
+      sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
+    }
+    #else
     requestPushers[node]->send(message);
+    #endif
+    DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
+      "GraphStore::sendMessageToSource sending message exceeded "
+      "tolerance")
   }
   terminationLock.unlock();
 }
@@ -566,14 +603,31 @@ sendMessageToTarget(EdgeRequestType const& edgeRequest)
   TargetType trg = edgeRequest.getTarget();
   size_t node = targetHash(trg) % numNodes;
 
+  double placeholder = 0;
+  DETAIL_TIMING_BEG1
   terminationLock.lock();
+  DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
+    "GraphStore::sendMessageToTarget obtaining lock exceeded "
+    "tolerance")
   if (!terminated) {
-    #ifdef DEBUG
-    printf("Node %lu->%lu GraphStore::sendMessageToTarget sending EdgeRequest:"
-          " %s\n", nodeId, node, edgeRequest.toString().c_str());
-    #endif
+    DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToTarget sending"
+          " EdgeRequest: %s\n", nodeId, node, edgeRequest.toString().c_str());
     requestPushCounter.fetch_add(1);
+    DETAIL_TIMING_BEG1
+    #ifdef NOBLOCK
+    bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
+    if (!sent) requestFails.fetch_add(1);
+    #elif defined NOBLOCK_WHILE
+    bool sent = false;
+    while(!sent) {
+      sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
+    }
+    #else
     requestPushers[node]->send(message);
+    #endif
+    DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
+      "GraphStore::sendMessageToTarget send exceeded "
+      "tolerance")
   }
   terminationLock.unlock();
 }
@@ -635,7 +689,7 @@ consumeDoesTheWork(TupleType const& tuple)
   // Adds the edge to the graph
   DETAIL_TIMING_BEG1
   size_t workAddEdge = addEdge(myTuple);
-  DETAIL_TIMING_END_TOL1(totalTimeConsumeAddEdge, 0.05, 
+  DETAIL_TIMING_END_TOL1(nodeId, totalTimeConsumeAddEdge, 0.05, 
                      "GraphStore::consume addEdge")
 
 
@@ -646,26 +700,26 @@ consumeDoesTheWork(TupleType const& tuple)
   std::list<EdgeRequestType> edgeRequests;
   size_t workResultMapProcess = 
     resultMap->process(myTuple, *csr, *csc, edgeRequests);
-  DETAIL_TIMING_END_TOL2(totalTimeConsumeResultMapProcess, 0.05,
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeResultMapProcess, 0.05,
                      "GraphStore::consume resultMap->process")
 
   // See if anybody needs this tuple and send it out to them.
   DETAIL_TIMING_BEG2
   size_t workEdgeRequestMap = edgeRequestMap->process(myTuple);
-  DETAIL_TIMING_END_TOL2(totalTimeConsumeEdgeRequestMapProcess, 0.05,
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeEdgeRequestMapProcess, 0.05,
                      "GraphStore::consume edgeRequestMap->process")
 
   // Check against all registered queries
 
   DETAIL_TIMING_BEG2
   size_t workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
-  DETAIL_TIMING_END_TOL2(totalTimeConsumeCheckSubgraphQueries, 0.05,
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 0.05,
                      "GraphStore::consume checkSubgraphQueries")
 
   // Send out the edge requests to the other nodes.
   DETAIL_TIMING_BEG2
   size_t workProcessEdgeRequests = processEdgeRequests(edgeRequests);
-  DETAIL_TIMING_END_TOL2(totalTimeConsumeProcessEdgeRequests, 0.05,
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeProcessEdgeRequests, 0.05,
                      "GraphStore::consume processEdgeRequests")
 
   #ifdef TIMING
@@ -683,9 +737,9 @@ consumeDoesTheWork(TupleType const& tuple)
   #ifdef DETAIL_METRICS
   totalWork = workAddEdge + workResultMapProcess + workEdgeRequestMap + 
               workCheckSubgraphQueries + workProcessEdgeRequests;
-  printf("Node %lu GraphStore::consume DETAIL_METRICS work %lu time %f\n",
-         nodeId, totalWork, time_consume);
-
+  printf("Node %lu GraphStore::consume DETAIL_METRICS workProcessEdgeRequests"
+         " %lu total work %lu time %f\n", nodeId, workProcessEdgeRequests, 
+         totalWork, time_consume);
   #endif
   
   #endif
@@ -788,6 +842,8 @@ GraphStore(  zmq::context_t& _context,
   edgePullCounter = 0;
   requestPushCounter = 0;
   requestPullCounter = 0;
+  edgePushFails = 0;
+  requestFails = 0;
 
   resultMap = 
     std::make_shared< ResultMapType>( numNodes, nodeId, 
@@ -1233,15 +1289,31 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
 
       zmq::message_t message = tupleToZmq(edge);
 
-
+      double placeholder = 0;
+      DETAIL_TIMING_BEG1
       terminationLock.lock();
+      DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
+        "GraphStore::processRequestAgainstGraph obtaining lock exceeded "
+        "tolerance")
       if (!terminated) {
-        #ifdef DEBUG
-        printf("Node %lu->%lu GraphStore::processRequestAgainstGraph sending "
-          "edge %s\n", nodeId, node, sam::toString(edge).c_str());
-        #endif
+        DEBUG_PRINT("Node %lu->%lu GraphStore::processRequestAgainstGraph"
+          " sending edge %s\n", nodeId, node, sam::toString(edge).c_str());
         edgePushCounter.fetch_add(1);
+        DETAIL_TIMING_BEG1
+        #ifdef NOBLOCK
+        bool sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);     
+        if (!sent) edgePushFails.fetch_add(1);
+        #elif defined NOBLOCK_WHILE
+        bool sent = false;
+        while(!sent) {
+          sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);
+        }
+        #else
         edgePushers[node]->send(message);     
+        #endif
+        DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
+          "GraphStore::processRequestAgainstGraph sending message exceeded "
+          "tolerance")
       }
       terminationLock.unlock();
     }

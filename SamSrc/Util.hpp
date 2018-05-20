@@ -32,14 +32,15 @@ namespace sam {
       detailTimingEnd - detailTimingBegin);\
   var += detailTimingDiff.count();
 
-  #define DETAIL_TIMING_END_TOL1(var, tolerance, message) \
+  #define DETAIL_TIMING_END_TOL1(nodeId, var, tolerance, message) \
   auto detailTimingEnd = std::chrono::high_resolution_clock::now();\
   auto detailTimingDiff = \
     std::chrono::duration_cast<std::chrono::duration<double>>(\
       detailTimingEnd - detailTimingBegin);\
   double localDiff = detailTimingDiff.count(); \
   if (localDiff > tolerance) { \
-    printf("Time tolerance exceeded: %f %s\n", localDiff, message); \
+    printf("Node %lu Time tolerance exceeded: %f %s\n", nodeId, localDiff,\
+            message); \
   }\
   var += detailTimingDiff.count();
 
@@ -50,27 +51,25 @@ namespace sam {
     detailTimingEnd - detailTimingBegin);\
   var += detailTimingDiff.count();
 
-  #define DETAIL_TIMING_END_TOL2(var, tolerance, message)\
+  #define DETAIL_TIMING_END_TOL2(nodeId, var, tolerance, message)\
   detailTimingEnd = std::chrono::high_resolution_clock::now();\
   detailTimingDiff = \
     std::chrono::duration_cast<std::chrono::duration<double>>(\
       detailTimingEnd - detailTimingBegin);\
   localDiff = detailTimingDiff.count(); \
   if (localDiff > tolerance) { \
-    printf("Time tolerance exceeded: %f %s\n", localDiff, message); \
+    printf("Node %lu Time tolerance exceeded: %f %s\n", nodeId, localDiff,\
+            message); \
   }\
   var += detailTimingDiff.count();
-
-
-
 
 #else
   #define DETAIL_TIMING_BEG1
   #define DETAIL_TIMING_BEG2
   #define DETAIL_TIMING_END1(var)
   #define DETAIL_TIMING_END2(var)
-  #define DETAIL_TIMING_END_TOL1(var, tolerance, message)
-  #define DETAIL_TIMING_END_TOL2(var, tolerance, message)
+  #define DETAIL_TIMING_END_TOL1(nodeId, var, tolerance, message)
+  #define DETAIL_TIMING_END_TOL2(nodeId, var, tolerance, message)
 #endif
 
 #ifdef METRICS

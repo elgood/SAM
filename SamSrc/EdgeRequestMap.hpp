@@ -76,6 +76,8 @@ private:
   std::function<bool(EdgeRequestType const&, TupleType const&)> 
     sourceTargetCheckFunction;
 
+  std::atomic<size_t> pushFails;
+
 public:
   /**
    * Constructor.  
@@ -125,6 +127,11 @@ public:
    */
   void terminate();
 
+  /**
+   * Returns how many send() calls to the push sockets failed.
+   */
+  size_t getPushFails() { return pushFails.load(); }
+
 private:
 
   size_t process(TupleType const& tuple,
@@ -158,6 +165,8 @@ EdgeRequestMap(
                 std::mutex& _terminationLock)
 : context(_context), terminationLock(_terminationLock)
 {
+
+  pushFails = 0;
 
   sourceIndexFunction = [this](TupleType const& tuple) {
     SourceType src = std::get<source>(tuple);
@@ -339,27 +348,48 @@ process(TupleType const& tuple,
 {
   size_t index = indexFunction(tuple);
 
+  size_t count = 0;
   for(auto edgeRequest : ale[index])
   {
+    count++;
     if(checkFunction(edgeRequest, tuple)) {
       size_t node = edgeRequest.getReturn();
       if (!terminated) {
         DETAIL_TIMING_BEG1
         zmq::message_t message = tupleToZmq(tuple);
-        DETAIL_TIMING_END_TOL1(totalTimePush, 0.001, 
-          "EdgeRequestMap::process push exceeding tolerance")
+        DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
+          "EdgeRequestMap::process creating message exceeded tolerance")
         edgePushCounter.fetch_add(1);
         DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
           " edge %s\n", nodeId, node, toString(tuple).c_str());
+        DETAIL_TIMING_BEG2
         terminationLock.lock();
+        DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
+          "EdgeRequestMap::process obtaining termination lock exceeded "
+          "tolerance")
         if (!terminated) {
-          pushers[node]->send(message);  
+          DETAIL_TIMING_BEG2
+          #ifdef NOBLOCK 
+          bool sent = pushers[node]->send(message, ZMQ_NOBLOCK);  
+          if (!sent) pushFails.fetch_add(1);
+          #elif defined NOBLOCK_WHILE
+          bool sent = false;
+          while(!sent) {
+            sent = pushers[node]->send(message, ZMQ_NOBLOCK);
+          }
+          #else
+          pushers[node]->send(message);
+          #endif
+          DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
+            "EdgeRequestMap::process sending message exceeded "
+            "tolerance")
         }
         terminationLock.unlock();
       }
     }
   }
-  return ale[index].size();
+  return count;
+  //return ale[index].size();
 }
 
 template <typename TupleType, size_t source, size_t target,
