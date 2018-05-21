@@ -20,6 +20,7 @@ include_directories("${STRING_INCLUDE_PATH}/dummy/../")
 SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_66_0")
 find_package(Boost REQUIRED system thread program_options serialization
               unit_test_framework)
+message( STATUS "Boost static libs: " ${Boost_LIBRARIES} )
 include_directories(${Boost_INCLUDE_DIRS})
 
 ##################### Protobuf ######################
@@ -39,41 +40,14 @@ find_package_handle_standard_args(ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
 
 include_directories("${ZMQ_INCLUDE_DIRS}")
 
-###################### Armadillo ##############################
-
-#find_package(Armadillo REQUIRED)
-#include_directories(${ARMADILLO_INCLUDE_DIRS})
-
-####################### MLPACK #########################
-#find_library(MLPACK_LIBRARY NAMES mlpack)
-#set (MLPACK_LIBRARIES ${MLPACK_LIBRARY})
 
 ####################### Include directories #################
 include_directories(SamSrc)
 
-################ ReadSocket ################
-
-#file(GLOB READ_SOCKET_SOURCES "ExecutableSrc/TestNCSpeed.cpp")
-
-#add_executable(ReadSocket ${READ_SOCKET_SOURCES} )
-#set_target_properties(ReadSocket PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-
-#target_link_libraries(ReadSocket ${BOOST_PROGRAM_OPTIONS_LIBRARY})
-#target_link_libraries(ReadSocket SamLib)
-
 ############# The SAM Library ################
 
-#file (GLOB SAM_SOURCES "SamSrc/*.cpp")
-
-#add_library(SamLib ${SAM_SOURCES})
 add_library(SamLib INTERFACE)
 target_include_directories(SamLib INTERFACE SamSrc/)
-#set_target_properties(SamLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY "lib")
-
-#target_link_libraries(SamLib ${ZMQ_LIBRARIES})
-#target_link_libraries(SamLib boost_program_options)
-#target_link_libraries(SamLib boost_thread)
-#target_link_libraries(SamLib boost_system)
 
 ############# Protobuf ######################
 file (GLOB PROTO_SOURCES "SamSrc/protobuf/*.cc")
@@ -113,10 +87,7 @@ foreach(testSrc ${TEST_SRCS})
 
   target_link_libraries(${testName} SamLib)
   target_link_libraries(${testName} ${Boost_LIBRARIES})
-  #target_link_libraries(${testName} boost_unit_test_framework)
-  #target_link_libraries(${testName} boost_system)
   target_link_libraries(${testName} pthread)
-  #target_link_libraries(${testName} boost_thread)
   target_link_libraries(${testName} ${ZMQ_LIBRARIES})
   target_link_libraries(${testName} ${PROTOBUF_LIBRARIES})
   target_link_libraries(${testName} ProtoLib)

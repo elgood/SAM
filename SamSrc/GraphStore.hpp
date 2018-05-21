@@ -19,6 +19,8 @@
 #include <zmq.hpp>
 #include <thread>
 #include <cstdlib>
+#include <boost/asio.hpp>
+#include <boost/asio/thread_pool.hpp>
 
 namespace sam {
 
@@ -141,10 +143,9 @@ private:
   /// Flag indicating terminate was called.
   std::atomic<bool> terminated; 
 
-  /// How many threads to use for parallel for loops.
+  /// How many threads to use for parallel consume. 
   size_t numThreads;
-  size_t currentThread = 0;
-  std::vector<std::thread> threads;
+  std::shared_ptr<boost::asio::thread_pool> threads;
   
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
@@ -573,6 +574,7 @@ sendMessageToSource(EdgeRequestType const& edgeRequest)
     DETAIL_TIMING_BEG1
     #ifdef NOBLOCK
     bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
+    printf("send %d\n", sent);
     if (!sent) requestFails.fetch_add(1);
     #elif defined NOBLOCK_WHILE
     bool sent = false;
@@ -643,11 +645,11 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 consume(TupleType const& tuple)
 {
 
-  /*auto consumeFunction = [this](TupleType const& tuple) {
+  auto consumeFunction = [this](TupleType const& tuple) {
     this->consumeDoesTheWork(tuple);  
   };
 
-  if (consumeCount >= numThreads) {
+  /*if (consumeCount >= numThreads) {
     threads[currentThread].join();
   }
   threads[currentThread] = std::thread(consumeFunction, tuple);
@@ -655,8 +657,11 @@ consume(TupleType const& tuple)
 
   if (currentThread >= numThreads) currentThread = 0;
   */
-  consumeDoesTheWork(tuple);
+  //consumeDoesTheWork(tuple);
   consumeCount++;
+  boost::asio::post(*threads, [this, &tuple]() {
+    this->consumeDoesTheWork(tuple);  
+  });
 
   return true;
 }
@@ -831,7 +836,7 @@ GraphStore(  zmq::context_t& _context,
              size_t numThreads) 
 : context(_context)
 {
-  threads.resize(numThreads);
+  threads = std::make_shared<boost::asio::thread_pool>(numThreads);
 
   terminated = false;
   this->numNodes = numNodes;
@@ -1189,17 +1194,9 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 {
   terminate();
 
-  for (auto & thread : threads) {
-    try {
-      thread.join();
-    } catch (std::exception e) {
+  threads->join();
 
-    }
-  }
-
-  #ifdef DEBUG
-  printf("Node %lu end of ~GraphStore\n", nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu end of ~GraphStore\n", nodeId);
 }
 
 template <typename TupleType, typename Tuplizer, 
