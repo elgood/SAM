@@ -76,7 +76,7 @@ private:
   std::function<bool(EdgeRequestType const&, TupleType const&)> 
     sourceTargetCheckFunction;
 
-  std::atomic<size_t> pushFails;
+  std::atomic<size_t> pushFails; ///> How many pushes fail
 
 public:
   /**
@@ -131,6 +131,7 @@ public:
    * Returns how many send() calls to the push sockets failed.
    */
   size_t getPushFails() { return pushFails.load(); }
+
 
 private:
 
@@ -359,7 +360,6 @@ process(TupleType const& tuple,
         zmq::message_t message = tupleToZmq(tuple);
         DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
           "EdgeRequestMap::process creating message exceeded tolerance")
-        edgePushCounter.fetch_add(1);
         DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
           " edge %s\n", nodeId, node, toString(tuple).c_str());
         DETAIL_TIMING_BEG2
@@ -369,6 +369,7 @@ process(TupleType const& tuple,
           "tolerance")
         if (!terminated) {
           DETAIL_TIMING_BEG2
+          edgePushCounter.fetch_add(1);
           #ifdef NOBLOCK 
           bool sent = pushers[node]->send(message, ZMQ_NOBLOCK);  
           if (!sent) pushFails.fetch_add(1);

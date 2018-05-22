@@ -259,12 +259,11 @@ public:
   }
 
   /**
-   * Returns the total number of edges that this node has sent over the
-   * edge push sockets.  It is a summation of the edges that the 
-   * RequestPullThread sent plus the ones that the EdgeRequestMap sent. 
+   * Returns the total number of edges sent by the graphstore, but not the
+   * edge request map.
    */
   size_t getTotalEdgePushes() {
-    return edgeRequestMap->getTotalEdgePushes() + edgePushCounter;
+    return edgePushCounter;
   }
 
   /**
@@ -280,6 +279,13 @@ public:
    */
   size_t getTotalRequestPushes() {
     return requestPushCounter;
+  }
+
+  /**
+   * Returns the number of edge map pushes
+   */
+  size_t getTotalEdgeRequestMapPushes() {
+    return edgeRequestMap->getTotalEdgePushes();
   }
 
   /**
@@ -574,7 +580,6 @@ sendMessageToSource(EdgeRequestType const& edgeRequest)
     DETAIL_TIMING_BEG1
     #ifdef NOBLOCK
     bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    printf("send %d\n", sent);
     if (!sent) requestFails.fetch_add(1);
     #elif defined NOBLOCK_WHILE
     bool sent = false;

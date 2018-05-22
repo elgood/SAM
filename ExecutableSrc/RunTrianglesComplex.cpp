@@ -379,10 +379,16 @@ int main(int argc, char** argv) {
     graphStore->getTotalEdgesAddedInCsc());
   printf("Node %lu Csc edges deleted: %lu\n", nodeId,
     graphStore->getTotalEdgesDeletedInCsc());
+  printf("Node %lu total GraphStore edge push attempts: %lu\n", nodeId,
+    graphStore->getTotalEdgePushes());
   printf("Node %lu total GraphStore edge push fails: %lu\n", nodeId,
     graphStore->getEdgePushFails());
+  printf("Node %lu total GraphStore request push attempts: %lu\n", nodeId,
+    graphStore->getTotalRequestPushes());
   printf("Node %lu total GraphStore request fails: %lu\n", nodeId,
     graphStore->getRequestFails());
+  printf("Node %lu total EdgeRequestMap edge push attempts: %lu\n", nodeId,
+    graphStore->getTotalEdgeRequestMapPushes());
   printf("Node %lu total EdgeRequestMap push fails: %lu\n", nodeId,
     graphStore->getEdgeRequestMapPushFails());
 
