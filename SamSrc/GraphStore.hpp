@@ -312,7 +312,7 @@ public:
    * Returns how many push fails occurred for the EdgeRequestMap.
    */
   size_t getEdgeRequestMapPushFails() {
-    edgeRequestMap->getPushFails();
+    return edgeRequestMap->getPushFails();
   }
 
   ResultType getResult(size_t index) const {

@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestGraphStore
 
-//#define DEBUG
+#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
@@ -22,7 +22,7 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 
 typedef GraphStoreType::EdgeRequestType EdgeRequestType;
 
-
+/*
 BOOST_AUTO_TEST_CASE( test_graph_store )
 {
   /// In this test we create a graphstore on two nodes (both local addresses).
@@ -111,7 +111,10 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   // tuples over zeromq should be zero.
   BOOST_CHECK_EQUAL(graphStore0->getTotalEdgePulls(), 0);
   BOOST_CHECK_EQUAL(graphStore1->getTotalEdgePulls(), 0);
-}
+
+  delete graphStore0;
+  delete graphStore1;
+}*/
 
 struct SingleNodeFixture  {
 
@@ -169,8 +172,6 @@ struct SingleNodeFixture  {
                         edgeHostnames, edgePorts,
                         hwm, graphCapacity, 
                         tableCapacity, resultsCapacity, timeWindow, numThreads); 
-
-
   }
 
   ~SingleNodeFixture() {
@@ -182,7 +183,7 @@ struct SingleNodeFixture  {
     delete graphStore0;
   }
 };
-
+/*
 ///
 /// In this test the query is simply an edge such that every edge
 /// matches.
@@ -209,10 +210,9 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
     graphStore0->consume(netflow);
   }
 
-  BOOST_CHECK_EQUAL(graphStore0->getNumResults(), n);
-
   graphStore0->terminate();
 
+  BOOST_CHECK_EQUAL(graphStore0->getNumResults(), n);
 }
 
 BOOST_FIXTURE_TEST_CASE( test_double_terminate, SingleNodeFixture )
@@ -220,13 +220,13 @@ BOOST_FIXTURE_TEST_CASE( test_double_terminate, SingleNodeFixture )
   graphStore0->terminate();
   graphStore0->terminate();
 }
-
+*/
 
 ///
 /// In this test the query is simply an edge such but the time constraints
 /// make so that nothing matches.
 ///
-BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
+/*BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
 {
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
@@ -251,7 +251,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), 0);
  
-}
+}*/
 
 
 ///
@@ -275,13 +275,15 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
 
   size_t numExtra = 1000;
 
-  size_t n = 100;
+  size_t n = 3;
   for(size_t i = 0; i < n; i++) 
   {
     std::string str = generator->generate();
     Netflow netflow = makeNetflow(i, str);
     graphStore0->consume(netflow);
   }
+  graphStore0->terminate();
+
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), (n-1)*(n)/2);
  
 }

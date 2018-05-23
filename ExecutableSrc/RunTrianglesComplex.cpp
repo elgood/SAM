@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <fstream>
 
 using namespace sam;
 namespace po = boost::program_options;
@@ -51,7 +52,6 @@ typedef GraphStoreType::ResultType ResultType;
 
 int main(int argc, char** argv) {
 	
-  try {
 
   zmq::context_t *context = new zmq::context_t(1);
   srand (time(NULL));
@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
   double rate; ///> Netflows per second
   bool check;
   size_t additionalNetflows; ///> Number of additional netflows
+  std::string outputNetflowFile = ""; ///> Where netflows should be written
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangels among the"
@@ -129,6 +130,8 @@ int main(int argc, char** argv) {
       "Rate at which netflows are provided.")
     ("check", po::bool_switch(&check)->default_value(false),
       "Performs check of results")
+    ("writeNeflows", po::value<std::string>(&outputNetflowFile),
+      "If specified, will write out the generated netflows to a file")
   ;
 
   // Parse the command line variables
@@ -140,6 +143,11 @@ int main(int argc, char** argv) {
   if (vm.count("help")) {
     std::cout << desc << std::endl;
     return 1;
+  }
+
+  std::ofstream ofile;
+  if (outputNetflowFile != "") {
+    ofile.open(outputNetflowFile);
   }
 
   // Setting up the random pool generator
@@ -299,6 +307,9 @@ int main(int argc, char** argv) {
 
     if (!drop) {
       std::string str = generator->generate(time);
+      if (ofile.is_open()) {
+        ofile << str << std::endl;
+      }
       time += increment;
 
       try {
@@ -316,9 +327,11 @@ int main(int argc, char** argv) {
   for(size_t i = 0; i < additionalNetflows; i++) {
     printf("NodeId %lu generating additional tuple i %lu\n", nodeId, i);
     std::string str = otherGenerator->generate(time);
+    ofile << str << std::endl;
     time += increment;
     pushPull->consume(str);
   }
+  ofile.close();
 
   pushPull->terminate();
   
@@ -444,9 +457,5 @@ int main(int argc, char** argv) {
   delete pushPull;
   delete generator;
   delete otherGenerator;
-
-  } catch (std::bad_alloc e) {
-    printf("caught bad alloc in main\n");
-  }
 
 }
