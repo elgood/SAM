@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
       "Rate at which netflows are provided.")
     ("check", po::bool_switch(&check)->default_value(false),
       "Performs check of results")
-    ("writeNeflows", po::value<std::string>(&outputNetflowFile),
+    ("writeNetflows", po::value<std::string>(&outputNetflowFile),
       "If specified, will write out the generated netflows to a file")
   ;
 

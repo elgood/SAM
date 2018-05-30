@@ -47,13 +47,17 @@ int main(int argc, char** argv) {
   netflowFile.open(infile);
 
   std::string line;
+  size_t i = 0;
   while (std::getline(netflowFile, line))
   {
-    Netflow netflow = makeNetflow(line);
+    Netflow netflow = makeNetflow(i, line);
     netflows.push_back(netflow);
+    i++;
   }
 
   size_t numTri = sam::numTriangles<Netflow, SourceIp, DestIp,
                     TimeSeconds, DurationSeconds>(netflows, queryTimeWindow);
+
+  std::cout << "Number of triangles " << numTri << std::endl;
 
 }
