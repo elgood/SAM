@@ -772,8 +772,14 @@ consumeDoesTheWork(TupleType const& tuple)
   totalWork = workAddEdge + workResultMapProcess + workEdgeRequestMap + 
               workCheckSubgraphQueries + workProcessEdgeRequests;
   printf("Node %lu GraphStore::consumeDoesTheWork DETAIL_METRICS "
+         "workAddEdge %lu "
+         "workResultMapProcess %lu "
+         "workEdgeRequestMap %lu "
+         "workCheckSubgraphQueries %lu "
          "workProcessEdgeRequests %lu total work %lu time %f\n", 
-         nodeId, workProcessEdgeRequests, totalWork, time_consume);
+         nodeId, workAddEdge, workResultMapProcess,
+         workEdgeRequestMap, workCheckSubgraphQueries,
+         workProcessEdgeRequests, totalWork, time_consume);
   #endif
   
   #endif
