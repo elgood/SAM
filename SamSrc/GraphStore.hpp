@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <boost/asio.hpp>
 #include <boost/asio/thread_pool.hpp>
+#include <future>
 
 namespace sam {
 
@@ -423,8 +424,9 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 checkSubgraphQueries(TupleType const& tuple,
                      std::list<EdgeRequestType>& edgeRequests) 
 {
-  DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries tuple %s\n",
-    nodeId, sam::toString(tuple).c_str()); 
+  DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries tuple %s "
+    " numQueries %lu\n",
+    nodeId, sam::toString(tuple).c_str(), queries.size()); 
 
   size_t totalWork = 0;
 
@@ -462,6 +464,10 @@ checkSubgraphQueries(TupleType const& tuple,
           "didn't own source in %s\n", this->nodeId, 
           sam::toString(tuple).c_str());
       }
+    } else {
+      DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries tuple %s"
+        " didn't satisfy query %s\n", sam::toString(tuple).c_str(), 
+        query.toString().c_str());
     }
   }
   #ifdef DEBUG
@@ -491,10 +497,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
 {
   //std::lock_guard<std::mutex> lock(generalLock);
-  #ifdef DEBUG
-  printf("Node %lu GraphStore::processEdgeRequests() there are %lu "
+  DEBUG_PRINT("Node %lu GraphStore::processEdgeRequests() there are %lu "
     "edge requests\n", this->nodeId, edgeRequests.size());
-  #endif
   
   // Don't want to issue more edge requests if we've been terminated.
   if (!terminated) {
@@ -574,13 +578,19 @@ sendMessageToSource(EdgeRequestType const& edgeRequest)
     "tolerance")
   if (!terminated) {
     requestPushCounter.fetch_add(1);
-    DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToSource Sending" 
+    DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToSource Sending " 
            "EdgeRequest: %s\n", 
            nodeId, node, edgeRequest.toString().c_str());
     DETAIL_TIMING_BEG1
     #ifdef NOBLOCK
     bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    if (!sent) requestFails.fetch_add(1);
+    if (!sent) { 
+      requestFails.fetch_add(1);
+      requestPushCounter.fetch_add(-1);
+      DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToSource failed"
+        " sending EdgeRequest: %s\n",
+        nodeId, node, edgeRequest.toString().c_str()); 
+    }
     #elif defined NOBLOCK_WHILE
     bool sent = false;
     while(!sent) {
@@ -623,7 +633,13 @@ sendMessageToTarget(EdgeRequestType const& edgeRequest)
     DETAIL_TIMING_BEG1
     #ifdef NOBLOCK
     bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    if (!sent) requestFails.fetch_add(1);
+    if (!sent) { 
+      requestFails.fetch_add(1);
+      requestPushCounter.fetch_add(-1);
+      DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToTarget failed"
+        " sending EdgeRequest: %s\n",
+        nodeId, node, edgeRequest.toString().c_str()); 
+    }
     #elif defined NOBLOCK_WHILE
     bool sent = false;
     while(!sent) {
@@ -649,6 +665,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consume(TupleType const& tuple)
 {
+  DEBUG_PRINT("Node %lu GraphStore::consume processing tuple %s\n",
+    nodeId, sam::toString(tuple).c_str());
 
   auto consumeFunction = [this](TupleType const& tuple) {
     this->consumeDoesTheWork(tuple);  
@@ -662,8 +680,14 @@ consume(TupleType const& tuple)
 
   if (currentThread >= numThreads) currentThread = 0;
   */
+
+  //std::async(std::launch::async, [this, &tuple]() {
+  //  this->consumeDoesTheWork(tuple);
+  //});
+
   //consumeDoesTheWork(tuple);
   consumeCount++;
+  
   boost::asio::post(*threads, [this, &tuple]() {
     this->consumeDoesTheWork(tuple);  
   });
@@ -692,7 +716,7 @@ consumeDoesTheWork(TupleType const& tuple)
   // Give the tuple a new id
   std::get<0>(myTuple) = idGenerator.generate();
 
-  DEBUG_PRINT("Node %lu GraphStore::consume tuple %s\n", nodeId, 
+  DEBUG_PRINT("Node %lu GraphStore::consumeDoesTheWork tuple %s\n", nodeId, 
     sam::toString(myTuple).c_str());
 
 
@@ -700,7 +724,7 @@ consumeDoesTheWork(TupleType const& tuple)
   DETAIL_TIMING_BEG1
   size_t workAddEdge = addEdge(myTuple);
   DETAIL_TIMING_END_TOL1(nodeId, totalTimeConsumeAddEdge, 0.05, 
-                     "GraphStore::consume addEdge")
+                     "GraphStore::consumeDoesTheWork addEdge")
 
 
   // Check against existing queryResults.  The edgeRequest list is populated
@@ -711,26 +735,26 @@ consumeDoesTheWork(TupleType const& tuple)
   size_t workResultMapProcess = 
     resultMap->process(myTuple, *csr, *csc, edgeRequests);
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeResultMapProcess, 0.05,
-                     "GraphStore::consume resultMap->process")
+                     "GraphStore::consumeDoesTheWork resultMap->process")
 
   // See if anybody needs this tuple and send it out to them.
   DETAIL_TIMING_BEG2
   size_t workEdgeRequestMap = edgeRequestMap->process(myTuple);
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeEdgeRequestMapProcess, 0.05,
-                     "GraphStore::consume edgeRequestMap->process")
+                     "GraphStore::consumeDoesTheWork edgeRequestMap->process")
 
   // Check against all registered queries
 
   DETAIL_TIMING_BEG2
   size_t workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 0.05,
-                     "GraphStore::consume checkSubgraphQueries")
+                     "GraphStore::consumeDoesTheWork checkSubgraphQueries")
 
   // Send out the edge requests to the other nodes.
   DETAIL_TIMING_BEG2
   size_t workProcessEdgeRequests = processEdgeRequests(edgeRequests);
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeProcessEdgeRequests, 0.05,
-                     "GraphStore::consume processEdgeRequests")
+                     "GraphStore::consumeDoesTheWork processEdgeRequests")
 
   #ifdef TIMING
   auto timestamp_consume2 = std::chrono::high_resolution_clock::now();
@@ -747,17 +771,16 @@ consumeDoesTheWork(TupleType const& tuple)
   #ifdef DETAIL_METRICS
   totalWork = workAddEdge + workResultMapProcess + workEdgeRequestMap + 
               workCheckSubgraphQueries + workProcessEdgeRequests;
-  printf("Node %lu GraphStore::consume DETAIL_METRICS workProcessEdgeRequests"
-         " %lu total work %lu time %f\n", nodeId, workProcessEdgeRequests, 
-         totalWork, time_consume);
+  printf("Node %lu GraphStore::consumeDoesTheWork DETAIL_METRICS "
+         "workProcessEdgeRequests %lu total work %lu time %f\n", 
+         nodeId, workProcessEdgeRequests, totalWork, time_consume);
   #endif
   
   #endif
 
   #ifdef DEBUG
-  printf("Node %lu exiting GraphStore::consume\n", nodeId);
+  printf("Node %lu exiting GraphStore::consumeDoesTheWork\n", nodeId);
   #endif
-
 
   return true;
 }
@@ -1304,7 +1327,13 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
         DETAIL_TIMING_BEG1
         #ifdef NOBLOCK
         bool sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);     
-        if (!sent) edgePushFails.fetch_add(1);
+        if (!sent) { 
+          edgePushFails.fetch_add(1);
+          edgePushCounter.fetch_add(-1);
+          DEBUG_PRINT("Node %lu->%lu GraphStore::processRequestAgainstGraph"
+            " failed sending edge: %s\n",
+            nodeId, node, sam::toString(edge).c_str()); 
+        }
         #elif defined NOBLOCK_WHILE
         bool sent = false;
         while(!sent) {

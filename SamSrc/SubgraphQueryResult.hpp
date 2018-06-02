@@ -261,11 +261,9 @@ SubgraphQueryResult(SubgraphQueryType const* query,
                     TupleType firstEdge) :
   subgraphQuery(query)
 {
-  #ifdef DEBUG
-  printf("SubgraphQueryResult::SubgraphQueryResult(query, firstedge) "
+  DEBUG_PRINT("SubgraphQueryResult::SubgraphQueryResult(query, firstedge) "
     "Creating subgraphquery result, first edge: %s\n", 
     sam::toString(firstEdge).c_str());
-  #endif
   
   //TODO: Maybe remove this to improve performance
   if (!query->isFinalized()) {
@@ -553,9 +551,7 @@ addEdgeInPlace(TupleType const& edge)
   std::string src = edgeDescription.getSource();
   std::string trg = edgeDescription.getTarget();
 
-  #ifdef DEBUG
-  printf("addEdgeInPlace src %s trg %s\n", src.c_str(), trg.c_str());
-  #endif
+  DEBUG_PRINT("addEdgeInPlace src %s trg %s\n", src.c_str(), trg.c_str());
 
   // Case when the source has been bound but the target has not
   if (var2BoundValue.count(src) > 0 &&

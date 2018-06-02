@@ -4,7 +4,7 @@
  * infrastructure.
  */
 
-
+#define DEBUG
 #include <fstream>
 #include <boost/program_options.hpp>
 #include "Util.hpp"

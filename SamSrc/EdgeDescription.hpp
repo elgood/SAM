@@ -308,13 +308,15 @@ public:
    * this edge description.
    */
   bool satisfies(TupleType const& tuple, double startTime) const {
-    #ifdef DEBUG
-    printf("EdgeDescription::satisfies tuple: %s startTime: %f\n",
+    DEBUG_PRINT("EdgeDescription::satisfies tuple: %s startTime: %f\n",
       sam::toString(tuple).c_str(), startTime);
-    #endif
     if (!satisfiesTimeConstraints(tuple, startTime)) {
+      DEBUG_PRINT("EdgeDescription::satisfies returning false for tuple: %s\n",
+        sam::toString(tuple).c_str());
       return false;
     }
+    DEBUG_PRINT("EdgeDescription::satisfies returning true for tuple: %s\n",
+      sam::toString(tuple).c_str());
     return true;
   }
 
@@ -328,8 +330,7 @@ public:
     double constraintEndTime_beg = endTimeRange.first + startTime;
     double constraintEndTime_end = endTimeRange.second + startTime;
     
-    #ifdef DEBUG
-    printf("EdgeDescription::satisfiesTimeConstraints tuple %s "
+    DEBUG_PRINT("EdgeDescription::satisfiesTimeConstraints tuple %s "
       "startTime %f "
       "edgeActualStartTime %f edgeActualEndTime %f "
       "startTimeRange %f %f endTimeRange %f %f "
@@ -340,22 +341,19 @@ public:
       endTimeRange.first, endTimeRange.second,
       constraintStartTime_beg, constraintStartTime_end,
       constraintEndTime_beg, constraintEndTime_end);
-    #endif
 
     if (edgeActualStartTime >= constraintStartTime_beg &&
         edgeActualStartTime <= constraintStartTime_end &&
         edgeActualEndTime >= constraintEndTime_beg &&
         edgeActualEndTime <= constraintEndTime_end)
     {
-      #ifdef DEBUG
-      printf("EdgeDescription::satisfiesTimeConstraints returning true\n");
-      #endif
+      DEBUG_PRINT("EdgeDescription::satisfiesTimeConstraints returning true"
+        " for tuple %s\n", sam::toString(tuple).c_str());
       return true;
     }
 
-    #ifdef DEBUG
-    printf("EdgeDescription::satisfiesTimeConstraints returning false\n");
-    #endif
+    DEBUG_PRINT("EdgeDescription::satisfiesTimeConstraints returning false "
+      "for tuple %s\n", sam::toString(tuple).c_str());
     return false;
   }
 };
