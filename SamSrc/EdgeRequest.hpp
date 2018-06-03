@@ -41,6 +41,8 @@ public:
   double getStartTime() const { return nullValue<double>(); }
 
   zmq::message_t toZmqMessage() const { return emptyZmqMessage(); }
+
+  bool isExpired(double currentTime) const { return true; }
 };
 
 
@@ -134,6 +136,13 @@ public:
       " End range: " + boost::lexical_cast<std::string>(getEndTimeFirst()) + 
       "," + boost::lexical_cast<std::string>(getEndTimeSecond());
     return rString;
+  }
+
+  bool isExpired(double currentTime) const { 
+    if (currentTime > getEndTimeSecond()) {
+      return true;
+    }
+    return false; 
   }
 
 };

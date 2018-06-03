@@ -60,7 +60,7 @@ public:
   typedef EdgeRequest<TupleType, source, target> EdgeRequestType;
   typedef EdgeRequest<TupleType, target, source> CscEdgeRequestType;
 
-  typedef EdgeRequestMap<TupleType, source, target, SourceHF, TargetHF,
+  typedef EdgeRequestMap<TupleType, source, target, time, SourceHF, TargetHF,
     SourceEF, TargetEF> RequestMapType;
 
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
@@ -744,7 +744,6 @@ consumeDoesTheWork(TupleType const& tuple)
                      "GraphStore::consumeDoesTheWork edgeRequestMap->process")
 
   // Check against all registered queries
-
   DETAIL_TIMING_BEG2
   size_t workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 0.05,
@@ -886,7 +885,7 @@ GraphStore(  zmq::context_t& _context,
 
   resultMap = 
     std::make_shared< ResultMapType>( numNodes, nodeId, 
-      tableCapacity, resultsCapacity, numThreads);
+      tableCapacity, resultsCapacity);
 
   // Resizing the push socket vectors to be the size of numNodes
   requestPushers.resize(numNodes);

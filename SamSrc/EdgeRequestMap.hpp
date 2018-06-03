@@ -27,7 +27,7 @@ public:
  * When process(tuple) is called, we find if there are any matching edge 
  * requests.  If so, we send the tuple to the appropriate node(s).
  */
-template <typename TupleType, size_t source, size_t target,
+template <typename TupleType, size_t source, size_t target, size_t time,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 class EdgeRequestMap
@@ -149,10 +149,10 @@ private:
 };
 
 // Constructor 
-template <typename TupleType, size_t source, size_t target,
+template <typename TupleType, size_t source, size_t target, size_t time,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
-EdgeRequestMap<TupleType, source, target,
+EdgeRequestMap<TupleType, source, target, time,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 EdgeRequestMap( 
                 zmq::context_t& _context,
@@ -262,10 +262,10 @@ EdgeRequestMap(
 }
 
 // Destructor 
-template <typename TupleType, size_t source, size_t target,
+template <typename TupleType, size_t source, size_t target, size_t time,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
-EdgeRequestMap<TupleType, source, target,
+EdgeRequestMap<TupleType, source, target, time,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 ~EdgeRequestMap()
 {
@@ -277,11 +277,11 @@ EdgeRequestMap<TupleType, source, target,
 
 
 
-template <typename TupleType, size_t source, size_t target,
+template <typename TupleType, size_t source, size_t target, size_t time,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 void
-EdgeRequestMap<TupleType, source, target,
+EdgeRequestMap<TupleType, source, target, time,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 addRequest(EdgeRequestType request)
 {
@@ -316,11 +316,11 @@ addRequest(EdgeRequestType request)
 
 }
 
-template <typename TupleType, size_t source, size_t target,
+template <typename TupleType, size_t source, size_t target, size_t time,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 size_t
-EdgeRequestMap<TupleType, source, target,
+EdgeRequestMap<TupleType, source, target, time,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 process(TupleType const& tuple)
 {
@@ -336,11 +336,11 @@ process(TupleType const& tuple)
 }
 
 
-template <typename TupleType, size_t source, size_t target,
+template <typename TupleType, size_t source, size_t target, size_t time,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 size_t
-EdgeRequestMap<TupleType, source, target,
+EdgeRequestMap<TupleType, source, target, time,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 process(TupleType const& tuple,
         std::function<size_t(TupleType const&)> indexFunction,
@@ -349,61 +349,72 @@ process(TupleType const& tuple,
 {
   size_t index = indexFunction(tuple);
 
+  double currentTime = std::get<time>(tuple);
+
+  mutexes[index].lock();
   size_t count = 0;
-  for(auto edgeRequest : ale[index])
+  for(auto edgeRequest = ale[index].begin();
+        edgeRequest != ale[index].end();)
   {
-    count++;
-    if(checkFunction(edgeRequest, tuple)) {
-      size_t node = edgeRequest.getReturn();
-      if (!terminated) {
-        DETAIL_TIMING_BEG1
-        zmq::message_t message = tupleToZmq(tuple);
-        DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
-          "EdgeRequestMap::process creating message exceeded tolerance")
-        DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
-          " edge %s\n", nodeId, node, toString(tuple).c_str());
-        DETAIL_TIMING_BEG2
-        terminationLock.lock();
-        DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
-          "EdgeRequestMap::process obtaining termination lock exceeded "
-          "tolerance")
+    if (edgeRequest->isExpired(currentTime)) {
+      edgeRequest = ale[index].erase(edgeRequest);
+    } else {
+
+      count++;
+      if(checkFunction(*edgeRequest, tuple)) {
+        size_t node = edgeRequest->getReturn();
         if (!terminated) {
+          DETAIL_TIMING_BEG1
+          zmq::message_t message = tupleToZmq(tuple);
+          DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
+            "EdgeRequestMap::process creating message exceeded tolerance")
+          DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
+            " edge %s\n", nodeId, node, toString(tuple).c_str());
           DETAIL_TIMING_BEG2
-          edgePushCounter.fetch_add(1);
-          #ifdef NOBLOCK 
-          bool sent = pushers[node]->send(message, ZMQ_NOBLOCK);  
-          if (!sent) {
-            pushFails.fetch_add(1);
-            edgePushCounter.fetch_add(-1);
-            DEBUG_PRINT("NodeId %lu->%lu EdgeRequestMap::process failed to "
-              "send edge %s\n", nodeId, node, toString(tuple).c_str());
-              
-          }
-          #elif defined NOBLOCK_WHILE
-          bool sent = false;
-          while(!sent) {
-            sent = pushers[node]->send(message, ZMQ_NOBLOCK);
-          }
-          #else
-          pushers[node]->send(message);
-          #endif
+          terminationLock.lock();
           DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
-            "EdgeRequestMap::process sending message exceeded "
+            "EdgeRequestMap::process obtaining termination lock exceeded "
             "tolerance")
+          if (!terminated) {
+            DETAIL_TIMING_BEG2
+            edgePushCounter.fetch_add(1);
+            #ifdef NOBLOCK 
+            bool sent = pushers[node]->send(message, ZMQ_NOBLOCK);  
+            if (!sent) {
+              pushFails.fetch_add(1);
+              edgePushCounter.fetch_add(-1);
+              DEBUG_PRINT("NodeId %lu->%lu EdgeRequestMap::process failed to "
+                "send edge %s\n", nodeId, node, toString(tuple).c_str());
+                
+            }
+            #elif defined NOBLOCK_WHILE
+            bool sent = false;
+            while(!sent) {
+              sent = pushers[node]->send(message, ZMQ_NOBLOCK);
+            }
+            #else
+            pushers[node]->send(message);
+            #endif
+            DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
+              "EdgeRequestMap::process sending message exceeded "
+              "tolerance")
+          }
+          terminationLock.unlock();
         }
-        terminationLock.unlock();
       }
+      ++edgeRequest;
     }
   }
+  mutexes[index].unlock();
   return count;
   //return ale[index].size();
 }
 
-template <typename TupleType, size_t source, size_t target,
+template <typename TupleType, size_t source, size_t target, size_t time,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 void
-EdgeRequestMap<TupleType, source, target,
+EdgeRequestMap<TupleType, source, target, time,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate()
 {
