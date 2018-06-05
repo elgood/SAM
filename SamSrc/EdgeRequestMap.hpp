@@ -372,7 +372,12 @@ process(TupleType const& tuple,
           edgePushCounter.fetch_add(1);
           #ifdef NOBLOCK 
           bool sent = pushers[node]->send(message, ZMQ_NOBLOCK);  
-          if (!sent) pushFails.fetch_add(1);
+          if (!sent) { 
+            pushFails.fetch_add(1);
+            DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process"
+              " failed to send edge: %s\n", nodeId, node, 
+              sam::toString(tuple).c_str());
+          }
           #elif defined NOBLOCK_WHILE
           bool sent = false;
           while(!sent) {
