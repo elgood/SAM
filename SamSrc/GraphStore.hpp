@@ -580,7 +580,11 @@ sendMessageToSource(EdgeRequestType const& edgeRequest)
     DETAIL_TIMING_BEG1
     #ifdef NOBLOCK
     bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    if (!sent) requestFails.fetch_add(1);
+    if (!sent) { 
+      requestFails.fetch_add(1);
+      DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToSource failed to "
+        "send EdgeRequest: %s\n", nodeId, node, edgeRequest.toString().c_str());
+    }
     #elif defined NOBLOCK_WHILE
     bool sent = false;
     while(!sent) {
@@ -623,7 +627,11 @@ sendMessageToTarget(EdgeRequestType const& edgeRequest)
     DETAIL_TIMING_BEG1
     #ifdef NOBLOCK
     bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    if (!sent) requestFails.fetch_add(1);
+    if (!sent) { 
+      requestFails.fetch_add(1);
+      DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToTarget failed to "
+        "send EdgeRequest: %s\n", nodeId, node, edgeRequest.toString().c_str());
+    }
     #elif defined NOBLOCK_WHILE
     bool sent = false;
     while(!sent) {
@@ -1304,7 +1312,13 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
         DETAIL_TIMING_BEG1
         #ifdef NOBLOCK
         bool sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);     
-        if (!sent) edgePushFails.fetch_add(1);
+        if (!sent) {
+          edgePushFails.fetch_add(1);
+          DEBUG_PRINT("Node %lu->%lu GraphStore::processRequestAgainstGraph"
+            " failed to send edge: %s\n", 
+            nodeId, node, sam::toString(edge).c_str());
+          edgePushCounter.fetch_add(-1);
+        }
         #elif defined NOBLOCK_WHILE
         bool sent = false;
         while(!sent) {
