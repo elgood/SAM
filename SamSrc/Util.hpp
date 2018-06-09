@@ -434,11 +434,19 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     TupleType netflow2;
   };
 
+  #ifdef DETAIL_TIMING
+  double totalTimeSort = 0;
+  #endif
+  DETAIL_TIMING_BEG1
   std::sort(l.begin(), l.end(), [](TupleType const& t1, 
                                    TupleType const& t2) ->bool
   {
     return std::get<time>(t1) < std::get<time>(t2);  
   });
+  DETAIL_TIMING_END1(totalTimeSort);
+  #ifdef DETAIL_TIMING
+  printf("numTriangles time to sort %f\n", totalTimeSort);
+  #endif
 
   for (size_t i = 0; i < l.size(); i++) {
     std::get<0>(l[i]) = i;
@@ -475,14 +483,16 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
                 newPartial.numEdges = 2;
                 newPartial.netflow1 = partial.netflow1;
                 newPartial.netflow2 = tuple;  
-                //printf("newpartial %f %s %s, "
-                //       " %f %s %s\n",
-                //       std::get<time>(newPartial.netflow1),
-                //       std::get<source>(newPartial.netflow1).c_str(),
-                //       std::get<target>(newPartial.netflow1).c_str(),
-                //       std::get<time>(newPartial.netflow2),
-                //       std::get<source>(newPartial.netflow2).c_str(),
-                //       std::get<target>(newPartial.netflow2).c_str());
+                #ifdef DEBUG
+                printf("newpartial %f %s %s, "
+                       " %f %s %s\n",
+                       std::get<time>(newPartial.netflow1),
+                       std::get<source>(newPartial.netflow1).c_str(),
+                       std::get<target>(newPartial.netflow1).c_str(),
+                       std::get<time>(newPartial.netflow2),
+                       std::get<source>(newPartial.netflow2).c_str(),
+                       std::get<target>(newPartial.netflow2).c_str());
+                #endif
                 partialTriangles.push_back(newPartial);
               }
             }
@@ -506,7 +516,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
               double dur = std::get<duration>(tuple);
               if (t3 >= t2 && t3 + dur -t1 <= queryTime) {
                 #ifdef DEBUG
-                printf("edge1 %f %s %s, "
+                printf("found triangle edge1 %f %s %s, "
                        "edge2 %f %s %s, "
                        "edge3 %f %s %s\n",
                        std::get<time>(partial.netflow1),

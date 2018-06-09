@@ -7,6 +7,7 @@
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/port.h>
+#include <google/protobuf/stubs/once.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format_lite_inl.h>
 #include <google/protobuf/descriptor.h>
@@ -18,7 +19,6 @@
 #include "third_party/protobuf/version.h"
 #endif
 // @@protoc_insertion_point(includes)
-
 namespace sam {
 class NetflowEdgeRequestDefaultTypeInternal {
  public:
@@ -27,9 +27,14 @@ class NetflowEdgeRequestDefaultTypeInternal {
 } _NetflowEdgeRequest_default_instance_;
 }  // namespace sam
 namespace protobuf_NetflowEdgeRequest_2eproto {
-static void InitDefaultsNetflowEdgeRequest() {
+void InitDefaultsNetflowEdgeRequestImpl() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
+#ifdef GOOGLE_PROTOBUF_ENFORCE_UNIQUENESS
+  ::google::protobuf::internal::InitProtobufDefaultsForceUnique();
+#else
+  ::google::protobuf::internal::InitProtobufDefaults();
+#endif  // GOOGLE_PROTOBUF_ENFORCE_UNIQUENESS
   {
     void* ptr = &::sam::_NetflowEdgeRequest_default_instance_;
     new (ptr) ::sam::NetflowEdgeRequest();
@@ -38,11 +43,9 @@ static void InitDefaultsNetflowEdgeRequest() {
   ::sam::NetflowEdgeRequest::InitAsDefaultInstance();
 }
 
-::google::protobuf::internal::SCCInfo<0> scc_info_NetflowEdgeRequest =
-    {{ATOMIC_VAR_INIT(::google::protobuf::internal::SCCInfoBase::kUninitialized), 0, InitDefaultsNetflowEdgeRequest}, {}};
-
-void InitDefaults() {
-  ::google::protobuf::internal::InitSCC(&scc_info_NetflowEdgeRequest.base);
+void InitDefaultsNetflowEdgeRequest() {
+  static GOOGLE_PROTOBUF_DECLARE_ONCE(once);
+  ::google::protobuf::GoogleOnceInit(&once, &InitDefaultsNetflowEdgeRequestImpl);
 }
 
 ::google::protobuf::Metadata file_level_metadata[1];
@@ -71,14 +74,15 @@ static ::google::protobuf::Message const * const file_default_instances[] = {
 
 void protobuf_AssignDescriptors() {
   AddDescriptors();
+  ::google::protobuf::MessageFactory* factory = NULL;
   AssignDescriptors(
-      "NetflowEdgeRequest.proto", schemas, file_default_instances, TableStruct::offsets,
+      "NetflowEdgeRequest.proto", schemas, file_default_instances, TableStruct::offsets, factory,
       file_level_metadata, NULL, NULL);
 }
 
 void protobuf_AssignDescriptorsOnce() {
-  static ::google::protobuf::internal::once_flag once;
-  ::google::protobuf::internal::call_once(once, protobuf_AssignDescriptors);
+  static GOOGLE_PROTOBUF_DECLARE_ONCE(once);
+  ::google::protobuf::GoogleOnceInit(&once, &protobuf_AssignDescriptors);
 }
 
 void protobuf_RegisterTypes(const ::std::string&) GOOGLE_PROTOBUF_ATTRIBUTE_COLD;
@@ -104,8 +108,8 @@ void AddDescriptorsImpl() {
 }
 
 void AddDescriptors() {
-  static ::google::protobuf::internal::once_flag once;
-  ::google::protobuf::internal::call_once(once, AddDescriptorsImpl);
+  static GOOGLE_PROTOBUF_DECLARE_ONCE(once);
+  ::google::protobuf::GoogleOnceInit(&once, &AddDescriptorsImpl);
 }
 // Force AddDescriptors() to be called at dynamic initialization time.
 struct StaticDescriptorInitializer {
@@ -132,14 +136,16 @@ const int NetflowEdgeRequest::kDestIPFieldNumber;
 
 NetflowEdgeRequest::NetflowEdgeRequest()
   : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  ::google::protobuf::internal::InitSCC(
-      &protobuf_NetflowEdgeRequest_2eproto::scc_info_NetflowEdgeRequest.base);
+  if (GOOGLE_PREDICT_TRUE(this != internal_default_instance())) {
+    ::protobuf_NetflowEdgeRequest_2eproto::InitDefaultsNetflowEdgeRequest();
+  }
   SharedCtor();
   // @@protoc_insertion_point(constructor:sam.NetflowEdgeRequest)
 }
 NetflowEdgeRequest::NetflowEdgeRequest(const NetflowEdgeRequest& from)
   : ::google::protobuf::Message(),
-      _internal_metadata_(NULL) {
+      _internal_metadata_(NULL),
+      _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   sourceip_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   if (from.sourceip().size() > 0) {
@@ -161,6 +167,7 @@ void NetflowEdgeRequest::SharedCtor() {
   ::memset(&starttimefirst_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&returnnode_) -
       reinterpret_cast<char*>(&starttimefirst_)) + sizeof(returnnode_));
+  _cached_size_ = 0;
 }
 
 NetflowEdgeRequest::~NetflowEdgeRequest() {
@@ -174,7 +181,9 @@ void NetflowEdgeRequest::SharedDtor() {
 }
 
 void NetflowEdgeRequest::SetCachedSize(int size) const {
-  _cached_size_.Set(size);
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
 }
 const ::google::protobuf::Descriptor* NetflowEdgeRequest::descriptor() {
   ::protobuf_NetflowEdgeRequest_2eproto::protobuf_AssignDescriptorsOnce();
@@ -182,10 +191,17 @@ const ::google::protobuf::Descriptor* NetflowEdgeRequest::descriptor() {
 }
 
 const NetflowEdgeRequest& NetflowEdgeRequest::default_instance() {
-  ::google::protobuf::internal::InitSCC(&protobuf_NetflowEdgeRequest_2eproto::scc_info_NetflowEdgeRequest.base);
+  ::protobuf_NetflowEdgeRequest_2eproto::InitDefaultsNetflowEdgeRequest();
   return *internal_default_instance();
 }
 
+NetflowEdgeRequest* NetflowEdgeRequest::New(::google::protobuf::Arena* arena) const {
+  NetflowEdgeRequest* n = new NetflowEdgeRequest;
+  if (arena != NULL) {
+    arena->Own(n);
+  }
+  return n;
+}
 
 void NetflowEdgeRequest::Clear() {
 // @@protoc_insertion_point(message_clear_start:sam.NetflowEdgeRequest)
@@ -207,7 +223,7 @@ bool NetflowEdgeRequest::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:sam.NetflowEdgeRequest)
   for (;;) {
-    ::std::pair<::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
+    ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
@@ -504,7 +520,9 @@ size_t NetflowEdgeRequest::ByteSizeLong() const {
   }
 
   int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
-  SetCachedSize(cached_size);
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = cached_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
   return total_size;
 }
 
@@ -579,16 +597,15 @@ void NetflowEdgeRequest::Swap(NetflowEdgeRequest* other) {
 }
 void NetflowEdgeRequest::InternalSwap(NetflowEdgeRequest* other) {
   using std::swap;
-  sourceip_.Swap(&other->sourceip_, &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  destip_.Swap(&other->destip_, &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  sourceip_.Swap(&other->sourceip_);
+  destip_.Swap(&other->destip_);
   swap(starttimefirst_, other->starttimefirst_);
   swap(starttimesecond_, other->starttimesecond_);
   swap(endtimefirst_, other->endtimefirst_);
   swap(endtimesecond_, other->endtimesecond_);
   swap(returnnode_, other->returnnode_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
+  swap(_cached_size_, other->_cached_size_);
 }
 
 ::google::protobuf::Metadata NetflowEdgeRequest::GetMetadata() const {
@@ -599,12 +616,5 @@ void NetflowEdgeRequest::InternalSwap(NetflowEdgeRequest* other) {
 
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace sam
-namespace google {
-namespace protobuf {
-template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::sam::NetflowEdgeRequest* Arena::CreateMaybeMessage< ::sam::NetflowEdgeRequest >(Arena* arena) {
-  return Arena::CreateInternal< ::sam::NetflowEdgeRequest >(arena);
-}
-}  // namespace protobuf
-}  // namespace google
 
 // @@protoc_insertion_point(global_scope)
