@@ -13,4 +13,4 @@ Testing/*
 build/*
 triage/*
 output/*
-run/
+runs/*
