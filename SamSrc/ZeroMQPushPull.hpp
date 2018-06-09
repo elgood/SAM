@@ -245,27 +245,21 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
             DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received terminate "
               "from %lu\n", this->nodeId, i)
 
-            #ifdef DEBUG
-            printf("Node %lu ZeroMQPushPull pullThread received terminate "
+            DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received terminate "
               "from %lu\n", this->nodeId, i);
-            #endif
             terminate[i] = true;
           } else if (message.size() > 0) {
             std::string s = getStringFromZmqMessage(message);
             size_t id = idGenerator.generate();
             TupleType tuple = tuplizer(id, s);
             
-            #ifdef DEBUG
-            printf("Node %lu ZeroMQPushPull pullThread received tuple "
+            DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received tuple "
               "%s\n", this->nodeId, sam::toString(tuple).c_str());
-            #endif
             
             this->parallelFeed(tuple);
           } else {
-            #ifdef DEBUG
-            printf("Node %lu ZeroMQPushPull pullThread received mystery message"
-              "%s\n", getStringFromZmqMessage(message).c_str());
-            #endif
+            DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received mystery"
+              " message %s\n", getStringFromZmqMessage(message).c_str());
           }
         }
         if (terminate[i]) numStop++; 
@@ -289,9 +283,7 @@ template <typename TupleType, size_t source, size_t target,
           typename Tuplizer, typename HF>
 void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate() 
 {
-  #ifdef DEBUG
-  printf("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
   if (!terminated) {
     
     for (auto consumer : this->consumers) {
@@ -304,10 +296,8 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
       if (i != nodeId) {
         zmq::message_t message = terminateZmqMessage();
         
-        #ifdef DEBUG
-        printf("Node %lu ZeroMQPushPull::terminate sending terminate signal"
-          "to %lu\n", nodeId, i);
-        #endif
+        DEBUG_PRINT("Node %lu ZeroMQPushPull::terminate sending terminate"
+          " signal to %lu\n", nodeId, i);
         pushers[i]->send(message);
       }
     }
@@ -337,10 +327,8 @@ consume(std::string const& s)
   printf("define check here\n");
   #endif
 
-  #ifdef DEBUG
-  printf("Node %lu ZeroMQPushPull::consume string %s "
+  DEBUG_PRINT("Node %lu ZeroMQPushPull::consume string %s "
    " tuple %s\n", nodeId, s.c_str(), sam::toString(tuple).c_str());
-  #endif
 
   // Keep track how many netflows have come through this method.
   consumeCount++;
@@ -381,20 +369,17 @@ consume(std::string const& s)
 
   if (node1 != this->nodeId) { // Don't send data to ourselves.
     zmq::message_t message = fillZmqMessage(s);
-    #ifdef DEBUG
-    printf("Node %lu ZeroMQPushPull::consume because of source "
+    DEBUG_PRINT("Node %lu ZeroMQPushPull::consume because of source "
            "sending to %lu %s\n",
            nodeId, node1, s.c_str());
-    #endif
 
     pushers[node1]->send(message);
   } else {
-    #ifdef DEBUG
-    printf("Node %lu ZeroMQPushPull::consume sending to parallel feed %s\n",
-           nodeId, s.c_str());
-    #endif
+    DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel "
+      "feed %s\n", nodeId, s.c_str());
 
     uint32_t id = idGenerator.generate();
+    TupleType tuple = tuplizer(0, s);
     this->parallelFeed(tuple);
   }
 
@@ -403,17 +388,13 @@ consume(std::string const& s)
     if (node2 != this->nodeId) {  
       zmq::message_t message = fillZmqMessage(s);
 
-      #ifdef DEBUG
-      printf("Node %lu ZeroMQPushPull::consume sending to %lu %s\n",
+      DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to %lu %s\n",
              nodeId, node2, s.c_str());
-      #endif
       
       pushers[node2]->send(message);
     } else {
-      #ifdef DEBUG
-      printf("Node %lu ZeroMQPushPull::consume sending to parallel feed %s\n",
-             nodeId, s.c_str());
-      #endif
+      DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel"
+        " feed %s\n", nodeId, s.c_str());
       uint32_t id = idGenerator.generate();
       TupleType tuple = tuplizer(id, s);
       this->parallelFeed(tuple);

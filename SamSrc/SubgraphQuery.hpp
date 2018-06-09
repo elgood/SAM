@@ -74,6 +74,15 @@ private:
 
 public:
 
+  std::string toString() const 
+  {
+    std::string rString = "";
+    for (auto edge : sortedEdges) {
+      rString += edge.toString() + " ";
+    }
+    return rString;
+  }
+
   /**
    * Constant begin iterator to the vector of sorted edges.
    */

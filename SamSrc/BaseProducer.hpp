@@ -125,6 +125,8 @@ size_t BaseProducer<T>::getNumConsumers() const { return consumers.size(); }
 template <typename T>
 void BaseProducer<T>::parallelFeed(T const& item) {
   lock.lock();
+  DEBUG_PRINT("BaseProducer::parallelFeed %s numItems %lu queueLength %lu \n", 
+    toString(item).c_str(), numItems, queueLength); 
   
   numReadItems++;
   inputQueue[numItems] = item; // T(item);
@@ -141,7 +143,10 @@ void BaseProducer<T>::parallelFeed(T const& item) {
     //}
     // Serial for debugging
     for(size_t i = 0; i < consumers.size(); i++) {
+      DEBUG_PRINT("BaseProducer::parallelFeed consumer %lu\n", i);
       for(size_t j = 0; j < this->queueLength; j++) {
+        DEBUG_PRINT("BaseProducer::parallelFeed j %lu queueLength %lu tuple "
+          "%s\n", j, this->queueLength, toString(inputQueue[j]).c_str());
         consumers[i]->consume(inputQueue[j]);
       }
     }

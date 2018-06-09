@@ -12,7 +12,7 @@ using namespace sam;
 zmq::context_t context(1);
 
 
-typedef EdgeRequestMap<Netflow, SourceIp, DestIp,
+typedef EdgeRequestMap<Netflow, SourceIp, DestIp, TimeSeconds,
   LastOctetHashFunction, LastOctetHashFunction,
   StringEqualityFunction, StringEqualityFunction> MapType;
 

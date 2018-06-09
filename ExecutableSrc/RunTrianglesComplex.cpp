@@ -7,12 +7,12 @@
  *      Author: elgood
  */
 
-//#define DEBUG
+#define DEBUG
 #define TIMING
 #define DETAIL_TIMING
 #define METRICS
 #define DETAIL_METRICS
-#define NOBLOCK
+//#define NOBLOCK
 //#define NOBLOCK_WHILE
 //#define DETAIL_METRICS2
 

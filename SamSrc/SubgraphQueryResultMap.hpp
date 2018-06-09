@@ -36,10 +36,6 @@ private:
   SourceEF sourceEquals;
   TargetEF targetEquals;
 
-  /// Some of for loops are parallelized.  This specifies how many
-  /// threads to use.
-  size_t numThreads;
-  
   /// The size of the hash table storing intermediate query results.
   size_t tableCapacity;
 
@@ -54,18 +50,15 @@ private:
   /// The total number of query results
   std::atomic<uint64_t> numQueryResults; 
 
-  /// mutexes for each list element of aalr.
-  std::mutex** mutexes;
+  /// mutexes for each list element of alr.
+  std::mutex* mutexes;
 
-  /// An array of an array of lists of results.  The first level is an 
-  /// array of size tableCapacity.  The second level array is a list
-  /// for each thread.
-  std::vector<QueryResultType> **aalr;
+  /// An array of lists of results.  The first level is an 
+  /// array of size tableCapacity.  
+  std::vector<QueryResultType> *alr;
 
   size_t numNodes;
   size_t nodeId;
-
-  std::thread* threads;
 
   #ifdef DETAIL_TIMING
   double totalTimeProcessAgainstGraph = 0;
@@ -89,13 +82,11 @@ public:
    * \param nodeId The node id of this node.
    * \param tableCapacity How many bins for intermediate query results.
    * \param resultsCapacity How many completed queries can be stored.
-   * \param numThreads How many threads to use for parallel processing.
    */
   SubgraphQueryResultMap( size_t numNodes,
                           size_t nodeId,
                           size_t tableCapacity,
-                          size_t resultsCapacity,
-                          size_t numThreads );
+                          size_t resultsCapacity);
 
   ~SubgraphQueryResultMap();
 
@@ -140,7 +131,7 @@ public:
   size_t getNumIntermediateResults() const {
     size_t total = 0;
     for(size_t i = 0; i < tableCapacity; i++) {
-      total += aalr[i].size();
+      total += alr[i].size();
     }
     return total;
   }
@@ -211,9 +202,6 @@ private:
   size_t add(QueryResultType const& result, 
            std::list<EdgeRequestType>& edgeRequests);
 
-
-  // This doesn't work for some reason.  There are results that it tries
-  // to erase and it causes a seg fault.
   size_t process(TupleType const& tuple,
         CsrType const& csr,
         CscType const& csc,
@@ -236,8 +224,7 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
  SubgraphQueryResultMap( size_t numNodes,
                          size_t nodeId,
                          size_t tableCapacity,
-                         size_t resultCapacity,
-                         size_t numThreads)
+                         size_t resultCapacity)
 {
   sourceIndexFunction = [this](TupleType const& tuple) {
     SourceType src = std::get<source>(tuple);
@@ -285,22 +272,14 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
   this->nodeId = nodeId;
   this->tableCapacity = tableCapacity;
   this->resultCapacity = resultCapacity;
-  this->numThreads = numThreads;
 
   queryResults.resize(resultCapacity);
   numQueryResults = 0;
 
-  mutexes = new std::mutex*[tableCapacity];
-  for(size_t i = 0; i < tableCapacity; i++) {
-    mutexes[i] = new std::mutex[numThreads];
-  }
+  mutexes = new std::mutex[tableCapacity];
 
-  aalr = new std::vector<QueryResultType>*[tableCapacity];
-  for(size_t i = 0; i < tableCapacity; i++) {
-    aalr[i] = new std::vector<QueryResultType>[numThreads];
-  }
+  alr = new std::vector<QueryResultType>[tableCapacity];
 
-  threads = new std::thread[numThreads];
 }
 
 /// Destructor
@@ -312,13 +291,8 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 ~SubgraphQueryResultMap()
 {
-  for(size_t i = 0; i < tableCapacity; i++) {
-    delete[] aalr[i];
-    delete[] mutexes[i];
-  }
   delete[] mutexes;
-  delete[] aalr;
-  delete[] threads;
+  delete[] alr;
 }
 
 template <typename TupleType, size_t source, size_t target,
@@ -365,25 +339,23 @@ add(QueryResultType const& result,
 
       // Determine which thread has the least amount of work and give it
       // to that one.
-      size_t minIndex = 0;
-      size_t min = std::numeric_limits<size_t>::max();
-      for(size_t i = 0; i < numThreads; i++) {
+      //size_t minIndex = 0;
+      //size_t min = std::numeric_limits<size_t>::max();
 
-        mutexes[newIndex][i].lock();
-        size_t current_size = aalr[newIndex][i].size();
-        mutexes[newIndex][i].unlock();
-        if (current_size < min) {
-          min = current_size;
-          minIndex = i;
-        }
-      }
+      //mutexes[newIndex].lock();
+      //size_t current_size = aalr[newIndex][i].size();
+      //mutexes[newIndex].unlock();
+      //if (current_size < min) {
+      //  min = current_size;
+      //  minIndex = i;
+      //}
               
-      mutexes[newIndex][minIndex].lock();
+      mutexes[newIndex].lock();
       DEBUG_PRINT("Node %lu SubgraphQueryResultMap::add result %s "
-        " adding to aalr[%lu][%lu]\n", nodeId, 
-        localQueryResult.toString().c_str(), newIndex, minIndex);
-      aalr[newIndex][minIndex].push_back(localQueryResult);
-      mutexes[newIndex][minIndex].unlock();
+        " adding to alr[%lu]\n", nodeId, 
+        localQueryResult.toString().c_str(), newIndex);
+      alr[newIndex].push_back(localQueryResult);
+      mutexes[newIndex].unlock();
 
       METRICS_INCREMENT(totalResultsCreated)
  
@@ -432,21 +404,21 @@ add(QueryResultType const& result,
     
     // Determine which thread has the least amount of work and give it
     // to that one.
-    size_t minIndex = 0;
-    size_t min = std::numeric_limits<size_t>::max();
-    for(size_t i = 0; i < numThreads; i++) {
-      mutexes[newIndex][i].lock();
-      size_t current_size = aalr[newIndex][i].size();
-      mutexes[newIndex][i].unlock();
-      if (current_size < min) {
-        min = current_size;
-        minIndex = i;
-      }
-    }
+    //size_t minIndex = 0;
+    //size_t min = std::numeric_limits<size_t>::max();
+    //for(size_t i = 0; i < numThreads; i++) {
+    //  mutexes[newIndex][i].lock();
+    //  size_t current_size = aalr[newIndex][i].size();
+    //  mutexes[newIndex][i].unlock();
+    //  if (current_size < min) {
+    //    min = current_size;
+    //    minIndex = i;
+    //  }
+    //}
      
-    mutexes[newIndex][minIndex].lock();
-    aalr[newIndex][minIndex].push_back(result);
-    mutexes[newIndex][minIndex].unlock(); 
+    mutexes[newIndex].lock();
+    alr[newIndex].push_back(result);
+    mutexes[newIndex].unlock(); 
 
     METRICS_INCREMENT(totalResultsCreated)
 
@@ -597,8 +569,8 @@ processAgainstGraph(
   // Get rid of the null element
   rehash.pop_back();
   DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph exiting "
-    "rehash size %lu\n", 
-      nodeId, rehash.size());
+    "rehash size %lu totalWork %lu\n", nodeId, rehash.size(), totalWork);
+      
   #ifdef DEBUG
   iter++;
   #endif
@@ -634,85 +606,89 @@ process(TupleType const& tuple,
 
   size_t samId = std::get<0>(tuple);
 
-  std::mutex rehashMutex;
-
   size_t totalWork = 0;
 
   // Tried out threading this but didn't get speedups, so maybe remove
   // this thread stuff.
-  for(size_t threadId = 0; threadId < numThreads; threadId++) {
-    mutexes[index][threadId].lock();
-    DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process(tuple, csr, csc, "
-      "edgeRequests, indexFunction) aalr[%lu][%lu].size() %lu\n",
-      nodeId, index, threadId, aalr[index][threadId].size())
-    //printf("size %lu\n", this->aalr[index][threadId].size());
-    for(auto l = this->aalr[index][threadId].begin();
-          l != this->aalr[index][threadId].end(); ) 
-    {
-      totalWork++;
-      if (l->isExpired(currentTime)) {
-        //#ifdef DEBUG
-        //printf("index %lu threadId %lu\n", index, threadId);
-        //printf("Node %lu thread %lu SubgraphQueryResultMap::process "
-        //  "deleting expired result %s\n", nodeId, threadId, 
-        //  l->toString().c_str());
-        //#endif
-        l = this->aalr[index][threadId].erase(l);
-        METRICS_INCREMENT(this->totalResultsDeleted)
-      } else  {
-        if (checkFunction(*l)) {
-          DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process "
-           "considering %s\n", nodeId, l->toString().c_str());
+  //for(size_t threadId = 0; threadId < numThreads; threadId++) {
+  //  mutexes[index][threadId].lock();
+  mutexes[index].lock();
+  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process(tuple, csr, csc, "
+    "edgeRequests, indexFunction) alr[%lu].size() %lu\n",
+    nodeId, index, alr[index].size())
+  for(auto l = this->alr[index].begin();
+        l != this->alr[index].end(); ) 
+  {
+    totalWork++;
+    if (l->isExpired(currentTime)) {
+      //#ifdef DEBUG
+      //printf("index %lu threadId %lu\n", index, threadId);
+      //printf("Node %lu thread %lu SubgraphQueryResultMap::process "
+      //  "deleting expired result %s\n", nodeId, threadId, 
+      //  l->toString().c_str());
+      //#endif
+      l = this->alr[index].erase(l);
+      METRICS_INCREMENT(this->totalResultsDeleted)
+    } else {
+      if (checkFunction(*l)) {
+        DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process "
+         "considering %s\n", nodeId, l->toString().c_str());
 
-          // Make sure none of the edges has the same samId as the current tuple
-          if (l->noSamId(samId)) {
-            //std::cout << "Adding edge in process Source " << std::endl;
-            // The following call tries to add the tuple to the existing 
-            // intermediate result, l.  If succesful, l remains the same
-            // but a new intermediate result is created.
+        // Make sure none of the edges has the same samId as the current tuple
+        if (l->noSamId(samId)) {
+          //std::cout << "Adding edge in process Source " << std::endl;
+          // The following call tries to add the tuple to the existing 
+          // intermediate result, l.  If succesful, l remains the same
+          // but a new intermediate result is created.
 
-            DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process about to try"
-             " and add tuple\n", nodeId);
-            
-            std::pair<bool, QueryResultType> p = l->addEdge(tuple);
-            if (p.first) {
+          DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process about to try"
+           " and add tuple\n", nodeId);
+          
+          std::pair<bool, QueryResultType> p = l->addEdge(tuple);
+          if (p.first) {
 
-              DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process added "
-                          "edge\n", nodeId);
+            DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process added "
+                        "edge\n", nodeId);
 
-              rehashMutex.lock();
-              rehash.push_back(p.second);
-              rehashMutex.unlock();
-            }
-          } else {
-            DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process had the id "
-              "already \n", this->nodeId);
+            rehash.push_back(p.second);
           }
+        } else {
+          DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process had the id "
+            "already \n", this->nodeId);
         }
-      ++l;
       }
+    ++l;
     }
-    mutexes[index][threadId].unlock();
   }
+  mutexes[index].unlock();
+  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process total work after for "
+    "loop %lu\n", nodeId, totalWork);
  
   DETAIL_TIMING_END1(totalTimeProcessLoop1)
  
   // See if the graph can further the queries
   DETAIL_TIMING_BEG2
-  totalWork += processAgainstGraph(rehash, csr, csc);
+  size_t graphWork = processAgainstGraph(rehash, csr, csc);
+  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process work from process"
+    "AgainstGraph: %lu\n", this->nodeId, graphWork);
+  totalWork += graphWork;
   DETAIL_TIMING_END2(totalTimeProcessProcessAgainstGraph)
 
   DETAIL_TIMING_BEG2
+  size_t addWork = 0;
   for (QueryResultType& result : rehash) {
-    #ifdef DEBUG
-    DEBUG_PRINT("Node %lu SubgraphqueryResultMap::process rehashing " 
+    DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process rehashing " 
            "query result %s\n", nodeId, result.toString().c_str());
-    #endif
     
-    totalWork += add(result, edgeRequests);
+    addWork += add(result, edgeRequests);
   }
+  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process addWork %lu"
+    " rehash size %lu\n", nodeId, addWork, rehash.size());
   DETAIL_TIMING_END2(totalTimeProcessLoop2)
 
+  totalWork += addWork;
+  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process at end, total work"
+    " %lu\n", nodeId, totalWork);
   return totalWork;
 }
 
