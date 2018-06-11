@@ -608,10 +608,6 @@ process(TupleType const& tuple,
 
   size_t totalWork = 0;
 
-  // Tried out threading this but didn't get speedups, so maybe remove
-  // this thread stuff.
-  //for(size_t threadId = 0; threadId < numThreads; threadId++) {
-  //  mutexes[index][threadId].lock();
   mutexes[index].lock();
   DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process(tuple, csr, csc, "
     "edgeRequests, indexFunction) alr[%lu].size() %lu\n",
@@ -636,7 +632,6 @@ process(TupleType const& tuple,
 
         // Make sure none of the edges has the same samId as the current tuple
         if (l->noSamId(samId)) {
-          //std::cout << "Adding edge in process Source " << std::endl;
           // The following call tries to add the tuple to the existing 
           // intermediate result, l.  If succesful, l remains the same
           // but a new intermediate result is created.

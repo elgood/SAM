@@ -681,16 +681,16 @@ consume(TupleType const& tuple)
   if (currentThread >= numThreads) currentThread = 0;
   */
 
-  //std::async(std::launch::async, [this, &tuple]() {
-  //  this->consumeDoesTheWork(tuple);
-  //});
+  std::async(std::launch::async, [this, &tuple]() {
+    this->consumeDoesTheWork(tuple);
+  });
 
   //consumeDoesTheWork(tuple);
   consumeCount++;
   
-  boost::asio::post(*threads, [this, &tuple]() {
-    this->consumeDoesTheWork(tuple);  
-  });
+  //boost::asio::post(*threads, [this, &tuple]() {
+  //  this->consumeDoesTheWork(tuple);  
+  //});
 
   return true;
 }
@@ -985,10 +985,8 @@ GraphStore(  zmq::context_t& _context,
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
             
-            #ifdef DEBUG
-            printf("Node %lu RequestPullThread received a terminate "
+            DEBUG_PRINT("Node %lu RequestPullThread received a terminate "
                    "message from %lu\n", this->nodeId, i);
-            #endif
 
             terminate[i] = true;
           } else if (message.size() > 0) {
@@ -1049,9 +1047,7 @@ GraphStore(  zmq::context_t& _context,
       if (numStop == this->numNodes - 1) stop = true;
     }
 
-    //#ifdef DEBUG
-    printf("Node %lu exiting requestPullThread\n", this->nodeId);
-    //#endif
+    DEBUG_PRINT("Node %lu exiting requestPullThread\n", this->nodeId);
 
     for (auto socket : sockets) {
       delete socket;
@@ -1196,9 +1192,7 @@ GraphStore(  zmq::context_t& _context,
       if (numStop == this->numNodes - 1 && this->terminated) stop = true;
     }
 
-    //#ifdef DEBUG
-    printf("Node %lu exiting edge pull thread\n", this->nodeId);
-    //#endif
+    DEBUG_PRINT("Node %lu exiting edge pull thread\n", this->nodeId);
     
     for (auto socket : sockets) {
       delete socket;

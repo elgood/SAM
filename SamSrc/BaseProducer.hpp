@@ -134,6 +134,9 @@ void BaseProducer<T>::parallelFeed(T const& item) {
 
   //  this->queueLength));
   if (numItems >= queueLength) {
+    DEBUG_PRINT("BaseProducer::parallelFeed %s numItems %lu >= "
+      "queueLength %lu consumes.size() %lu \n", toString(item).c_str(), 
+      numItems, queueLength, consumers.size()); 
     //for(size_t i = 0; i < consumers.size(); i++) {
     //  threads[i] = std::thread(parallelFeedFunction, i);
     //}
@@ -142,8 +145,10 @@ void BaseProducer<T>::parallelFeed(T const& item) {
     //  threads[i].join();
     //}
     // Serial for debugging
+    
     for(size_t i = 0; i < consumers.size(); i++) {
-      DEBUG_PRINT("BaseProducer::parallelFeed consumer %lu\n", i);
+      DEBUG_PRINT("BaseProducer::parallelFeed consumer %lu %s\n", i,
+        toString(item).c_str());
       for(size_t j = 0; j < this->queueLength; j++) {
         DEBUG_PRINT("BaseProducer::parallelFeed j %lu queueLength %lu tuple "
           "%s\n", j, this->queueLength, toString(inputQueue[j]).c_str());

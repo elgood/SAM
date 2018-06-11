@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestGraphStore
 
-#define DEBUG
+//#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
@@ -22,7 +22,9 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 
 typedef GraphStoreType::EdgeRequestType EdgeRequestType;
 
-/*
+typedef GraphStoreType::QueryType SubgraphQueryType;
+
+
 BOOST_AUTO_TEST_CASE( test_graph_store )
 {
   /// In this test we create a graphstore on two nodes (both local addresses).
@@ -107,6 +109,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   thread0.join();
   thread1.join();
 
+
   // There is no query that forces communication, so the number of received
   // tuples over zeromq should be zero.
   BOOST_CHECK_EQUAL(graphStore0->getTotalEdgePulls(), 0);
@@ -114,7 +117,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
 
   delete graphStore0;
   delete graphStore1;
-}*/
+}
 
 struct SingleNodeFixture  {
 
@@ -183,14 +186,14 @@ struct SingleNodeFixture  {
     delete graphStore0;
   }
 };
-/*
+
 ///
 /// In this test the query is simply an edge such that every edge
 /// matches.
 ///
 BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
 {
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  SubgraphQueryType query;
 
   query.addExpression(*startY2Xboth);
   query.addExpression(*y2x);
@@ -220,13 +223,13 @@ BOOST_FIXTURE_TEST_CASE( test_double_terminate, SingleNodeFixture )
   graphStore0->terminate();
   graphStore0->terminate();
 }
-*/
+
 
 ///
 /// In this test the query is simply an edge such but the time constraints
 /// make so that nothing matches.
 ///
-/*BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
+BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
 {
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
 
@@ -251,7 +254,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_terminate, SingleNodeFixture )
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), 0);
  
-}*/
+}
 
 
 ///
@@ -286,6 +289,100 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), (n-1)*(n)/2);
  
+}
+
+///
+/// This tests where two of the edges in the triangle have the same 
+/// time.  We are assuming strictly increasing time for the edges, but
+/// TODO that should be specifiable.
+BOOST_FIXTURE_TEST_CASE( test_triangle_same_time, SingleNodeFixture )
+{
+  // Set up the triangle query
+  double queryTimeWindow = 10;
+  //SubgraphQueryType query;
+  
+  EdgeFunction starttimeFunction = EdgeFunction::StartTime;
+  EdgeFunction endtimeFunction = EdgeFunction::EndTime;
+  EdgeOperator equal_edge_operator = EdgeOperator::Assignment;
+  EdgeOperator greater_edge_operator = EdgeOperator::GreaterThan;
+  EdgeOperator less_edge_operator = EdgeOperator::LessThan;
+
+  std::string e0 = "e0";
+  std::string e1 = "e1";
+  std::string e2 = "e2";
+  std::string nodex = "nodex";
+  std::string nodey = "nodey";
+  std::string nodez = "nodez";
+
+  EdgeExpression x2y(nodex, e0, nodey);
+  EdgeExpression y2z(nodey, e1, nodez);
+  EdgeExpression z2x(nodez, e2, nodex);
+  TimeEdgeExpression startE0First(starttimeFunction, e0,
+                                  equal_edge_operator, 0);
+  TimeEdgeExpression startE1First(starttimeFunction,e1,
+                                  greater_edge_operator, 0);
+  TimeEdgeExpression startE2First(starttimeFunction,e2,
+                                  greater_edge_operator, 0);
+  TimeEdgeExpression startE0Second(starttimeFunction, e0,
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression startE1Second(starttimeFunction,e1,
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression startE2Second(starttimeFunction,e2,
+                                   less_edge_operator, queryTimeWindow);
+  TimeEdgeExpression endE0Second(endtimeFunction, e0,
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression endE1Second(endtimeFunction,e1,
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression endE2Second(endtimeFunction,e2,
+                                   less_edge_operator, queryTimeWindow);
+
+  SubgraphQueryType query;
+  query.addExpression(x2y);
+  query.addExpression(y2z);
+  query.addExpression(z2x);
+  query.addExpression(startE0First);
+  query.addExpression(startE1First);
+  query.addExpression(startE2First);
+  query.addExpression(startE0Second);
+  query.addExpression(startE1Second);
+  query.addExpression(startE2Second);
+  query.addExpression(endE0Second);
+  query.addExpression(endE1Second);
+  query.addExpression(endE2Second);
+  query.finalize();
+
+  graphStore0->registerQuery(query);
+
+  std::string s1 = "0.47000000000000025,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node1,node2,51482,40020,1,1,1,1,1,1,1,1,1,1";
+  std::string s2 = "0.52000000000000024,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node2,node3,51482,40020,1,1,1,1,1,1,1,1,1,1";
+  std::string s3 = "0.52000000000000024,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node3,node1,51482,40020,1,1,1,1,1,1,1,1,1,1";
+  std::string s4 = "0.47000000000000025,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node4,node5,51482,40020,1,1,1,1,1,1,1,1,1,1";
+  std::string s5 = "0.47000000000000025,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node5,node6,51482,40020,1,1,1,1,1,1,1,1,1,1";
+  std::string s6 = "0.52000000000000024,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node6,node4,51482,40020,1,1,1,1,1,1,1,1,1,1";
+
+
+  Netflow n1 = makeNetflow(0, s1);
+  Netflow n2 = makeNetflow(1, s2);
+  Netflow n3 = makeNetflow(2, s3);
+  Netflow n4 = makeNetflow(0, s4);
+  Netflow n5 = makeNetflow(1, s5);
+  Netflow n6 = makeNetflow(2, s6);
+  graphStore0->consume(n1);
+  graphStore0->consume(n2);
+  graphStore0->consume(n3);
+  graphStore0->consume(n4);
+  graphStore0->consume(n5);
+  graphStore0->consume(n6);
+
+  graphStore0->terminate();
+
+  BOOST_CHECK_EQUAL(graphStore0->getNumResults(), 0);
 }
 
 

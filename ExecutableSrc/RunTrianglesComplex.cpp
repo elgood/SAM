@@ -151,7 +151,8 @@ int main(int argc, char** argv) {
   }
 
   // Setting up the random pool generator
-  AbstractNetflowGenerator* generator = new RandomPoolGenerator(numVertices);
+  AbstractNetflowGenerator* generator = 
+    new RandomPoolGenerator(numVertices, nodeId);
   
   // Used at the end to clear things out
   AbstractNetflowGenerator *otherGenerator = new RandomGenerator(); 
@@ -266,6 +267,8 @@ int main(int argc, char** argv) {
   query.finalize();
 
   graphStore->registerQuery(query);
+
+  pushPull->acceptData();
 
   double time = 0.0;
   size_t triangleCounter = 0;

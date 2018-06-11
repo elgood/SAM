@@ -193,7 +193,8 @@ public:
   /**
    * Constructor.
    */
-  RandomPoolGenerator(size_t n) {
+  RandomPoolGenerator(size_t n, size_t randomSeed = 0) {
+    srand(randomSeed);
     this->numVertices = n;
   }
 
@@ -214,6 +215,10 @@ public:
 
     size_t sourceInt = rand() % numVertices;
     size_t targetInt = rand() % numVertices;
+
+    while (targetInt == sourceInt) {
+      targetInt = rand() % numVertices;
+    }
   
     std::string sourceStr = "node" + 
       boost::lexical_cast<std::string>(sourceInt);

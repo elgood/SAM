@@ -103,7 +103,14 @@ public:
    */
   void terminate();
 
+  /**
+   * Starts up the the pull thread to accept data.  This allows us to register
+   * consumers before reading data.
+   */
+  void acceptData(); 
+  
   size_t getConsumeCount() const { return consumeCount; }
+
 
 
 private:
@@ -173,6 +180,13 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
   }
 
 
+}
+
+
+template <typename TupleType, size_t source, size_t target, 
+          typename Tuplizer, typename HF>
+void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
+{
   /**
    * This is the function executed by the pull thread.  The pull
    * thread is responsible for polling all the pull sockets and
@@ -210,10 +224,8 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
         
         socket->setsockopt(ZMQ_SNDHWM, &this->hwm, sizeof(this->hwm));
         try {
-          #ifdef DEBUG
-          printf("Node %lu ZeroMQPushPull connecting to %s\n", this->nodeId,
-            url.c_str());
-          #endif
+          DEBUG_PRINT("Node %lu ZeroMQPushPull connecting to %s\n", 
+            this->nodeId, url.c_str());
           socket->connect(url);
         } catch (std::exception e) {
           std::string message = "Couldn't connect to url " + url;
@@ -270,13 +282,12 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
     for (auto socket : sockets) {
       delete socket;
     }
-    #ifdef DEBUG
-    printf("Node %lu exiting ZeroMQPushPull pullThread\n", this->nodeId);
-    #endif
+    DEBUG_PRINT("Node %lu exiting ZeroMQPushPull pullThread\n", this->nodeId);
 
   };
 
   pullThread = std::thread(pullFunction); 
+ 
 }
 
 template <typename TupleType, size_t source, size_t target, 
@@ -388,8 +399,8 @@ consume(std::string const& s)
     if (node2 != this->nodeId) {  
       zmq::message_t message = fillZmqMessage(s);
 
-      DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to %lu %s\n",
-             nodeId, node2, s.c_str());
+      DEBUG_PRINT("Node %lu ZeroMQPushPull::consume because of target "
+        "sending to %lu %s\n", nodeId, node2, s.c_str());
       
       pushers[node2]->send(message);
     } else {
