@@ -7,11 +7,11 @@
  *      Author: elgood
  */
 
-#define DEBUG
-#define TIMING
-#define DETAIL_TIMING
-#define METRICS
-#define DETAIL_METRICS
+//#define DEBUG
+//#define TIMING
+//#define DETAIL_TIMING
+//#define METRICS
+//#define DETAIL_METRICS
 //#define NOBLOCK
 //#define NOBLOCK_WHILE
 //#define DETAIL_METRICS2
@@ -285,7 +285,7 @@ int main(int argc, char** argv) {
   for(size_t i = 0; i < numNetflows; i++)
   {
     bool drop = false;
-    printf("NodeId %lu generating tuple i %lu\n", nodeId, i);
+    DEBUG_PRINT("NodeId %lu generating tuple i %lu\n", nodeId, i);
     if (i % 1000 == 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
       double expectedTime = i * increment;
@@ -328,7 +328,7 @@ int main(int argc, char** argv) {
   auto t2 = std::chrono::high_resolution_clock::now();
 
   for(size_t i = 0; i < additionalNetflows; i++) {
-    printf("NodeId %lu generating additional tuple i %lu\n", nodeId, i);
+    DEBUG_PRINT("NodeId %lu generating additional tuple i %lu\n", nodeId, i);
     std::string str = otherGenerator->generate(time);
     ofile << str << std::endl;
     time += increment;

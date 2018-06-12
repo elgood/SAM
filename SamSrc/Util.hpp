@@ -446,8 +446,11 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     std::string toString() const {
       std::string rString = "numEdges " + 
         boost::lexical_cast<std::string>(numEdges) + " ";
-      for (size_t i = 0; i < numEdges; i++) {
-        sam::toString(netflow1) + " ";
+      if (numEdges > 0) {
+        rString += sam::toString(netflow1) + " ";
+      } 
+      if (numEdges > 1) {
+        rString += sam::toString(netflow2);
       }
       return rString;
     }
