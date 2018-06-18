@@ -20,7 +20,7 @@
 #include <thread>
 #include <cstdlib>
 #include <boost/asio.hpp>
-#include <boost/asio/thread_pool.hpp>
+//#include <boost/asio/thread_pool.hpp>
 #include <future>
 
 namespace sam {
@@ -146,7 +146,7 @@ private:
 
   /// How many threads to use for parallel consume. 
   size_t numThreads;
-  std::shared_ptr<boost::asio::thread_pool> threads;
+  //std::shared_ptr<boost::asio::thread_pool> threads;
   
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
@@ -869,7 +869,7 @@ GraphStore(  zmq::context_t& _context,
              size_t numThreads) 
 : context(_context)
 {
-  threads = std::make_shared<boost::asio::thread_pool>(numThreads);
+  //threads = std::make_shared<boost::asio::thread_pool>(numThreads);
 
   terminated = false;
   this->numNodes = numNodes;
@@ -1221,7 +1221,7 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 {
   terminate();
 
-  threads->join();
+  //threads->join();
 
   DEBUG_PRINT("Node %lu end of ~GraphStore\n", nodeId);
 }

@@ -286,13 +286,13 @@ int main(int argc, char** argv) {
   {
     bool drop = false;
     DEBUG_PRINT("NodeId %lu generating tuple i %lu\n", nodeId, i);
-    if (i % 1000 == 0) {
+    if (i % 10000 == 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
       double expectedTime = i * increment;
       double actualTime = 
         duration_cast<duration<double>>(currenttime - t1).count();
-      printf("RunTriangle iteration %lu.  Expected time: %f Actual time:"
-             " %f\n", i, expectedTime, actualTime);
+      printf("Node %lu RunTriangle iteration %lu.  Expected time: %f Actual time:"
+             " %f\n", nodeId, i, expectedTime, actualTime);
     }
     if (rate > 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
@@ -311,6 +311,7 @@ int main(int argc, char** argv) {
     if (!drop) {
       std::string str = generator->generate(time);
       if (ofile.is_open()) {
+        DEBUG_PRINT("Node %lu writing tuple %s\n", nodeId, str.c_str());
         ofile << str << std::endl;
       }
       time += increment;

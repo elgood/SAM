@@ -303,7 +303,7 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
 
     // If terminate was called, we aren't going to receive any more
     // data, so we can push out the terminate signal to all pull sockets. 
-    for(int i = 0; i < numNodes; i++) {
+    for(size_t i = 0; i < numNodes; i++) {
       if (i != nodeId) {
         zmq::message_t message = terminateZmqMessage();
         
