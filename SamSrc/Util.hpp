@@ -569,7 +569,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
               DEBUG_PRINT("tuple %s trg2 %s src3 %s\n",
                 toString(tuple).c_str(), trg2.c_str(), src3.c_str()); 
               if (trg2 == src3) {
-                DEBUG_PRINT("tuple %s trg2 == src3\n", toString(tuple));
+                DEBUG_PRINT("tuple %s trg2 == src3\n", toString(tuple).c_str());
                 auto trg3 = std::get<target>(tuple) ;
                 auto src1 = std::get<source>(partial.netflow1);
                 if (trg3 == src1) {
@@ -615,7 +615,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     }
     for (auto partial : newPartials) 
     {
-      DEBUG_PRINT("tuple %lu adding new partial %s\n", toString(tuple).c_str(),
+      DEBUG_PRINT("tuple %s adding new partial %s\n", toString(tuple).c_str(),
         partial.toString().c_str());
       partialTriangles.push_back(partial);
     }
