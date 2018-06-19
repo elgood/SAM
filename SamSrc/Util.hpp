@@ -423,6 +423,88 @@ createPushSockets(
   }
 }
 
+namespace numTrianglesDetails
+{
+
+/// Struct for holding the intermediate results.
+template<typename TupleType, size_t source, size_t target, size_t time,
+         size_t duration>
+struct PartialTriangle {
+  size_t numEdges = 0;
+  TupleType netflow1;
+  TupleType netflow2;
+
+  std::string toString() const {
+    std::string rString = "numEdges " + 
+      boost::lexical_cast<std::string>(numEdges) + " ";
+    if (numEdges > 0) {
+      rString += sam::toString(netflow1) + " ";
+    } 
+    if (numEdges > 1) {
+      rString += sam::toString(netflow2);
+    }
+    return rString;
+  }
+
+  /**
+   * Determines if the intermediate result is expired by looking at the 
+   * provided current time and seeing if we are still in the allowed
+   * time window.
+   */
+  bool isExpired(double currentTime, double timeWindow) {
+    double startTime = std::get<time>(netflow1);
+    DEBUG_PRINT("isExpired startTime %f currentTime %f currentTime -"
+           " startTime %f timeWindow %f comparison %f\n",
+      startTime, currentTime, currentTime - startTime, timeWindow,
+      currentTime - startTime - timeWindow);
+    if (currentTime - startTime <= timeWindow) {
+      return false;
+    }
+    return true;
+  }
+
+  /*size_t operator()(PartialTriangle const& partial) const 
+  {
+    if (partial.numEdges == 1) {
+      auto trg = std::get<target>(partial.netflow1);
+      return hashFunction(trg);        
+    }
+    if (partial.numEdges == 2) {
+      auto trg = std::get<target>(partial.netflow2);
+      return hashFunction(trg);        
+    }
+    throw UtilException("Tried to hash a partial triangle but the"
+      " number of edges was not 1 or 2."); 
+  }
+
+  bool operator==(PartialTriangle const& other) const
+  {
+    if (numEdges != other.numEdges) {
+      return false;
+    }
+    if (numEdges >= 1) {
+      std::string s1 = toString(netflow1);
+      std::string s2 = toString(other.netflow1);
+      if (s1.compare(s2) != 0) {
+        return false;
+      } 
+    }
+
+    if (numEdges == 2) {
+      std::string s1 = toString(netflow2);
+      std::string s2 = toString(other.netflow2);
+      if (s1.compare(s2) != 0) {
+        return false;
+      } 
+    }
+
+    return true;
+  }*/
+
+};
+
+} //End numTrianglesDetails
+
 /**
  * This is an alternate method for calculating triangles.  It is used to 
  * validate the parallel framework to make sure they get the same answer.
@@ -435,42 +517,13 @@ template<typename TupleType, size_t source, size_t target, size_t time,
          size_t duration>
 size_t numTriangles(std::vector<TupleType> l, double queryTime)
 {
+  using namespace sam::numTrianglesDetails;
+  
+  typedef PartialTriangle<TupleType, source, target, time, duration>
+    PartialTriangleType;
+
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
-
-  /// Struct for holding the intermediate results.
-  struct PartialTriangle {
-    size_t numEdges = 0;
-    TupleType netflow1;
-    TupleType netflow2;
-
-    std::string toString() const {
-      std::string rString = "numEdges " + 
-        boost::lexical_cast<std::string>(numEdges) + " ";
-      if (numEdges > 0) {
-        rString += sam::toString(netflow1) + " ";
-      } 
-      if (numEdges > 1) {
-        rString += sam::toString(netflow2);
-      }
-      return rString;
-    }
-
-    /**
-     * Determines if the intermediate result is expired by looking at the 
-     * provided current time and seeing if we are still in the allowed
-     * time window.
-     */
-    bool isExpired(double currentTime, double timeWindow) {
-      double startTime = std::get<time>(netflow1);
-      DEBUG_PRINT("isExpired startTime %f currentTime %f timeWindow %f\n",
-        startTime, currentTime, timeWindow);
-      if (currentTime - startTime <= timeWindow) {
-        return false;
-      }
-      return true;
-    }
-  };
 
   // TODO: parallelize sort
   #ifdef DETAIL_TIMING
@@ -492,7 +545,9 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     std::get<0>(l[i]) = i;
   }
 
-  std::vector<PartialTriangle> partialTriangles;
+  //std::map<
+
+  std::vector<PartialTriangleType> partialTriangles;
 
   std::atomic<size_t> numTriangles(0);
 
@@ -506,7 +561,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
 
     DEBUG_PRINT("Beginning processing Tuple %s\n", 
       sam::toString(tuple).c_str());
-    PartialTriangle p;
+    PartialTriangleType p;
     p.numEdges = 1;
     p.netflow1 = tuple;
    
@@ -514,7 +569,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     // New partial triangles that arise from processing this tuple
     // are added to this data structure (in parallel), and then
     // added back into partialTriangles after the parallel processing.
-    std::vector<PartialTriangle> newPartials;
+    std::vector<PartialTriangleType> newPartials;
 
     std::vector<std::thread> threads;
     threads.resize(numThreads);
@@ -558,7 +613,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
                   {
                     double dur = std::get<duration>(tuple);
                     if (t2 + dur - t1 < queryTime) {
-                      PartialTriangle newPartial;
+                      PartialTriangleType newPartial;
                       newPartial.numEdges = 2;
                       newPartial.netflow1 = partial.netflow1;
                       newPartial.netflow2 = tuple;  

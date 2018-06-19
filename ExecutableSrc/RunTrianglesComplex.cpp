@@ -337,8 +337,6 @@ int main(int argc, char** argv) {
   }
   ofile.close();
 
-  pushPull->terminate();
-  
   duration<double> time_space = duration_cast<duration<double>>(t2-t1);
   double totalTime = time_space.count(); 
   printf("Node %lu Time: %f seconds\n", nodeId, totalTime);
@@ -353,6 +351,9 @@ int main(int argc, char** argv) {
   size_t numResults = (graphStore->getNumResults() < resultsCapacity) ?
     graphStore->getNumResults() : resultsCapacity;
 
+
+  pushPull->terminate();
+  
   #ifdef TIMING
   printf("Node %lu Timing total consume time: %f\n", nodeId, 
     graphStore->getTotalTimeConsume());

@@ -9,10 +9,36 @@
 #include "NetflowGenerators.hpp"
 #include "Netflow.hpp"
 #include <boost/test/unit_test.hpp>
+#include <map>
 
 using namespace sam;
 using namespace std::chrono;
+using namespace sam::numTrianglesDetails;
 
+typedef PartialTriangle<Netflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
+    PartialTriangleType;
+
+
+BOOST_AUTO_TEST_CASE( test_partial_triangle )
+{
+
+  std::map<std::string, PartialTriangleType> partialMap;
+  PartialTriangleType partial;
+  
+
+  std::string s1 = "0.47,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node167,node167,51482,40020,1,1,1,1,1,1,1,1,1,1";
+
+  Netflow n1 = makeNetflow(0, s1);
+
+  partial.numEdges = 1;
+  partial.netflow1 = n1;
+
+  BOOST_CHECK_EQUAL(false, partial.isExpired(.48, 1.0));
+  BOOST_CHECK_EQUAL(false, partial.isExpired(.479999999, 0.01)); 
+  BOOST_CHECK_EQUAL(true, partial.isExpired(.481, 0.01)); 
+
+}
 
 BOOST_AUTO_TEST_CASE( test_self_edge )
 {
@@ -171,5 +197,4 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
   BOOST_CHECK_EQUAL(n, calculatedNumTriangles); 
 
 }
-
 
