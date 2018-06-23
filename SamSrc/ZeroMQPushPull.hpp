@@ -114,6 +114,7 @@ public:
 
 
 private:
+  bool acceptingData = false;
   
 };
 
@@ -287,6 +288,8 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
   };
 
   pullThread = std::thread(pullFunction); 
+
+  acceptingData = true;
  
 }
 
@@ -303,7 +306,7 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
 
     // If terminate was called, we aren't going to receive any more
     // data, so we can push out the terminate signal to all pull sockets. 
-    for(int i = 0; i < numNodes; i++) {
+    for(size_t i = 0; i < numNodes; i++) {
       if (i != nodeId) {
         zmq::message_t message = terminateZmqMessage();
         
@@ -331,6 +334,11 @@ template <typename TupleType, size_t source, size_t target,
 bool ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::
 consume(std::string const& s)
 {
+  if (!acceptingData) {
+    throw ZeroMQPushPullException("ZeroMQPushPull::consume tried to consume"
+      " an item but not accepting data yet.");
+  }
+
   TupleType tuple = tuplizer(0, s);
 
   #ifdef CHECK

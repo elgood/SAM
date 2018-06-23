@@ -1,5 +1,6 @@
 #define BOOST_TEST_MAIN TestSubgraphQueryResultMap
 
+#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include "Util.hpp"
@@ -65,7 +66,7 @@ struct F {
 
 };
 
-
+/*
 ///
 /// In this test the query is simply an edge such that every edge
 /// matches.
@@ -99,7 +100,8 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), n);
  
 }
-
+*/
+/*
 ///
 /// In this test the query is simply an edge such but the time constraints
 /// make so that nothing matches.
@@ -142,7 +144,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), 0);
  
 }
-
+*/
 ///
 /// In this test the query is two connected edges.
 ///
@@ -182,7 +184,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), (n-1)*(n)/2);
  
 }
-
+/*
 ///
 /// In this test the query is a->b, b->c, and c->d and the edges b->c and c->d
 /// already exist in the graph. 
@@ -251,4 +253,5 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), 1);
 
 }
+*/
 

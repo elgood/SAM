@@ -173,6 +173,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   double time = 0.0;
   double increment = 0.01;
 
+  pushPull0->acceptData();
+  pushPull1->acceptData();
 
   // The lambda function
   auto generateFunction = [numTuples, numTriangles, modValue, numExtra,
@@ -465,6 +467,9 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 
   std::vector<Netflow> netflowList;
   std::mutex lock;
+
+  pushPull0->acceptData();
+  pushPull1->acceptData();
 
   // The lambda function
   auto generateFunction = [numTuples, &time, increment,
