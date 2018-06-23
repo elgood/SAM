@@ -63,8 +63,6 @@ BOOST_AUTO_TEST_CASE( test_self_edge )
   std::string s9 = "0.58000000000000029,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node167,node167,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-
-
   Netflow n1 = makeNetflow(0, s1);
   Netflow n2 = makeNetflow(1, s2);
   Netflow n3 = makeNetflow(2, s3);
@@ -91,7 +89,7 @@ BOOST_AUTO_TEST_CASE( test_self_edge )
 
   BOOST_CHECK_EQUAL(1, calculatedNumTriangles); 
 
-}
+} 
 
 
 BOOST_AUTO_TEST_CASE( test_edge_same_time )
@@ -137,15 +135,23 @@ BOOST_AUTO_TEST_CASE( test_counting )
   netflowList.push_back(n1);
   netflowList.push_back(n2);
 
+  double queryTime = 10;
   double time = 0.2;
   double increment = 0.001;
   size_t id = 2;
 
-  size_t n = 100;
+  size_t n = 20000;
+  size_t numValid = 0;
   for (size_t i = 0; i < n; i++) {
     std::string s = boost::lexical_cast<std::string>(time) + 
       ",parseDate,dateTimeStr,ipLayerProtocol,"
       "ipLayerProtocolCode,node3,node1,51482,40020,1,1,1,1,1,1,1,1,1,1";
+    if (time <= queryTime) {
+      numValid++;
+      DEBUG_PRINT("valid tuple %s\n", s.c_str());
+    } else {
+      DEBUG_PRINT("Invalid tuple %s\n", s.c_str());
+    }
     time += increment; 
     Netflow n = makeNetflow(id, s);
     id++;
@@ -154,9 +160,9 @@ BOOST_AUTO_TEST_CASE( test_counting )
  
   size_t calculatedNumTriangles = 
     sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
-                      DurationSeconds>(netflowList, 10);
+                      DurationSeconds>(netflowList, queryTime);
 
-  BOOST_CHECK_EQUAL(n, calculatedNumTriangles); 
+  BOOST_CHECK_EQUAL(numValid, calculatedNumTriangles); 
 
 }
 
@@ -169,9 +175,11 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
   std::string s3 = "0.9,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node3,node1,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  size_t n = 100;
+  double queryTime = 10;
+  size_t n = 701;
   Netflow n1 = makeNetflow(0, s1);
   Netflow n3 = makeNetflow(n, s3);
+  double timeThirdEdge = std::get<TimeSeconds>(n3);
   std::vector<Netflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n3);
@@ -180,7 +188,11 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
   double increment = 0.001;
   size_t id = 1;
 
+  size_t numValid = 0;
   for (size_t i = 0; i < n; i++) {
+    if (time <= timeThirdEdge) {
+      numValid++;
+    }
     std::string s = boost::lexical_cast<std::string>(time) + 
       ",parseDate,dateTimeStr,ipLayerProtocol,"
       "ipLayerProtocolCode,node2,node3,51482,40020,1,1,1,1,1,1,1,1,1,1";
@@ -192,9 +204,9 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
  
   size_t calculatedNumTriangles = 
     sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
-                      DurationSeconds>(netflowList, 10);
+                      DurationSeconds>(netflowList, queryTime);
 
-  BOOST_CHECK_EQUAL(n, calculatedNumTriangles); 
+  BOOST_CHECK_EQUAL(numValid, calculatedNumTriangles); 
 
 }
 
