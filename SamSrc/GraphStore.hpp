@@ -157,6 +157,9 @@ private:
   std::atomic<size_t> requestPullCounter; ///>Count of how many requests we pull
   std::atomic<size_t> requestFails; ///> Count request sends failed.
   std::atomic<size_t> edgePushFails; ///> Cound edge sends failed.
+  
+  /// Keeps track of how many consume threads are active.
+  std::atomic<size_t> consumeThreadsActive; 
 
   void processRequestAgainstGraph(EdgeRequestType const& edgeRequest);
   
@@ -451,13 +454,16 @@ checkSubgraphQueries(TupleType const& tuple,
         ResultType queryResult(&query, tuple);
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries adding"
-          " queryResult %s\n", this->nodeId, queryResult.toString().c_str());
+          " queryResult %s from tuple %s\n", this->nodeId, 
+          queryResult.toString().c_str(), toString(tuple).c_str());
 
         resultMap->add(queryResult, *csr, *csc, edgeRequests);  
         
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries added"
-          " queryResult %s.  EdgeRequests.size() %lu\n", this->nodeId, 
-          queryResult.toString().c_str(), edgeRequests.size());
+          " queryResult %s for tuple %s.  EdgeRequests.size() %lu\n", 
+          this->nodeId, 
+          queryResult.toString().c_str(), toString(tuple).c_str(), 
+          edgeRequests.size());
       } else {
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries this node "
@@ -505,10 +511,8 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
     
     for(auto edgeRequest : edgeRequests) {
 
-      #ifdef DEBUG
-      printf("Node %lu GraphStore::processEdgeRequests() processing edgeRequest"
-        " %s\n", this->nodeId, edgeRequest.toString().c_str());
-      #endif
+      DEBUG_PRINT("Node %lu GraphStore::processEdgeRequests() processing"
+        " edgeRequest %s\n", this->nodeId, edgeRequest.toString().c_str());
 
       if (isNull(edgeRequest.getTarget()) && isNull(edgeRequest.getSource()))
       {
@@ -547,9 +551,12 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
         }
       }
     }
+  } else {
+    DEBUG_PRINT("Node %lu GraphStore::processEdgeRequests() there are %lu "
+      "edge requests but terminated\n", nodeId, edgeRequests.size());
   }
-  DEBUG_PRINT("Node %lu end of GraphStore::processEdgeRequests\n", 
-              this->nodeId);
+  DEBUG_PRINT("Node %lu end of GraphStore::processEdgeRequests processed %lu "
+    "requests \n", this->nodeId, edgeRequests.size());
   return edgeRequests.size();
 }
 
@@ -706,6 +713,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consumeDoesTheWork(TupleType const& tuple)
 {
+  consumeThreadsActive.fetch_add(1);
+
   size_t totalWork = 0;
 
   #ifdef TIMING
@@ -787,6 +796,7 @@ consumeDoesTheWork(TupleType const& tuple)
   printf("Node %lu exiting GraphStore::consumeDoesTheWork\n", nodeId);
   #endif
 
+  consumeThreadsActive.fetch_add(-1);
   return true;
 }
 
@@ -800,9 +810,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate() 
 {
-  #ifdef DEBUG
-  printf("Node %lu entering GraphStore::terminate\n", nodeId);
-  #endif
+  printf("Node %lu entering GraphStore::terminate consumeThreadsActive "
+    " %lu\n", nodeId, consumeThreadsActive.load());
   if (!terminated) {  
 
     terminationLock.lock();
@@ -882,6 +891,7 @@ GraphStore(  zmq::context_t& _context,
   requestPullCounter = 0;
   edgePushFails = 0;
   requestFails = 0;
+  consumeThreadsActive = 0;
 
   resultMap = 
     std::make_shared< ResultMapType>( numNodes, nodeId, 

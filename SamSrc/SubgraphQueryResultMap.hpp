@@ -360,8 +360,8 @@ add(QueryResultType const& result,
       METRICS_INCREMENT(totalResultsCreated)
  
     } else {
-      DEBUG_PRINT("Node %lu Complete query! %s\n", nodeId, 
-        localQueryResult.toString().c_str())
+      printf("Node %lu Complete query! %s\n", nodeId, 
+        localQueryResult.toString().c_str());
       size_t index = numQueryResults.fetch_add(1);
       index = index % resultCapacity;
       queryResults[index] = localQueryResult;     
@@ -423,7 +423,7 @@ add(QueryResultType const& result,
     METRICS_INCREMENT(totalResultsCreated)
 
   } else {
-    DEBUG_PRINT("Node %lu Complete query! %s\n", nodeId, 
+    printf("Node %lu Complete query! %s\n", nodeId, 
       result.toString().c_str());
     size_t index = numQueryResults.fetch_add(1);
     index = index % resultCapacity;

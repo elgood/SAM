@@ -529,29 +529,35 @@ void processSingleEdgePartial(
 {
   typedef PartialTriangle<TupleType, source, target, time, duration>
     PartialTriangleType;
+  DEBUG_PRINT("processSingleEdgePartial: processing tuple %s\n", 
+    toString(tuple).c_str());
 
   auto id1 = std::get<0>(partial.netflow1);
   auto id2 = std::get<0>(tuple);
   if (id1 != id2) {
+    DEBUG_PRINT("processSingleEdgePartial: id1 %lu != id2 %lu\n", id1, id2);
 
     auto trg1 = std::get<target>(partial.netflow1);
     auto src2 = std::get<source>(tuple);
     if (trg1 == src2) 
     {
+      DEBUG_PRINT("processSingleEdgePartial: trg1 %s == src2 %s\n",
+        trg1.c_str(), src2.c_str());
       double t1 = std::get<time>(partial.netflow1);
       double t2 = std::get<time>(tuple);
 
       // Inforces strictly increasing times
       if (t1 < t2) 
       {
+        DEBUG_PRINT("processSingleEdgePartial: t1 %f < t2 %f\n", t1, t2);
         double dur = std::get<duration>(tuple);
-        if (t2 + dur - t1 < queryTime) {
+        if (t2 - t1 <= queryTime) {
           PartialTriangleType newPartial;
           newPartial.numEdges = 2;
           newPartial.netflow1 = partial.netflow1;
           newPartial.netflow2 = tuple;  
 
-          DEBUG_PRINT("newpartial %f %s %s, "
+          DEBUG_PRINT("processSingleEdgePartial: newpartial %f %s %s, "
              " %f %s %s\n",
              std::get<time>(newPartial.netflow1),
              std::get<source>(newPartial.netflow1).c_str(),
@@ -610,7 +616,7 @@ void processTwoEdgePartial(
         "%s t3 %f t2 %f t1 %f dur %f queryTime %f"
         "\n", toString(tuple).c_str(), t3, t2, t1, dur, 
         queryTime);
-      if (t3 > t2 && t3 + -t1 <= queryTime) {
+      if (t3 > t2 && t3  -t1 <= queryTime) {
 
         DEBUG_PRINT("found triangle edge1 %lu %f %s "
           "%s, edge2 %lu %f %s %s, "
@@ -708,6 +714,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     p.numEdges = 1;
     p.netflow1 = tuple;
     // A single edge is a partial triangle 
+    DEBUG_PRINT("Adding to newPartials %s\n", p.toString().c_str());
     newPartials.push_back(p);
    
 
@@ -719,7 +726,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
  
     std::string src = std::get<source>(tuple);
     size_t index = hash(src) % tableSize; 
-    
+    DEBUG_PRINT("Looking for src %s index %lu\n", src.c_str(), index);
 
     DEBUG_PRINT("num partialTriangles %lu\n", countPartials(alr, tableSize));
 
@@ -768,6 +775,8 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
             trg = std::get<target>(partial.netflow2);
           }
           size_t index = hash(trg) % tableSize;
+          DEBUG_PRINT("Hashing partial %s based on target %s index %lu\n",
+            partial.toString().c_str(), trg.c_str(), index);
           mutexes[index].lock();
           alr[index].push_back(partial);
           mutexes[index].unlock();

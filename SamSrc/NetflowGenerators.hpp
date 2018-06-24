@@ -189,6 +189,10 @@ private:
   /// The number of vertices.
   size_t numVertices;
 
+  /// Even with different random seeds, still seeing similar output.  Adding a little
+  /// offset based on the random seed.
+  double timeOffset;
+
 public:
   /**
    * Constructor.
@@ -196,6 +200,7 @@ public:
   RandomPoolGenerator(size_t n, size_t randomSeed = 0) {
     srand(randomSeed);
     this->numVertices = n;
+    timeOffset = randomSeed / 100000;
   }
 
   /**
@@ -212,6 +217,8 @@ public:
   }
 
   std::string generate(double epochTime) {
+
+    epochTime = epochTime + timeOffset;    
 
     size_t sourceInt = rand() % numVertices;
     size_t targetInt = rand() % numVertices;
