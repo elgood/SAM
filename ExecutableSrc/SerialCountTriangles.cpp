@@ -4,7 +4,7 @@
  * infrastructure.
  */
 
-#define DEBUG
+//#define DEBUG
 #define DETAIL_TIMING
 #include <fstream>
 #include <boost/program_options.hpp>
