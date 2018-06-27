@@ -618,7 +618,7 @@ void processTwoEdgePartial(
         queryTime);
       if (t3 > t2 && t3  -t1 <= queryTime) {
 
-        DEBUG_PRINT("found triangle edge1 %lu %f %s "
+        printf("found triangle edge1 %lu %f %s "
           "%s, edge2 %lu %f %s %s, "
           "edge3 %lu %f %s %s\n", 
           std::get<0>(partial.netflow1),
@@ -694,10 +694,12 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
   size_t tableSize = 10000;
   printf("numTriangles table_size %lu\n", tableSize);
   std::mutex* mutexes = new std::mutex[tableSize];
-  std::vector<PartialTriangleType>* alr = 
-    new std::vector<PartialTriangleType>[tableSize];
+  std::list<PartialTriangleType>* alr = 
+    new std::list<PartialTriangleType>[tableSize];
 
   StringHashFunction hash;
+
+  size_t numProcessed = 0;
 
   for (auto tuple : l) 
   {
@@ -729,6 +731,11 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     DEBUG_PRINT("Looking for src %s index %lu\n", src.c_str(), index);
 
     DEBUG_PRINT("num partialTriangles %lu\n", countPartials(alr, tableSize));
+
+    if (numProcessed % 10000 == 0) {
+      printf("Processed %lu out of %lu\n", numProcessed, l.size());
+    }
+    numProcessed++;
 
     for (auto partial = alr[index].begin(); partial != alr[index].end(); )
     {
