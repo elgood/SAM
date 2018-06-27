@@ -617,12 +617,6 @@ process(TupleType const& tuple,
   {
     totalWork++;
     if (l->isExpired(currentTime)) {
-      //#ifdef DEBUG
-      //printf("index %lu threadId %lu\n", index, threadId);
-      //printf("Node %lu thread %lu SubgraphQueryResultMap::process "
-      //  "deleting expired result %s\n", nodeId, threadId, 
-      //  l->toString().c_str());
-      //#endif
       l = this->alr[index].erase(l);
       METRICS_INCREMENT(this->totalResultsDeleted)
     } else {
@@ -637,13 +631,15 @@ process(TupleType const& tuple,
           // but a new intermediate result is created.
 
           DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process about to try"
-           " and add tuple\n", nodeId);
+           " and add tuple %s to result %s\n", nodeId, toString(tuple).c_str(), 
+           l->toString().c_str());
           
           std::pair<bool, QueryResultType> p = l->addEdge(tuple);
           if (p.first) {
 
             DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process added "
-                        "edge\n", nodeId);
+                        "tuple %s to result %s\n", nodeId, toString(tuple).c_str(),
+                         l->toString().c_str());
 
             rehash.push_back(p.second);
           }

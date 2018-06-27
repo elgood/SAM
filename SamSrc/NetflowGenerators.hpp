@@ -279,6 +279,7 @@ private:
   double devSourceFlow;
   std::normal_distribution<double> destDist;
   std::normal_distribution<double> sourceDist;
+
 public:
 
   /**
