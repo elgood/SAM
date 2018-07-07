@@ -362,6 +362,97 @@ size_t get_end_index(size_t num_elements, size_t stream_id,
  
 }
 
+
+/**
+ * This gives the correct hostname for the ith pull socket.
+ * The total number of pull sockets to create is (numNodes - 1) *
+ * numPushSockets.  Each node creates numPushSockets sockets for each
+ * node to pull from (e.g. a node has numPushSockets sockets to choose from
+ * for each node except itself).
+ * \param i The ith socket out of (numNodes - 1) * numPushSockets
+ * \param nodeId The id of the node in the cluster
+ * \param numPushSockets The number of push sockets a node creates for each
+ *   other node to pull from.
+ * \param numNodes The total number of nodes in the cluster.
+ * \param hostnames The names of the hosts in the cluster.
+ */
+inline
+std::string getHostnameForPull(size_t i,
+                        size_t nodeId,
+                        size_t numPushSockets, 
+                        size_t numNodes, 
+                        std::vector<std::string> const& hostnames)
+{
+  if (i >= (numNodes - 1) * numPushSockets) {
+    std::string message = "sam::getHostname i " + 
+      boost::lexical_cast<std::string>(i) + " >= (" +
+      boost::lexical_cast<std::string>(numNodes) + " - ) * " +
+      boost::lexical_cast<std::string>(numPushSockets);
+    throw UtilException(message);
+  }
+
+  // This conditional accounts for the fact that a node doesn't pull from
+  // itself.
+  size_t index;
+  if ((i / numPushSockets) < nodeId) {
+    index = i / numPushSockets;
+  } else {
+    index = i / numPushSockets + 1;
+  }
+  if (index >= hostnames.size()) {
+    std::string message = "sam::getHostname index " +
+      boost::lexical_cast<std::string>(index) + " >= hostname.size() " +
+      boost::lexical_cast<std::string>(hostnames.size());
+    throw UtilException(message);
+  }
+  return hostnames[index];
+}
+
+/**
+ * Similar to getHostnames, this gives you the associated port.
+ * \param i The ith socket out of (numNodes - 1) * numPushSockets
+ * \param nodeId The id of the node in the cluster
+ * \param numPushSockets The number of push sockets a node creates for each
+ *   other node to pull from.
+ * \param numNodes The total number of nodes in the cluster.
+ * \param startingPort The start of the port range.
+ */
+inline
+size_t getPortForPull(size_t i, 
+                    size_t nodeId,
+                    size_t numPushSockets,
+                    size_t numNodes,
+                    size_t startingPort)
+{
+  if (i >= (numNodes - 1) * numPushSockets) {
+    std::string message = "sam::getPort i " + 
+      boost::lexical_cast<std::string>(i) + " >= (" +
+      boost::lexical_cast<std::string>(numNodes) + " - ) * " +
+      boost::lexical_cast<std::string>(numPushSockets);
+    throw UtilException(message);
+  }
+
+  // Find which node we are wanting to talk to.
+  size_t targetNode = i / numPushSockets;
+  if ((i / numPushSockets) >= nodeId) {
+    targetNode++;
+  }
+
+  size_t port;
+  
+  if (targetNode > nodeId) {
+    port = startingPort + nodeId * numPushSockets + i % numPushSockets;
+  } else if (targetNode < nodeId) {
+    port = startingPort + (nodeId - 1) * numPushSockets + i % numPushSockets;
+  } else {
+    // This shouldn't happen
+    throw UtilException("sam::getPort targetNode == nodeId");
+  }
+
+  return port;
+}
+
+
 inline
 void
 createPushSockets(

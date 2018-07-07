@@ -138,8 +138,8 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
   this->ports     = ports;
   this->hwm       = hwm;
 
-  std::shared_ptr<zmq::pollitem_t> items( new zmq::pollitem_t[numNodes],
-    []( zmq::pollitem_t* p) { delete[] p; });
+  //std::shared_ptr<zmq::pollitem_t> items( new zmq::pollitem_t[numNodes],
+  //  []( zmq::pollitem_t* p) { delete[] p; });
 
   pushers.resize(numNodes);
  
@@ -255,9 +255,6 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
 
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
-            DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received terminate "
-              "from %lu\n", this->nodeId, i)
-
             DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received terminate "
               "from %lu\n", this->nodeId, i);
             terminate[i] = true;
@@ -380,11 +377,9 @@ consume(std::string const& s)
   size_t node1 = hash(src) % numNodes;
   size_t node2 = hash(trg) % numNodes;
 
-  #ifdef DEBUG
-  printf("Node %lu ZeroMQPushPull %s hash(%s) %llu hash(%s) %llu "
+  DEBUG_PRINT("Node %lu ZeroMQPushPull %s hash(%s) %llu hash(%s) %llu "
     "numNodes %lu node1 %lu node2 %lu\n", nodeId, s.c_str(), src.c_str(),
     hash(src), trg.c_str(), hash(trg), numNodes, node1, node2);
-  #endif
 
   if (node1 != this->nodeId) { // Don't send data to ourselves.
     zmq::message_t message = fillZmqMessage(s);

@@ -54,7 +54,6 @@ int main(int argc, char** argv) {
 	
 
   zmq::context_t *context = new zmq::context_t(1);
-  srand (time(NULL));
 
   /// Parameters
   size_t numNodes; ///> The number of nodes in the cluster
@@ -149,6 +148,8 @@ int main(int argc, char** argv) {
   if (outputNetflowFile != "") {
     ofile.open(outputNetflowFile);
   }
+
+  srand(nodeId);
 
   // Setting up the random pool generator
   AbstractNetflowGenerator* generator = 
@@ -291,8 +292,8 @@ int main(int argc, char** argv) {
       double expectedTime = i * increment;
       double actualTime = 
         duration_cast<duration<double>>(currenttime - t1).count();
-      printf("Node %lu RunTriangle iteration %lu.  Expected time: %f Actual time:"
-             " %f\n", nodeId, i, expectedTime, actualTime);
+      printf("Node %lu RunTriangle iteration %lu.  Expected time: %f"
+        " Actual time: %f\n", nodeId, i, expectedTime, actualTime);
     }
     if (rate > 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
