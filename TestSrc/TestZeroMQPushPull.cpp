@@ -55,11 +55,15 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
                       PartitionType* pushPull)
   {
     for(size_t i = 0; i < n; i++) {
+      DEBUG_PRINT("Generating %luth netflow\n", i);
       std::string str = generator->generate();
       pushPull->consume(str);
     }
     pushPull->terminate();
   };
+
+  pushPull0->acceptData();
+  pushPull1->acceptData();
 
   std::thread thread0(function, generator0, pushPull0);
   std::thread thread1(function, generator1, pushPull1);

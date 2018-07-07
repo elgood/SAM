@@ -7,15 +7,18 @@
 #include <random>
 #include "Util.hpp"
 
+#define DEBUG
 
 namespace po = boost::program_options;
 using namespace sam;
 
 int main(int argc, char** argv) {
-
+ 
+  printf("blah1\n");
 
   /// The zmq context
-  zmq::context_t context = zmq::context_t(1);
+  zmq::context_t* context = new zmq::context_t(1);
+  printf("blah2\n");
   size_t receivedMessages = 0;
 
   /// A vector of all the push sockets
@@ -61,6 +64,7 @@ int main(int argc, char** argv) {
       "The number of sockets that are pushing data")
   ;
 
+  printf("blah3\n");
   // Parse the command line variables
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -85,25 +89,34 @@ int main(int argc, char** argv) {
       hostnames[i] = prefix + boost::lexical_cast<std::string>(i);
     }
   }
+  printf("blah4\n");
 
   size_t totalNumPushSockets = (numNodes - 1) * numPushSockets; 
+  DEBUG_PRINT("Total number of push sockets %lu\n", totalNumPushSockets);
 
-  for (int i = 0; i < totalNumPushSockets; i++) 
+  for (size_t i = 0; i < totalNumPushSockets; i++) 
   {
+
+    printf("i %lu\n", i);
     /////////// Adding push sockets //////////////
-    auto pusher = std::shared_ptr<zmq::socket_t>(
-                    new zmq::socket_t(context, ZMQ_PUSH));
+    try {
+      auto pusher = std::shared_ptr<zmq::socket_t>(
+                    new zmq::socket_t(*context, ZMQ_PUSH));
+      std::string hostname;
+      std::string url = "tcp://*:";
+      url = url + boost::lexical_cast<std::string>(startingPort + i);
+      DEBUG_PRINT("Node %lu binding to %s\n", nodeId, url.c_str());
 
-    std::string hostname;
-    std::string url = "tcp://*:";
-    url = url + boost::lexical_cast<std::string>(startingPort + i);
+      // The function complains if you use std::size_t, so be sure to use the
+      // uint32_t class member for hwm.
+      pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
+      pusher->bind(url);
+      pushers[i] = pusher;
 
-    // The function complains if you use std::size_t, so be sure to use the
-    // uint32_t class member for hwm.
-    pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
-    DEBUG_PRINT("Node %lu binding to %s\n", nodeId, url.c_str());
-    pusher->bind(url);
-    pushers[i] = pusher;
+    } catch (std::exception e) {
+      printf("%s\n", e.what());
+    }
+
   }
 
 
@@ -142,7 +155,7 @@ int main(int argc, char** argv) {
                                                 numNodes, hostnames);
       size_t port = getPortForPull(i, nodeId, numPushSockets,
                                    numNodes, startingPort);
-      zmq::socket_t* socket = new zmq::socket_t(context, ZMQ_PULL);
+      zmq::socket_t* socket = new zmq::socket_t(*context, ZMQ_PULL);
       std::string url = "";
       url = "tcp://" + hostname + ":";
       url = url + boost::lexical_cast<std::string>(port);
