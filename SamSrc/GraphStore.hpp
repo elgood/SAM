@@ -94,7 +94,7 @@ private:
 
   size_t consumeCount = 0;
 
-  //std::mutex generalLock;
+  std::mutex resultMapLock;
 
   /// Once the terminate signal has been given, we don't want to push out
   /// anymore edge requests or edges to other nodes.  To prevent data from
@@ -157,6 +157,9 @@ private:
   std::atomic<size_t> requestPullCounter; ///>Count of how many requests we pull
   std::atomic<size_t> requestFails; ///> Count request sends failed.
   std::atomic<size_t> edgePushFails; ///> Cound edge sends failed.
+  
+  /// Keeps track of how many consume threads are active.
+  std::atomic<size_t> consumeThreadsActive; 
 
   void processRequestAgainstGraph(EdgeRequestType const& edgeRequest);
   
@@ -398,17 +401,13 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 addEdge(TupleType tuple) 
 {
-  #ifdef DEBUG
-  printf("Node %lu entering GraphStore::addEdge tuple %s\n", nodeId, 
+  DEBUG_PRINT("Node %lu entering GraphStore::addEdge tuple %s\n", nodeId, 
     sam::toString(tuple).c_str());
-  #endif
   //std::lock_guard<std::mutex> lock(generalLock);
   size_t workCsc = csc->addEdge(tuple);
   size_t workCsr = csr->addEdge(tuple);
-  #ifdef DEBUG
-  printf("Node %lu exiting GraphStore::addEdge tuple %s\n", nodeId, 
+  DEBUG_PRINT("Node %lu exiting GraphStore::addEdge tuple %s\n", nodeId, 
     sam::toString(tuple).c_str());
-  #endif
   return workCsc + workCsr;
 }
 
@@ -451,13 +450,16 @@ checkSubgraphQueries(TupleType const& tuple,
         ResultType queryResult(&query, tuple);
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries adding"
-          " queryResult %s\n", this->nodeId, queryResult.toString().c_str());
+          " queryResult %s from tuple %s\n", this->nodeId, 
+          queryResult.toString().c_str(), toString(tuple).c_str());
 
         resultMap->add(queryResult, *csr, *csc, edgeRequests);  
         
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries added"
-          " queryResult %s.  EdgeRequests.size() %lu\n", this->nodeId, 
-          queryResult.toString().c_str(), edgeRequests.size());
+          " queryResult %s for tuple %s.  EdgeRequests.size() %lu\n", 
+          this->nodeId, 
+          queryResult.toString().c_str(), toString(tuple).c_str(), 
+          edgeRequests.size());
       } else {
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries this node "
@@ -505,10 +507,8 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
     
     for(auto edgeRequest : edgeRequests) {
 
-      #ifdef DEBUG
-      printf("Node %lu GraphStore::processEdgeRequests() processing edgeRequest"
-        " %s\n", this->nodeId, edgeRequest.toString().c_str());
-      #endif
+      DEBUG_PRINT("Node %lu GraphStore::processEdgeRequests() processing"
+        " edgeRequest %s\n", this->nodeId, edgeRequest.toString().c_str());
 
       if (isNull(edgeRequest.getTarget()) && isNull(edgeRequest.getSource()))
       {
@@ -547,9 +547,12 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
         }
       }
     }
+  } else {
+    DEBUG_PRINT("Node %lu GraphStore::processEdgeRequests() there are %lu "
+      "edge requests but terminated\n", nodeId, edgeRequests.size());
   }
-  DEBUG_PRINT("Node %lu end of GraphStore::processEdgeRequests\n", 
-              this->nodeId);
+  DEBUG_PRINT("Node %lu end of GraphStore::processEdgeRequests processed %lu "
+    "requests \n", this->nodeId, edgeRequests.size());
   return edgeRequests.size();
 }
 
@@ -706,6 +709,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consumeDoesTheWork(TupleType const& tuple)
 {
+  consumeThreadsActive.fetch_add(1);
+
   size_t totalWork = 0;
 
   #ifdef TIMING
@@ -726,14 +731,15 @@ consumeDoesTheWork(TupleType const& tuple)
   DETAIL_TIMING_END_TOL1(nodeId, totalTimeConsumeAddEdge, 0.05, 
                      "GraphStore::consumeDoesTheWork addEdge")
 
-
   // Check against existing queryResults.  The edgeRequest list is populated
   // with edge requests when we find we need a tuple that will reside 
   // elsewhere.
   DETAIL_TIMING_BEG2
   std::list<EdgeRequestType> edgeRequests;
+  resultMapLock.lock();
   size_t workResultMapProcess = 
     resultMap->process(myTuple, *csr, *csc, edgeRequests);
+  resultMapLock.unlock();
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeResultMapProcess, 0.05,
                      "GraphStore::consumeDoesTheWork resultMap->process")
 
@@ -787,6 +793,7 @@ consumeDoesTheWork(TupleType const& tuple)
   printf("Node %lu exiting GraphStore::consumeDoesTheWork\n", nodeId);
   #endif
 
+  consumeThreadsActive.fetch_add(-1);
   return true;
 }
 
@@ -800,9 +807,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate() 
 {
-  #ifdef DEBUG
-  printf("Node %lu entering GraphStore::terminate\n", nodeId);
-  #endif
+  printf("Node %lu entering GraphStore::terminate consumeThreadsActive "
+    " %lu\n", nodeId, consumeThreadsActive.load());
   if (!terminated) {  
 
     terminationLock.lock();
@@ -815,10 +821,8 @@ terminate()
       if (i != nodeId) {
         zmq::message_t message = terminateZmqMessage();
 
-        #ifdef DEBUG
-        printf("Node %lu GraphStore::terminate sending terminate message"
+        DEBUG_PRINT("Node %lu GraphStore::terminate sending terminate message"
           " to requestPusher %lu\n", this->nodeId, i);
-        #endif
 
         requestPushers[i]->send(message);
       }
@@ -826,22 +830,16 @@ terminate()
 
     requestPullThread.join();
 
-    #ifdef DEBUG
-    printf("Node %lu requestPullThread joined\n", nodeId);
-    #endif
+    DEBUG_PRINT("Node %lu requestPullThread joined\n", nodeId);
  
     // The EdgeRequestMap has all the edge pushers.  We call terminate
     // on the EdgeRequestMap to send out the terminate message.
     edgeRequestMap->terminate();
     edgePullThread.join();
 
-    #ifdef DEBUG
-    printf("Node %lu edgePullThread joined\n", nodeId);
-    #endif
+    DEBUG_PRINT("Node %lu edgePullThread joined\n", nodeId);
   }
-  #ifdef DEBUG
-  printf("Node %lu exiting GraphStore::terminate\n", nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu exiting GraphStore::terminate\n", nodeId);
 }
 
 /**
@@ -882,6 +880,7 @@ GraphStore(  zmq::context_t& _context,
   requestPullCounter = 0;
   edgePushFails = 0;
   requestFails = 0;
+  consumeThreadsActive = 0;
 
   resultMap = 
     std::make_shared< ResultMapType>( numNodes, nodeId, 
@@ -953,10 +952,8 @@ GraphStore(  zmq::context_t& _context,
         }
        
         try { 
-          #ifdef DEBUG
-          printf("Node %lu GraphStore request pull function connecting "
+          DEBUG_PRINT("Node %lu GraphStore request pull function connecting "
             "to %s\n", this->nodeId, url.c_str());
-          #endif
           socket->connect(url);
         } catch (std::exception e) {
           std::string message = "Couldn't connect to url " + url;
@@ -996,11 +993,9 @@ GraphStore(  zmq::context_t& _context,
             std::string str = getStringFromZmqMessage(message);
             EdgeRequestType request(str);
 
-            #ifdef DEBUG
-            printf("Node %lu RequestPullThread Received an edge request"
+            DEBUG_PRINT("Node %lu RequestPullThread Received an edge request"
               " length = %lu: %s\n", 
               this->nodeId, message.size(), request.toString().c_str());
-            #endif
 
             // When we get an edge request, we need to check against
             // the graph (existing matches) and add it to the list 
@@ -1013,32 +1008,24 @@ GraphStore(  zmq::context_t& _context,
             //generalLock.lock();
 
             edgeRequestMap->addRequest(request);
-            #ifdef DEBUG
-            printf("Node %lu RequestPullThread added edge request to map"
+            DEBUG_PRINT("Node %lu RequestPullThread added edge request to map"
               ": %s\n", 
               this->nodeId, request.toString().c_str());
-            #endif
 
             processRequestAgainstGraph(request);
-            #ifdef DEBUG
-            printf("Node %lu RequestPullThread processed edge request against "
+            DEBUG_PRINT("Node %lu RequestPullThread processed edge request against "
               "graph: %s\n", 
               this->nodeId, request.toString().c_str());
-            #endif
 
             //generalLock.unlock();
-            #ifdef DEBUG
-            printf("Node %lu RequestPullThread processed edge request"
+            DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
               ": %s\n", 
               this->nodeId, request.toString().c_str());
-            #endif
 
 
           } else {
-            #ifdef DEBUG
-            printf("Node %lu GraphStore::requestPullFunction received mystery "
+            DEBUG_PRINT("Node %lu GraphStore::requestPullFunction received mystery "
               "message %s\n", getStringFromZmqMessage(message).c_str());
-            #endif
           }
         }
 
@@ -1094,10 +1081,8 @@ GraphStore(  zmq::context_t& _context,
           throw GraphStoreException(message);
         }
         try {
-          #ifdef DEBUG
-          printf("Node %lu GraphStore edge pull function connecting "
+          DEBUG_PRINT("Node %lu GraphStore edge pull function connecting "
             "to %s\n", this->nodeId, url.c_str());
-          #endif
           socket->connect(url);
         } catch (std::exception e) {
           std::string message = "Couldn't connect to url " + url;
@@ -1116,10 +1101,6 @@ GraphStore(  zmq::context_t& _context,
     bool stop = false;
     while (!stop) {
 
-      //std::lock_guard<std::mutex> lock(generalLock);
-      //#ifdef DEBUG
-      //printf("Node %lu edgePullFunction before poll\n", this->nodeId);
-      //#endif
       size_t numStop = 0;
       int rvalue = zmq::poll(pollItems, this->numNodes - 1, 1);
       for (size_t i = 0; i < this->numNodes - 1; i++) {
@@ -1127,18 +1108,14 @@ GraphStore(  zmq::context_t& _context,
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
             
-            #ifdef DEBUG
-            printf("Node %lu GraphStore::edgePullThread received a terminate "
+            DEBUG_PRINT("Node %lu GraphStore::edgePullThread received a terminate "
                    "message from %lu\n",
               this->nodeId, i);
-            #endif
 
             terminate[i] = true;
           } else if (message.size() > 0) {
-            #ifdef DEBUG
-            printf("Node %lu GraphStore::edgePullFunction else\n", 
+            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction else\n", 
               this->nodeId);
-            #endif
 
             // Increment the counter indicating we got another edge by pulling.
             edgePullCounter.fetch_add(1);
@@ -1152,38 +1129,32 @@ GraphStore(  zmq::context_t& _context,
             // Change the string into the expected tuple type.
             TupleType tuple = tuplizer(id, str);
 
-            #ifdef DEBUG
-            printf("Node %lu GraphStore::edgePullFunction received a tuple "
+            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction received a tuple "
               "%s\n", this->nodeId, sam::toString(tuple).c_str());
-            #endif
 
             // Do we need to do this?
             // Add the edge to the graph
             //addEdge(tuple);
 
-            #ifdef DEBUG
-            printf("Node %lu GraphStore::edgePullFunction added edge %s\n",
+            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction added edge %s\n",
               this->nodeId, sam::toString(tuple).c_str());
-            #endif
 
             // Process the new edge over results and see if it satifies
             // queries.  If it does, there may be new edge requests.
             std::list<EdgeRequestType> edgeRequests;
+            resultMapLock.lock();
             resultMap->process(tuple, *csr, *csc, edgeRequests);
+            resultMapLock.unlock();
 
-            #ifdef DEBUG
-            printf("Node %lu GraphStore::edgePullFunction processed edge %s\n",
+            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction processed edge %s\n",
               this->nodeId, sam::toString(tuple).c_str());
-            #endif
 
             // Send out the edge requests to the other nodes.
             processEdgeRequests(edgeRequests);
 
           } else {
-            #ifdef DEBUG
-            printf("Node %lu GraphStore::edgePullFunction received mystery "
+            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction received mystery "
               "message %s\n", getStringFromZmqMessage(message).c_str());
-            #endif
           }
 
         }
@@ -1236,10 +1207,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
 {
-  #ifdef DEBUG
-  printf("Node %lu GraphStore::processRequestAgainstGraph edgeRequest %s\n", 
+  DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph edgeRequest %s\n", 
     nodeId, edgeRequest.toString().c_str());
-  #endif
 
   if (isNull(edgeRequest.getStartTimeFirst()) ||
       isNull(edgeRequest.getStartTimeSecond())) {
@@ -1260,11 +1229,9 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
     // The source is not null, so we look up the edges in the compressed
     // sparse row graph
     
-    #ifdef DEBUG
-    printf("Node %lu GraphStore::processRequestAgainstGraph looking up "
+    DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph looking up "
       " edge request %s against csr because source is not null\n",
       nodeId, edgeRequest.toString().c_str());
-    #endif
 
     csr->findEdges(edgeRequest, foundEdges);
 
@@ -1272,22 +1239,18 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
     // The target is not null, so we look up by the target using the 
     // compressed sparse column graph.  
 
-    #ifdef DEBUG
-    printf("Node %lu GraphStore::processRequestAgainstGraph looking up "
+    DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph looking up "
       " edge request %s against csc because target is not null\n",
       nodeId, edgeRequest.toString().c_str());
-    #endif
 
     csc->findEdges(edgeRequest, foundEdges);
 
   } else if (!isNull(src) && !isNull(trg)) {
     // Doesn't matter which one we look up, so look it up in csr
 
-    #ifdef DEBUG
-    printf("Node %lu GraphStore::processRequestAgainstGraph looking up "
+    DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph looking up "
       " edge request %s against csr because source and target are not null\n",
       nodeId, edgeRequest.toString().c_str());
-    #endif
     
     csr->findEdges(edgeRequest, foundEdges);
   } else {
@@ -1297,10 +1260,8 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
 
   size_t node = edgeRequest.getReturn();
 
-  #ifdef DEBUG
-  printf("Node %lu GraphStore::processRequestAgainstGraph found %lu edges\n",
+  DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph found %lu edges\n",
     nodeId, foundEdges.size());
-  #endif
 
   for (auto edge : foundEdges) {
     SourceType src = std::get<source>(edge);

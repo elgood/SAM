@@ -353,10 +353,17 @@ process(TupleType const& tuple,
 
   mutexes[index].lock();
   size_t count = 0;
+  DEBUG_PRINT("Node %lu EdgeRequestMap::process number of requests to look at %lu "
+    " processing tuple %s\n", nodeId, ale[index].size(), toString(tuple).c_str());
   for(auto edgeRequest = ale[index].begin();
         edgeRequest != ale[index].end();)
   {
+    DEBUG_PRINT("Node %lu EdgeRequestMap::process looking at edgeRequest %s "
+      " processing tuple %s\n", 
+      nodeId, edgeRequest->toString().c_str(), toString(tuple).c_str());
     if (edgeRequest->isExpired(currentTime)) {
+      DEBUG_PRINT("Node %lu EdgeRequestMap::process deleting old edgeRequest %s "
+        "currentTime %f\n", edgeRequest->toString().c_str(), currentTime);
       edgeRequest = ale[index].erase(edgeRequest);
     } else {
 
@@ -376,6 +383,8 @@ process(TupleType const& tuple,
             "EdgeRequestMap::process obtaining termination lock exceeded "
             "tolerance")
           if (!terminated) {
+            DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending %s\n",
+              nodeId, node, toString(tuple).c_str());
             DETAIL_TIMING_BEG2
             edgePushCounter.fetch_add(1);
             #ifdef NOBLOCK 
@@ -383,7 +392,7 @@ process(TupleType const& tuple,
             if (!sent) {
               pushFails.fetch_add(1);
               edgePushCounter.fetch_add(-1);
-              DEBUG_PRINT("NodeId %lu->%lu EdgeRequestMap::process failed to "
+              DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process failed to "
                 "send edge %s\n", nodeId, node, toString(tuple).c_str());
                 
             }

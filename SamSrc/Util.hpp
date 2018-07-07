@@ -620,29 +620,35 @@ void processSingleEdgePartial(
 {
   typedef PartialTriangle<TupleType, source, target, time, duration>
     PartialTriangleType;
+  DEBUG_PRINT("processSingleEdgePartial: processing tuple %s\n", 
+    toString(tuple).c_str());
 
   auto id1 = std::get<0>(partial.netflow1);
   auto id2 = std::get<0>(tuple);
   if (id1 != id2) {
+    DEBUG_PRINT("processSingleEdgePartial: id1 %lu != id2 %lu\n", id1, id2);
 
     auto trg1 = std::get<target>(partial.netflow1);
     auto src2 = std::get<source>(tuple);
     if (trg1 == src2) 
     {
+      DEBUG_PRINT("processSingleEdgePartial: trg1 %s == src2 %s\n",
+        trg1.c_str(), src2.c_str());
       double t1 = std::get<time>(partial.netflow1);
       double t2 = std::get<time>(tuple);
 
       // Inforces strictly increasing times
       if (t1 < t2) 
       {
+        DEBUG_PRINT("processSingleEdgePartial: t1 %f < t2 %f\n", t1, t2);
         double dur = std::get<duration>(tuple);
-        if (t2 + dur - t1 < queryTime) {
+        if (t2 - t1 <= queryTime) {
           PartialTriangleType newPartial;
           newPartial.numEdges = 2;
           newPartial.netflow1 = partial.netflow1;
           newPartial.netflow2 = tuple;  
 
-          DEBUG_PRINT("newpartial %f %s %s, "
+          DEBUG_PRINT("processSingleEdgePartial: newpartial %f %s %s, "
              " %f %s %s\n",
              std::get<time>(newPartial.netflow1),
              std::get<source>(newPartial.netflow1).c_str(),
@@ -701,9 +707,9 @@ void processTwoEdgePartial(
         "%s t3 %f t2 %f t1 %f dur %f queryTime %f"
         "\n", toString(tuple).c_str(), t3, t2, t1, dur, 
         queryTime);
-      if (t3 > t2 && t3 + -t1 <= queryTime) {
+      if (t3 > t2 && t3  -t1 <= queryTime) {
 
-        DEBUG_PRINT("found triangle edge1 %lu %f %s "
+        printf("found triangle edge1 %lu %f %s "
           "%s, edge2 %lu %f %s %s, "
           "edge3 %lu %f %s %s\n", 
           std::get<0>(partial.netflow1),
@@ -779,10 +785,12 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
   size_t tableSize = 10000;
   printf("numTriangles table_size %lu\n", tableSize);
   std::mutex* mutexes = new std::mutex[tableSize];
-  std::vector<PartialTriangleType>* alr = 
-    new std::vector<PartialTriangleType>[tableSize];
+  std::list<PartialTriangleType>* alr = 
+    new std::list<PartialTriangleType>[tableSize];
 
   StringHashFunction hash;
+
+  size_t numProcessed = 0;
 
   for (auto tuple : l) 
   {
@@ -799,6 +807,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     p.numEdges = 1;
     p.netflow1 = tuple;
     // A single edge is a partial triangle 
+    DEBUG_PRINT("Adding to newPartials %s\n", p.toString().c_str());
     newPartials.push_back(p);
    
 
@@ -810,9 +819,14 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
  
     std::string src = std::get<source>(tuple);
     size_t index = hash(src) % tableSize; 
-    
+    DEBUG_PRINT("Looking for src %s index %lu\n", src.c_str(), index);
 
     DEBUG_PRINT("num partialTriangles %lu\n", countPartials(alr, tableSize));
+
+    if (numProcessed % 10000 == 0) {
+      printf("Processed %lu out of %lu\n", numProcessed, l.size());
+    }
+    numProcessed++;
 
     for (auto partial = alr[index].begin(); partial != alr[index].end(); )
     {
@@ -859,6 +873,8 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
             trg = std::get<target>(partial.netflow2);
           }
           size_t index = hash(trg) % tableSize;
+          DEBUG_PRINT("Hashing partial %s based on target %s index %lu\n",
+            partial.toString().c_str(), trg.c_str(), index);
           mutexes[index].lock();
           alr[index].push_back(partial);
           mutexes[index].unlock();
@@ -878,140 +894,6 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
   return numTriangles;
 }
   
-/*    for (size_t t = 0; t < numThreads; t++)  
-    {
-      threads[t] = std::thread([&newPartials, t,
-       numThreads, tuple, queryTime, &lock, &numTriangles,
-       currentTime, &mutexes, &alr, tableSize  ]() 
-      {
-
-        size_t beg = get_begin_index(tableSize, t, numThreads); 
-        size_t end = get_end_index(tableSize, t, numThreads);
-        for (size_t i = beg; i < end; i++) 
-        {
-          mutexes[i].lock();
-          for (auto partial = alr[i].begin(); partial != alr[i].end() ;) 
-          {
-             
-            // Determine if the partial is expired 
-            if (!partial->isExpired(currentTime, queryTime))
-            {
-              lock.lock();
-              newPartials.push_back(partial);
-              lock.unlock();
-              if (partial.numEdges == 1) {
-                auto id1 = std::get<0>(partial.netflow1);
-                auto id2 = std::get<0>(tuple);
-                if (id1 != id2) {
-
-                  auto trg1 = std::get<target>(partial.netflow1);
-                  auto src2 = std::get<source>(tuple);
-                  if (trg1 == src2) 
-                  {
-                    double t1 = std::get<time>(partial.netflow1);
-                    double t2 = std::get<time>(tuple);
-
-                    // Inforces strictly increasing times
-                    if (t1 < t2) 
-                    {
-                      double dur = std::get<duration>(tuple);
-                      if (t2 + dur - t1 < queryTime) {
-                        PartialTriangleType newPartial;
-                        newPartial.numEdges = 2;
-                        newPartial.netflow1 = partial.netflow1;
-                        newPartial.netflow2 = tuple;  
-
-                        DEBUG_PRINT("newpartial %f %s %s, "
-                           " %f %s %s\n",
-                           std::get<time>(newPartial.netflow1),
-                           std::get<source>(newPartial.netflow1).c_str(),
-                           std::get<target>(newPartial.netflow1).c_str(),
-                           std::get<time>(newPartial.netflow2),
-                           std::get<source>(newPartial.netflow2).c_str(),
-                           std::get<target>(newPartial.netflow2).c_str());
-
-                        lock.lock();
-                        newPartials.push_back(newPartial);
-                        lock.unlock();
-                      }
-                    }
-                  }
-                }
-              }
-              else if (partial.numEdges == 2) 
-              {
-                auto id1 = std::get<0>(partial.netflow1);
-                auto id2 = std::get<0>(partial.netflow2);
-                auto id3 = std::get<0>(tuple);
-
-                DEBUG_PRINT("partial has 2 edges, ids of partial id1 %lu id2"
-                  " %lu id3 %lu, tuple under consideration %s\n", 
-                  id1, id2, id3, toString(tuple).c_str());
-
-                //if (id1 != id3 && id2 != id3) {
-                //  DEBUG_PRINT("tuple %s, id1!=id3 id2 != id3\n", 
-                //    toString(tuple).c_str());
-                  auto trg2 = std::get<target>(partial.netflow2);
-                  auto src3 = std::get<source>(tuple);
-                  DEBUG_PRINT("thread %lu seeing if trg2 %s = src3 %s for tuple"
-                    " %s \n", t, trg2.c_str(), src3.c_str(), 
-                    toString(tuple).c_str());
-                    
-                  if (trg2 == src3) {
-                    DEBUG_PRINT("thread %lu trg2 == src3 for tuple %s \n", t,
-                      toString(tuple).c_str());
-                    auto trg3 = std::get<target>(tuple) ;
-                    auto src1 = std::get<source>(partial.netflow1);
-                    if (trg3 == src1) {
-                      DEBUG_PRINT("thread %lu trg3 %s =  src1 %s for tuple %s\n",
-                        t, trg3.c_str(), src1.c_str(), toString(tuple).c_str() ); 
-                      double t1 = std::get<time>(partial.netflow1);
-                      double t2 = std::get<time>(partial.netflow2);
-                      double t3 = std::get<time>(tuple);
-                      double dur = std::get<duration>(tuple);
-
-                      // Inforces strictly increasing times
-                      DEBUG_PRINT("thread %lu checking increasing time tuple "
-                        "%s t3 %f t2 %f t1 %f dur %f queryTime %f"
-                        "\n", t, toString(tuple).c_str(), t3, t2, t1, dur, 
-                        queryTime);
-                      if (t3 > t2 && t3 + dur -t1 <= queryTime) {
-
-                        DEBUG_PRINT("thread %lu found triangle edge1 %lu %f %s "
-                          "%s, edge2 %lu %f %s %s, "
-                          "edge3 %lu %f %s %s\n", t,
-                          std::get<0>(partial.netflow1),
-                          std::get<time>(partial.netflow1),
-                          std::get<source>(partial.netflow1).c_str(),
-                          std::get<target>(partial.netflow1).c_str(),
-                          std::get<0>(partial.netflow2),
-                          std::get<time>(partial.netflow2),
-                          std::get<source>(partial.netflow2).c_str(),
-                          std::get<target>(partial.netflow2).c_str(),
-                          std::get<0>(tuple),
-                          std::get<time>(tuple),
-                          std::get<source>(tuple).c_str(),
-                          std::get<target>(tuple).c_str());
-
-                        numTriangles.fetch_add(1);
-                      }
-                    }
-                }
-             // }
-            }
-          } else {
-            DEBUG_PRINT("tuple %s partial expired %s\n", 
-              toString(tuple).c_str(), partial.toString().c_str());
-          }
-          mutexes[i].unlock();
-          }
-        }
-      });
-    }
-    for(size_t i = 0; i < numThreads; i++) {
-      threads[i].join();
-    }*/
-
 
 
 }

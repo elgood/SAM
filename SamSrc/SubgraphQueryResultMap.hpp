@@ -360,8 +360,8 @@ add(QueryResultType const& result,
       METRICS_INCREMENT(totalResultsCreated)
  
     } else {
-      DEBUG_PRINT("Node %lu Complete query! %s\n", nodeId, 
-        localQueryResult.toString().c_str())
+      printf("Node %lu Complete query! %s\n", nodeId, 
+        localQueryResult.toString().c_str());
       size_t index = numQueryResults.fetch_add(1);
       index = index % resultCapacity;
       queryResults[index] = localQueryResult;     
@@ -423,7 +423,7 @@ add(QueryResultType const& result,
     METRICS_INCREMENT(totalResultsCreated)
 
   } else {
-    DEBUG_PRINT("Node %lu Complete query! %s\n", nodeId, 
+    printf("Node %lu Complete query! %s\n", nodeId, 
       result.toString().c_str());
     size_t index = numQueryResults.fetch_add(1);
     index = index % resultCapacity;
@@ -617,12 +617,6 @@ process(TupleType const& tuple,
   {
     totalWork++;
     if (l->isExpired(currentTime)) {
-      //#ifdef DEBUG
-      //printf("index %lu threadId %lu\n", index, threadId);
-      //printf("Node %lu thread %lu SubgraphQueryResultMap::process "
-      //  "deleting expired result %s\n", nodeId, threadId, 
-      //  l->toString().c_str());
-      //#endif
       l = this->alr[index].erase(l);
       METRICS_INCREMENT(this->totalResultsDeleted)
     } else {
@@ -637,13 +631,15 @@ process(TupleType const& tuple,
           // but a new intermediate result is created.
 
           DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process about to try"
-           " and add tuple\n", nodeId);
+           " and add tuple %s to result %s\n", nodeId, toString(tuple).c_str(), 
+           l->toString().c_str());
           
           std::pair<bool, QueryResultType> p = l->addEdge(tuple);
           if (p.first) {
 
             DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process added "
-                        "edge\n", nodeId);
+                        "tuple %s to result %s\n", nodeId, toString(tuple).c_str(),
+                         l->toString().c_str());
 
             rehash.push_back(p.second);
           }

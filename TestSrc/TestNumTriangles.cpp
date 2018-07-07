@@ -210,3 +210,29 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
 
 }
 
+BOOST_AUTO_TEST_CASE( test_specific_example )
+{
+  /// Testing specific example that failed
+  std::string s1 = "9.8399999999998347,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node153,node111,38633,27283,1,1,1,1,1,1,1,1,1,1";
+  std::string s2 = "19.100000000000186,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node111,node639,48690,30535,1,1,1,1,1,1,1,1,1,1";
+  std::string s3 = "19.680000000000277,parseDate,dateTimeStr,ipLayerProtocol,"
+    "ipLayerProtocolCode,node639,node153,30162,31196,1,1,1,1,1,1,1,1,1,1";
+
+  Netflow n1 = makeNetflow(0, s1);
+  Netflow n2 = makeNetflow(1, s2);
+  Netflow n3 = makeNetflow(2, s3);
+  std::vector<Netflow> netflowList;
+  netflowList.push_back(n1);
+  netflowList.push_back(n2);
+  netflowList.push_back(n3);
+
+  size_t calculatedNumTriangles = 
+    sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
+                      DurationSeconds>(netflowList, 10);
+
+  BOOST_CHECK_EQUAL(1, calculatedNumTriangles); 
+
+}
+
