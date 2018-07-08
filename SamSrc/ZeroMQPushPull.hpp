@@ -163,10 +163,8 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
       // uint32_t class member for hwm.
       pusher->setsockopt(ZMQ_SNDHWM, &this->hwm, sizeof(this->hwm)); 
       try {
-        #ifdef DEBUG
-        printf("Node %lu ZeroMQPushPull binding to %s\n", this->nodeId,
+        DEBUG_PRINT("Node %lu ZeroMQPushPull binding to %s\n", this->nodeId,
           url.c_str());
-        #endif
         pusher->bind(url);
       } catch (std::exception e)
       {

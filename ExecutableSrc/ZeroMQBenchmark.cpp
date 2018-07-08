@@ -1,4 +1,6 @@
 
+//#define DEBUG
+
 #include <zmq.hpp>
 #include <boost/program_options.hpp>
 #include <thread>
@@ -7,18 +9,17 @@
 #include <random>
 #include "Util.hpp"
 
-#define DEBUG
 
 namespace po = boost::program_options;
 using namespace sam;
 
 int main(int argc, char** argv) {
  
-  printf("blah1\n");
+  auto totalTimingBegin = std::chrono::high_resolution_clock::now();
 
   /// The zmq context
   zmq::context_t* context = new zmq::context_t(1);
-  printf("blah2\n");
+
   size_t receivedMessages = 0;
 
   /// A vector of all the push sockets
@@ -27,14 +28,13 @@ int main(int argc, char** argv) {
   /// Parameters
   size_t numNodes; ///> The number of nodes in the cluster
   size_t nodeId; ///> The node id of this node
-  size_t hwm; ///> The high-water mark (Zeromq parameter)
+  uint32_t hwm; ///> The high-water mark (Zeromq parameter)
   size_t messageSize; ///> Size of the body for each message
   size_t numMessages; ///> Number of messages to send
   size_t startingPort; ///> The starting port number for push/pull sockets
   std::string prefix; ///> The prefix to the nodes
-  size_t numPushThreads; ///> Number of push threads
+  //size_t numPushThreads; ///> Number of push threads
   size_t numPullThreads; ///> Number of pull threads
-  size_t numPushSockets; ///> Number of push sockets
 
   po::options_description desc("Benchmark to see what the throughput is "
     "for ZeroMQ");
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
       "The number of nodes involved in the computation (default: 1).")
     ("nodeId", po::value<size_t>(&nodeId)->default_value(0), 
       "The node id of this node (default: 0).")
-    ("hwm", po::value<size_t>(&hwm)->default_value(10000), 
+    ("hwm", po::value<uint32_t>(&hwm)->default_value(10000), 
       "The high water mark (how many items can queue up before we start "
       "dropping)")
     ("messageSize", po::value<size_t>(&messageSize)->default_value(1),
@@ -56,15 +56,12 @@ int main(int argc, char** argv) {
       "used when there is only one node).")
     ("numMessages", po::value<size_t>(&numMessages)->default_value(
       10000), "The number of messages to send")
-    ("numPushThreads", po::value<size_t>(&numPushThreads)->default_value(1),
-      "The number of threads that are pushing data")
+    //("numPushThreads", po::value<size_t>(&numPushThreads)->default_value(1),
+    //  "The number of threads that are pushing data")
     ("numPullThreads", po::value<size_t>(&numPullThreads)->default_value(1),
       "The number of threads that are pulling data")
-    ("numPushSockets", po::value<size_t>(&numPushSockets)->default_value(1),
-      "The number of sockets that are pushing data")
   ;
 
-  printf("blah3\n");
   // Parse the command line variables
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -89,37 +86,45 @@ int main(int argc, char** argv) {
       hostnames[i] = prefix + boost::lexical_cast<std::string>(i);
     }
   }
-  printf("blah4\n");
 
-  size_t totalNumPushSockets = (numNodes - 1) * numPushSockets; 
+  //size_t numPushSockets = numPushThreads;
+  //size_t totalNumPushSockets = (numNodes - 1) * numPushSockets; 
+  size_t totalNumPushSockets = (numNodes - 1); 
   DEBUG_PRINT("Total number of push sockets %lu\n", totalNumPushSockets);
 
-  for (size_t i = 0; i < totalNumPushSockets; i++) 
+  /*for (size_t i = 0; i < totalNumPushSockets; i++) 
   {
 
     printf("i %lu\n", i);
     /////////// Adding push sockets //////////////
+    auto pusher = std::shared_ptr<zmq::socket_t>(
+                   new zmq::socket_t(*context, ZMQ_PUSH));
+    printf("blah5 %lu\n", nodeId);
+    std::string hostname = prefix + 
+      boost::lexical_cast<std::string>(nodeId);
+    std::string ip = getIpString(hostname);
+    std::string url = "tcp://" + ip + ":";
+    url = url + boost::lexical_cast<std::string>(startingPort + i);
+    printf("Node %lu binding to %s\n", nodeId, url.c_str());
+
+    // The function complains if you use std::size_t, so be sure to use the
+    // uint32_t class member for hwm.
+    pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
     try {
-      auto pusher = std::shared_ptr<zmq::socket_t>(
-                    new zmq::socket_t(*context, ZMQ_PUSH));
-      std::string hostname;
-      std::string url = "tcp://*:";
-      url = url + boost::lexical_cast<std::string>(startingPort + i);
-      DEBUG_PRINT("Node %lu binding to %s\n", nodeId, url.c_str());
-
-      // The function complains if you use std::size_t, so be sure to use the
-      // uint32_t class member for hwm.
-      pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
       pusher->bind(url);
-      pushers[i] = pusher;
-
     } catch (std::exception e) {
-      printf("%s\n", e.what());
+      std::string message = "Node " +
+        boost::lexical_cast<std::string>(nodeId) +
+        " couldn't bind to url " + url + ": " + e.what();
+      throw std::runtime_error(message);
     }
+    printf("blah5.5 %lu\n", nodeId);
+    pushers.push_back(pusher);
 
-  }
 
+  }*/
 
+  std::atomic<size_t> messagesReceived(0);
 
   /**
    * This is the function executed by the pull thread.  The pull
@@ -127,13 +132,14 @@ int main(int argc, char** argv) {
    * receiving data.
    */
   auto pullFunction = [numNodes, nodeId, hostnames, &receivedMessages,
-    &context, hwm, startingPort, numPushSockets, numPullThreads]
+    &context, hwm, startingPort, numPullThreads, &messagesReceived]
     (size_t threadId) 
   {
-
-    size_t beg = get_begin_index(numPushSockets * (numNodes - 1), threadId, 
+    DEBUG_PRINT("Node %lu in pullFunction numNodes %lu threadId %lu"
+      " numPullThreads %lu\n", nodeId, numNodes, threadId, numPullThreads);
+    size_t beg = get_begin_index((numNodes - 1), threadId, 
                                  numPullThreads);
-    size_t end = get_begin_index(numPushSockets * (numNodes - 1), threadId, 
+    size_t end = get_end_index((numNodes - 1), threadId, 
                                  numPullThreads);
 
     size_t numVisiblePushSockets = end - beg;
@@ -147,17 +153,22 @@ int main(int argc, char** argv) {
     // When a node sends a terminate flag, the corresponding entry is 
     // turned to true.  When all flags are true, the thread terminates.
     bool terminate[numVisiblePushSockets];
+    DEBUG_PRINT("numVisiblePushSockets %lu\n", numVisiblePushSockets);
 
+    DEBUG_PRINT("beg %lu end %lu\n", beg, end);
     int numAdded = 0;
-    for(int i = beg; i < end; i++) {
+    for(size_t i = beg; i < end; i++) {
+      DEBUG_PRINT("Node %lu i %lu beg %lu end %lu\n", nodeId, i, beg, end);
       // Creating the zmq pull socket.
-      std::string hostname = getHostnameForPull(i, nodeId, numPushSockets, 
+      std::string hostname = getHostnameForPull(i, nodeId, 1, 
                                                 numNodes, hostnames);
-      size_t port = getPortForPull(i, nodeId, numPushSockets,
+      size_t port = getPortForPull(i, nodeId, 1,
                                    numNodes, startingPort);
       zmq::socket_t* socket = new zmq::socket_t(*context, ZMQ_PULL);
       std::string url = "";
-      url = "tcp://" + hostname + ":";
+      std::string ip = getIpString(hostname);
+      
+      url = "tcp://" + ip + ":";
       url = url + boost::lexical_cast<std::string>(port);
       
       socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
@@ -180,7 +191,7 @@ int main(int argc, char** argv) {
       zmq::message_t message;
       int rValue = zmq::poll(pollItems, numNodes -1, 1);
       int numStop = 0;
-      for (size_t i = 0; i < numNodes -1; i++) {
+      for (size_t i = 0; i < numVisiblePushSockets; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
 
           sockets[i]->recv(&message);
@@ -190,12 +201,13 @@ int main(int argc, char** argv) {
             terminate[i] = true;
           } else if (message.size() > 0) {
             receivedMessages++;
-            DEBUG_PRINT("Node %lu pullThread received tuple "
-              "%s\n", nodeId, sam::toString(tuple).c_str());
+            DEBUG_PRINT("Node %lu pullThread received message of size %lu "
+              "from %lu\n", nodeId, message.size(), i);
             
           } else {
             DEBUG_PRINT("Node %lu pullThread received mystery"
-              " message %s\n", getStringFromZmqMessage(message).c_str());
+              " message %s\n", nodeId, 
+              getStringFromZmqMessage(message).c_str());
           }
         }
         if (terminate[i]) numStop++; 
@@ -206,6 +218,9 @@ int main(int argc, char** argv) {
     for (auto socket : sockets) {
       delete socket;
     }
+
+    messagesReceived.fetch_add(receivedMessages);
+
     DEBUG_PRINT("Node %lu exiting pullThread\n", nodeId);
   };
 
@@ -221,38 +236,80 @@ int main(int argc, char** argv) {
   }
   
   std::vector<std::thread> pushThreads;
-  
+  pushThreads.resize(totalNumPushSockets);
 
-  for(size_t i = 0; i < numPushThreads; i++) {
+  auto timingBegin = std::chrono::high_resolution_clock::now();  
+  DEBUG_PRINT("node %lu sending %lu messages\n", nodeId, numMessages);
+  for(size_t threadId = 0; threadId < totalNumPushSockets; threadId++) {
 
-    pushThreads.push_back(std::thread( 
-     [nodeId, i, totalNumPushSockets, numMessages, &pushers,
-      message]() 
+    pushThreads[threadId] = std::thread( 
+     [nodeId, threadId, totalNumPushSockets, numMessages, &pushers,
+      message, prefix, context, startingPort, hwm]() 
     { 
-      
-      auto seed = nodeId * i *
-        std::chrono::high_resolution_clock::now().time_since_epoch().count();
-      std::mt19937 mt_rand(seed);
-      std::uniform_int_distribution<size_t> dist(0, totalNumPushSockets - 1);
-      for(size_t i = 0; i < numMessages; i++) {
-        size_t node1 = dist(mt_rand);
-        pushers[node1]->send(fillZmqMessage(message));
-      }
-    }));
-  }
 
-  for(size_t i = 0; i < numPushThreads; i++) {
-    if (i != nodeId) {
-      pushThreads[i].join();
-    }
+      auto pusher = std::shared_ptr<zmq::socket_t>(
+                     new zmq::socket_t(*context, ZMQ_PUSH));
+      std::string hostname = prefix + 
+        boost::lexical_cast<std::string>(nodeId);
+      std::string ip = getIpString(hostname);
+      std::string url = "tcp://" + ip + ":";
+      url = url + boost::lexical_cast<std::string>(startingPort + threadId);
+      DEBUG_PRINT("Node %lu binding to %s\n", nodeId, url.c_str());
+
+      // The function complains if you use std::size_t, so be sure to use the
+      // uint32_t class member for hwm.
+      pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
+      try {
+        pusher->bind(url);
+      } catch (std::exception e) {
+        std::string message = "Node " +
+          boost::lexical_cast<std::string>(nodeId) +
+          " couldn't bind to url " + url + ": " + e.what();
+        throw std::runtime_error(message);
+      }
+      DEBUG_PRINT("blah5.5 %lu\n", nodeId);
+
+
+      
+      //auto seed = nodeId * threadId *
+      //  std::chrono::high_resolution_clock::now().time_since_epoch().count();
+      //std::mt19937 mt_rand(seed);
+      //std::uniform_int_distribution<size_t> dist(0, totalNumPushSockets - 1);
+      for(size_t i = 0; i < numMessages; i++) {
+        //size_t node1 = dist(mt_rand);
+        DEBUG_PRINT("Node %lu thread id %lu sending message %lu to socket"
+          " %lu\n", nodeId, threadId, i, threadId);
+        pusher->send(fillZmqMessage(message));
+      }
+
+      DEBUG_PRINT("Node %lu thread %lu sending terminate message\n",
+        nodeId, threadId);
+      zmq::message_t message = terminateZmqMessage();
+      pusher->send(message);
+    });
   }
 
   for(size_t i = 0; i < totalNumPushSockets; i++) {
-    zmq::message_t message = terminateZmqMessage();
-    pushers[i]->send(message);
+    pushThreads[i].join();
   }
+  auto timingEnd = std::chrono::high_resolution_clock::now();
 
   for (size_t i = 0; i < numPullThreads; i++) {
     pullThreads[i].join();
   }
+  auto totalTimingEnd = std::chrono::high_resolution_clock::now();
+  auto pushTimingDiff = std::chrono::duration_cast<
+    std::chrono::duration<double>>(timingEnd - timingBegin);
+  auto totalTimingDiff = std::chrono::duration_cast<
+    std::chrono::duration<double>>(totalTimingEnd - totalTimingBegin); 
+  double sendMessageTime = pushTimingDiff.count();
+  double totalTime = totalTimingDiff.count();
+  size_t totalMessages = numMessages * totalNumPushSockets;
+  printf("Node %lu Time to send messages: %f total time: %f "
+    "messages received/expected %lu / %lu "
+    "messages per second %f %f\n", nodeId, sendMessageTime, totalTime,
+    totalMessages, messagesReceived.load(), 
+    totalMessages / sendMessageTime, totalMessages/totalTime);
+
+  delete context;      
 }

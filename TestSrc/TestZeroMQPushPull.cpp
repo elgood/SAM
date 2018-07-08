@@ -1,4 +1,7 @@
 #define BOOST_TEST_MAIN TestZeroMQPushPull
+
+#define DEBUG
+
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include <string>

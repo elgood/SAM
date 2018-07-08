@@ -354,7 +354,6 @@ inline
 size_t get_end_index(size_t num_elements, size_t stream_id, 
                        size_t num_streams)
 {
-
   return (stream_id + 1 < num_streams) ?
     static_cast<size_t>((static_cast<double>(num_elements) / num_streams) *
                        (stream_id + 1)) :

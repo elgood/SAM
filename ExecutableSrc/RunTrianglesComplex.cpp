@@ -7,7 +7,7 @@
  *      Author: elgood
  */
 
-//#define DEBUG
+#define DEBUG
 //#define TIMING
 //#define DETAIL_TIMING
 //#define METRICS
