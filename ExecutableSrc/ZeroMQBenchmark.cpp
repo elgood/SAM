@@ -259,15 +259,26 @@ int main(int argc, char** argv) {
       // The function complains if you use std::size_t, so be sure to use the
       // uint32_t class member for hwm.
       pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
-      try {
-        pusher->bind(url);
-      } catch (std::exception e) {
-        std::string message = "Node " +
-          boost::lexical_cast<std::string>(nodeId) +
-          " couldn't bind to url " + url + ": " + e.what();
-        throw std::runtime_error(message);
+
+      bool success = false;
+      size_t numTries = 0;
+      size_t maxNumTries = 100;
+      while (!success) {
+        try {
+          pusher->bind(url);
+          success = true;
+        } catch (std::exception e) {
+          std::string message = "Node " +
+            boost::lexical_cast<std::string>(nodeId) +
+            " couldn't bind to url " + url + ": " + e.what();
+          printf("Couldn't connect to %s, trying again\n", url.c_str());
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          numTries++;
+          if (numTries > maxNumTries) {
+            throw std::runtime_error(message);
+          }
+        }
       }
-      DEBUG_PRINT("blah5.5 %lu\n", nodeId);
 
 
       
