@@ -134,6 +134,7 @@ int main(int argc, char** argv) {
   }*/
 
   std::atomic<size_t> messagesReceived(0);
+  std::mutex zmqLock;
 
   /**
    * This is the function executed by the pull thread.  The pull
@@ -141,7 +142,7 @@ int main(int argc, char** argv) {
    * receiving data.
    */
   auto pullFunction = [numNodes, nodeId, hostnames, &receivedMessages,
-    &context, hwm, startingPort, numPullThreads, &messagesReceived]
+    &context, hwm, startingPort, numPullThreads, &messagesReceived, &zmqLock]
     (size_t threadId) 
   {
     DEBUG_PRINT("Node %lu in pullFunction numNodes %lu threadId %lu"
@@ -151,6 +152,7 @@ int main(int argc, char** argv) {
     size_t end = get_end_index((numNodes - 1), threadId, 
                                  numPullThreads);
 
+    zmqLock.lock();
     size_t numVisiblePushSockets = end - beg;
     // All sockets passed to zmq_poll() function must belong to the same
     // thread calling zmq_poll().  Below we create the poll items and the
@@ -182,7 +184,14 @@ int main(int argc, char** argv) {
       
       socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
       DEBUG_PRINT("Node %lu connecting to %s\n", nodeId, url.c_str());
-      socket->connect(url);
+      try {
+        socket->connect(url);
+      } catch (std::exception e) {
+        std::string message = "Node " +
+          boost::lexical_cast<std::string>(nodeId) +
+          " couldn't connect to url " + url + ": " + e.what();
+        throw std::runtime_error(message);
+      }
       sockets.push_back(socket);
 
       pollItems[numAdded].socket = *socket;
@@ -191,6 +200,8 @@ int main(int argc, char** argv) {
       numAdded++;
     }
 
+    zmqLock.unlock();
+
     // Now we get the data from all the pull sockets through the zmq
     // poll mechanism.
 
@@ -198,7 +209,7 @@ int main(int argc, char** argv) {
   
     while (!stop) {
       zmq::message_t message;
-      int rValue = zmq::poll(pollItems, numNodes -1, 1);
+      int rValue = zmq::poll(pollItems, numVisiblePushSockets, 1);
       int numStop = 0;
       for (size_t i = 0; i < numVisiblePushSockets; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
@@ -252,15 +263,17 @@ int main(int argc, char** argv) {
   std::vector<std::thread> pushThreads;
   pushThreads.resize(totalNumPushSockets);
 
+
   auto timingBegin = std::chrono::high_resolution_clock::now();  
   DEBUG_PRINT("node %lu sending %lu messages\n", nodeId, numMessages);
   for(size_t threadId = 0; threadId < totalNumPushSockets; threadId++) {
 
     pushThreads[threadId] = std::thread( 
      [nodeId, threadId, totalNumPushSockets, numMessages, &pushers,
-      message, prefix, context, startingPort, hwm]() 
+      message, prefix, context, startingPort, hwm, &zmqLock]() 
     { 
 
+      zmqLock.lock();
       auto pusher = std::shared_ptr<zmq::socket_t>(
                      new zmq::socket_t(*context, ZMQ_PUSH));
       std::string hostname = prefix + 
@@ -276,23 +289,16 @@ int main(int argc, char** argv) {
 
       bool success = false;
       size_t numTries = 0;
-      size_t maxNumTries = 100;
-      while (!success) {
-        try {
-          pusher->bind(url);
-          success = true;
-        } catch (std::exception e) {
-          std::string message = "Node " +
-            boost::lexical_cast<std::string>(nodeId) +
-            " couldn't bind to url " + url + ": " + e.what();
-          printf("Couldn't connect to %s, trying again\n", url.c_str());
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          numTries++;
-          if (numTries > maxNumTries) {
-            throw std::runtime_error(message);
-          }
-        }
+      size_t maxNumTries = 1;
+      try {
+        pusher->bind(url);
+      } catch (std::exception e) {
+        std::string message = "Node " +
+          boost::lexical_cast<std::string>(nodeId) +
+          " couldn't bind to url " + url + ": " + e.what();
+        throw std::runtime_error(message);
       }
+      zmqLock.unlock();
 
 
       
