@@ -35,6 +35,13 @@ int main(int argc, char** argv) {
   std::string prefix; ///> The prefix to the nodes
   //size_t numPushThreads; ///> Number of push threads
   size_t numPullThreads; ///> Number of pull threads
+  bool useNetflowString = false;
+
+  /// An example netflow string.  This is used as the message 
+  /// when --netflowString is selected.
+  std::string netflowString = "1,1,1365582756.384094,2013-04-10 08:32:36,"
+                         "20130410083236.384094,17,UDP,172.20.2.18,"
+                         "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
 
   po::options_description desc("Benchmark to see what the throughput is "
     "for ZeroMQ");
@@ -60,6 +67,8 @@ int main(int argc, char** argv) {
     //  "The number of threads that are pushing data")
     ("numPullThreads", po::value<size_t>(&numPullThreads)->default_value(1),
       "The number of threads that are pulling data")
+    ("netflowString", po::bool_switch(&useNetflowString),
+      "If specified, uses an example netflow string for the message")
   ;
 
   // Parse the command line variables
@@ -231,8 +240,13 @@ int main(int argc, char** argv) {
 
   // Make a message of the specified size
   std::string message;
-  for(size_t i = 0; i < messageSize; i++) {
-    message = message + "a";
+
+  if (!useNetflowString) {
+    for(size_t i = 0; i < messageSize; i++) {
+      message = message + "a";
+    }
+  } else {
+    message = netflowString;
   }
   
   std::vector<std::thread> pushThreads;
