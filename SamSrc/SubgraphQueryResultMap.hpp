@@ -638,8 +638,8 @@ process(TupleType const& tuple,
           if (p.first) {
 
             DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process added "
-                        "tuple %s to result %s\n", nodeId, toString(tuple).c_str(),
-                         l->toString().c_str());
+              "tuple %s to result %s\n", nodeId, toString(tuple).c_str(),
+              l->toString().c_str());
 
             rehash.push_back(p.second);
           }

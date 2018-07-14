@@ -640,11 +640,11 @@ addEdge(TupleType const& edge)
 
     seenEdges.insert(edgeKey);
 
-    DEBUG_PRINT("SubgraphQueryResult::addEdge trying to add edge %s to result %s\n",
-      sam::toString(edge).c_str(), toString().c_str());
+    DEBUG_PRINT("SubgraphQueryResult::addEdge trying to add edge %s to result"
+      " %s\n", sam::toString(edge).c_str(), toString().c_str());
       
     if (currentEdge >= numEdges) {
-      std::string message = "SubgraphQueryResult::addEdge Tried to add an edge " 
+      std::string message = "SubgraphQueryResult::addEdge Tried to add an edge "
         "but the query has already been satisfied, i.e. currentEdge(" + 
         boost::lexical_cast<std::string>(currentEdge) +
         ") >= numEdges (" + boost::lexical_cast<std::string>(numEdges) + ")";
@@ -670,8 +670,8 @@ addEdge(TupleType const& edge)
 
     if (!edgeDescription.satisfies(edge, this->startTime)) {
 
-      DEBUG_PRINT("SubgraphQueryResult::addEdge this tuple %s did not satisfy this"
-        " edgeDescription %s\n", sam::toString(edge).c_str(), 
+      DEBUG_PRINT("SubgraphQueryResult::addEdge this tuple %s did not satisfy"
+        " this edgeDescription %s\n", sam::toString(edge).c_str(), 
         edgeDescription.toString().c_str());
 
       return std::pair<bool, SubgraphQueryResultType>(false, 
@@ -725,12 +725,10 @@ addEdge(TupleType const& edge)
         newResult.var2BoundValue[src] = edgeSource;
           
       } else {
-        #ifdef DEBUG
-        printf("SubgraphQueryResult::addEdge: edgeTarget %s "
+        DEBUG_PRINT("SubgraphQueryResult::addEdge: edgeTarget %s "
           " did not match var2BoundValue.at(trg) %s for tuple %s\n", 
           edgeTarget.c_str(), var2BoundValue.at(trg).c_str(),
           sam::toString(edge).c_str());
-        #endif
 
         return std::pair<bool, SubgraphQueryResultType>(false, 
           SubgraphQueryResultType());
@@ -738,7 +736,6 @@ addEdge(TupleType const& edge)
     } else if (var2BoundValue.count(src) == 0 &&
                var2BoundValue.count(trg) == 0)
     { 
-      //std::cout << "blah both 0 " << std::endl;
       newResult.var2BoundValue[src] = std::get<source>(edge);
       newResult.var2BoundValue[trg] = std::get<target>(edge);
     } else {
@@ -749,14 +746,12 @@ addEdge(TupleType const& edge)
       if (edgeTarget != var2BoundValue.at(trg) ||
           edgeSource != var2BoundValue.at(src))
       {
-        #ifdef DEBUG
-        printf("SubgraphQueryResult::addEdge: edgeTarget %s "
+        DEBUG_PRINT("SubgraphQueryResult::addEdge: edgeTarget %s "
           " did not match var2BoundValue.at(trg) %s or edgeSource %s "
           " dis not match var2BoundValue.at(src) %s for tuple %s\n", 
           edgeTarget.c_str(), var2BoundValue.at(trg).c_str(),
           edgeSource.c_str(), var2BoundValue.at(src).c_str(),
           sam::toString(edge).c_str());
-        #endif
 
 
 
@@ -769,16 +764,14 @@ addEdge(TupleType const& edge)
     newResult.resultEdges.push_back(edge);
     newResult.currentEdge++;
 
-    DEBUG_PRINT("SubgraphQueryResult::addEdge: Added edge %s, update query: %s\n",
-      sam::toString(edge).c_str(), newResult.toString().c_str());
+    DEBUG_PRINT("SubgraphQueryResult::addEdge: Added edge %s, update query:"
+      " %s\n", sam::toString(edge).c_str(), newResult.toString().c_str());
 
     return std::pair<bool, SubgraphQueryResultType>(true, newResult);
   } else {
-    #ifdef DEBUG
-    printf("SubgraphQueryResult::addEdge: Did not add edge %s to query %s"
+    DEBUG_PRINT("SubgraphQueryResult::addEdge: Did not add edge %s to query %s"
       " because the edge had already been seen before.\n", 
       sam::toString(edge).c_str(), toString().c_str());
-    #endif
     return std::pair<bool, SubgraphQueryResultType>(false, 
       SubgraphQueryResultType());
   }

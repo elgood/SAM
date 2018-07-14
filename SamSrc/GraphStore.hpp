@@ -468,8 +468,8 @@ checkSubgraphQueries(TupleType const& tuple,
       }
     } else {
       DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries tuple %s"
-        " didn't satisfy query %s\n", sam::toString(tuple).c_str(), 
-        query.toString().c_str());
+        " didn't satisfy query %s\n", this->nodeId, 
+        sam::toString(tuple).c_str(), query.toString().c_str());
     }
   }
   #ifdef DEBUG
@@ -1013,8 +1013,8 @@ GraphStore(  zmq::context_t& _context,
               this->nodeId, request.toString().c_str());
 
             processRequestAgainstGraph(request);
-            DEBUG_PRINT("Node %lu RequestPullThread processed edge request against "
-              "graph: %s\n", 
+            DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
+              " against graph: %s\n", 
               this->nodeId, request.toString().c_str());
 
             //generalLock.unlock();
@@ -1024,8 +1024,9 @@ GraphStore(  zmq::context_t& _context,
 
 
           } else {
-            DEBUG_PRINT("Node %lu GraphStore::requestPullFunction received mystery "
-              "message %s\n", getStringFromZmqMessage(message).c_str());
+            DEBUG_PRINT("Node %lu GraphStore::requestPullFunction received"
+              " mystery message %s\n", this->nodeId,
+              getStringFromZmqMessage(message).c_str());
           }
         }
 
@@ -1146,15 +1147,16 @@ GraphStore(  zmq::context_t& _context,
             resultMap->process(tuple, *csr, *csc, edgeRequests);
             resultMapLock.unlock();
 
-            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction processed edge %s\n",
-              this->nodeId, sam::toString(tuple).c_str());
+            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction processed"
+              " edge %s\n", this->nodeId, sam::toString(tuple).c_str());
 
             // Send out the edge requests to the other nodes.
             processEdgeRequests(edgeRequests);
 
           } else {
-            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction received mystery "
-              "message %s\n", getStringFromZmqMessage(message).c_str());
+            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction received"
+              " mystery message %s\n", this->nodeId, 
+              getStringFromZmqMessage(message).c_str());
           }
 
         }

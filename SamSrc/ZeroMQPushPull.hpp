@@ -267,7 +267,8 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
             this->parallelFeed(tuple);
           } else {
             DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received mystery"
-              " message %s\n", getStringFromZmqMessage(message).c_str());
+              " message %s\n", 
+              nodeId, getStringFromZmqMessage(message).c_str());
           }
         }
         if (terminate[i]) numStop++; 

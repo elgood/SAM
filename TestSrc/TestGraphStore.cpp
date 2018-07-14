@@ -11,6 +11,7 @@
 #include <zmq.hpp>
 
 using namespace sam;
+using namespace std::chrono;
 
 zmq::context_t context(1);
 
@@ -23,7 +24,6 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 typedef GraphStoreType::EdgeRequestType EdgeRequestType;
 
 typedef GraphStoreType::QueryType SubgraphQueryType;
-
 
 BOOST_AUTO_TEST_CASE( test_graph_store )
 {
@@ -118,6 +118,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   delete graphStore0;
   delete graphStore1;
 }
+
 
 struct SingleNodeFixture  {
 
@@ -267,7 +268,6 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
   TimeEdgeExpression startTimeExpressionE2(starttimeFunction, e2,
                                            greater_edge_operator, 0);
  
-
   query.addExpression(*startY2Xboth);
   query.addExpression(*startZ2Xbeg);
   query.addExpression(*y2x);
@@ -278,13 +278,37 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
 
   size_t numExtra = 1000;
 
-  size_t n = 3;
+  double rate = 1000;
+  double increment = 1 / rate;
+  double time = 0.0;
+
+  auto t1 = std::chrono::high_resolution_clock::now();
+  
+  size_t n = 111;
   for(size_t i = 0; i < n; i++) 
   {
-    std::string str = generator->generate();
+    auto currenttime = std::chrono::high_resolution_clock::now();
+    duration<double> diff = duration_cast<duration<double>>(currenttime - t1);
+    if (diff.count() < i * increment) {
+      size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+      std::this_thread::sleep_for(
+        std::chrono::milliseconds(numMilliseconds));
+    } 
+
+    std::string str = generator->generate(time);
+    Netflow netflow = makeNetflow(i, str);
+    graphStore0->consume(netflow);
+    time += increment;
+  }
+
+  RandomGenerator randomGenerator;
+  for(size_t i = 0; i < numExtra; i++) 
+  {
+    std::string str = randomGenerator.generate();
     Netflow netflow = makeNetflow(i, str);
     graphStore0->consume(netflow);
   }
+
   graphStore0->terminate();
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), (n-1)*(n)/2);

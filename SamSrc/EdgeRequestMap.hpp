@@ -214,7 +214,7 @@ EdgeRequestMap(
       
       size_t node = edgeRequest.getReturn();
       DEBUG_PRINT("Node %lu EdgeRequestMap::targetCheckFunction "
-        "sourceHash(src) mod numNodes  %lu node %lu\n", 
+        "sourceHash(src) mod numNodes  %llu node %lu\n", 
         this->nodeId, sourceHash(src) % this->numNodes, node);
       // TODO: Partition info
       if (this->sourceHash(src) % this->numNodes != node) {
@@ -362,8 +362,9 @@ process(TupleType const& tuple,
       " processing tuple %s\n", 
       nodeId, edgeRequest->toString().c_str(), toString(tuple).c_str());
     if (edgeRequest->isExpired(currentTime)) {
-      DEBUG_PRINT("Node %lu EdgeRequestMap::process deleting old edgeRequest %s "
-        "currentTime %f\n", edgeRequest->toString().c_str(), currentTime);
+      DEBUG_PRINT("Node %lu EdgeRequestMap::process deleting old edgeRequest"
+        " %s currentTime %f\n", nodeId, edgeRequest->toString().c_str(), 
+        currentTime);
       edgeRequest = ale[index].erase(edgeRequest);
     } else {
 
