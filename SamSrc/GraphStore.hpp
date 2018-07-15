@@ -267,7 +267,7 @@ public:
    * edge request map.
    */
   size_t getTotalEdgePushes() {
-    return edgePushCounter;
+    return edgePushCounter + edgeRequestMap->getTotalEdgePushes();
   }
 
   /**

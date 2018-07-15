@@ -348,10 +348,10 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   size_t totalEdgePushes0 = graphStore0->getTotalEdgePushes();
   size_t totalEdgePushes1 = graphStore1->getTotalEdgePushes();
   
-  //printf("TotalEdgePushes0 %lu\n", totalEdgePushes0);
-  //printf("TotalEdgePushes1 %lu\n", totalEdgePushes1);
-  //printf("TotalEdgePulls0 %lu\n", totalEdgePulls0);
-  //printf("TotalEdgePulls1 %lu\n", totalEdgePulls1);
+  printf("TotalEdgePushes0 %lu\n", totalEdgePushes0);
+  printf("TotalEdgePushes1 %lu\n", totalEdgePushes1);
+  printf("TotalEdgePulls0 %lu\n", totalEdgePulls0);
+  printf("TotalEdgePulls1 %lu\n", totalEdgePulls1);
   BOOST_CHECK_EQUAL(totalEdgePulls0, totalEdgePushes1);
   BOOST_CHECK_EQUAL(totalEdgePulls1, totalEdgePushes0);
 
@@ -360,10 +360,10 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   size_t totalRequestPushes0 = graphStore0->getTotalRequestPushes();
   size_t totalRequestPushes1 = graphStore1->getTotalRequestPushes();
   
-  //printf("TotalRequestPushes0 %lu\n", totalRequestPushes0);
-  //printf("TotalRequestPushes1 %lu\n", totalRequestPushes1);
-  //printf("TotalRequestPulls0 %lu\n", totalRequestPulls0);
-  //printf("TotalRequestPulls1 %lu\n", totalRequestPulls1);
+  printf("TotalRequestPushes0 %lu\n", totalRequestPushes0);
+  printf("TotalRequestPushes1 %lu\n", totalRequestPushes1);
+  printf("TotalRequestPulls0 %lu\n", totalRequestPulls0);
+  printf("TotalRequestPulls1 %lu\n", totalRequestPulls1);
   BOOST_CHECK_EQUAL(totalRequestPulls0, totalRequestPushes1);
   BOOST_CHECK_EQUAL(totalRequestPulls1, totalRequestPushes0);
 
