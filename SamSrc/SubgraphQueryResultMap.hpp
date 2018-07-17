@@ -332,10 +332,10 @@ add(QueryResultType const& result,
       for(auto request : edgeRequests) {
         requestString += request.toString() + "\n";
       }
-      DEBUG_PRINT("Node %lu SubgraphQueryResultMap::add result %s "
-        "edgeRequests.size() %lu edge requests %s\n", nodeId, 
-        localQueryResult.toString().c_str(), edgeRequests.size(), 
-        requestString.c_str())
+      //DEBUG_PRINT("Node %lu SubgraphQueryResultMap::add result %s "
+      //  "edgeRequests.size() %lu edge requests %s\n", nodeId, 
+      //  localQueryResult.toString().c_str(), edgeRequests.size(), 
+      //  requestString.c_str())
 
       // Determine which thread has the least amount of work and give it
       // to that one.

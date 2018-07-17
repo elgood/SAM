@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestSubgraphQueryResultMap
 
-#define DEBUG
+//#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include "Util.hpp"
@@ -12,6 +12,7 @@
 
 
 using namespace sam;
+using namespace std::chrono;
 
 typedef SubgraphQueryResultMap<Netflow, SourceIp, DestIp,
   TimeSeconds, DurationSeconds, StringHashFunction, StringHashFunction,
@@ -66,7 +67,7 @@ struct F {
 
 };
 
-/*
+
 ///
 /// In this test the query is simply an edge such that every edge
 /// matches.
@@ -100,8 +101,8 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), n);
  
 }
-*/
-/*
+
+
 ///
 /// In this test the query is simply an edge such but the time constraints
 /// make so that nothing matches.
@@ -144,7 +145,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), 0);
  
 }
-*/
+
 ///
 /// In this test the query is two connected edges.
 ///
@@ -170,10 +171,27 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
   query.finalize();
 
   std::list<EdgeRequestType> edgeRequests;
-  size_t n = 10;
+  size_t n = 50;
+
+  double rate = 1000;
+  double increment = 1 / rate;
+  double time = 0.0;
+
+  auto t1 = std::chrono::high_resolution_clock::now();
+
   for(size_t i = 0; i < n; i++) 
   {
-    std::string str = generator->generate();
+    auto currenttime = std::chrono::high_resolution_clock::now();
+    duration<double> diff = duration_cast<duration<double>>(currenttime - t1);
+    if (diff.count() < i * increment) {
+      size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+      std::this_thread::sleep_for(
+        std::chrono::milliseconds(numMilliseconds));
+    }
+
+
+    std::string str = generator->generate(time);
+    time += increment;
     Netflow netflow = makeNetflow(i, str);
     QueryResultType result(&query, netflow);
                          
@@ -184,7 +202,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), (n-1)*(n)/2);
  
 }
-/*
+
 ///
 /// In this test the query is a->b, b->c, and c->d and the edges b->c and c->d
 /// already exist in the graph. 
@@ -196,9 +214,9 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   std::string nodeC = "C";
   std::string nodeD = "D";
 
-  std::string str1 = generator->generate();
-  std::string str2 = generator->generate();
-  std::string str3 = generator->generate();
+  std::string str1 = generator->generate(0.0);
+  std::string str2 = generator->generate(0.1);
+  std::string str3 = generator->generate(0.2);
 
   Netflow netflow1 = makeNetflow(1, str1);
   Netflow netflow2 = makeNetflow(2, str2);
@@ -253,5 +271,5 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), 1);
 
 }
-*/
+
 
