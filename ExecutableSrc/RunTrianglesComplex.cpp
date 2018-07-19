@@ -152,8 +152,7 @@ int main(int argc, char** argv) {
   srand(nodeId);
 
   // Setting up the random pool generator
-  AbstractNetflowGenerator* generator = 
-    new RandomPoolGenerator(numVertices, nodeId);
+  AbstractNetflowGenerator* generator = new RandomPoolGenerator(numVertices);
   
   // Used at the end to clear things out
   AbstractNetflowGenerator *otherGenerator = new RandomGenerator(); 

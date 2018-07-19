@@ -36,7 +36,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
                        StringHashFunction>
         PartitionType;
 
-
+/*
 BOOST_AUTO_TEST_CASE( test_triangles_exact )
 {
   /// In this test, we create two threads that generate random netflows.
@@ -317,7 +317,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   printf("deleting generator1\n");
   delete generator1;
   printf("exiting\n");
-}
+}*/
 
 
 BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
@@ -332,6 +332,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   size_t numVertices = 50;
   AbstractNetflowGenerator *generator0 = new RandomPoolGenerator(numVertices);
   AbstractNetflowGenerator *generator1 = new RandomPoolGenerator(numVertices);
+    
 
   // Setting up ZeroMQPushPull objects
   size_t queueLength = 1;
@@ -347,7 +348,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   hostnames.push_back("localhost");
   ports.push_back(10001);
   
-  size_t numTuples = 1000;
+  size_t numTuples = 200;
 
   // Sometimes it doesn't catch the triangles at the end because things 
   // terminate too quickly.  This adds a little buffer at the end where

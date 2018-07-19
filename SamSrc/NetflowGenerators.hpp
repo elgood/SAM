@@ -189,24 +189,30 @@ private:
   /// The number of vertices.
   size_t numVertices;
 
-  /// Even with different random seeds, still seeing similar output.  Adding a little
-  /// offset based on the random seed.
+  /// Even with different random seeds, still seeing similar output.  
+  /// Adding a little offset based on the random seed.
   double timeOffset;
+
+  std::random_device rd;
+  std::mt19937 myRand; 
+  std::uniform_int_distribution<size_t> dist;
 
 public:
   /**
    * Constructor.
    */
-  RandomPoolGenerator(size_t n, size_t randomSeed = 0) {
-    srand(randomSeed);
+  RandomPoolGenerator(size_t n) {
     this->numVertices = n;
-    timeOffset = randomSeed / 100000;
+    myRand = std::mt19937(rd());
+    dist = std::uniform_int_distribution<size_t>(0, n-1);
   }
 
   /**
    * Destructor.
    */
-  ~RandomPoolGenerator() {}
+  ~RandomPoolGenerator() 
+  {
+  }
 
   /**
    * Uses AbstractNetflowGenerator::generate, which calls generate(epochTime)
@@ -220,8 +226,8 @@ public:
 
     epochTime = epochTime + timeOffset;    
 
-    size_t sourceInt = rand() % numVertices;
-    size_t targetInt = rand() % numVertices;
+    size_t sourceInt = dist(myRand); 
+    size_t targetInt = dist(myRand); 
 
     while (targetInt == sourceInt) {
       targetInt = rand() % numVertices;
