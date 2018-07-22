@@ -7,7 +7,7 @@
  *      Author: elgood
  */
 
-#define DEBUG
+//#define DEBUG
 //#define TIMING
 //#define DETAIL_TIMING
 //#define METRICS
@@ -235,12 +235,12 @@ int main(int argc, char** argv) {
                                    less_edge_operator,queryTimeWindow);
   TimeEdgeExpression startE2Second(starttimeFunction,e2,
                                    less_edge_operator, queryTimeWindow);
-  TimeEdgeExpression endE0Second(endtimeFunction, e0, 
-                                   less_edge_operator,queryTimeWindow);
-  TimeEdgeExpression endE1Second(endtimeFunction,e1,
-                                   less_edge_operator,queryTimeWindow);
-  TimeEdgeExpression endE2Second(endtimeFunction,e2,
-                                   less_edge_operator, queryTimeWindow);
+  //TimeEdgeExpression endE0Second(endtimeFunction, e0, 
+  //                                 less_edge_operator,queryTimeWindow);
+  //TimeEdgeExpression endE1Second(endtimeFunction,e1,
+  //                                 less_edge_operator,queryTimeWindow);
+  //TimeEdgeExpression endE2Second(endtimeFunction,e2,
+  //                                 less_edge_operator, queryTimeWindow);
   /*TimeEdgeExpression endE0First(endtimeFunction, e0, greater_edge_operator, 0);
   TimeEdgeExpression endE0Second(endtimeFunction, e0, less_edge_operator, 
     queryTimeWindow);
@@ -261,9 +261,9 @@ int main(int argc, char** argv) {
   query.addExpression(startE0Second);
   query.addExpression(startE1Second);
   query.addExpression(startE2Second);
-  query.addExpression(endE0Second);
-  query.addExpression(endE1Second);
-  query.addExpression(endE2Second);
+  //query.addExpression(endE0Second);
+  //query.addExpression(endE1Second);
+  //query.addExpression(endE2Second);
   query.finalize();
 
   graphStore->registerQuery(query);

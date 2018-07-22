@@ -468,12 +468,9 @@ createPushSockets(
   {
     if (i != nodeId) // never need to send stuff to itself
     {
-      //printf("createpushsockets nodeId %lu %d\n", nodeId, i);
       /////////// adding push sockets //////////////
       auto pusher = std::shared_ptr<zmq::socket_t>(
                       new zmq::socket_t(*context, ZMQ_PUSH));
-      //printf("createpushsockets nodeId %lu %d created socket\n", 
-      //        nodeId, i);
 
       std::string ip = getIpString(hostnames[nodeId]);
       std::string url = "";
@@ -493,6 +490,16 @@ createPushSockets(
           std::string(" high water mark: ") + e.what();
         throw UtilException(message);
       }
+
+      try {
+        uint32_t timeout = 1000; //milliseconds
+        pusher->setsockopt(ZMQ_SNDTIMEO, &timeout, sizeof(timeout));
+      } catch (std::exception e) {
+        std::string message = std::string("problem setting push socket's ")+
+          std::string(" timeout: ") + e.what();
+        throw UtilException(message);
+      }
+
       //printf("createpushsockets url %s nodeId %lu %d set socket option\n", 
       //    url.c_str(), nodeId, i);
       //pusher->connect(url);
@@ -820,7 +827,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     size_t index = hash(src) % tableSize; 
     DEBUG_PRINT("Looking for src %s index %lu\n", src.c_str(), index);
 
-    DEBUG_PRINT("num partialTriangles %lu\n", countPartials(alr, tableSize));
+    //DEBUG_PRINT("num partialTriangles %lu\n", countPartials(alr, tableSize));
 
     if (numProcessed % 10000 == 0) {
       printf("Processed %lu out of %lu\n", numProcessed, l.size());

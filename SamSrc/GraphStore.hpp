@@ -25,6 +25,8 @@
 
 namespace sam {
 
+#define MAX_NUM_FUTURES 64
+
 class GraphStoreException : public std::runtime_error {
 public:
   GraphStoreException(char const * message) : std::runtime_error(message) { } 
@@ -75,6 +77,21 @@ public:
  
 private:
 
+  // Returns the node (cluster) associated with the source of the edge request.
+  std::function<size_t(EdgeRequestType const&)> sourceAddressFunction;
+
+  // Returns the node (cluster) associated with the target of the edge request.
+  std::function<size_t(EdgeRequestType const&)> targetAddressFunction;
+
+  // Multiple threads used the request push sockets.  To make them thread safe,
+  // need to isolate access to each socket to one thread at a time.  An
+  // array of mutexes equal to the number of sockets is created.
+  std::mutex* requestPushMutexes;
+
+  // Similar to the request push sockets, multiple threads use the edge push
+  // sockets.  These mutexes are used to keep them thread safe.
+  std::mutex* edgePushMutexes;
+
   #ifdef TIMING
   double totalTimeConsume = 0; 
   double totalTimeEdgePullThread = 0;
@@ -96,12 +113,7 @@ private:
 
   std::mutex resultMapLock;
 
-  /// Once the terminate signal has been given, we don't want to push out
-  /// anymore edge requests or edges to other nodes.  To prevent data from
-  /// being pushed out, all pushes are done with the same mutually 
-  /// exclusive set of code using the below lock.  This lock is also
-  /// passed to the EdgeRequestMap.
-  std::mutex terminationLock;
+  std::mutex futuresLock;
 
   SourceHF sourceHash;
   TargetHF targetHash;
@@ -160,6 +172,9 @@ private:
   
   /// Keeps track of how many consume threads are active.
   std::atomic<size_t> consumeThreadsActive; 
+  
+  size_t currentFuture = 0;
+  std::future<bool> futures[MAX_NUM_FUTURES];
 
   void processRequestAgainstGraph(EdgeRequestType const& edgeRequest);
   
@@ -171,14 +186,21 @@ private:
 
 
   /**
+   * Sends the edge request out.  Uses the address function to determine
+   * which node to send the request to.
+   */
+  void sendEdgeRequest(EdgeRequestType const& edgeRequest,
+    std::function<size_t(EdgeRequestType const&)> addressFunction);
+
+  /**
    * Sends the specified edgeRequest to the source node.
    */
-  void sendMessageToSource(EdgeRequestType const& edgeRequest);
+  //void sendMessageToSource(EdgeRequestType const& edgeRequest);
 
   /**
    * Sends the specified edgeRequest to the target node.
    */
-  void sendMessageToTarget(EdgeRequestType const& edgeRequest);
+  //void sendMessageToTarget(EdgeRequestType const& edgeRequest);
 
 public:
 
@@ -521,14 +543,16 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
       {
         //If the target is not null but the source is, we send the edge request
         //to whomever owns the target.
-        sendMessageToTarget(edgeRequest);
+        //sendMessageToTarget(edgeRequest);
+        sendEdgeRequest(edgeRequest, targetAddressFunction);
       }
       else 
       if (isNull(edgeRequest.getTarget()) && !isNull(edgeRequest.getSource()))
       {
         //If the source is not null but the target is, we send the edge request
         //to whomever owns the source.
-        sendMessageToSource(edgeRequest);
+        //sendMessageToSource(edgeRequest);
+        sendEdgeRequest(edgeRequest, sourceAddressFunction);
       }
       else 
       if (!isNull(edgeRequest.getTarget()) && !isNull(edgeRequest.getSource()))
@@ -541,9 +565,11 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
         // load balancing by splitting our requests 
         if (rand() % 2 == 0 )
         {
-          sendMessageToSource(edgeRequest);
+          //sendMessageToSource(edgeRequest);
+          sendEdgeRequest(edgeRequest, sourceAddressFunction);
         } else {
-          sendMessageToTarget(edgeRequest);
+          //sendMessageToTarget(edgeRequest);
+          sendEdgeRequest(edgeRequest, targetAddressFunction);
         }
       }
     }
@@ -556,107 +582,35 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
   return edgeRequests.size();
 }
 
-template <typename TupleType, typename Tuplizer, 
-          size_t source, size_t target, 
+template <typename TupleType, typename Tuplizer,
+          size_t source, size_t target,
           size_t time, size_t duration,
-          typename SourceHF, typename TargetHF, 
-          typename SourceEF, typename TargetEF> 
-void 
+          typename SourceHF, typename TargetHF,
+          typename SourceEF, typename TargetEF>
+void
 GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-sendMessageToSource(EdgeRequestType const& edgeRequest)
-{  
+sendEdgeRequest(EdgeRequestType const& edgeRequest,
+  std::function<size_t(EdgeRequestType const&)> addressFunction)
+{
   zmq::message_t message = edgeRequest.toZmqMessage();
-  SourceType src = edgeRequest.getSource();
-  size_t node = sourceHash(src) % numNodes;
+  size_t node = addressFunction(edgeRequest);
 
   std::string str = getStringFromZmqMessage( message );
   EdgeRequestType edgeRequest1(str);
-
-  double placeholder = 0;
-  DETAIL_TIMING_BEG1
-  terminationLock.lock();
-  DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
-    "GraphStore::sendMessageToSource obtaining lock exceeded "
-    "tolerance")
-  if (!terminated) {
-    requestPushCounter.fetch_add(1);
-    DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToSource Sending " 
-           "EdgeRequest: %s\n", 
-           nodeId, node, edgeRequest.toString().c_str());
-    DETAIL_TIMING_BEG1
-    #ifdef NOBLOCK
-    bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    if (!sent) { 
-      requestFails.fetch_add(1);
-      requestPushCounter.fetch_add(-1);
-      DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToSource failed"
-        " sending EdgeRequest: %s\n",
-        nodeId, node, edgeRequest.toString().c_str()); 
-    }
-    #elif defined NOBLOCK_WHILE
-    bool sent = false;
-    while(!sent) {
-      sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    }
-    #else
-    requestPushers[node]->send(message);
-    #endif
-    DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
-      "GraphStore::sendMessageToSource sending message exceeded "
-      "tolerance")
+  requestPushCounter.fetch_add(1);
+  requestPushMutexes[node].lock();
+  bool sent = requestPushers[node]->send(message);
+  requestPushMutexes[node].unlock();
+  if (!sent) { 
+    requestFails.fetch_add(1);
+    requestPushCounter.fetch_add(-1);
+    printf("Node %lu->%lu GraphStore::sendEdgeRequest failed"
+      " sending EdgeRequest: %s\n",
+      nodeId, node, edgeRequest.toString().c_str()); 
   }
-  terminationLock.unlock();
 }
 
-template <typename TupleType, typename Tuplizer, 
-          size_t source, size_t target, 
-          size_t time, size_t duration,
-          typename SourceHF, typename TargetHF, 
-          typename SourceEF, typename TargetEF> 
-void 
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
-  SourceHF, TargetHF, SourceEF, TargetEF>::
-sendMessageToTarget(EdgeRequestType const& edgeRequest)
-{
-  zmq::message_t message = edgeRequest.toZmqMessage();
-  TargetType trg = edgeRequest.getTarget();
-  size_t node = targetHash(trg) % numNodes;
-
-  double placeholder = 0;
-  DETAIL_TIMING_BEG1
-  terminationLock.lock();
-  DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
-    "GraphStore::sendMessageToTarget obtaining lock exceeded "
-    "tolerance")
-  if (!terminated) {
-    DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToTarget sending"
-          " EdgeRequest: %s\n", nodeId, node, edgeRequest.toString().c_str());
-    requestPushCounter.fetch_add(1);
-    DETAIL_TIMING_BEG1
-    #ifdef NOBLOCK
-    bool sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    if (!sent) { 
-      requestFails.fetch_add(1);
-      requestPushCounter.fetch_add(-1);
-      DEBUG_PRINT("Node %lu->%lu GraphStore::sendMessageToTarget failed"
-        " sending EdgeRequest: %s\n",
-        nodeId, node, edgeRequest.toString().c_str()); 
-    }
-    #elif defined NOBLOCK_WHILE
-    bool sent = false;
-    while(!sent) {
-      sent = requestPushers[node]->send(message, ZMQ_NOBLOCK);
-    }
-    #else
-    requestPushers[node]->send(message);
-    #endif
-    DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
-      "GraphStore::sendMessageToTarget send exceeded "
-      "tolerance")
-  }
-  terminationLock.unlock();
-}
 
 template <typename TupleType, typename Tuplizer, 
           size_t source, size_t target, 
@@ -671,29 +625,26 @@ consume(TupleType const& tuple)
   DEBUG_PRINT("Node %lu GraphStore::consume processing tuple %s\n",
     nodeId, sam::toString(tuple).c_str());
 
-  auto consumeFunction = [this](TupleType const& tuple) {
-    this->consumeDoesTheWork(tuple);  
-  };
-
-  /*if (consumeCount >= numThreads) {
-    threads[currentThread].join();
-  }
-  threads[currentThread] = std::thread(consumeFunction, tuple);
-  currentThread++;
-
-  if (currentThread >= numThreads) currentThread = 0;
-  */
-
+  //futuresLock.lock();
+  DEBUG_PRINT("Node %lu GraphStore::consume about to launch async (total"
+    " asnyc threads right now %lu) for tuple %s currentFuture %lu\n",
+    nodeId, consumeThreadsActive.load(), toString(tuple).c_str(), 
+    currentFuture);
+  //futures[currentFuture] = std::async(std::launch::async, [this, &tuple]() {
+  // return this->consumeDoesTheWork(tuple);
+  //});
   std::async(std::launch::async, [this, &tuple]() {
-    this->consumeDoesTheWork(tuple);
+   return this->consumeDoesTheWork(tuple);
   });
+  //currentFuture++;
+  //if (currentFuture >= MAX_NUM_FUTURES) {
+  //  currentFuture = 0;
+  //}
+  //futuresLock.unlock();
 
-  //consumeDoesTheWork(tuple);
+
   consumeCount++;
   
-  //boost::asio::post(*threads, [this, &tuple]() {
-  //  this->consumeDoesTheWork(tuple);  
-  //});
 
   return true;
 }
@@ -709,7 +660,7 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 consumeDoesTheWork(TupleType const& tuple)
 {
-  consumeThreadsActive.fetch_add(1);
+  size_t previousCount = consumeThreadsActive.fetch_add(1);
 
   size_t totalWork = 0;
 
@@ -811,9 +762,20 @@ terminate()
     " %lu\n", nodeId, consumeThreadsActive.load());
   if (!terminated) {  
 
-    terminationLock.lock();
     terminated = true;
-    terminationLock.unlock();
+
+    /*futuresLock.lock();
+    for (size_t i = 0; i < MAX_NUM_FUTURES; i++) {
+       printf("Node %lu i %lu MAX_NUM_FUTURES %lu\n", nodeId, i, 
+         MAX_NUM_FUTURES);
+       try {
+         futures[i].get();
+       } catch (std::system_error e) {
+         printf("Caught exception with future %s\n", e.what());
+       }
+    }
+    futuresLock.unlock();*/
+
     // If terminate was called, we aren't going to receive any more
     // edges, so we can push out the terminate signal to all the edge request
     // channels. 
@@ -821,25 +783,31 @@ terminate()
       if (i != nodeId) {
         zmq::message_t message = terminateZmqMessage();
 
-        DEBUG_PRINT("Node %lu GraphStore::terminate sending terminate message"
+        printf("Node %lu GraphStore::terminate sending terminate message"
           " to requestPusher %lu\n", this->nodeId, i);
 
-        requestPushers[i]->send(message);
+        requestPushMutexes[i].lock();
+        bool sent = requestPushers[i]->send(message);
+        requestPushMutexes[i].unlock();
+        if (!sent) {
+          printf("Node %lu GraphStore::terminate failed to send terminate"
+            " message to %lu\n", this->nodeId, i);
+        }
       }
     }
 
     requestPullThread.join();
 
-    DEBUG_PRINT("Node %lu requestPullThread joined\n", nodeId);
+    printf("Node %lu requestPullThread joined\n", nodeId);
  
     // The EdgeRequestMap has all the edge pushers.  We call terminate
     // on the EdgeRequestMap to send out the terminate message.
     edgeRequestMap->terminate();
     edgePullThread.join();
 
-    DEBUG_PRINT("Node %lu edgePullThread joined\n", nodeId);
+    printf("Node %lu edgePullThread joined\n", nodeId);
   }
-  DEBUG_PRINT("Node %lu exiting GraphStore::terminate\n", nodeId);
+  printf("Node %lu exiting GraphStore::terminate\n", nodeId);
 }
 
 /**
@@ -869,6 +837,22 @@ GraphStore(  zmq::context_t& _context,
 {
   //threads = std::make_shared<boost::asio::thread_pool>(numThreads);
 
+
+  sourceAddressFunction = [this](EdgeRequestType const& edgeRequest) {
+    SourceType src = edgeRequest.getSource();
+    size_t node = sourceHash(src) % this->numNodes;
+    return node;
+  };
+
+  targetAddressFunction = [this](EdgeRequestType const& edgeRequest) {
+    TargetType trg = edgeRequest.getSource();
+    size_t node = targetHash(trg) % this->numNodes;
+    return node;
+  };
+
+  requestPushMutexes = new std::mutex[numNodes];
+  edgePushMutexes = new std::mutex[numNodes];
+
   terminated = false;
   this->numNodes = numNodes;
   this->nodeId   = nodeId;
@@ -895,10 +879,9 @@ GraphStore(  zmq::context_t& _context,
   createPushSockets(&context, numNodes, nodeId, edgeHostnames, edgePorts,
                     edgePushers, hwm);
 
-
   edgeRequestMap = std::make_shared< RequestMapType>( context,
     numNodes, nodeId, edgeHostnames, edgePorts, hwm, tableCapacity,
-    edgePushers, terminationLock);
+    edgePushers, edgePushMutexes);
 
   csr = std::make_shared<csrType>(graphCapacity, timeWindow); 
   csc = std::make_shared<cscType>(graphCapacity, timeWindow); 
@@ -982,7 +965,7 @@ GraphStore(  zmq::context_t& _context,
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
             
-            DEBUG_PRINT("Node %lu RequestPullThread received a terminate "
+            printf("Node %lu RequestPullThread received a terminate "
                    "message from %lu\n", this->nodeId, i);
 
             terminate[i] = true;
@@ -1109,9 +1092,8 @@ GraphStore(  zmq::context_t& _context,
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
             
-            DEBUG_PRINT("Node %lu GraphStore::edgePullThread received a terminate "
-                   "message from %lu\n",
-              this->nodeId, i);
+            DEBUG_PRINT("Node %lu GraphStore::edgePullThread received a"
+             " terminate message from %lu\n", this->nodeId, i);
 
             terminate[i] = true;
           } else if (message.size() > 0) {
@@ -1194,6 +1176,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 {
   terminate();
 
+  delete[] edgePushMutexes;
+  delete[] requestPushMutexes; 
   //threads->join();
 
   DEBUG_PRINT("Node %lu end of ~GraphStore\n", nodeId);
@@ -1262,8 +1246,8 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
 
   size_t node = edgeRequest.getReturn();
 
-  DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph found %lu edges\n",
-    nodeId, foundEdges.size());
+  DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph found"
+    " %lu edges\n", nodeId, foundEdges.size());
 
   for (auto edge : foundEdges) {
     SourceType src = std::get<source>(edge);
@@ -1278,7 +1262,6 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
 
       double placeholder = 0;
       DETAIL_TIMING_BEG1
-      terminationLock.lock();
       DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
         "GraphStore::processRequestAgainstGraph obtaining lock exceeded "
         "tolerance")
@@ -1287,8 +1270,24 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
           " sending edge %s\n", nodeId, node, sam::toString(edge).c_str());
         edgePushCounter.fetch_add(1);
         DETAIL_TIMING_BEG1
-        #ifdef NOBLOCK
-        bool sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);     
+        //#ifdef NOBLOCK
+        //bool sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);     
+        //if (!sent) { 
+        //  edgePushFails.fetch_add(1);
+        //  edgePushCounter.fetch_add(-1);
+        //  DEBUG_PRINT("Node %lu->%lu GraphStore::processRequestAgainstGraph"
+        //    " failed sending edge: %s\n",
+        //    nodeId, node, sam::toString(edge).c_str()); 
+        //}
+        //#elif defined NOBLOCK_WHILE
+        //bool sent = false;
+        //while(!sent) {
+        //  sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);
+        //}
+        //#else
+        edgePushMutexes[node].lock();
+        bool sent = edgePushers[node]->send(message);     
+        edgePushMutexes[node].unlock();
         if (!sent) { 
           edgePushFails.fetch_add(1);
           edgePushCounter.fetch_add(-1);
@@ -1296,19 +1295,11 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
             " failed sending edge: %s\n",
             nodeId, node, sam::toString(edge).c_str()); 
         }
-        #elif defined NOBLOCK_WHILE
-        bool sent = false;
-        while(!sent) {
-          sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);
-        }
-        #else
-        edgePushers[node]->send(message);     
-        #endif
+        //#endif
         DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
           "GraphStore::processRequestAgainstGraph sending message exceeded "
           "tolerance")
       }
-      terminationLock.unlock();
     }
   }
 }

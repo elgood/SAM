@@ -55,6 +55,9 @@ private:
   /// mutexes for each array element of ale.
   std::mutex* mutexes;
 
+  /// Used to keep the edge push sockets thread safe.
+  std::mutex* edgePushMutexes;
+
   /// Keeps track of how many edges we send
   std::atomic<size_t> edgePushCounter;
 
@@ -62,9 +65,6 @@ private:
 
   /// This has all the push sockets that we use to send edges to other nodes.
   std::vector<std::shared_ptr<zmq::socket_t>> pushers;
-
-  // Comes from GraphStore
-  std::mutex& terminationLock;
 
   std::function<size_t(TupleType const&)> sourceIndexFunction;
   std::function<bool(EdgeRequestType const&, TupleType const&)> 
@@ -94,7 +94,7 @@ public:
                   uint32_t hwm,
                   size_t tableCapacity,
                   std::vector<std::shared_ptr<zmq::socket_t>> edgePushers,
-                  std::mutex& terminationLock);
+                  std::mutex* edgePushMutexes);
 
   /**
    * Destructor.
@@ -163,9 +163,11 @@ EdgeRequestMap(
                 uint32_t hwm,
                 size_t tableCapacity,
                 std::vector<std::shared_ptr<zmq::socket_t>> edgePushers,
-                std::mutex& _terminationLock)
-: context(_context), terminationLock(_terminationLock)
+                std::mutex* edgePushMutexes)
+: context(_context)
 {
+
+  this->edgePushMutexes = edgePushMutexes;
 
   pushFails = 0;
 
@@ -353,8 +355,9 @@ process(TupleType const& tuple,
 
   mutexes[index].lock();
   size_t count = 0;
-  DEBUG_PRINT("Node %lu EdgeRequestMap::process number of requests to look at %lu "
-    " processing tuple %s\n", nodeId, ale[index].size(), toString(tuple).c_str());
+  DEBUG_PRINT("Node %lu EdgeRequestMap::process number of requests to look at"
+    " %lu processing tuple %s\n", 
+    nodeId, ale[index].size(), toString(tuple).c_str());
   for(auto edgeRequest = ale[index].begin();
         edgeRequest != ale[index].end();)
   {
@@ -379,7 +382,6 @@ process(TupleType const& tuple,
           DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
             " edge %s\n", nodeId, node, toString(tuple).c_str());
           DETAIL_TIMING_BEG2
-          terminationLock.lock();
           DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
             "EdgeRequestMap::process obtaining termination lock exceeded "
             "tolerance")
@@ -388,28 +390,32 @@ process(TupleType const& tuple,
               nodeId, node, toString(tuple).c_str());
             DETAIL_TIMING_BEG2
             edgePushCounter.fetch_add(1);
-            #ifdef NOBLOCK 
-            bool sent = pushers[node]->send(message, ZMQ_NOBLOCK);  
+            //#ifdef NOBLOCK 
+            //bool sent = pushers[node]->send(message, ZMQ_NOBLOCK);  
+            //if (!sent) {
+            //  pushFails.fetch_add(1);
+            //  edgePushCounter.fetch_add(-1);
+            //  DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process failed to "
+            //    "send edge %s\n", nodeId, node, toString(tuple).c_str());   
+            //}
+            //#elif defined NOBLOCK_WHILE
+            //bool sent = false;
+            //while(!sent) {
+            //  sent = pushers[node]->send(message, ZMQ_NOBLOCK);
+            //}
+            //#else
+            edgePushMutexes[node].lock();
+            bool sent = pushers[node]->send(message);
+            edgePushMutexes[node].unlock();
             if (!sent) {
-              pushFails.fetch_add(1);
-              edgePushCounter.fetch_add(-1);
-              DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process failed to "
-                "send edge %s\n", nodeId, node, toString(tuple).c_str());
-                
+              printf("Node %lu EdgeRequestMap::process error sending message"
+                " to %lu\n", nodeId, node);
             }
-            #elif defined NOBLOCK_WHILE
-            bool sent = false;
-            while(!sent) {
-              sent = pushers[node]->send(message, ZMQ_NOBLOCK);
-            }
-            #else
-            pushers[node]->send(message);
-            #endif
+            //#endif
             DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
               "EdgeRequestMap::process sending message exceeded "
               "tolerance")
           }
-          terminationLock.unlock();
         }
       }
       ++edgeRequest;
@@ -438,7 +444,11 @@ terminate()
           " to %lu\n", nodeId, i); 
         
         try {
-          pushers[i]->send(terminateZmqMessage());
+          edgePushMutexes[i].lock();
+          bool sent = pushers[i]->send(terminateZmqMessage());
+          edgePushMutexes[i].unlock();
+          printf("Node %lu EdgeRequestMap::terminate() couldn't send"
+            " terminate message to %lu\n", nodeId, i);
         } catch (std::exception e) {
           std::string message = "Couldn't send termination message "
             + boost::lexical_cast<std::string>(nodeId) + "->" 

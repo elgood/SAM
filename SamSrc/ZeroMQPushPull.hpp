@@ -253,7 +253,7 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
 
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
-            DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received terminate "
+            printf("Node %lu ZeroMQPushPull pullThread received terminate "
               "from %lu\n", this->nodeId, i);
             terminate[i] = true;
           } else if (message.size() > 0) {
@@ -293,7 +293,7 @@ template <typename TupleType, size_t source, size_t target,
           typename Tuplizer, typename HF>
 void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate() 
 {
-  DEBUG_PRINT("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
+  printf("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
   if (!terminated) {
     
     for (auto consumer : this->consumers) {
@@ -306,7 +306,7 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
       if (i != nodeId) {
         zmq::message_t message = terminateZmqMessage();
         
-        DEBUG_PRINT("Node %lu ZeroMQPushPull::terminate sending terminate"
+        printf("Node %lu ZeroMQPushPull::terminate sending terminate"
           " signal to %lu\n", nodeId, i);
         pushers[i]->send(message);
       }

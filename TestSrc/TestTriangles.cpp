@@ -36,7 +36,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
                        StringHashFunction>
         PartitionType;
 
-/*
+
 BOOST_AUTO_TEST_CASE( test_triangles_exact )
 {
   /// In this test, we create two threads that generate random netflows.
@@ -316,12 +316,19 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   delete generator0;
   printf("deleting generator1\n");
   delete generator1;
+
+
   printf("exiting\n");
-}*/
+}
 
 
 BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 {
+
+  // Give time for last zmq threads to terminate from previous test
+  std::this_thread::sleep_for(
+    std::chrono::milliseconds(20000));
+
   /// This differs from the previous test in that when we generate netflows,
   /// we randomly select the source and destination from a small set of 
   /// vertices.  If there are n vertices, each edge is expected to 
@@ -348,7 +355,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   hostnames.push_back("localhost");
   ports.push_back(10001);
   
-  size_t numTuples = 200;
+  size_t numTuples = 1000;
 
   // Sometimes it doesn't catch the triangles at the end because things 
   // terminate too quickly.  This adds a little buffer at the end where
@@ -423,32 +430,34 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   std::string nodey = "nodey";
   std::string nodez = "nodez";
 
+  size_t queryTimeWindow = 10;
   EdgeExpression x2y(nodex, e0, nodey);
   EdgeExpression y2z(nodey, e1, nodez);
   EdgeExpression z2x(nodez, e2, nodex);
-  TimeEdgeExpression startE0Both(starttimeFunction, e0, equal_edge_operator, 0);
-  TimeEdgeExpression startE1Both(starttimeFunction,e1,greater_edge_operator, 0);
-  TimeEdgeExpression startE2Both(starttimeFunction,e2,greater_edge_operator, 0);
-  TimeEdgeExpression endE0First(endtimeFunction, e0, greater_edge_operator, 0);
-  TimeEdgeExpression endE0Second(endtimeFunction, e0, less_edge_operator, 10);
-  TimeEdgeExpression endE1First(endtimeFunction, e1, greater_edge_operator, 0);
-  TimeEdgeExpression endE1Second(endtimeFunction, e1, less_edge_operator, 10);
-  TimeEdgeExpression endE2First(endtimeFunction, e2, greater_edge_operator, 0);
-  TimeEdgeExpression endE2Second(endtimeFunction, e2, less_edge_operator, 10);
+  TimeEdgeExpression startE0First(starttimeFunction, e0, 
+                                  equal_edge_operator, 0);
+  TimeEdgeExpression startE1First(starttimeFunction,e1,
+                                  greater_edge_operator, 0);
+  TimeEdgeExpression startE2First(starttimeFunction,e2,
+                                  greater_edge_operator, 0);
+  TimeEdgeExpression startE0Second(starttimeFunction, e0, 
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression startE1Second(starttimeFunction,e1,
+                                   less_edge_operator,queryTimeWindow);
+  TimeEdgeExpression startE2Second(starttimeFunction,e2,
+                                   less_edge_operator, queryTimeWindow);
+
 
   SubgraphQueryType query;
   query.addExpression(x2y);
   query.addExpression(y2z);
   query.addExpression(z2x);
-  query.addExpression(startE0Both);
-  query.addExpression(startE1Both);
-  query.addExpression(startE2Both);
-  query.addExpression(endE0First);
-  query.addExpression(endE0Second);
-  query.addExpression(endE1First);
-  query.addExpression(endE1Second);
-  query.addExpression(endE2First);
-  query.addExpression(endE2Second);
+  query.addExpression(startE0First);
+  query.addExpression(startE1First);
+  query.addExpression(startE2First);
+  query.addExpression(startE0Second);
+  query.addExpression(startE1Second);
+  query.addExpression(startE2Second);
   query.finalize();
 
   graphStore0->registerQuery(query);
@@ -514,6 +523,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
         size_t numMilliseconds = (i * increment - diff.count()) * 1000;
         std::this_thread::sleep_for(
           std::chrono::milliseconds(numMilliseconds));
+      } else {
+        printf("behind by %f\n", i * increment + numTuples * increment - diff.count());
       }
 
      
@@ -583,7 +594,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
     double starttime2 = std::get<TimeSeconds>(n2);
     BOOST_CHECK(starttime0 <= starttime1);
     BOOST_CHECK(starttime1 <= starttime2);
-    BOOST_CHECK(starttime2 - starttime0 < 10);
+    BOOST_CHECK(starttime2 - starttime0 < queryTimeWindow);
   }
 
   for(size_t i = 0; i < numGetResults1; i++) {
@@ -597,12 +608,12 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
     double starttime2 = std::get<TimeSeconds>(n2);
     BOOST_CHECK(starttime0 <= starttime1);
     BOOST_CHECK(starttime1 <= starttime2);
-    BOOST_CHECK(starttime2 - starttime0 < 10);
+    BOOST_CHECK(starttime2 - starttime0 < queryTimeWindow);
   }
 
   size_t calculatedNumTriangles = 
     sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
-                      DurationSeconds>(netflowList, 10);
+                      DurationSeconds>(netflowList, queryTimeWindow);
 
   BOOST_CHECK_EQUAL(calculatedNumTriangles, totalResults);
 
