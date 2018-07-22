@@ -49,7 +49,7 @@ private:
   std::vector<std::string> hostnames; ///> The hostnames of all the nodes
   std::vector<std::size_t> ports;  ///> The ports of all the nodes
   uint32_t hwm;  ///> The high water mark
-  bool terminated = false;
+  std::atomic<bool> terminated;
 
   size_t consumeCount = 0; ///> How many items this node has seen through feed()
   size_t metricInterval = 100000; ///> How many seen before spitting metrics out
@@ -87,9 +87,7 @@ public:
   virtual ~ZeroMQPushPull()
   {
     terminate();
-    #ifdef DEBUG
-    printf("Node %lu end of ~ZeroMQPushPull\n", nodeId);
-    #endif
+    DEBUG_PRINT("Node %lu end of ~ZeroMQPushPull\n", nodeId);
   }
   
   virtual bool consume(std::string const& netflow);
@@ -137,13 +135,16 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
   this->hostnames = hostnames;
   this->ports     = ports;
   this->hwm       = hwm;
+  terminated.store(false);
 
   //std::shared_ptr<zmq::pollitem_t> items( new zmq::pollitem_t[numNodes],
   //  []( zmq::pollitem_t* p) { delete[] p; });
 
-  pushers.resize(numNodes);
+  //pushers.resize(numNodes);
+  createPushSockets(&context, numNodes, nodeId, hostnames, ports, pushers, hwm);
+                   
  
-  for (int i =0; i < numNodes; i++) 
+  /*for (int i =0; i < numNodes; i++) 
   {
     if (i != nodeId) {
 
@@ -176,7 +177,7 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
       pushers[i] = pusher;
 
     }
-  }
+  }*/
 
 
 }
@@ -245,6 +246,11 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
     bool stop = false;
   
     while (!stop) {
+
+      //if (terminated.load()) {
+      //  stop = true;
+      //}
+
       zmq::message_t message;
       int rValue = zmq::poll(pollItems, this->numNodes -1, 1);
       int numStop = 0;
@@ -279,7 +285,7 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
     for (auto socket : sockets) {
       delete socket;
     }
-    DEBUG_PRINT("Node %lu exiting ZeroMQPushPull pullThread\n", this->nodeId);
+    printf("Node %lu exiting ZeroMQPushPull pullThread\n", this->nodeId);
 
   };
 
@@ -308,7 +314,14 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
         
         printf("Node %lu ZeroMQPushPull::terminate sending terminate"
           " signal to %lu\n", nodeId, i);
-        pushers[i]->send(message);
+        bool sent = false;
+        while (!sent) {
+          sent = pushers[i]->send(message);
+          if (!sent) {
+            printf("Node %lu->%lu ZeroMQPushPull::terminate failed to send "
+              "terminate message.  Trying again.\n", nodeId, i);
+          }
+        }
       }
     }
 
@@ -317,9 +330,7 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
     pullThread.join();
   }
 
-  #ifdef DEBUG
-  printf("Node %lu exiting ZeroMQPushPull::terminate\n", nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu exiting ZeroMQPushPull::terminate\n", nodeId);
   terminated = true;
 
 }

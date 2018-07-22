@@ -781,17 +781,19 @@ terminate()
     // channels. 
     for(size_t i = 0; i < numNodes; i++) {
       if (i != nodeId) {
-        zmq::message_t message = terminateZmqMessage();
 
         printf("Node %lu GraphStore::terminate sending terminate message"
-          " to requestPusher %lu\n", this->nodeId, i);
+          " to request pusher %lu\n", this->nodeId, i);
 
-        requestPushMutexes[i].lock();
-        bool sent = requestPushers[i]->send(message);
-        requestPushMutexes[i].unlock();
-        if (!sent) {
-          printf("Node %lu GraphStore::terminate failed to send terminate"
-            " message to %lu\n", this->nodeId, i);
+        bool sent = false;
+        while (!sent) {
+          requestPushMutexes[i].lock();
+          sent = requestPushers[i]->send(terminateZmqMessage());
+          requestPushMutexes[i].unlock();
+          if (!sent) {
+            printf("Node %lu->%lu GraphStore::terminate failed to send"
+              " terminate message to request pusher\n", this->nodeId, i);
+          }
         }
       }
     }
@@ -956,7 +958,9 @@ GraphStore(  zmq::context_t& _context,
 
     while (!stop) {
 
-      //std::lock_guard<std::mutex> lock(generalLock);
+      //if (terminated.load()) {
+      //  stop = true;
+      //}
 
       int rValue = zmq::poll(pollItems, this->numNodes -1, 1);
       int numStop = 0;
@@ -1007,7 +1011,7 @@ GraphStore(  zmq::context_t& _context,
 
 
           } else {
-            DEBUG_PRINT("Node %lu GraphStore::requestPullFunction received"
+            printf("Node %lu GraphStore::requestPullFunction received"
               " mystery message %s\n", this->nodeId,
               getStringFromZmqMessage(message).c_str());
           }
@@ -1015,13 +1019,16 @@ GraphStore(  zmq::context_t& _context,
 
         if (terminate[i]) numStop++;
       }
+      DEBUG_PRINT("Node %lu RequestPullThread numStop %lu numNodes %lu\n",
+        this->nodeId, numStop, this->numNodes);
       if (numStop == this->numNodes - 1) stop = true;
     }
 
-    DEBUG_PRINT("Node %lu exiting requestPullThread\n", this->nodeId);
 
     for (auto socket : sockets) {
+      printf("Node %lu deleting request pull socket\n", this->nodeId);
       delete socket;
+      printf("Node %lu deleted request pull socket\n", this->nodeId);
     }
 
     #ifdef TIMING
@@ -1031,6 +1038,7 @@ GraphStore(  zmq::context_t& _context,
     double timeRequestPullThread = time_space.count(); 
     totalTimeRequestPullThread += timeRequestPullThread;
     #endif
+    printf("Node %lu exiting requestPullThread\n", this->nodeId);
   };
 
   requestPullThread = std::thread(requestPullFunction);
@@ -1085,6 +1093,10 @@ GraphStore(  zmq::context_t& _context,
     bool stop = false;
     while (!stop) {
 
+      //if (terminated.load()) {
+      //  stop = true;
+      //}
+
       size_t numStop = 0;
       int rvalue = zmq::poll(pollItems, this->numNodes - 1, 1);
       for (size_t i = 0; i < this->numNodes - 1; i++) {
@@ -1092,7 +1104,7 @@ GraphStore(  zmq::context_t& _context,
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
             
-            DEBUG_PRINT("Node %lu GraphStore::edgePullThread received a"
+            printf("Node %lu GraphStore::edgePullThread received a"
              " terminate message from %lu\n", this->nodeId, i);
 
             terminate[i] = true;
@@ -1112,8 +1124,8 @@ GraphStore(  zmq::context_t& _context,
             // Change the string into the expected tuple type.
             TupleType tuple = tuplizer(id, str);
 
-            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction received a tuple "
-              "%s\n", this->nodeId, sam::toString(tuple).c_str());
+            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction received a"
+              " tuple %s\n", this->nodeId, sam::toString(tuple).c_str());
 
             // Do we need to do this?
             // Add the edge to the graph
@@ -1147,7 +1159,7 @@ GraphStore(  zmq::context_t& _context,
       if (numStop == this->numNodes - 1 && this->terminated) stop = true;
     }
 
-    DEBUG_PRINT("Node %lu exiting edge pull thread\n", this->nodeId);
+    printf("Node %lu exiting edge pull thread\n", this->nodeId);
     
     for (auto socket : sockets) {
       delete socket;

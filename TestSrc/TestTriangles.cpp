@@ -324,6 +324,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
 
 BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 {
+  printf("Starting test_triangles_random_pool_of_vertices\n");
 
   // Give time for last zmq threads to terminate from previous test
   std::this_thread::sleep_for(
@@ -355,7 +356,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   hostnames.push_back("localhost");
   ports.push_back(10001);
   
-  size_t numTuples = 1000;
+  size_t numTuples = 10000;
 
   // Sometimes it doesn't catch the triangles at the end because things 
   // terminate too quickly.  This adds a little buffer at the end where

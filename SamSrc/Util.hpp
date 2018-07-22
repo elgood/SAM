@@ -715,7 +715,7 @@ void processTwoEdgePartial(
         queryTime);
       if (t3 > t2 && t3  -t1 <= queryTime) {
 
-        printf("found triangle edge1 %lu %f %s "
+        DEBUG_PRINT("found triangle edge1 %lu %f %s "
           "%s, edge2 %lu %f %s %s, "
           "edge3 %lu %f %s %s\n", 
           std::get<0>(partial.netflow1),
