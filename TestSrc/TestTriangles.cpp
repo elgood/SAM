@@ -337,7 +337,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   /// of time specified for the query.
 
   // Setting up random generators
-  size_t numVertices = 50;
+  size_t numVertices = 500;
   AbstractNetflowGenerator *generator0 = new RandomPoolGenerator(numVertices);
   AbstractNetflowGenerator *generator1 = new RandomPoolGenerator(numVertices);
     

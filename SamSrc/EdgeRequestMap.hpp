@@ -354,9 +354,10 @@ process(TupleType const& tuple,
 
   double currentTime = std::get<time>(tuple);
 
-  // To prevent duplicates being sent, we keep track of which edges we've
-  // sent to each node.
-  std::set<size_t> sentEdges[numNodes];
+  // To prevent duplicates being sent, we keep track of which nodes has seen
+  // the tuple already.
+  bool sentEdges[numNodes];
+  for (size_t i = 0; i < numNodes; i++) sentEdges[i] = false;
 
   size_t countSentEdges = 0;
 
@@ -391,7 +392,7 @@ process(TupleType const& tuple,
         
         size_t node = edgeRequest->getReturn();
         
-        if (sentEdges[node].count(edgeId) <= 0) {
+        if (!sentEdges[node]) {
           
           if (!terminated) {
            
@@ -423,7 +424,7 @@ process(TupleType const& tuple,
               double sendTime = sendTimingDiff.count();
               if (sendTime > 0.001) {
                 printf("Node %lu->%lu EdgeRequestMap::process sending "
-                  " edge %s took %f\n", sendTimingDiff.count(), nodeId, node,
+                  " edge %s took %f\n", nodeId, node,
                   toString(tuple).c_str(), sendTime);
               }
               DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
@@ -437,7 +438,7 @@ process(TupleType const& tuple,
                   " edge %s\n", nodeId, node, toString(tuple).c_str());
               } else {
                 edgePushCounter.fetch_add(1);
-                sentEdges[node].insert(edgeId);
+                sentEdges[node] = true;
                 countSentEdges++;
               }
               
@@ -481,7 +482,7 @@ terminate()
             edgePushMutexes[i].unlock();
             if (!sent) {
               printf("Node %lu->%lu EdgeRequestMap::terminate() failed to send"
-                " terminate message%lu\n", nodeId, i);
+                " terminate message\n", nodeId, i);
             }
           }
         } catch (std::exception e) {
