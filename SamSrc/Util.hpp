@@ -180,6 +180,24 @@ public:
 };
 
 /**
+ * Hash function for ints
+ */
+inline
+uint64_t hashFunction(uint64_t key)
+{
+  return key * 31280644937747LL;
+}
+
+class UnsignedIntHashFunction
+{
+public:
+  inline 
+  uint64_t operator()(uint64_t key) const {
+    return hashFunction(key);
+  }
+};
+
+/**
  * This is used for testing purposes.  It assumes the strings are ip4 addresses.
  * It just looks at the last octet and returns that.  This is useful so that
  * we can create testing situations where we know where ip addresses will

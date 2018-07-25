@@ -1,5 +1,5 @@
-#ifndef EDGE_REQUEST_LIST
-#define EDGE_REQUEST_LIST
+#ifndef SAM_EDGE_REQUEST_MAP_HPP
+#define SAM_EDGE_REQUEST_MAP_HPP
 
 #include "EdgeRequest.hpp"
 #include "Null.hpp"
@@ -433,12 +433,13 @@ process(TupleType const& tuple,
               
               //// End sending tuple
               
+              sentEdges[node] = true;
+
               if (!sent) {
                 printf("Node %lu->%lu EdgeRequestMap::process error sending"
                   " edge %s\n", nodeId, node, toString(tuple).c_str());
               } else {
                 edgePushCounter.fetch_add(1);
-                sentEdges[node] = true;
                 countSentEdges++;
               }
               

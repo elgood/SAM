@@ -10,7 +10,7 @@
 //#define DEBUG
 //#define TIMING
 //#define DETAIL_TIMING
-//#define METRICS
+#define METRICS
 //#define DETAIL_METRICS
 //#define NOBLOCK
 //#define NOBLOCK_WHILE
@@ -302,6 +302,8 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(
           std::chrono::milliseconds(numMilliseconds));
       } else {
+        printf("Node %lu Regular tuple behind by %f\n", nodeId,
+          diff.count() - i * increment);
         //if (i * increment - diff.count > dropTolerance) {
         //drop = true;
         //}
@@ -351,6 +353,10 @@ int main(int argc, char** argv) {
   size_t numResults = (graphStore->getNumResults() < resultsCapacity) ?
     graphStore->getNumResults() : resultsCapacity;
 
+  printf("Node %lu total GraphStore edge push attempts: %lu\n", nodeId,
+    graphStore->getTotalEdgePushes());
+  printf("Node %lu total GraphStore edge push fails: %lu\n", nodeId,
+    graphStore->getEdgePushFails());
 
   pushPull->terminate();
   
