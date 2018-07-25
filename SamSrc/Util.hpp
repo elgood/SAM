@@ -492,7 +492,7 @@ createPushSockets(
       }
 
       try {
-        uint32_t timeout = 1000; //milliseconds
+        uint32_t timeout = 10; //milliseconds
         pusher->setsockopt(ZMQ_SNDTIMEO, &timeout, sizeof(timeout));
       } catch (std::exception e) {
         std::string message = std::string("problem setting push socket's ")+
