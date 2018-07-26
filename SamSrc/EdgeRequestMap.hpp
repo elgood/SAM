@@ -1,12 +1,13 @@
 #ifndef SAM_EDGE_REQUEST_MAP_HPP
 #define SAM_EDGE_REQUEST_MAP_HPP
 
-#include "EdgeRequest.hpp"
-#include "Null.hpp"
-#include "Util.hpp"
 #include <atomic>
 #include <zmq.hpp>
 #include <boost/lexical_cast.hpp>
+#include "EdgeRequest.hpp"
+#include "Null.hpp"
+#include "Util.hpp"
+#include "TemporalSet.hpp"
 
 namespace sam {
 
@@ -36,6 +37,7 @@ public:
   typedef EdgeRequest<TupleType, source, target> EdgeRequestType;
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
+  typedef TemporalSet<size_t, double> TemporalSetType;
 
 private:
   SourceHF sourceHash;
@@ -57,6 +59,9 @@ private:
 
   /// Used to keep the edge push sockets thread safe.
   std::mutex* edgePushMutexes;
+
+  /// Keeps track of which edges have already been sent
+  TemporalSetType* seenEdges;
 
   /// Keeps track of how many edges we send
   std::atomic<size_t> edgePushCounter;
@@ -261,6 +266,19 @@ EdgeRequestMap(
   mutexes = new std::mutex[tableCapacity];
   ale = new std::list<EdgeRequestType>[tableCapacity];
   edgePushCounter = 0;
+
+  seenEdges = new TemporalSetType[numNodes];
+
+  //TODO Need to pass timeToLive somehow.
+  double timeToLive = 20;
+
+  for (size_t i = 0; i < tableCapacity; i++)
+  {
+    seenEdges[i] = TemporalSetType(tableCapacity, UnsignedIntHashFunction(),
+                                  timeToLive);
+                                   
+  }
+
 }
 
 // Destructor 
@@ -273,6 +291,7 @@ EdgeRequestMap<TupleType, source, target, time,
 {
   delete[] mutexes;
   delete[] ale;
+  delete[] seenEdges;
   terminate();
   DEBUG_PRINT("Node %lu end of ~EdgeRequestMap\n", nodeId);
 }
@@ -393,18 +412,19 @@ process(TupleType const& tuple,
         size_t node = edgeRequest->getReturn();
         
         if (!sentEdges[node]) {
-          
-          if (!terminated) {
-           
-            DETAIL_TIMING_BEG1
-            zmq::message_t message = tupleToZmq(tuple);
-            DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
-              "EdgeRequestMap::process creating message exceeded tolerance")
-            
-            DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
-              " edge %s\n", nodeId, node, toString(tuple).c_str());
-            
+
+          if (!seenEdges[node].contains(edgeId))
+          {
             if (!terminated) {
+             
+              DETAIL_TIMING_BEG1
+              zmq::message_t message = tupleToZmq(tuple);
+              DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
+                "EdgeRequestMap::process creating message exceeded tolerance")
+              
+              DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
+                " edge %s\n", nodeId, node, toString(tuple).c_str());
+              
               
               DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending %s\n",
                 nodeId, node, toString(tuple).c_str());
@@ -434,6 +454,8 @@ process(TupleType const& tuple,
               //// End sending tuple
               
               sentEdges[node] = true;
+              double edgeTime = std::get<time>(tuple);
+              seenEdges[node].insert(edgeId, edgeTime);
 
               if (!sent) {
                 printf("Node %lu->%lu EdgeRequestMap::process error sending"
@@ -442,7 +464,6 @@ process(TupleType const& tuple,
                 edgePushCounter.fetch_add(1);
                 countSentEdges++;
               }
-              
             }
           }
         }

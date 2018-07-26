@@ -159,9 +159,9 @@ public:
   size_t size()
   {
     size_t total = 0;
-    for (size_t i = 0; i < tableSize; i++) 
+    for (size_t i = 0; i < tableCapacity; i++) 
     {
-      total += hashTables[i].size() 
+      total += hashTables[i].size();
     }
     return total;
   }
