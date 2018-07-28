@@ -61,7 +61,7 @@ private:
   std::mutex* edgePushMutexes;
 
   /// Keeps track of which edges have already been sent
-  TemporalSetType* seenEdges;
+  std::vector<std::shared_ptr<TemporalSetType>> seenEdges;
 
   /// Keeps track of how many edges we send
   std::atomic<size_t> edgePushCounter;
@@ -267,16 +267,14 @@ EdgeRequestMap(
   ale = new std::list<EdgeRequestType>[tableCapacity];
   edgePushCounter = 0;
 
-  seenEdges = new TemporalSetType[numNodes];
 
   //TODO Need to pass timeToLive somehow.
   double timeToLive = 20;
 
   for (size_t i = 0; i < numNodes; i++)
   {
-    seenEdges[i] = TemporalSetType(tableCapacity, UnsignedIntHashFunction(),
-                                  timeToLive);
-                                   
+    seenEdges.push_back(std::make_shared<TemporalSetType>(tableCapacity, 
+                            UnsignedIntHashFunction(), timeToLive));
   }
 
 }
@@ -291,7 +289,6 @@ EdgeRequestMap<TupleType, source, target, time,
 {
   delete[] mutexes;
   delete[] ale;
-  delete[] seenEdges;
   terminate();
   DEBUG_PRINT("Node %lu end of ~EdgeRequestMap\n", nodeId);
 }
@@ -455,7 +452,7 @@ process(TupleType const& tuple,
               
               sentEdges[node] = true;
               double edgeTime = std::get<time>(tuple);
-              seenEdges[node].insert(edgeId, edgeTime);
+              seenEdges[node]->insert(edgeId, edgeTime);
 
               if (!sent) {
                 printf("Node %lu->%lu EdgeRequestMap::process error sending"
