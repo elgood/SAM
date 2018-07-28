@@ -272,7 +272,7 @@ EdgeRequestMap(
   //TODO Need to pass timeToLive somehow.
   double timeToLive = 20;
 
-  for (size_t i = 0; i < tableCapacity; i++)
+  for (size_t i = 0; i < numNodes; i++)
   {
     seenEdges[i] = TemporalSetType(tableCapacity, UnsignedIntHashFunction(),
                                   timeToLive);
@@ -413,8 +413,8 @@ process(TupleType const& tuple,
         
         if (!sentEdges[node]) {
 
-          if (!seenEdges[node].contains(edgeId))
-          {
+          //if (!seenEdges[node].contains(edgeId))
+          //{
             if (!terminated) {
              
               DETAIL_TIMING_BEG1
@@ -465,7 +465,7 @@ process(TupleType const& tuple,
                 countSentEdges++;
               }
             }
-          }
+          //}
         }
       }
       ++edgeRequest;
