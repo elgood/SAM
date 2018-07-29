@@ -357,6 +357,8 @@ int main(int argc, char** argv) {
     graphStore->getTotalEdgePushes());
   printf("Node %lu total GraphStore edge push fails: %lu\n", nodeId,
     graphStore->getEdgePushFails());
+  printf("Node %lu total GraphStore saved edge pushes: %lu\n", nodeId,
+    graphStore->getSavedEdgePushes());
 
   pushPull->terminate();
   

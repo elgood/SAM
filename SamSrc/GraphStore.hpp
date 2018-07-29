@@ -291,6 +291,10 @@ public:
   size_t getTotalEdgePushes() {
     return edgePushCounter + edgeRequestMap->getTotalEdgePushes();
   }
+  
+  size_t getSavedEdgePushes() {
+    return edgeRequestMap->getSavedEdgePushes();
+  }
 
   /**
    * Returns the total number of edges that this node pulled over the

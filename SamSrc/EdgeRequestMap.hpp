@@ -66,6 +66,8 @@ private:
   /// Keeps track of how many edges we send
   std::atomic<size_t> edgePushCounter;
 
+  std::atomic<size_t> savedEdgePushes;
+
   zmq::context_t& context;// = zmq::context_t(1);
 
   /// This has all the push sockets that we use to send edges to other nodes.
@@ -125,6 +127,8 @@ public:
    * Returns how many edges we've sent
    */
   size_t getTotalEdgePushes() { return edgePushCounter; }
+
+  size_t getSavedEdgePushes() { return savedEdgePushes; }
 
   /**
    * Iterates through the edge push sockets and sends a terminate
@@ -266,6 +270,7 @@ EdgeRequestMap(
   mutexes = new std::mutex[tableCapacity];
   ale = new std::list<EdgeRequestType>[tableCapacity];
   edgePushCounter = 0;
+  savedEdgePushes = 0;
 
 
   //TODO Need to pass timeToLive somehow.
@@ -410,8 +415,8 @@ process(TupleType const& tuple,
         
         if (!sentEdges[node]) {
 
-          //if (!seenEdges[node].contains(edgeId))
-          //{
+          if (!seenEdges[node]->contains(edgeId))
+          {
             if (!terminated) {
              
               DETAIL_TIMING_BEG1
@@ -462,7 +467,9 @@ process(TupleType const& tuple,
                 countSentEdges++;
               }
             }
-          //}
+          } else {
+            savedEdgePushes.fetch_add(1);
+          }
         }
       }
       ++edgeRequest;
