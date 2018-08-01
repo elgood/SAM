@@ -8,6 +8,7 @@
 #include <string>
 #include <random>
 #include "Util.hpp"
+#include "ZeroMQUtil.hpp"
 
 
 namespace po = boost::program_options;
@@ -100,38 +101,6 @@ int main(int argc, char** argv) {
   //size_t totalNumPushSockets = (numNodes - 1) * numPushSockets; 
   size_t totalNumPushSockets = (numNodes - 1); 
   DEBUG_PRINT("Total number of push sockets %lu\n", totalNumPushSockets);
-
-  /*for (size_t i = 0; i < totalNumPushSockets; i++) 
-  {
-
-    printf("i %lu\n", i);
-    /////////// Adding push sockets //////////////
-    auto pusher = std::shared_ptr<zmq::socket_t>(
-                   new zmq::socket_t(*context, ZMQ_PUSH));
-    printf("blah5 %lu\n", nodeId);
-    std::string hostname = prefix + 
-      boost::lexical_cast<std::string>(nodeId);
-    std::string ip = getIpString(hostname);
-    std::string url = "tcp://" + ip + ":";
-    url = url + boost::lexical_cast<std::string>(startingPort + i);
-    printf("Node %lu binding to %s\n", nodeId, url.c_str());
-
-    // The function complains if you use std::size_t, so be sure to use the
-    // uint32_t class member for hwm.
-    pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm)); 
-    try {
-      pusher->bind(url);
-    } catch (std::exception e) {
-      std::string message = "Node " +
-        boost::lexical_cast<std::string>(nodeId) +
-        " couldn't bind to url " + url + ": " + e.what();
-      throw std::runtime_error(message);
-    }
-    printf("blah5.5 %lu\n", nodeId);
-    pushers.push_back(pusher);
-
-
-  }*/
 
   std::atomic<size_t> messagesReceived(0);
   std::mutex zmqLock;

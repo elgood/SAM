@@ -14,6 +14,11 @@ include_directories("${STDIO_INCLUDE_PATH}/dummy/../")
 find_path(STRING_INCLUDE_PATH string /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1)
 include_directories("${STRING_INCLUDE_PATH}/dummy/../")
 
+############## Protoc ##############################
+#find_package(Protobuf REQUIRED)
+#include_directories(${Protobuf_INCLUDE_DIRS})
+
+
 ######################## Boost ######################
 
 SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_66_0")

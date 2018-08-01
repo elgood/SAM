@@ -295,25 +295,6 @@ zmq::message_t fillZmqMessage(std::string const& str)
   return message;
 }
 
-/**
- * Given the zmq message, extract the data as a string.
- * \param message The zmq to get the data from.
- * \return Returns the zmq data as a string.
- */
-std::string getStringFromZmqMessage( zmq::message_t const& message )
-{
-  // Reinterpret the void pointer to be an unsigned char pointer.
-  unsigned char const * dataptr = 
-    reinterpret_cast<unsigned char const*>(message.data());
-
-  // Creates a string with proper size so we can iterate over it and 
-  // copy in the values from the message.
-  std::string rString(message.size(), 'x');
-
-  std::copy(dataptr, &dataptr[message.size()], rString.begin());
-  return rString;
-}
-
 template<typename... Tp>
 inline zmq::message_t tupleToZmq(std::tuple<Tp...>const& t)
 {
@@ -321,43 +302,6 @@ inline zmq::message_t tupleToZmq(std::tuple<Tp...>const& t)
   zmq::message_t message = fillZmqMessage(str);
 
   return message;
-}
-
-/**
- * Creates an empty zmq message.  We use this to indicate a terminate
- * message.
- */
-zmq::message_t emptyZmqMessage() {
-  std::string str = "";
-  zmq::message_t message = fillZmqMessage(str);
-  return message;
-}
-
-/**
- * Creates a zmq message that means terimate
- */
-zmq::message_t terminateZmqMessage() {
-  return emptyZmqMessage();
-  //std::string str = "terminate";
-  //zmq::message_t message = fillZmqMessage(str);
-  //return message;
-}
-
-
-
-/**
- * Checks if the zmq message is a terminate message. A terminate message
- * is one with an empty string.
- */
-bool isTerminateMessage(zmq::message_t& message)
-{
-  //std::string str = getStringFromZmqMessage(message);
-  //if (str.compare("terminate") == 0) {
-  //  return true;
-  //}
-  //return false;
-  if (message.size() == 0) return true;
-  return false;
 }
 
 inline
@@ -378,97 +322,6 @@ size_t get_end_index(size_t num_elements, size_t stream_id,
     num_elements;
  
 }
-
-
-/**
- * This gives the correct hostname for the ith pull socket.
- * The total number of pull sockets to create is (numNodes - 1) *
- * numPushSockets.  Each node creates numPushSockets sockets for each
- * node to pull from (e.g. a node has numPushSockets sockets to choose from
- * for each node except itself).
- * \param i The ith socket out of (numNodes - 1) * numPushSockets
- * \param nodeId The id of the node in the cluster
- * \param numPushSockets The number of push sockets a node creates for each
- *   other node to pull from.
- * \param numNodes The total number of nodes in the cluster.
- * \param hostnames The names of the hosts in the cluster.
- */
-inline
-std::string getHostnameForPull(size_t i,
-                        size_t nodeId,
-                        size_t numPushSockets, 
-                        size_t numNodes, 
-                        std::vector<std::string> const& hostnames)
-{
-  if (i >= (numNodes - 1) * numPushSockets) {
-    std::string message = "sam::getHostname i " + 
-      boost::lexical_cast<std::string>(i) + " >= (" +
-      boost::lexical_cast<std::string>(numNodes) + " - ) * " +
-      boost::lexical_cast<std::string>(numPushSockets);
-    throw UtilException(message);
-  }
-
-  // This conditional accounts for the fact that a node doesn't pull from
-  // itself.
-  size_t index;
-  if ((i / numPushSockets) < nodeId) {
-    index = i / numPushSockets;
-  } else {
-    index = i / numPushSockets + 1;
-  }
-  if (index >= hostnames.size()) {
-    std::string message = "sam::getHostname index " +
-      boost::lexical_cast<std::string>(index) + " >= hostname.size() " +
-      boost::lexical_cast<std::string>(hostnames.size());
-    throw UtilException(message);
-  }
-  return hostnames[index];
-}
-
-/**
- * Similar to getHostnames, this gives you the associated port.
- * \param i The ith socket out of (numNodes - 1) * numPushSockets
- * \param nodeId The id of the node in the cluster
- * \param numPushSockets The number of push sockets a node creates for each
- *   other node to pull from.
- * \param numNodes The total number of nodes in the cluster.
- * \param startingPort The start of the port range.
- */
-inline
-size_t getPortForPull(size_t i, 
-                    size_t nodeId,
-                    size_t numPushSockets,
-                    size_t numNodes,
-                    size_t startingPort)
-{
-  if (i >= (numNodes - 1) * numPushSockets) {
-    std::string message = "sam::getPort i " + 
-      boost::lexical_cast<std::string>(i) + " >= (" +
-      boost::lexical_cast<std::string>(numNodes) + " - ) * " +
-      boost::lexical_cast<std::string>(numPushSockets);
-    throw UtilException(message);
-  }
-
-  // Find which node we are wanting to talk to.
-  size_t targetNode = i / numPushSockets;
-  if ((i / numPushSockets) >= nodeId) {
-    targetNode++;
-  }
-
-  size_t port;
-  
-  if (targetNode > nodeId) {
-    port = startingPort + nodeId * numPushSockets + i % numPushSockets;
-  } else if (targetNode < nodeId) {
-    port = startingPort + (nodeId - 1) * numPushSockets + i % numPushSockets;
-  } else {
-    // This shouldn't happen
-    throw UtilException("sam::getPort targetNode == nodeId");
-  }
-
-  return port;
-}
-
 
 inline
 void
@@ -537,6 +390,8 @@ createPushSockets(
     } 
   }
 }
+
+
 
 namespace numTrianglesDetails
 {

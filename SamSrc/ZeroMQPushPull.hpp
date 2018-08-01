@@ -20,6 +20,7 @@
 #include "Netflow.hpp"
 #include "IdGenerator.hpp"
 #include "Util.hpp"
+#include "ZeroMQUtil.hpp"
 
 
 namespace sam {

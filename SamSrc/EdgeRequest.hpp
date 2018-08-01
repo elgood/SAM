@@ -5,6 +5,7 @@
 #include "Netflow.hpp"
 #include "Null.hpp"
 #include "Util.hpp"
+#include "ZeroMQUtil.hpp"
 #include <stdexcept>
 
 namespace sam {

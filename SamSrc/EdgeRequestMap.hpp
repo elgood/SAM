@@ -61,7 +61,7 @@ private:
   std::mutex* edgePushMutexes;
 
   /// Keeps track of which edges have already been sent
-  std::vector<std::shared_ptr<TemporalSetType>> seenEdges;
+  //std::vector<std::shared_ptr<TemporalSetType>> seenEdges;
 
   /// Keeps track of how many edges we send
   std::atomic<size_t> edgePushCounter;
@@ -276,11 +276,11 @@ EdgeRequestMap(
   //TODO Need to pass timeToLive somehow.
   double timeToLive = 20;
 
-  for (size_t i = 0; i < numNodes; i++)
-  {
-    seenEdges.push_back(std::make_shared<TemporalSetType>(tableCapacity, 
-                            UnsignedIntHashFunction(), timeToLive));
-  }
+  //for (size_t i = 0; i < numNodes; i++)
+  //{
+  //  seenEdges.push_back(std::make_shared<TemporalSetType>(tableCapacity, 
+  //                          UnsignedIntHashFunction(), timeToLive));
+  //}
 
 }
 
@@ -415,8 +415,8 @@ process(TupleType const& tuple,
         
         if (!sentEdges[node]) {
 
-          if (!seenEdges[node]->contains(edgeId))
-          {
+          //if (!seenEdges[node]->contains(edgeId))
+          //{
             if (!terminated) {
              
               DETAIL_TIMING_BEG1
@@ -457,7 +457,7 @@ process(TupleType const& tuple,
               
               sentEdges[node] = true;
               double edgeTime = std::get<time>(tuple);
-              seenEdges[node]->insert(edgeId, edgeTime);
+              //seenEdges[node]->insert(edgeId, edgeTime);
 
               if (!sent) {
                 printf("Node %lu->%lu EdgeRequestMap::process error sending"
@@ -467,9 +467,9 @@ process(TupleType const& tuple,
                 countSentEdges++;
               }
             }
-          } else {
-            savedEdgePushes.fetch_add(1);
-          }
+          //} else {
+          //  savedEdgePushes.fetch_add(1);
+          //}
         }
       }
       ++edgeRequest;
