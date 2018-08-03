@@ -156,10 +156,9 @@ size_t getPortForPull(size_t i,
  *
  * To set up, follow the pattern below:
  * 1) call the constructor
- * 2) register callback functions that will be called when data arrives.
- * 3) call acceptData(), which starts the pull threads that gets data from
- *    the other nodes.
- * 4) Send data to the other nodes using send().
+ *   a) You must provide a set of functions that will be called when messages
+ *      arrive.  The input parameter of the functions is a string.
+ * 2) Send data to the other nodes using send().
  *
  * No information is necessary about the type of data being sent.  The only
  * requirement is that it can be serialized as an std::string.  send()
@@ -209,6 +208,30 @@ private:
   std::uniform_int_distribution<size_t> dist;
 
 public:
+  /**
+   * Constructor.
+   *
+   * Creates a set of push sockets.  The total number of push sockets created
+   * is (numNodes - 1) * numPushSockets.  The reason for having multiple
+   * push sockets is that we want to maximize the total network bandwidth.
+   * In the code base, often multiple threads are pushing.  This will help
+   * ease contention.
+   *
+   * After creating the push sockets, it also starts the pull threads.  There
+   * are numPullThreads total pull threads.  The pullThreads cover 
+   * (numNodes - 1) * numPushSockets pull sockets.  Experiments so far
+   * indicate that only a few pull threads are necessary.
+   *
+   * \param numNodes The number of nodes in the cluster.
+   * \param numPushSockets The number of push sockets to create for each node
+   *   except for the given node.
+   * \param numPullThreads How many total pull threads will cover the entire
+   *   set of pull sockets.
+   * \param hostnames The hostnames of all nodes in the cluster.
+   * \param hwm High-water mark.  A zeromq parameter.
+   * \param callbacks A vector of function wrappers.  These are called each
+   *   time a message is received from the pull threads.
+   */
   PushPull(   
     size_t numNodes,
     size_t nodeId,

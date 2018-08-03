@@ -84,8 +84,6 @@ int main(int argc, char** argv) {
     message = netflowString;
   }
 
-  auto noopFunction = [](std::string const& str) {
-  };
 
   std::vector<std::string> hostnames;
 
@@ -99,6 +97,9 @@ int main(int argc, char** argv) {
     }
   }
 
+  // PushPull needs a list of 
+  auto noopFunction = [](std::string const& str) {
+  };
   typedef PushPull::FunctionType FunctionType;
   std::vector<FunctionType> functions;
   functions.push_back(noopFunction);
@@ -121,8 +122,12 @@ int main(int argc, char** argv) {
     {
       bool found = false;
       size_t node;
+
+      // iterate until we find a destination node that is not the current node
       while (!found) {
         node = dist(myRand);
+
+        // Don't want to send data to ourselves.
         if (node != nodeId) {
           found = true;
         }
@@ -132,6 +137,26 @@ int main(int argc, char** argv) {
   };
 
   std::vector<std::thread> threads;
+  threads.resize(numSendThreads);
+
+  for (size_t i = 0; i < numSendThreads; i++)
+  {
+    threads[i] = std::thread(function);
+  }
+
+  for (size_t i = 0; i < numSendThreads; i++)
+  {
+    threads[i].join();
+  }
+
+  auto totalTimingEnd = std::chrono::high_resolution_clock::now();
+  auto totalTimingDiff = std::chrono::duration_cast<
+    std::chrono::duration<double>>(totalTimingEnd - totalTimingBegin);
+  double totalTime = totalTimingDiff.count();
+  size_t totalMessages = numMessages * numSendThreads;
+  printf("Node %lu total time: %f \n", nodeId, totalTime);
+
+
 
 
 }
