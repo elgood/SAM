@@ -122,9 +122,9 @@ size_t getPortForPull(size_t i,
                     size_t startingPort)
 {
   if (i >= (numNodes - 1) * numPushSockets) {
-    std::string message = "sam::getPort i " + 
+    std::string message = "sam::getPortForPull i " + 
       boost::lexical_cast<std::string>(i) + " >= (" +
-      boost::lexical_cast<std::string>(numNodes) + " - ) * " +
+      boost::lexical_cast<std::string>(numNodes) + " - 1) * " +
       boost::lexical_cast<std::string>(numPushSockets);
     throw ZeroMQUtilException(message);
   }
@@ -181,6 +181,7 @@ private:
   std::vector<std::thread> pullThreads; ///> All the pull threads.
   uint32_t hwm; ///> The high-water mark
   size_t startingPort; ///> The starting port
+  uint32_t timeout; ///> The timeout in ms for sending data
 
   std::vector<std::shared_ptr<zmq::socket_t>> pushers;
 
@@ -240,7 +241,8 @@ public:
     std::vector<std::string> hostnames,
     uint32_t hwm,
     std::vector<FunctionType> callbacks,
-    size_t startingPort);
+    size_t startingPort,
+    uint32_t timeout);
 
   ~PushPull();
 
@@ -253,6 +255,11 @@ public:
    * Terminates accepting data and prevents more data from being sent.
    */
   void terminate();
+
+  size_t getTotalMessagesReceived() const 
+  {
+    return totalMessagesReceived;
+  }
 
 
 private:
@@ -276,7 +283,8 @@ PushPull::PushPull(
   std::vector<std::string> hostnames,
   uint32_t hwm,
   std::vector<FunctionType> callbacks,
-  size_t startingPort)
+  size_t startingPort,
+  uint32_t timeout)
 {
   this->numNodes       = numNodes;
   this->nodeId         = nodeId;
@@ -286,7 +294,10 @@ PushPull::PushPull(
   this->hwm            = hwm;
   this->callbacks      = callbacks;
   this->startingPort   = startingPort;
+  this->timeout        = timeout;
   totalNumPushSockets = (numNodes - 1) * numPushSockets; 
+
+  totalMessagesReceived = 0;
   
   pushMutexes = new std::mutex[totalNumPushSockets];
 
@@ -316,6 +327,7 @@ void PushPull::terminate()
     {
       bool sent = false;
       while (!sent) {
+        //printf("Node %lu Sending terminate to %lu\n", nodeId, i);
         pushMutexes[i].lock();
         sent = pushers[i]->send(terminateZmqMessage());
         pushMutexes[i].unlock();
@@ -325,19 +337,24 @@ void PushPull::terminate()
         }
       }
     }
+
+    for (size_t i = 0; i < numPullThreads; i++) 
+    {
+      pullThreads[i].join(); 
+    }
   }
 }
 
 void PushPull::createPushSockets()
 {
   pushers.resize(totalNumPushSockets);
+  std::string hostname = hostnames[nodeId];
+  std::string ip = getIpString(hostname);
   for (size_t i = 0; i < totalNumPushSockets; i++) 
   {
     zmqLock.lock();
     auto pusher = std::shared_ptr<zmq::socket_t>(
       new zmq::socket_t(context, ZMQ_PUSH));
-    std::string hostname = hostnames[i];
-    std::string ip = getIpString(hostname);
     std::string url = "tcp://" + ip + ":";
       url = url + boost::lexical_cast<std::string>(startingPort + i);
       DEBUG_PRINT("Node %lu binding to %s\n", nodeId, url.c_str());
@@ -345,6 +362,10 @@ void PushPull::createPushSockets()
     // The function complains if you use std::size_t, so be sure to use the
     // uint32_t class member for hwm.
     pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+
+    // Setting the timeout for the socket
+    //printf("Node %lu setting timeout %lu\n", nodeId, timeout);
+    //pusher->setsockopt(ZMQ_SNDTIMEO, &timeout, sizeof(timeout));
 
     try {
       pusher->bind(url);
@@ -373,6 +394,8 @@ void PushPull::initializePullThreads()
 
     this->zmqLock.lock();
     size_t numVisiblePushSockets = end - beg;
+    //printf("beg %lu end %lu numVisiblePushSockets %lu\n", beg, end,
+    //  numVisiblePushSockets);
 
     zmq::pollitem_t pollItems[numVisiblePushSockets];
     std::vector<zmq::socket_t*> sockets;
@@ -385,10 +408,11 @@ void PushPull::initializePullThreads()
     // thread calling zmq_poll().  Below we create the poll items and the
     // pull sockets.
 
+    size_t numAdded = 0;
     for( size_t i = beg; i < end; i++) {
-      std::string hostname = getHostnameForPull(i, nodeId, 1,
+      std::string hostname = getHostnameForPull(i, nodeId, numPushSockets,
                                                 numNodes, hostnames);
-      size_t port = getPortForPull(i, nodeId, 1,
+      size_t port = getPortForPull(i, nodeId, numPushSockets,
                                    numNodes, startingPort);
       zmq::socket_t* socket = new zmq::socket_t(context, ZMQ_PULL);
       std::string url = "";
@@ -398,6 +422,8 @@ void PushPull::initializePullThreads()
       url = url + boost::lexical_cast<std::string>(port);
 
       socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+
+      //printf("Node %lu connecting to %s\n", nodeId, url.c_str());
 
       try {
         socket->connect(url);
@@ -409,32 +435,41 @@ void PushPull::initializePullThreads()
       }
       sockets.push_back(socket);
 
-      pollItems[i].socket = *socket;
-      pollItems[i].events = ZMQ_POLLIN;
-      terminate[i] = false;
+      pollItems[numAdded].socket = *socket;
+      pollItems[numAdded].events = ZMQ_POLLIN;
+      terminate[numAdded] = false;
+      numAdded++;
     }
     this->zmqLock.unlock();
 
     bool stop = false;
 
+    auto timeDataArrived = std::chrono::high_resolution_clock::now();
+
     while (!stop) {
       zmq::message_t message;
-      int rValue = zmq::poll(pollItems, numVisiblePushSockets, 1);
+      // Third parameter is the timeout in milliseconds to wait for input.
       int numStop = 0;
+      int rValue = zmq::poll(pollItems, numVisiblePushSockets, 1);
       for (size_t i = 0; i < numVisiblePushSockets; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
 
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
+
+            
             
             DEBUG_PRINT("Node %lu pullThread received terminate "
               "from %lu\n", nodeId, i);
             terminate[i] = true;
 
+            timeDataArrived = std::chrono::high_resolution_clock::now();
+
           } else if (message.size() > 0) {
             
             DEBUG_PRINT("Node %lu pullThread received message of size %lu "
-              "from %lu\n", nodeId, message.size(), i);
+              "from %lu %s\n", nodeId, message.size(), i,
+               getStringFromZmqMessage(message).c_str());
             receivedMessages++;
             
             std::string str = getStringFromZmqMessage(message);
@@ -443,16 +478,28 @@ void PushPull::initializePullThreads()
               callback(str);              
             }
 
+            timeDataArrived = std::chrono::high_resolution_clock::now();
+
           } else {
             
-            DEBUG_PRINT("Node %lu pullThread received mystery"
+            printf("Node %lu pullThread received mystery"
               " message %s\n", nodeId,
               getStringFromZmqMessage(message).c_str());
           }
         }
         if (terminate[i]) numStop++;
       }
+      
+      // Exit if we haven't received data for a while
+      auto timeNow = std::chrono::high_resolution_clock::now();
+      size_t timeDiff = 
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+                        timeNow - timeDataArrived).count();
+     
+      //printf("Node %lu timeDiff %lu\n", nodeId, timeDiff);
+
       if (numStop == numVisiblePushSockets) stop = true;
+      if (timeDiff > 1000) stop = true;
     }
 
     for (auto socket : sockets) {
@@ -461,6 +508,8 @@ void PushPull::initializePullThreads()
     
     this->totalMessagesReceived.fetch_add(receivedMessages);
 
+    //printf("Node %lu pullThread exiting\n", this->nodeId);
+
   };
 
   for (size_t i = 0; i < numPullThreads; i++) {
@@ -468,13 +517,23 @@ void PushPull::initializePullThreads()
   }
 }
 
-void PushPull::send(std::string str, size_t nodeId)
+void PushPull::send(std::string str, size_t otherNode)
 {
+  DEBUG_PRINT("Node %lu->%lu sending %s\n", nodeId, otherNode, str.c_str());
   size_t pushSocket = dist(myRand);
-  size_t index = nodeId * numPushSockets + pushSocket;
+  size_t offset = otherNode < nodeId ? otherNode : otherNode - 1;
+  //printf("offset %lu\n", offset);
+  //printf("otherNode %lu numPushSockets %lu pushSocket %lu\n",
+  //  otherNode, numPushSockets, pushSocket);
+  size_t index = offset * numPushSockets + pushSocket;
+  //printf("index %lu\n", index);
   zmq::message_t message = fillZmqMessage(str);
+  //printf("Node %lu index %lu\n", nodeId, index);
   pushMutexes[index].lock();
+  //printf("Node %lu got past mutex\n", nodeId);
   bool sent = pushers[index]->send(message);
+  DEBUG_PRINT("Node %lu->%lu sent %s rvalue %d\n", nodeId, otherNode, 
+    str.c_str(), sent);
   pushMutexes[index].unlock();
   if (!sent) {
     printf("Node %lu PushPull::send couldn't send message to %luth socket\n",

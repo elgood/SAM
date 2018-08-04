@@ -1,4 +1,6 @@
 
+//#define DEBUG
+
 #include <boost/program_options.hpp>
 #include "ZeroMQUtil.hpp"
 
@@ -10,7 +12,7 @@ namespace po = boost::program_options;
 using namespace sam;
 
 int main(int argc, char** argv) {
- 
+
   auto totalTimingBegin = std::chrono::high_resolution_clock::now();
 
   /// Parameters
@@ -25,6 +27,7 @@ int main(int argc, char** argv) {
   size_t numPullThreads; ///> Number of pull threads
   size_t numPushSockets; ///> Number of push sockets per node
   bool useNetflowString = false;
+  uint32_t timeout; ///> Timeout in milliseconds
 
   /// An example netflow string.  This is used as the message 
   /// when --netflowString is selected.
@@ -60,12 +63,16 @@ int main(int argc, char** argv) {
       "Number of push sockets created to talk to each node.")
     ("netflowString", po::bool_switch(&useNetflowString),
       "If specified, uses an example netflow string for the message")
+    ("timeout", po::value<uint32_t>(&timeout)->default_value(0),
+      "Send Timeout in milliseconds.  If zero, then block until complete."
+      "  (Default 0)")
   ;
 
   // Parse the command line variables
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
+
 
   // Print out the help and exit if --help was specified.
   if (vm.count("help")) {
@@ -86,11 +93,13 @@ int main(int argc, char** argv) {
 
 
   std::vector<std::string> hostnames;
+  hostnames.resize(numNodes);
 
   if (numNodes == 1) { // Case when we are operating on one node
     hostnames[0] = "127.0.0.1";
   } else {
-    for (int i = 0; i < numNodes; i++) {
+    for (size_t i = 0; i < numNodes; i++) {
+      //printf("i %lu\n", i);
       // Assumes all the host names can be composed by adding prefix with
       // [0,numNodes).
       hostnames[i] = prefix + boost::lexical_cast<std::string>(i);
@@ -106,9 +115,10 @@ int main(int argc, char** argv) {
 
   PushPull* pushPull = new PushPull(numNodes, nodeId, numPushSockets, 
                                     numPullThreads, hostnames, hwm,
-                                    functions, startingPort);
+                                    functions, startingPort, timeout);
 
   
+
 
   // Thread to create data and send it out.  
   auto function = [message, numNodes, nodeId, numPushSockets, numPullThreads,
@@ -132,6 +142,7 @@ int main(int argc, char** argv) {
           found = true;
         }
       }
+      //printf("Node %lu sending message %s\n", nodeId, message.c_str());
       pushPull->send(message, node);
     }
   };
@@ -144,19 +155,23 @@ int main(int argc, char** argv) {
     threads[i] = std::thread(function);
   }
 
+
   for (size_t i = 0; i < numSendThreads; i++)
   {
     threads[i].join();
   }
+
+  pushPull->terminate();
 
   auto totalTimingEnd = std::chrono::high_resolution_clock::now();
   auto totalTimingDiff = std::chrono::duration_cast<
     std::chrono::duration<double>>(totalTimingEnd - totalTimingBegin);
   double totalTime = totalTimingDiff.count();
   size_t totalMessages = numMessages * numSendThreads;
+  size_t totalReceived = pushPull->getTotalMessagesReceived();
   printf("Node %lu total time: %f \n", nodeId, totalTime);
-
-
+  printf("Node %lu messages/second: %f\n", nodeId, totalMessages / totalTime);
+  printf("Node %lu total messages received: %lu \n", nodeId, totalReceived);
 
 
 }

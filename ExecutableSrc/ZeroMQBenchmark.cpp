@@ -37,6 +37,7 @@ int main(int argc, char** argv) {
   //size_t numPushThreads; ///> Number of push threads
   size_t numPullThreads; ///> Number of pull threads
   bool useNetflowString = false;
+  uint32_t timeout; ///> Timeout in milliseconds
 
   /// An example netflow string.  This is used as the message 
   /// when --netflowString is selected.
@@ -70,6 +71,9 @@ int main(int argc, char** argv) {
       "The number of threads that are pulling data")
     ("netflowString", po::bool_switch(&useNetflowString),
       "If specified, uses an example netflow string for the message")
+    ("timout", po::value<uint32_t>(&timeout)->default_value(0),
+      "Send Timeout in milliseconds.  If zero, then block until complete."
+      "  (Default 0)")
   ;
 
   // Parse the command line variables
@@ -152,7 +156,7 @@ int main(int argc, char** argv) {
       url = url + boost::lexical_cast<std::string>(port);
       
       socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
-      DEBUG_PRINT("Node %lu connecting to %s\n", nodeId, url.c_str());
+      printf("Node %lu connecting to %s\n", nodeId, url.c_str());
       try {
         socket->connect(url);
       } catch (std::exception e) {
@@ -250,7 +254,7 @@ int main(int argc, char** argv) {
       std::string ip = getIpString(hostname);
       std::string url = "tcp://" + ip + ":";
       url = url + boost::lexical_cast<std::string>(startingPort + threadId);
-      DEBUG_PRINT("Node %lu binding to %s\n", nodeId, url.c_str());
+      printf("Node %lu binding to %s\n", nodeId, url.c_str());
 
       // The function complains if you use std::size_t, so be sure to use the
       // uint32_t class member for hwm.
