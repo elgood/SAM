@@ -532,7 +532,7 @@ void PushPull::initializePullThreads()
     
     this->totalMessagesReceived.fetch_add(receivedMessages);
 
-    //printf("Node %lu pullThread exiting\n", this->nodeId);
+    printf("Node %lu pullThread exiting\n", this->nodeId);
 
   };
 
@@ -559,8 +559,10 @@ bool PushPull::send(std::string str, size_t otherNode)
     str.c_str(), sent);
   
   if (!sent) {
-    printf("Node %lu PushPull::send couldn't send message to %luth socket\n",
-      nodeId, index);
+    size_t failedNodeId = index / numPushSockets;
+    failedNodeId = failedNodeId >= nodeId ? failedNodeId + 1 : failedNodeId;
+    printf("Node %lu PushPull::send couldn't send message to %luth socket "
+      "failedNodeId %lu\n", nodeId, index, failedNodeId);
     totalMessagesFailed.fetch_add(1);
   } else {
     totalMessagesSent.fetch_add(1);
