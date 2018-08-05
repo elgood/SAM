@@ -86,43 +86,31 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
                                     hwm);
 
   // Setting up GraphStore objects
-  std::vector<std::string> requestHostnames;
-  std::vector<size_t> requestPorts;
-  std::vector<std::string> edgeHostnames;
-  std::vector<size_t> edgePorts;
   size_t graphCapacity = 1000; //For csc and csr
   size_t tableCapacity = 1000; //For SubgraphQueryResultMap intermediate results
   size_t resultsCapacity = 1000; //For final results
   double timeWindow = 100;
 
-  requestHostnames.push_back("localhost");
-  requestPorts.push_back(10002);
-  requestHostnames.push_back("localhost");
-  requestPorts.push_back(10003);
-  edgeHostnames.push_back("localhost");
-  edgePorts.push_back(10004);
-  edgeHostnames.push_back("localhost");
-  edgePorts.push_back(10005);
-
-  size_t numThreads = 1;
+  size_t startingPort = 10002;
+  size_t numPushSockets = 1;
+  size_t numPullThreads = 1;
+  size_t timeout = 1000;
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
-                          context,
                           numNodes, nodeId0,
-                          requestHostnames, requestPorts,
-                          edgeHostnames, edgePorts,
+                          hostnames, startingPort, 
                           hwm, graphCapacity,
-                          tableCapacity, resultsCapacity, timeWindow,
-                          numThreads);
+                          tableCapacity, resultsCapacity, 
+                          numPushSockets, numPullThreads, timeout,
+                          timeWindow);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
-                          context,
                           numNodes, nodeId1,
-                          requestHostnames, requestPorts,
-                          edgeHostnames, edgePorts,
+                          hostnames, startingPort, 
                           hwm, graphCapacity,
-                          tableCapacity, resultsCapacity, timeWindow,
-                          numThreads);
+                          tableCapacity, resultsCapacity, 
+                          numPushSockets, numPullThreads, timeout,
+                          timeWindow);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects

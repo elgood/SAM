@@ -178,10 +178,12 @@ private:
   size_t numPullThreads; ///> Number of pull threads
   std::mutex zmqLock; ///> Lock for some zmq stuff
   std::atomic<size_t> totalMessagesReceived; ///> Total messages pulled.
+  std::atomic<size_t> totalMessagesSent; ///> Total messages pushed.
+  std::atomic<size_t> totalMessagesFailed; ///> Total messages failed to send.
   std::vector<std::thread> pullThreads; ///> All the pull threads.
   uint32_t hwm; ///> The high-water mark
   size_t startingPort; ///> The starting port
-  uint32_t timeout; ///> The timeout in ms for sending data
+  int timeout; ///> The timeout in ms for send() calls
 
   std::vector<std::shared_ptr<zmq::socket_t>> pushers;
 
@@ -232,6 +234,8 @@ public:
    * \param hwm High-water mark.  A zeromq parameter.
    * \param callbacks A vector of function wrappers.  These are called each
    *   time a message is received from the pull threads.
+   * \param timeout The amount of time in ms that a send() call waits before
+   *  timing out.  If -1, blocks until completed.
    */
   PushPull(   
     size_t numNodes,
@@ -242,14 +246,15 @@ public:
     uint32_t hwm,
     std::vector<FunctionType> callbacks,
     size_t startingPort,
-    uint32_t timeout);
+    int timeout);
 
   ~PushPull();
 
   /**
    * Sends the data to the specified node.
+   * \return Returns true if the data was sent, false otherwise.
    */
-  void send(std::string data, size_t node);
+  bool send(std::string data, size_t node);
 
   /**
    * Terminates accepting data and prevents more data from being sent.
@@ -260,6 +265,23 @@ public:
   {
     return totalMessagesReceived;
   }
+
+  size_t getTotalMessagesSent() const 
+  {
+    return totalMessagesSent;
+  }
+
+  size_t getTotalMessagesFailed() const 
+  {
+    return totalMessagesFailed;
+  }
+
+  size_t getLastPort() const
+  {
+    return startingPort + (numNodes - 1) * numPushSockets - 1;
+  }
+
+
 
 
 private:
@@ -284,7 +306,7 @@ PushPull::PushPull(
   uint32_t hwm,
   std::vector<FunctionType> callbacks,
   size_t startingPort,
-  uint32_t timeout)
+  int timeout)
 {
   this->numNodes       = numNodes;
   this->nodeId         = nodeId;
@@ -298,6 +320,8 @@ PushPull::PushPull(
   totalNumPushSockets = (numNodes - 1) * numPushSockets; 
 
   totalMessagesReceived = 0;
+  totalMessagesSent     = 0;
+  totalMessagesFailed   = 0;
   
   pushMutexes = new std::mutex[totalNumPushSockets];
 
@@ -326,7 +350,7 @@ void PushPull::terminate()
     for (size_t i = 0; i < totalNumPushSockets; i++) 
     {
       bool sent = false;
-      while (!sent) {
+      //while (!sent) {
         //printf("Node %lu Sending terminate to %lu\n", nodeId, i);
         pushMutexes[i].lock();
         sent = pushers[i]->send(terminateZmqMessage());
@@ -335,7 +359,7 @@ void PushPull::terminate()
           printf("Node %lu PullPull::terminate failed to send terminate "
             "message to %luth push socket\n", nodeId, i);
         }
-      }
+      //}
     }
 
     for (size_t i = 0; i < numPullThreads; i++) 
@@ -364,8 +388,8 @@ void PushPull::createPushSockets()
     pusher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
 
     // Setting the timeout for the socket
-    //printf("Node %lu setting timeout %lu\n", nodeId, timeout);
-    //pusher->setsockopt(ZMQ_SNDTIMEO, &timeout, sizeof(timeout));
+    DEBUG_PRINT("Node %lu setting timeout %d\n", nodeId, timeout);
+    pusher->setsockopt(ZMQ_SNDTIMEO, &timeout, sizeof(timeout));
 
     try {
       pusher->bind(url);
@@ -517,28 +541,31 @@ void PushPull::initializePullThreads()
   }
 }
 
-void PushPull::send(std::string str, size_t otherNode)
+bool PushPull::send(std::string str, size_t otherNode)
 {
-  DEBUG_PRINT("Node %lu->%lu sending %s\n", nodeId, otherNode, str.c_str());
+  DEBUG_PRINT("Node %lu->%lu PushPull::send sending %s\n", nodeId, 
+    otherNode, str.c_str());
+
   size_t pushSocket = dist(myRand);
   size_t offset = otherNode < nodeId ? otherNode : otherNode - 1;
-  //printf("offset %lu\n", offset);
-  //printf("otherNode %lu numPushSockets %lu pushSocket %lu\n",
-  //  otherNode, numPushSockets, pushSocket);
   size_t index = offset * numPushSockets + pushSocket;
-  //printf("index %lu\n", index);
   zmq::message_t message = fillZmqMessage(str);
-  //printf("Node %lu index %lu\n", nodeId, index);
+  
   pushMutexes[index].lock();
-  //printf("Node %lu got past mutex\n", nodeId);
   bool sent = pushers[index]->send(message);
+  pushMutexes[index].unlock();
+  
   DEBUG_PRINT("Node %lu->%lu sent %s rvalue %d\n", nodeId, otherNode, 
     str.c_str(), sent);
-  pushMutexes[index].unlock();
+  
   if (!sent) {
     printf("Node %lu PushPull::send couldn't send message to %luth socket\n",
       nodeId, index);
+    totalMessagesFailed.fetch_add(1);
+  } else {
+    totalMessagesSent.fetch_add(1);
   }
+  return sent;
 
 }
 

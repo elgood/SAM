@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
   size_t numPullThreads; ///> Number of pull threads
   size_t numPushSockets; ///> Number of push sockets per node
   bool useNetflowString = false;
-  uint32_t timeout; ///> Timeout in milliseconds
+  int timeout; ///> Timeout in milliseconds for zmq::send() calls
 
   /// An example netflow string.  This is used as the message 
   /// when --netflowString is selected.
@@ -63,9 +63,9 @@ int main(int argc, char** argv) {
       "Number of push sockets created to talk to each node.")
     ("netflowString", po::bool_switch(&useNetflowString),
       "If specified, uses an example netflow string for the message")
-    ("timeout", po::value<uint32_t>(&timeout)->default_value(0),
-      "Send Timeout in milliseconds.  If zero, then block until complete."
-      "  (Default 0)")
+    ("timeout", po::value<int>(&timeout)->default_value(-1),
+      "Send Timeout in milliseconds.  If -1, then block until complete."
+      "  (Default -1)")
   ;
 
   // Parse the command line variables
@@ -106,7 +106,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  // PushPull needs a list of 
+  // PushPull needs a list of callback functions.  Here we create a list
+  // and add a function that doesn't do anything.
   auto noopFunction = [](std::string const& str) {
   };
   typedef PushPull::FunctionType FunctionType;

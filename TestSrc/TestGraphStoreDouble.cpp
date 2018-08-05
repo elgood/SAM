@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestGraphStore
 
-//#define DEBUG
+#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
@@ -13,8 +13,6 @@
 
 using namespace sam;
 using namespace std::chrono;
-
-zmq::context_t context(1);
 
 /**
  * Manufactured hash function that sends 192.168.0.1 and 192.168.0.2
@@ -53,15 +51,17 @@ struct DoubleNodeFixture  {
   size_t numNodes = 2;
   size_t nodeId0 = 0;
   size_t nodeId1 = 1;
-  std::vector<std::string> requestHostnames;
-  std::vector<size_t> requestPorts;
-  std::vector<std::string> edgeHostnames;
-  std::vector<size_t> edgePorts;
+  std::vector<std::string> hostnames;
   size_t hwm = 1000;
   size_t graphCapacity = 1000; //For csc and csr
   size_t tableCapacity = 1000; //For SubgraphQueryResultMap results
   size_t resultsCapacity = 1000; //For final results
   double timeWindow = 100;
+
+  size_t startingPort = 10000;
+  size_t numPushSockets = 1;
+  size_t numPullThreads = 1;
+  size_t timeout = 1000; 
 
   EdgeFunction starttimeFunction = EdgeFunction::StartTime;
   EdgeFunction endtimeFunction = EdgeFunction::EndTime;
@@ -92,34 +92,27 @@ struct DoubleNodeFixture  {
     startZ2Xbeg = new TimeEdgeExpression(starttimeFunction,
                                                  e2, greater_edge_operator, 0); 
 
-    requestHostnames.push_back("localhost");
-    requestPorts.push_back(10000);
-    requestHostnames.push_back("localhost");
-    requestPorts.push_back(10001);
-    edgeHostnames.push_back("localhost");
-    edgePorts.push_back(10002);
-    edgeHostnames.push_back("localhost");
-    edgePorts.push_back(10003);
+    hostnames.push_back("localhost");
+    hostnames.push_back("localhost");
 
     generator0 = new UniformDestPort("192.168.0.0", 1);
     generator1 = new UniformDestPort("192.168.0.1", 1);
-     
-    size_t numThreads = 1; 
+    
       
-    graphStore0 = new GraphStoreType(context, 
+    graphStore0 = new GraphStoreType( 
                             numNodes, nodeId0, 
-                            requestHostnames, requestPorts,
-                            edgeHostnames, edgePorts,
+                            hostnames, startingPort,
                             hwm, graphCapacity, 
                             tableCapacity, resultsCapacity, 
-                            timeWindow, numThreads); 
-    graphStore1 = new GraphStoreType(context, 
+                            numPushSockets, numPullThreads, timeout,
+                            timeWindow); 
+    graphStore1 = new GraphStoreType( 
                             numNodes, nodeId1, 
-                            requestHostnames, requestPorts,
-                            edgeHostnames, edgePorts,
+                            hostnames, startingPort + 4,
                             hwm, graphCapacity, 
                             tableCapacity, resultsCapacity, 
-                            timeWindow, numThreads); 
+                            numPushSockets, numPullThreads, timeout,
+                            timeWindow); 
   
 
   }

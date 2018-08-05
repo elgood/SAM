@@ -23,33 +23,36 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   size_t numNodes = 2;
   size_t nodeId0 = 0;
   size_t nodeId1 = 1;
-  std::vector<std::string> edgeHostnames;
-  edgeHostnames.push_back("localhost");
-  edgeHostnames.push_back("localhost");
-  std::vector<size_t> edgePorts;
-  edgePorts.push_back(10000);
-  edgePorts.push_back(10001);
+  std::vector<std::string> hostnames;
+  hostnames.push_back("localhost");
+  hostnames.push_back("localhost");
+  size_t startingPort = 5000;
   uint32_t hwm = 1000;
   size_t tableCapacity = 1000;
+  int timeout = -1;
+  size_t numPushSockets = 1;
+  size_t numPullThreads = 1;
 
-  zmq::context_t context = zmq::context_t(1);
+	// PushPull needs a list of callback functions.  Here we create a list
+  // and add a function that doesn't do anything.	
+	auto noopFunction = [](std::string const& str) {
+  };
+  typedef PushPull::FunctionType FunctionType;
+  std::vector<FunctionType> functions;
+  functions.push_back(noopFunction);
 
-  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers0;
-  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers1;
-  createPushSockets(&context, numNodes, nodeId0, edgeHostnames, edgePorts,
-                    edgePushers0, hwm);
-  createPushSockets(&context, numNodes, nodeId1, edgeHostnames, edgePorts,
-                    edgePushers1, hwm);
+  PushPull* edgeCommunicator0 = new PushPull(numNodes, 0, numPushSockets,
+                                             numPullThreads, hostnames, hwm,
+                                             functions, startingPort, timeout);
+  PushPull* edgeCommunicator1 = new PushPull(numNodes, 1, numPushSockets,
+                                             numPullThreads, hostnames, hwm,
+                                             functions, 
+																						 startingPort + numPushSockets, 
+                                             timeout);
  
-  std::mutex* edgePushMutexes0 = new std::mutex[numNodes];
-  std::mutex* edgePushMutexes1 = new std::mutex[numNodes];
-  
-  MapType map0(context, numNodes, nodeId0, edgeHostnames, edgePorts, hwm, 
-                      tableCapacity, edgePushers0, edgePushMutexes0);
-  MapType map1(context, numNodes, nodeId1, edgeHostnames, edgePorts, hwm, 
-                      tableCapacity, edgePushers1, edgePushMutexes1);
-
-
+  MapType map0(numNodes, nodeId0, tableCapacity, edgeCommunicator0);
+  MapType map1(numNodes, nodeId1, tableCapacity, edgeCommunicator1);
+               
   // Two generators for each thread 
   std::shared_ptr<AbstractNetflowGenerator> generator0 = 
     std::make_shared<UniformDestPort>("192.168.0.0", 1);
@@ -70,8 +73,7 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   map0.addRequest(edgeRequest0);
   map1.addRequest(edgeRequest1);
   
-  size_t n = 1;
-
+  size_t n = 10;
 
   auto mapFunction = [](MapType* map,
                         std::shared_ptr<AbstractNetflowGenerator> generator, 
@@ -83,25 +85,27 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
     while (i < n) {
       std::string str = generator->generate();
       Netflow netflow = makeNetflow(i, str);
+      DEBUG_PRINT("Node %lu processing netflow %s\n", id, 
+        toString(netflow).c_str());
+        
       map->process(netflow);
 
       // If the hash of the source ip equals the other node, then
       // we don't send the edge since it should have gotten it, so
       // we only increment the counter when we get a netflow where the source
-      // and target both hash to the given node (thread).
+      // hashes to the given node (thread).
       if (hash(std::get<SourceIp>(netflow)) % 2 == id) {
         i++;
+				DEBUG_PRINT("Node %lu i %lu\n", id, i);
       }
     }
-    for (size_t i = 0; i < n; i++) {
-    }
+
     map->terminate();
-    #ifdef DEBUG
-    printf("Exiting PUSH thread\n");
-    #endif
+
+    DEBUG_PRINT("Node %lu Exiting PUSH thread\n", id);
   };
 
-  auto pullFunction = [](
+  /*auto pullFunction = [](
                          std::string url, 
                          int* count)
   {
@@ -116,21 +120,19 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
     while(!stop) {
       socket->recv(&message);
       if (isTerminateMessage(message)) {
-        #ifdef DEBUG
-        printf("pull thread url %s TERMINATE message\n", url.c_str());
-        #endif
+
+        DEBUG_PRINT("pull thread url %s terminate message\n", url.c_str());
         stop = true;
+
       } else {
-        #ifdef DEBUG
-        printf("pull thread url %s count %d\n", url.c_str(), *count);
-        #endif
+
+        DEBUG_PRINT("pull thread url %s count %d\n", url.c_str(), *count);
         (*count)++;
+
       }
     }
-    #ifdef DEBUG
-    printf("Existing PULL thread url%s\n", url.c_str());
-    #endif
-  };
+    DEBUG_PRINT("Exiting PULL thread url%s\n", url.c_str());
+  };*/
 
 
   std::string ip = getIpString("localhost");
@@ -138,35 +140,34 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   std::string edgepull_url0;
   std::string edgepull_url1;
   edgepull_url0 = baseurl + 
-    boost::lexical_cast<std::string>(edgePorts[0]);
+    boost::lexical_cast<std::string>(startingPort);
   edgepull_url1 = baseurl + 
-    boost::lexical_cast<std::string>(edgePorts[1]);
+    boost::lexical_cast<std::string>(startingPort + 1);
 
 
   std::thread pushthread0(mapFunction, &map0, generator0, n, 0);
   std::thread pushthread1(mapFunction, &map1, generator1, n, 1);
-  int receiveCount0 = 0;
-  int receiveCount1 = 0;
-  std::thread pullthread0(pullFunction, 
-                          edgepull_url1, &receiveCount0);
-  std::thread pullthread1(pullFunction, 
-                          edgepull_url0, &receiveCount1);
-
-  //edgePushers[0]->send(emptyZmqMessage());
-  //edgePushers[1]->send(emptyZmqMessage());
+  //int receiveCount0 = 0;
+  //int receiveCount1 = 0;
+  //std::thread pullthread0(pullFunction, 
+  //                        edgepull_url1, &receiveCount0);
+  //std::thread pullthread1(pullFunction, 
+  //                        edgepull_url0, &receiveCount1);
 
   pushthread0.join();
   pushthread1.join();
-  pullthread0.join();
-  pullthread1.join();
+  //pullthread0.join();
+  //pullthread1.join();
 
   BOOST_CHECK_EQUAL(map0.getTotalEdgePushes(), n);
   BOOST_CHECK_EQUAL(map1.getTotalEdgePushes(), n);
 
-  delete[] edgePushMutexes0;
-  delete[] edgePushMutexes1;
+	printf("big blah\n");
+	
+	edgeCommunicator0->terminate();
+	edgeCommunicator1->terminate();
 
-
-  //printf("At the end\n");
+  delete edgeCommunicator0;
+  delete edgeCommunicator1;
 
 }

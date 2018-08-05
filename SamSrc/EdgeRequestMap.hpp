@@ -8,6 +8,7 @@
 #include "Null.hpp"
 #include "Util.hpp"
 #include "TemporalSet.hpp"
+#include "ZeroMQUtil.hpp"
 
 namespace sam {
 
@@ -57,8 +58,10 @@ private:
   /// mutexes for each array element of ale.
   std::mutex* mutexes;
 
+  PushPull* edgeCommunicator;
+
   /// Used to keep the edge push sockets thread safe.
-  std::mutex* edgePushMutexes;
+  //std::mutex* edgePushMutexes;
 
   /// Keeps track of which edges have already been sent
   //std::vector<std::shared_ptr<TemporalSetType>> seenEdges;
@@ -66,9 +69,7 @@ private:
   /// Keeps track of how many edges we send
   std::atomic<size_t> edgePushCounter;
 
-  std::atomic<size_t> savedEdgePushes;
-
-  zmq::context_t& context;// = zmq::context_t(1);
+  //std::atomic<size_t> savedEdgePushes;
 
   /// This has all the push sockets that we use to send edges to other nodes.
   std::vector<std::shared_ptr<zmq::socket_t>> pushers;
@@ -83,25 +84,16 @@ private:
   std::function<bool(EdgeRequestType const&, TupleType const&)> 
     sourceTargetCheckFunction;
 
-  std::atomic<size_t> pushFails; ///> How many pushes fail
+  std::atomic<size_t> sendFails; ///> How many pushes fail
 
 public:
   /**
    * Constructor.  
-   * \param pushers Must pass in the pushers, which is what we use to 
-   *  send edges to other nodes.
-   * \param tableCapacity The size of the hash table.
    */
-   EdgeRequestMap(
-                  zmq::context_t& _context,
-                  std::size_t numNodes,
+   EdgeRequestMap(std::size_t numNodes,
                   std::size_t nodeId,
-                  std::vector<std::string> edgeHostnames,
-                  std::vector<std::size_t> edgePorts,
-                  uint32_t hwm,
                   size_t tableCapacity,
-                  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers,
-                  std::mutex* edgePushMutexes);
+                  PushPull* edgeCommunicator);
 
   /**
    * Destructor.
@@ -128,19 +120,13 @@ public:
    */
   size_t getTotalEdgePushes() { return edgePushCounter; }
 
-  size_t getSavedEdgePushes() { return savedEdgePushes; }
+  size_t getTotalEdgePushFails() { return sendFails; }
 
   /**
    * Iterates through the edge push sockets and sends a terminate
    * signal.
    */
   void terminate();
-
-  /**
-   * Returns how many send() calls to the push sockets failed.
-   */
-  size_t getPushFails() { return pushFails.load(); }
-
 
 private:
 
@@ -163,22 +149,14 @@ template <typename TupleType, size_t source, size_t target, size_t time,
           typename SourceEF, typename TargetEF>
 EdgeRequestMap<TupleType, source, target, time,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-EdgeRequestMap( 
-                zmq::context_t& _context,
-                std::size_t numNodes,
+EdgeRequestMap( std::size_t numNodes,
                 std::size_t nodeId,
-                std::vector<std::string> hostnames,
-                std::vector<std::size_t> ports,
-                uint32_t hwm,
                 size_t tableCapacity,
-                std::vector<std::shared_ptr<zmq::socket_t>> edgePushers,
-                std::mutex* edgePushMutexes)
-: context(_context)
+                PushPull* edgeCommunicator)
 {
+  this->edgeCommunicator = edgeCommunicator;
 
-  this->edgePushMutexes = edgePushMutexes;
-
-  pushFails = 0;
+  sendFails = 0;
 
   sourceIndexFunction = [this](TupleType const& tuple) {
     SourceType src = std::get<source>(tuple);
@@ -263,24 +241,10 @@ EdgeRequestMap(
   terminated = false;
   this->numNodes = numNodes;
   this->nodeId = nodeId;
-  pushers = edgePushers;
-  //createPushSockets(&context, numNodes, nodeId, hostnames, ports,
-  //                  this->pushers, hwm);
   this->tableCapacity = tableCapacity;
   mutexes = new std::mutex[tableCapacity];
   ale = new std::list<EdgeRequestType>[tableCapacity];
   edgePushCounter = 0;
-  savedEdgePushes = 0;
-
-
-  //TODO Need to pass timeToLive somehow.
-  double timeToLive = 20;
-
-  //for (size_t i = 0; i < numNodes; i++)
-  //{
-  //  seenEdges.push_back(std::make_shared<TemporalSetType>(tableCapacity, 
-  //                          UnsignedIntHashFunction(), timeToLive));
-  //}
 
 }
 
@@ -415,61 +379,55 @@ process(TupleType const& tuple,
         
         if (!sentEdges[node]) {
 
-          //if (!seenEdges[node]->contains(edgeId))
-          //{
-            if (!terminated) {
-             
-              DETAIL_TIMING_BEG1
-              zmq::message_t message = tupleToZmq(tuple);
-              DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
-                "EdgeRequestMap::process creating message exceeded tolerance")
-              
-              DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
-                " edge %s\n", nodeId, node, toString(tuple).c_str());
-              
-              
-              DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending %s\n",
-                nodeId, node, toString(tuple).c_str());
-
-              ////// Sending tuple and checking timing /////
-              DETAIL_TIMING_BEG2
-              auto sendTimingBegin = std::chrono::high_resolution_clock::now();
-              
-              edgePushMutexes[node].lock();
-              bool sent = pushers[node]->send(message);
-              edgePushMutexes[node].unlock();
-              
-              auto sendTimingEnd = std::chrono::high_resolution_clock::now();
-              auto sendTimingDiff = 
-                std::chrono::duration_cast<std::chrono::duration<double>>(
-                  sendTimingEnd - sendTimingBegin);
-              double sendTime = sendTimingDiff.count();
-              if (sendTime > 0.001) {
-                printf("Node %lu->%lu EdgeRequestMap::process sending "
-                  " edge %s took %f\n", nodeId, node,
-                  toString(tuple).c_str(), sendTime);
-              }
-              DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
-                "EdgeRequestMap::process sending message exceeded "
-                "tolerance")
-              
-              //// End sending tuple
-              
-              sentEdges[node] = true;
-              double edgeTime = std::get<time>(tuple);
-              //seenEdges[node]->insert(edgeId, edgeTime);
-
-              if (!sent) {
-                printf("Node %lu->%lu EdgeRequestMap::process error sending"
-                  " edge %s\n", nodeId, node, toString(tuple).c_str());
-              } else {
-                edgePushCounter.fetch_add(1);
-                countSentEdges++;
-              }
+          if (!terminated) {
+           
+            DETAIL_TIMING_BEG1
+            std::string message = toString(tuple);
+            //zmq::message_t message = tupleToZmq(tuple);
+            DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
+              "EdgeRequestMap::process creating message exceeded tolerance")
+            
+            DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
+              " edge %s\n", nodeId, node, toString(tuple).c_str());
+            
+            ////// Sending tuple and checking timing /////
+            DETAIL_TIMING_BEG2
+            auto sendTimingBegin = std::chrono::high_resolution_clock::now();
+            
+            //edgePushMutexes[node].lock();
+            //bool sent = pushers[node]->send(message);
+            //edgePushMutexes[node].unlock();
+            bool sent = edgeCommunicator->send(message, node);
+            
+            auto sendTimingEnd = std::chrono::high_resolution_clock::now();
+            auto sendTimingDiff = 
+              std::chrono::duration_cast<std::chrono::duration<double>>(
+                sendTimingEnd - sendTimingBegin);
+            double sendTime = sendTimingDiff.count();
+            if (sendTime > 0.001) {
+              printf("Node %lu->%lu EdgeRequestMap::process sending "
+                " edge %s took %f\n", nodeId, node,
+                toString(tuple).c_str(), sendTime);
             }
-          //} else {
-          //  savedEdgePushes.fetch_add(1);
-          //}
+            DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
+              "EdgeRequestMap::process sending message exceeded "
+              "tolerance")
+            
+            //// End sending tuple
+            
+            sentEdges[node] = true;
+            double edgeTime = std::get<time>(tuple);
+            //seenEdges[node]->insert(edgeId, edgeTime);
+
+            if (!sent) {
+              printf("Node %lu->%lu EdgeRequestMap::process error sending"
+                " edge %s\n", nodeId, node, toString(tuple).c_str());
+              sendFails.fetch_add(1);
+            } else {
+              edgePushCounter.fetch_add(1);
+              countSentEdges++;
+            }
+          }
         }
       }
       ++edgeRequest;
@@ -493,33 +451,7 @@ terminate()
 {
   printf("Node %lu entering EdgeRequestMap::terminate\n", nodeId);
   if (!terminated) {
-    for(size_t i = 0; i < this->numNodes; i++)
-    {
-      if (i != this->nodeId) { 
-
-        printf("Node %lu->%lu EdgeRequestMap::terminate() sending terminate"
-          " to\n", nodeId, i); 
-        
-        try {
-          bool sent = false; 
-          while (!sent) {
-            edgePushMutexes[i].lock();
-            sent = pushers[i]->send(terminateZmqMessage());
-            edgePushMutexes[i].unlock();
-            if (!sent) {
-              printf("Node %lu->%lu EdgeRequestMap::terminate() failed to send"
-                " terminate message\n", nodeId, i);
-            }
-          }
-        } catch (std::exception e) {
-          std::string message = "Couldn't send termination message "
-            + boost::lexical_cast<std::string>(nodeId) + "->" 
-            + boost::lexical_cast<std::string>(i) + " because of "
-            + e.what();
-          throw EdgeRequestMapException(message);
-        }
-      }
-    }
+    edgeCommunicator->terminate();
   }
   terminated = true;
   printf("Node %lu exiting EdgeRequestMap::terminate\n", nodeId);

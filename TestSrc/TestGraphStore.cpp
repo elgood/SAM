@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestGraphStore
 
-//#define DEBUG
+#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
@@ -12,8 +12,6 @@
 
 using namespace sam;
 using namespace std::chrono;
-
-zmq::context_t context(1);
 
 typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp, 
                    TimeSeconds, DurationSeconds, 
@@ -32,34 +30,32 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   size_t numNodes = 2;
   size_t nodeId0 = 0;
   size_t nodeId1 = 1;
-  std::vector<std::string> requestHostnames;
-  std::vector<size_t> requestPorts;
-  std::vector<std::string> edgeHostnames;
-  std::vector<size_t> edgePorts;
   size_t hwm = 1000;
   size_t graphCapacity = 1000; //For csc and csr
   size_t tableCapacity = 1000; //For SubgraphQueryResultMap intermediate results
   size_t resultsCapacity = 1000; //For final results
   double timeWindow = 100;
+  size_t startingPort = 10000;
 
-  requestHostnames.push_back("localhost");
-  requestPorts.push_back(10000);
-  requestHostnames.push_back("localhost");
-  requestPorts.push_back(10001);
-  edgeHostnames.push_back("localhost");
-  edgePorts.push_back(10002);
-  edgeHostnames.push_back("localhost");
-  edgePorts.push_back(10003);
+  std::vector<std::string> hostnames;
+  hostnames.push_back("localhost");
+  hostnames.push_back("localhost");
 
   int n = 1000;
 
   size_t numThreads = 1;
 
-  GraphStoreType* graphStore0 = new GraphStoreType(context, numNodes, nodeId0, 
-                        requestHostnames, requestPorts,
-                        edgeHostnames, edgePorts,
+  size_t numPushSockets = 1;
+  size_t numPullThreads = 1;
+  size_t timeout = 1000;
+
+  GraphStoreType* graphStore0 = new GraphStoreType(
+                        numNodes, nodeId0, 
+                        hostnames, startingPort,
                         hwm, graphCapacity, 
-                        tableCapacity, resultsCapacity, timeWindow, numThreads); 
+                        tableCapacity, resultsCapacity, 
+                        numPushSockets, numPullThreads, timeout, 
+                        timeWindow); 
 
   // One thread runs this.
   auto graph_function0 = [graphStore0, n]()
@@ -78,12 +74,13 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
     delete generator0;
   };
 
-  GraphStoreType* graphStore1 = new GraphStoreType(context,
+  GraphStoreType* graphStore1 = new GraphStoreType(
                         numNodes, nodeId1, 
-                        requestHostnames, requestPorts,
-                        edgeHostnames, edgePorts,
+                        hostnames, startingPort + 4,
                         hwm, graphCapacity, 
-                        tableCapacity, resultsCapacity, timeWindow, numThreads); 
+                        tableCapacity, resultsCapacity, 
+                        numPushSockets, numPullThreads, timeout, 
+                        timeWindow); 
 
   // Another thread runs this.
   auto graph_function1 = [graphStore1, n]()
@@ -130,10 +127,12 @@ struct SingleNodeFixture  {
   size_t resultsCapacity = 1000; //For final results
   double timeWindow = 100;
 
-  std::vector<std::string> requestHostnames;
-  std::vector<size_t> requestPorts;
-  std::vector<std::string> edgeHostnames;
-  std::vector<size_t> edgePorts;
+  std::vector<std::string> hostnames;
+  size_t startingPort = 10000;
+
+  size_t numPushSockets = 1;
+  size_t numPullThreads = 1;
+  size_t timeout = 1000;
 
   EdgeFunction starttimeFunction = EdgeFunction::StartTime;
   EdgeFunction endtimeFunction = EdgeFunction::EndTime;
@@ -164,18 +163,17 @@ struct SingleNodeFixture  {
     generator = new UniformDestPort("192.168.0.2", 1);
 
 
-    requestHostnames.push_back("localhost");
-    requestPorts.push_back(10000);
-    edgeHostnames.push_back("localhost");
-    edgePorts.push_back(10002);
 
     size_t numThreads = 1;
 
-    graphStore0 = new GraphStoreType(context, numNodes, nodeId0, 
-                        requestHostnames, requestPorts,
-                        edgeHostnames, edgePorts,
+    hostnames.push_back("localhost");
+
+    graphStore0 = new GraphStoreType(numNodes, nodeId0, 
+                        hostnames, startingPort,
                         hwm, graphCapacity, 
-                        tableCapacity, resultsCapacity, timeWindow, numThreads); 
+                        tableCapacity, resultsCapacity, 
+                        numPushSockets, numPullThreads, timeout,
+                        timeWindow); 
   }
 
   ~SingleNodeFixture() {

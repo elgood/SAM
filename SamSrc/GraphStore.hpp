@@ -16,12 +16,13 @@
 #include "SubgraphQuery.hpp"
 #include "SubgraphQueryResultMap.hpp"
 #include "EdgeRequestMap.hpp"
+#include "ZeroMQUtil.hpp"
 #include <zmq.hpp>
 #include <thread>
 #include <cstdlib>
+#include <future>
 //#include <boost/asio.hpp>
 //#include <boost/asio/thread_pool.hpp>
-#include <future>
 
 namespace sam {
 
@@ -83,15 +84,6 @@ private:
   // Returns the node (cluster) associated with the target of the edge request.
   std::function<size_t(EdgeRequestType const&)> targetAddressFunction;
 
-  // Multiple threads used the request push sockets.  To make them thread safe,
-  // need to isolate access to each socket to one thread at a time.  An
-  // array of mutexes equal to the number of sockets is created.
-  std::mutex* requestPushMutexes;
-
-  // Similar to the request push sockets, multiple threads use the edge push
-  // sockets.  These mutexes are used to keep them thread safe.
-  std::mutex* edgePushMutexes;
-
   #ifdef TIMING
   double totalTimeConsume = 0; 
   double totalTimeEdgePullThread = 0;
@@ -111,9 +103,8 @@ private:
 
   size_t consumeCount = 0;
 
+  // Controls access to the result map TODO: test if we actually need this
   std::mutex resultMapLock;
-
-  std::mutex futuresLock;
 
   SourceHF sourceHash;
   TargetHF targetHash;
@@ -131,50 +122,67 @@ private:
   /// Creates id for each tuple we get from other nodes
   SimpleIdGenerator idGenerator;
 
+  PushPull* edgeCommunicator;
+  PushPull* requestCommunicator;
+
+  /// Flag indicating terminate was called.
+  std::atomic<bool> terminated; 
+  
   /// There is another context in ZeroMQPushPull.  I think we can just
   /// instantiate another one here.
-  zmq::context_t& context; 
+  //zmq::context_t& context; 
+
+  // Multiple threads used the request push sockets.  To make them thread safe,
+  // need to isolate access to each socket to one thread at a time.  An
+  // array of mutexes equal to the number of sockets is created.
+  //std::mutex* requestPushMutexes;
+
+  // Similar to the request push sockets, multiple threads use the edge push
+  // sockets.  These mutexes are used to keep them thread safe.
+  //std::mutex* edgePushMutexes;
+
 
   /// The push sockets in charge of pushing requests to other nodes.
-  std::vector<std::shared_ptr<zmq::socket_t>> requestPushers;
+  //std::vector<std::shared_ptr<zmq::socket_t>> requestPushers;
 
   /// The push sockets in charge of pushing edges to other nodes.
-  std::vector<std::shared_ptr<zmq::socket_t>> edgePushers;
+  //std::vector<std::shared_ptr<zmq::socket_t>> edgePushers;
   
   /// The thread that polls the request pull sockets.
-  std::thread requestPullThread;
+  //std::thread requestPullThread;
 
   /// The thread that polls the edge pull sockets.
-  std::thread edgePullThread;
+  //std::thread edgePullThread;
+
+
+  /// This is the count of how many edges we send from this class and not
+  /// from the EdgeRequestMap.
+  std::atomic<size_t> edgePushCounter; 
+
+  /// This is the count of how many edges we failed to send from this class
+  /// and not from the EdgeRequestMap.
+  std::atomic<size_t> edgePushFails; 
+  
+  //std::atomic<size_t> edgePullCounter; ///> Count of how many edges we pull
+  //std::atomic<size_t> requestPushCounter; ///>Count of how many requests we send
+  //std::atomic<size_t> requestPullCounter; ///>Count of how many requests we pull
+  //std::atomic<size_t> requestFails; ///> Count request sends failed.
 
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
 
-  /// Used for testing to make sure we got expected number of tuples.
-  size_t tuplesReceived = 0;
-
-  /// Flag indicating terminate was called.
-  std::atomic<bool> terminated; 
-
   /// How many threads to use for parallel consume. 
   size_t numThreads;
-  //std::shared_ptr<boost::asio::thread_pool> threads;
   
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
   std::vector<QueryType> queries; ///> The list of queries to run.
-  std::atomic<size_t> edgePushCounter; ///> Count of how many edges we send
-  std::atomic<size_t> edgePullCounter; ///> Count of how many edges we pull
-  std::atomic<size_t> requestPushCounter; ///>Count of how many requests we send
-  std::atomic<size_t> requestPullCounter; ///>Count of how many requests we pull
-  std::atomic<size_t> requestFails; ///> Count request sends failed.
-  std::atomic<size_t> edgePushFails; ///> Cound edge sends failed.
   
   /// Keeps track of how many consume threads are active.
   std::atomic<size_t> consumeThreadsActive; 
   
-  size_t currentFuture = 0;
-  std::future<bool> futures[MAX_NUM_FUTURES];
+  //size_t currentFuture = 0;
+  //std::future<bool> futures[MAX_NUM_FUTURES];
 
   void processRequestAgainstGraph(EdgeRequestType const& edgeRequest);
   
@@ -192,16 +200,6 @@ private:
   void sendEdgeRequest(EdgeRequestType const& edgeRequest,
     std::function<size_t(EdgeRequestType const&)> addressFunction);
 
-  /**
-   * Sends the specified edgeRequest to the source node.
-   */
-  //void sendMessageToSource(EdgeRequestType const& edgeRequest);
-
-  /**
-   * Sends the specified edgeRequest to the target node.
-   */
-  //void sendMessageToTarget(EdgeRequestType const& edgeRequest);
-
 public:
 
   /**
@@ -212,34 +210,37 @@ public:
    *
    * \param numNodes The number of nodes in the cluster
    * \param nodeId The id of this node.
-   * \param requestHostnames A vector of all the hostnames in the cluster.
-   * \param requestPorts A vector of all the ports to be used for zeromq
-   *                     communications for edge requests.
-   * \param edgeHostnames A vector of all the hostnames in the cluster.
-   * \param edgePorts The vector of ports to be used for zeromq communications
-   *                   for sending of edges.
+   * \param hostnames A vector of all the hostnames in the cluster.
+   * \param startingPort Port number to start from.  Ports are create 
+   *   sequentially from this port.  Includes both the edge communicator
+   *   and the request communicator.
    * \param hwm The highwater mark.
    * \param graphCapacity The number of bins in the graph representation.
    * \param tableCapacity The number of bins in the SubgraphQueryResultMap.
    * \param resultsCapacity How many completed queries can be stored in
    *          SubgraphQueryResultMap.
+   * \param numPushSockets How many push sockets to talk to one node. 
+   *   numPushSockets * (numNodes - 1) push sockets are created.
+   * \param numPullThreads How many pull threads to create.  Each one covers
+   *   a roughly equal number of pull sockets.  Like before, there are 
+   *   numPushSockets * (numNodes - 1) total pull sockets.
+   * \param timeout How long in milliseconds should the communicator's pull
+   *  threads wait for data before exiting the pull loop.
    * \param timeWindow How long do we keep edges.
-   * \param numThreads How many threads to use for parallel for loops.
    */
   GraphStore(
-             zmq::context_t& _context,
              std::size_t numNodes,
              std::size_t nodeId,
-             std::vector<std::string> requestHostnames,
-             std::vector<std::size_t> requestPorts,
-             std::vector<std::string> edgeHostnames,
-             std::vector<std::size_t> edgePorts,
+             std::vector<std::string> hostnames,
+             size_t startingPort,
              uint32_t hwm,
              size_t graphCapacity,
              size_t tableCapacity,
              size_t resultsCapacity,
-             double timeWindow,
-             size_t numThreads);
+             size_t numPushSockets,
+             size_t numPullThreads,
+             size_t timeout,
+             double timeWindow);
 
   ~GraphStore();
 
@@ -273,43 +274,43 @@ public:
   size_t checkSubgraphQueries(TupleType const& tuple,
                             std::list<EdgeRequestType>& edgeRequests);
 
-  /**
-   * Returns how many tuples the graph store has received through
-   * edge pulls.
-   */
-  inline size_t getEdgesPulled() { return edgePullCounter; }
-
   size_t getNumResults() const { return resultMap->getNumResults(); }
+  
   size_t getNumIntermediateResults() const { 
     return resultMap->getNumIntermediateResults();
   }
 
   /**
-   * Returns the total number of edges sent by the graphstore, but not the
-   * edge request map.
+   * Returns how many tuples the graph store has received through
+   * edge pulls.
    */
-  size_t getTotalEdgePushes() {
-    return edgePushCounter + edgeRequestMap->getTotalEdgePushes();
-  }
-  
-  size_t getSavedEdgePushes() {
-    return edgeRequestMap->getSavedEdgePushes();
+  inline size_t getTotalEdgePulls() const { 
+    return edgeCommunicator->getTotalMessagesReceived(); 
   }
 
   /**
-   * Returns the total number of edges that this node pulled over the
-   * zmq pull sockets.
+   * Returns the total number of edges sent by the graphstore and the request
+   * map.
    */
-  size_t getTotalEdgePulls() {
-    return edgePullCounter;
+  size_t getTotalEdgePushes() {
+    return edgeCommunicator->getTotalMessagesSent();
   }
-
+  
   /**
    * Returns the total number of edge requests that this nodes has issued.
    */
   size_t getTotalRequestPushes() {
-    return requestPushCounter;
+    return requestCommunicator->getTotalMessagesSent();
   }
+
+  /**
+   * Returns the total number of edge requests that this nodes has pulled
+   * via the zmq pull sockets.
+   */
+  size_t getTotalRequestPulls() {
+    return requestCommunicator->getTotalMessagesReceived();
+  }
+
 
   /**
    * Returns the number of edge map pushes
@@ -319,30 +320,26 @@ public:
   }
 
   /**
-   * Returns the total number of edge requests that this nodes has pulled
-   * via the zmq pull sockets.
-   */
-  size_t getTotalRequestPulls() {
-    return requestPullCounter.load();
-  }
-
-  /**
    * Returns the total number of times that send messages on the request
    * push sockets failed.
    */
-  size_t getRequestFails() { return requestFails.load(); }
+  size_t getTotalRequestPushFails() { 
+    return requestCommunicator->getTotalMessagesFailed(); 
+  }
 
   /**
    * Returns the total number of times that send messages on the edge push
    * sockets failed.
    */
-  size_t getEdgePushFails() { return edgePushFails.load(); }
+  size_t getTotalEdgePushFails() { 
+    return edgeCommunicator->getTotalMessagesFailed(); 
+  }
 
   /**
    * Returns how many push fails occurred for the EdgeRequestMap.
    */
   size_t getEdgeRequestMapPushFails() {
-    return edgeRequestMap->getPushFails();
+    return edgeRequestMap->getTotalEdgePushFails();
   }
 
   ResultType getResult(size_t index) const {
@@ -471,7 +468,6 @@ checkSubgraphQueries(TupleType const& tuple,
         nodeId, src.c_str(), sourceHash(src), numNodes, 
         sourceHash(src) % numNodes);
 
-
       if (sourceHash(src) % numNodes == nodeId) {
         ResultType queryResult(&query, tuple);
 
@@ -547,7 +543,6 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
       {
         //If the target is not null but the source is, we send the edge request
         //to whomever owns the target.
-        //sendMessageToTarget(edgeRequest);
         sendEdgeRequest(edgeRequest, targetAddressFunction);
       }
       else 
@@ -555,7 +550,6 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
       {
         //If the source is not null but the target is, we send the edge request
         //to whomever owns the source.
-        //sendMessageToSource(edgeRequest);
         sendEdgeRequest(edgeRequest, sourceAddressFunction);
       }
       else 
@@ -569,10 +563,8 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
         // load balancing by splitting our requests 
         if (rand() % 2 == 0 )
         {
-          //sendMessageToSource(edgeRequest);
           sendEdgeRequest(edgeRequest, sourceAddressFunction);
         } else {
-          //sendMessageToTarget(edgeRequest);
           sendEdgeRequest(edgeRequest, targetAddressFunction);
         }
       }
@@ -597,18 +589,12 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 sendEdgeRequest(EdgeRequestType const& edgeRequest,
   std::function<size_t(EdgeRequestType const&)> addressFunction)
 {
-  zmq::message_t message = edgeRequest.toZmqMessage();
+  std::string message = edgeRequest.toString();
   size_t node = addressFunction(edgeRequest);
 
-  std::string str = getStringFromZmqMessage( message );
-  EdgeRequestType edgeRequest1(str);
-  requestPushCounter.fetch_add(1);
-  requestPushMutexes[node].lock();
-  bool sent = requestPushers[node]->send(message);
-  requestPushMutexes[node].unlock();
+  bool sent = requestCommunicator->send(message, node);
+
   if (!sent) { 
-    requestFails.fetch_add(1);
-    requestPushCounter.fetch_add(-1);
     printf("Node %lu->%lu GraphStore::sendEdgeRequest failed"
       " sending EdgeRequest: %s\n",
       nodeId, node, edgeRequest.toString().c_str()); 
@@ -629,11 +615,9 @@ consume(TupleType const& tuple)
   DEBUG_PRINT("Node %lu GraphStore::consume processing tuple %s\n",
     nodeId, sam::toString(tuple).c_str());
 
-  //futuresLock.lock();
   DEBUG_PRINT("Node %lu GraphStore::consume about to launch async (total"
-    " asnyc threads right now %lu) for tuple %s currentFuture %lu\n",
-    nodeId, consumeThreadsActive.load(), toString(tuple).c_str(), 
-    currentFuture);
+    " asnyc threads right now %lu) for tuple %s\n",
+    nodeId, consumeThreadsActive.load(), toString(tuple).c_str());
   //futures[currentFuture] = std::async(std::launch::async, [this, &tuple]() {
   // return this->consumeDoesTheWork(tuple);
   //});
@@ -644,7 +628,6 @@ consume(TupleType const& tuple)
   //if (currentFuture >= MAX_NUM_FUTURES) {
   //  currentFuture = 0;
   //}
-  //futuresLock.unlock();
 
 
   consumeCount++;
@@ -783,7 +766,7 @@ terminate()
     // If terminate was called, we aren't going to receive any more
     // edges, so we can push out the terminate signal to all the edge request
     // channels. 
-    for(size_t i = 0; i < numNodes; i++) {
+    /*for(size_t i = 0; i < numNodes; i++) {
       if (i != nodeId) {
 
         printf("Node %lu GraphStore::terminate sending terminate message"
@@ -800,18 +783,17 @@ terminate()
           }
         }
       }
-    }
+    }*/
 
-    requestPullThread.join();
+    requestCommunicator->terminate();
 
-    printf("Node %lu requestPullThread joined\n", nodeId);
+    printf("Node %lu requestCommunicator terminated\n", nodeId);
  
-    // The EdgeRequestMap has all the edge pushers.  We call terminate
+    // The EdgeRequestMap has the edge communicator.  We call terminate
     // on the EdgeRequestMap to send out the terminate message.
     edgeRequestMap->terminate();
-    edgePullThread.join();
 
-    printf("Node %lu edgePullThread joined\n", nodeId);
+    printf("Node %lu edgeRequestMap joined\n", nodeId);
   }
   printf("Node %lu exiting GraphStore::terminate\n", nodeId);
 }
@@ -826,24 +808,20 @@ template <typename TupleType, typename Tuplizer,
           typename SourceEF, typename TargetEF> 
 GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-GraphStore(  zmq::context_t& _context,
+GraphStore(  
              std::size_t numNodes,
              std::size_t nodeId,
-             std::vector<std::string> requestHostnames,
-             std::vector<std::size_t> requestPorts,
-             std::vector<std::string> edgeHostnames,
-             std::vector<std::size_t> edgePorts,
+             std::vector<std::string> hostnames,
+             size_t startingPort,
              uint32_t hwm,
              std::size_t graphCapacity, //How many bins for csr and csc
              std::size_t tableCapacity, //For SubgraphQueryResultMap
              std::size_t resultsCapacity, //For SubgraphQueryResultMap
-             double timeWindow,
-             size_t numThreads) 
-: context(_context)
+             size_t numPushSockets,
+             size_t numPullThreads,
+             size_t timeout,
+             double timeWindow)
 {
-  //threads = std::make_shared<boost::asio::thread_pool>(numThreads);
-
-
   sourceAddressFunction = [this](EdgeRequestType const& edgeRequest) {
     SourceType src = edgeRequest.getSource();
     size_t node = sourceHash(src) % this->numNodes;
@@ -856,8 +834,8 @@ GraphStore(  zmq::context_t& _context,
     return node;
   };
 
-  requestPushMutexes = new std::mutex[numNodes];
-  edgePushMutexes = new std::mutex[numNodes];
+  //requestPushMutexes = new std::mutex[numNodes];
+  //edgePushMutexes = new std::mutex[numNodes];
 
   terminated = false;
   this->numNodes = numNodes;
@@ -865,11 +843,7 @@ GraphStore(  zmq::context_t& _context,
   this->numThreads = numThreads;
 
   edgePushCounter = 0;
-  edgePullCounter = 0;
-  requestPushCounter = 0;
-  requestPullCounter = 0;
   edgePushFails = 0;
-  requestFails = 0;
   consumeThreadsActive = 0;
 
   resultMap = 
@@ -877,28 +851,115 @@ GraphStore(  zmq::context_t& _context,
       tableCapacity, resultsCapacity);
 
   // Resizing the push socket vectors to be the size of numNodes
-  requestPushers.resize(numNodes);
-  edgePushers.resize(numNodes);
+  //requestPushers.resize(numNodes);
+  //edgePushers.resize(numNodes);
 
-  createPushSockets(&context, numNodes, nodeId, requestHostnames, requestPorts,
-                    requestPushers, hwm);
-  createPushSockets(&context, numNodes, nodeId, edgeHostnames, edgePorts,
-                    edgePushers, hwm);
-
-  edgeRequestMap = std::make_shared< RequestMapType>( context,
-    numNodes, nodeId, edgeHostnames, edgePorts, hwm, tableCapacity,
-    edgePushers, edgePushMutexes);
+  //createPushSockets(&context, numNodes, nodeId, requestHostnames, requestPorts,
+  //                  requestPushers, hwm);
+  //createPushSockets(&context, numNodes, nodeId, edgeHostnames, edgePorts,
+  //                  edgePushers, hwm);
 
   csr = std::make_shared<csrType>(graphCapacity, timeWindow); 
   csc = std::make_shared<cscType>(graphCapacity, timeWindow); 
 
-  std::atomic<size_t>* requestPullCounterPtr = &requestPullCounter;
+  typedef PushPull::FunctionType FunctionType;
+
+  auto edgeCallback = [this](std::string str) 
+  {
+    // We give the edge a new id that is unique to this node.
+    size_t id = idGenerator.generate();
+
+    // Change the string into the expected tuple type.
+    TupleType tuple = tuplizer(id, str);
+
+    DEBUG_PRINT("Node %lu GraphStore::edgeCallback received a"
+      " tuple %s\n", this->nodeId, sam::toString(tuple).c_str());
+
+    // Do we need to do this?
+    // Add the edge to the graph
+    //addEdge(tuple);
+
+    DEBUG_PRINT("Node %lu GraphStore::edgeCallback added edge %s\n",
+      this->nodeId, sam::toString(tuple).c_str());
+
+    // Process the new edge over results and see if it satifies
+    // queries.  If it does, there may be new edge requests.
+    std::list<EdgeRequestType> edgeRequests;
+    resultMapLock.lock();
+    resultMap->process(tuple, *csr, *csc, edgeRequests);
+    resultMapLock.unlock();
+
+    DEBUG_PRINT("Node %lu GraphStore::edgeCallback processed"
+      " edge %s\n", this->nodeId, sam::toString(tuple).c_str());
+
+    // Send out the edge requests to the other nodes.
+    processEdgeRequests(edgeRequests);
+  };
+
+  std::vector<FunctionType> edgeCommunicatorFunctions;
+  edgeCommunicatorFunctions.push_back(edgeCallback);
+
+  edgeCommunicator = new PushPull(numNodes, nodeId, numPushSockets,
+                                  numPullThreads, hostnames, hwm,
+                                  edgeCommunicatorFunctions,
+                                  startingPort, timeout); 
+
+  size_t newStartingPort = edgeCommunicator->getLastPort() + 1;
+
+  edgeRequestMap = std::make_shared< RequestMapType>( 
+    numNodes, nodeId, tableCapacity, edgeCommunicator);
+
+  auto requestCallback = [this](std::string str)
+  {
+      
+
+    // When we get an edge request, we need to check against
+    // the graph (existing matches) and add it to the list 
+    // so that any new matches are caught.  Since there are
+    // two other threads that add to the graph 
+    // (the edgeRequest pull thread and the consume thread),
+    // we need a lock to make sure we don't miss edges are add
+    // edge multiple times. 
+    
+    //generalLock.lock();
+
+    EdgeRequestType request(str);
+    DEBUG_PRINT("Node %lu GraphStore::requestCallback received an edge request"
+      " length = %lu: %s\n", this->nodeId, str.size(), 
+      request.toString().c_str());
+
+    edgeRequestMap->addRequest(request);
+    DEBUG_PRINT("Node %lu RequestPullThread added edge request to map"
+      ": %s\n", this->nodeId, request.toString().c_str());
+      
+
+    processRequestAgainstGraph(request);
+    DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
+      " against graph: %s\n", this->nodeId, request.toString().c_str());
+      
+
+    //generalLock.unlock();
+    DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
+      ": %s\n", this->nodeId, request.toString().c_str());
+      
+  };
+
+  std::vector<FunctionType> requestCommunicatorFunctions;
+  requestCommunicatorFunctions.push_back(requestCallback);
+
+  requestCommunicator = new PushPull(numNodes, nodeId, numPushSockets,
+                                     numPullThreads, hostnames, hwm,
+                                     requestCommunicatorFunctions,
+                                     newStartingPort, timeout);
+
+
+  //std::atomic<size_t>* requestPullCounterPtr = &requestPullCounter;
 
   /// The requestPullFunction is responsible for polling all the edge request
   /// pull sockets.
-  auto requestPullFunction = [this, requestHostnames, requestPorts, hwm,
-    requestPullCounterPtr]() 
-  {
+  //auto requestPullFunction = [this, requestHostnames, requestPorts, hwm,
+  //  requestPullCounterPtr]() 
+  /*{
     #ifdef TIMING
     auto t1 = std::chrono::high_resolution_clock::now();
     #endif
@@ -1179,6 +1240,7 @@ GraphStore(  zmq::context_t& _context,
   };
 
   edgePullThread = std::thread(edgePullFunction);
+  */
 }
 
 template <typename TupleType, typename Tuplizer, 
@@ -1192,9 +1254,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 {
   terminate();
 
-  delete[] edgePushMutexes;
-  delete[] requestPushMutexes; 
-  //threads->join();
+  delete requestCommunicator;
+  delete edgeCommunicator;
 
   DEBUG_PRINT("Node %lu end of ~GraphStore\n", nodeId);
 }
@@ -1274,7 +1335,8 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
     // Only send the message of the node won't get the message anyway.
     if (srcHash != node && trgHash != node) {
 
-      zmq::message_t message = tupleToZmq(edge);
+      std::string message = toString(edge);
+      //zmq::message_t message = tupleToZmq(edge);
 
       double placeholder = 0;
       DETAIL_TIMING_BEG1
@@ -1283,8 +1345,7 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
         "tolerance")
       if (!terminated) {
         DEBUG_PRINT("Node %lu->%lu GraphStore::processRequestAgainstGraph"
-          " sending edge %s\n", nodeId, node, sam::toString(edge).c_str());
-        edgePushCounter.fetch_add(1);
+          " sending edge %s\n", nodeId, node, message.c_str());
         DETAIL_TIMING_BEG1
         //#ifdef NOBLOCK
         //bool sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);     
@@ -1301,15 +1362,14 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
         //  sent = edgePushers[node]->send(message, ZMQ_NOBLOCK);
         //}
         //#else
-        edgePushMutexes[node].lock();
-        bool sent = edgePushers[node]->send(message);     
-        edgePushMutexes[node].unlock();
+        bool sent = edgeCommunicator->send(message, node);
         if (!sent) { 
           edgePushFails.fetch_add(1);
-          edgePushCounter.fetch_add(-1);
           DEBUG_PRINT("Node %lu->%lu GraphStore::processRequestAgainstGraph"
-            " failed sending edge: %s\n",
-            nodeId, node, sam::toString(edge).c_str()); 
+            " failed sending edge: %s\n", nodeId, node, message.c_str()); 
+            
+        } else {
+          edgePushCounter.fetch_add(1);
         }
         //#endif
         DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
