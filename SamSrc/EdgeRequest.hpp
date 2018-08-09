@@ -1,7 +1,7 @@
 #ifndef SAM_EDGE_REQUEST
 #define SAM_EDGE_REQUEST
 
-#include "NetflowEdgeRequest.pb.h"
+#include "proto/NetflowEdgeRequest.pb.h"
 #include "Netflow.hpp"
 #include "Null.hpp"
 #include "Util.hpp"

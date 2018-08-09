@@ -171,9 +171,6 @@ private:
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
 
-  /// How many threads to use for parallel consume. 
-  size_t numThreads;
-  
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
   std::vector<QueryType> queries; ///> The list of queries to run.
@@ -840,7 +837,6 @@ GraphStore(
   terminated = false;
   this->numNodes = numNodes;
   this->nodeId   = nodeId;
-  this->numThreads = numThreads;
 
   edgePushCounter = 0;
   edgePushFails = 0;

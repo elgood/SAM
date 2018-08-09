@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 
+project(SAM)
+
 ENABLE_LANGUAGE(CXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
@@ -14,11 +16,6 @@ include_directories("${STDIO_INCLUDE_PATH}/dummy/../")
 find_path(STRING_INCLUDE_PATH string /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1)
 include_directories("${STRING_INCLUDE_PATH}/dummy/../")
 
-############## Protoc ##############################
-#find_package(Protobuf REQUIRED)
-#include_directories(${Protobuf_INCLUDE_DIRS})
-
-
 ######################## Boost ######################
 
 SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_66_0")
@@ -27,8 +24,10 @@ find_package(Boost REQUIRED system thread program_options serialization
 message( STATUS "Boost static libs: " ${Boost_LIBRARIES} )
 include_directories(${Boost_INCLUDE_DIRS})
 
-##################### Protobuf ######################
+############## Protoc ##############################
 
+ADD_SUBDIRECTORY(proto)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
@@ -53,12 +52,6 @@ include_directories(SamSrc)
 add_library(SamLib INTERFACE)
 target_include_directories(SamLib INTERFACE SamSrc/)
 
-############# Protobuf ######################
-file (GLOB PROTO_SOURCES "SamSrc/protobuf/*.cc")
-add_library(ProtoLib ${PROTO_SOURCES})
-set_target_properties(ProtoLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY "lib") 
-include_directories(SamSrc/protobuf)
-
 ################# Executables ###############################
 file (GLOB EXE_SRCS ExecutableSrc/*.cpp)
 
@@ -72,7 +65,8 @@ foreach(exeSrc ${EXE_SRCS})
   target_link_libraries(${exeName} ${ZMQ_LIBRARIES})
   target_link_libraries(${exeName} ${Boost_LIBRARIES})
   target_link_libraries(${exeName} ${PROTOBUF_LIBRARIES})
-  target_link_libraries(${exeName} ProtoLib)
+  #target_link_libraries(${exeName} ProtoLib)
+  target_link_libraries(${exeName} proto ${PROTOBUF_LIBRARY})
 
   set_target_properties(${exeName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
 endforeach(exeSrc)
@@ -90,11 +84,12 @@ foreach(testSrc ${TEST_SRCS})
   add_executable(${testName} ${testSrc})
 
   target_link_libraries(${testName} SamLib)
-  target_link_libraries(${testName} ${Boost_LIBRARIES})
   target_link_libraries(${testName} pthread)
   target_link_libraries(${testName} ${ZMQ_LIBRARIES})
+  target_link_libraries(${testName} ${Boost_LIBRARIES})
   target_link_libraries(${testName} ${PROTOBUF_LIBRARIES})
-  target_link_libraries(${testName} ProtoLib)
+  #target_link_libraries(${testName} ProtoLib)
+  target_link_libraries(${testName} proto ${PROTOBUF_LIBRARY})
 
   set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
 

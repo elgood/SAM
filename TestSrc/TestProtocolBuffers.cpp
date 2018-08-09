@@ -2,7 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include <string>
-#include "NetflowEdgeRequest.pb.h"
+#include "proto/NetflowEdgeRequest.pb.h"
 
 using namespace sam;
 

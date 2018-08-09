@@ -447,7 +447,7 @@ void PushPull::initializePullThreads()
 
       socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
 
-      //printf("Node %lu connecting to %s\n", nodeId, url.c_str());
+      DEBUG_PRINT("Node %lu connecting to %s\n", nodeId, url.c_str());
 
       try {
         socket->connect(url);

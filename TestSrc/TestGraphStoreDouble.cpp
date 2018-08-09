@@ -134,7 +134,7 @@ struct DoubleNodeFixture  {
 /// This tests matching a single edge across two nodes.  This doesn't
 /// test the communication of edge requests since each node can
 /// process an edge by itself.
-BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
+/*BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 {
   SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
   query.addExpression(*startY2Xboth);
@@ -186,7 +186,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 
   BOOST_CHECK_EQUAL(expected0, graphStore0->getNumResults());
   BOOST_CHECK_EQUAL(expected1, graphStore1->getNumResults());
-}
+}*/
 
 ///
 /// This test creates a two graphstores and we send each graphstore
