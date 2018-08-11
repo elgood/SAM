@@ -210,6 +210,8 @@ private:
   std::mt19937 myRand;
   std::uniform_int_distribution<size_t> dist;
 
+  bool local = false;
+
 public:
   /**
    * Constructor.
@@ -236,6 +238,7 @@ public:
    *   time a message is received from the pull threads.
    * \param timeout The amount of time in ms that a send() call waits before
    *  timing out.  If -1, blocks until completed.
+   * \param local Flag indicating that all the nodes are local
    */
   PushPull(   
     size_t numNodes,
@@ -246,7 +249,17 @@ public:
     uint32_t hwm,
     std::vector<FunctionType> callbacks,
     size_t startingPort,
-    int timeout);
+    int timeout,
+    bool local = false);
+
+  /**
+   * This can be used to explicity set the hostnames and ports for all
+   * the sockets.  This is useful for testing purposes when on the same
+   * host
+   */
+
+
+
 
   ~PushPull();
 
@@ -306,7 +319,8 @@ PushPull::PushPull(
   uint32_t hwm,
   std::vector<FunctionType> callbacks,
   size_t startingPort,
-  int timeout)
+  int timeout,
+  bool local)
 {
   this->numNodes       = numNodes;
   this->nodeId         = nodeId;
@@ -317,6 +331,7 @@ PushPull::PushPull(
   this->callbacks      = callbacks;
   this->startingPort   = startingPort;
   this->timeout        = timeout;
+  this->local          = local;
   totalNumPushSockets = (numNodes - 1) * numPushSockets; 
 
   totalMessagesReceived = 0;
@@ -332,7 +347,6 @@ PushPull::PushPull(
   dist = std::uniform_int_distribution<size_t>(0, numPushSockets-1);
 
   initializePullThreads();
-
 }
 
 PushPull::~PushPull()
@@ -374,13 +388,18 @@ void PushPull::createPushSockets()
   pushers.resize(totalNumPushSockets);
   std::string hostname = hostnames[nodeId];
   std::string ip = getIpString(hostname);
+  size_t actualStartingPort = startingPort;
+  if (local) {
+    actualStartingPort += nodeId * totalNumPushSockets;
+  }
+  printf("totalNumPushSockets %lu \n", totalNumPushSockets);
   for (size_t i = 0; i < totalNumPushSockets; i++) 
   {
     zmqLock.lock();
     auto pusher = std::shared_ptr<zmq::socket_t>(
       new zmq::socket_t(context, ZMQ_PUSH));
     std::string url = "tcp://" + ip + ":";
-      url = url + boost::lexical_cast<std::string>(startingPort + i);
+      url = url + boost::lexical_cast<std::string>(actualStartingPort + i);
       DEBUG_PRINT("Node %lu binding to %s\n", nodeId, url.c_str());
 
     // The function complains if you use std::size_t, so be sure to use the
@@ -438,6 +457,17 @@ void PushPull::initializePullThreads()
                                                 numNodes, hostnames);
       size_t port = getPortForPull(i, nodeId, numPushSockets,
                                    numNodes, startingPort);
+
+      if (local) {
+        // Find which node we are wanting to talk to.
+        size_t targetNode = i / numPushSockets;
+        if ((i / numPushSockets) >= nodeId) {
+          targetNode++;
+        } 
+
+        port += targetNode * totalNumPushSockets;
+      }
+
       zmq::socket_t* socket = new zmq::socket_t(context, ZMQ_PULL);
       std::string url = "";
       std::string ip = getIpString(hostname);
@@ -483,7 +513,7 @@ void PushPull::initializePullThreads()
 
             
             
-            DEBUG_PRINT("Node %lu pullThread received terminate "
+            DEBUG_PRINT("Node %lu PushPull pullThread received terminate "
               "from %lu\n", nodeId, i);
             terminate[i] = true;
 
@@ -491,12 +521,12 @@ void PushPull::initializePullThreads()
 
           } else if (message.size() > 0) {
             
-            DEBUG_PRINT("Node %lu pullThread received message of size %lu "
-              "from %lu %s\n", nodeId, message.size(), i,
-               getStringFromZmqMessage(message).c_str());
-            receivedMessages++;
-            
             std::string str = getStringFromZmqMessage(message);
+            receivedMessages++;
+
+            DEBUG_PRINT("Node %lu PushPull pullThread received message of"
+              " size %lu from %lu %s\n", nodeId, message.size(), i, 
+               str.c_str());
 
             for (auto callback : callbacks) {
               callback(str);              

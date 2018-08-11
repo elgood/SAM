@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   std::vector<std::string> hostnames;
   hostnames.push_back("localhost");
   hostnames.push_back("localhost");
-  size_t startingPort = 5000;
+  size_t startingPort = 10000;
   uint32_t hwm = 1000;
   size_t tableCapacity = 1000;
   int timeout = -1;
@@ -43,12 +43,13 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
 
   PushPull* edgeCommunicator0 = new PushPull(numNodes, 0, numPushSockets,
                                              numPullThreads, hostnames, hwm,
-                                             functions, startingPort, timeout);
+                                             functions, startingPort, timeout,
+                                             true);
   PushPull* edgeCommunicator1 = new PushPull(numNodes, 1, numPushSockets,
                                              numPullThreads, hostnames, hwm,
                                              functions, 
-																						 startingPort + numPushSockets, 
-                                             timeout);
+																						 startingPort, 
+                                             timeout, true);
  
   MapType map0(numNodes, nodeId0, tableCapacity, edgeCommunicator0);
   MapType map1(numNodes, nodeId1, tableCapacity, edgeCommunicator1);

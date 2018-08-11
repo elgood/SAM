@@ -21,8 +21,6 @@
 #include <thread>
 #include <cstdlib>
 #include <future>
-//#include <boost/asio.hpp>
-//#include <boost/asio/thread_pool.hpp>
 
 namespace sam {
 
@@ -224,6 +222,7 @@ public:
    * \param timeout How long in milliseconds should the communicator's pull
    *  threads wait for data before exiting the pull loop.
    * \param timeWindow How long do we keep edges.
+   * \param local Bollean indicating that we are on one node.
    */
   GraphStore(
              std::size_t numNodes,
@@ -237,7 +236,8 @@ public:
              size_t numPushSockets,
              size_t numPullThreads,
              size_t timeout,
-             double timeWindow);
+             double timeWindow,
+             bool local=false);
 
   ~GraphStore();
 
@@ -586,7 +586,7 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 sendEdgeRequest(EdgeRequestType const& edgeRequest,
   std::function<size_t(EdgeRequestType const&)> addressFunction)
 {
-  std::string message = edgeRequest.toString();
+  std::string message = edgeRequest.serialize();
   size_t node = addressFunction(edgeRequest);
 
   bool sent = requestCommunicator->send(message, node);
@@ -817,7 +817,8 @@ GraphStore(
              size_t numPushSockets,
              size_t numPullThreads,
              size_t timeout,
-             double timeWindow)
+             double timeWindow,
+             bool local)
 {
   sourceAddressFunction = [this](EdgeRequestType const& edgeRequest) {
     SourceType src = edgeRequest.getSource();
@@ -898,9 +899,14 @@ GraphStore(
   edgeCommunicator = new PushPull(numNodes, nodeId, numPushSockets,
                                   numPullThreads, hostnames, hwm,
                                   edgeCommunicatorFunctions,
-                                  startingPort, timeout); 
+                                  startingPort, timeout, local); 
 
-  size_t newStartingPort = edgeCommunicator->getLastPort() + 1;
+  size_t newStartingPort;
+  if (local) {
+    newStartingPort = startingPort + (numPushSockets * (numNodes-1)) * numNodes;
+  } else {
+    newStartingPort = edgeCommunicator->getLastPort() + 1;
+  }
 
   edgeRequestMap = std::make_shared< RequestMapType>( 
     numNodes, nodeId, tableCapacity, edgeCommunicator);
@@ -921,7 +927,7 @@ GraphStore(
 
     EdgeRequestType request(str);
     DEBUG_PRINT("Node %lu GraphStore::requestCallback received an edge request"
-      " length = %lu: %s\n", this->nodeId, str.size(), 
+      " length = %lu: %s %s\n", this->nodeId, str.size(), str.c_str(),
       request.toString().c_str());
 
     edgeRequestMap->addRequest(request);
@@ -946,7 +952,7 @@ GraphStore(
   requestCommunicator = new PushPull(numNodes, nodeId, numPushSockets,
                                      numPullThreads, hostnames, hwm,
                                      requestCommunicatorFunctions,
-                                     newStartingPort, timeout);
+                                     newStartingPort, timeout, local);
 
 
   //std::atomic<size_t>* requestPullCounterPtr = &requestPullCounter;
@@ -1266,8 +1272,8 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
 {
-  DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph edgeRequest %s\n", 
-    nodeId, edgeRequest.toString().c_str());
+  DEBUG_PRINT("Node %lu GraphStore::processRequestAgainstGraph edgeRequest"
+    " %s\n", nodeId, edgeRequest.toString().c_str());
 
   if (isNull(edgeRequest.getStartTimeFirst()) ||
       isNull(edgeRequest.getStartTimeSecond())) {

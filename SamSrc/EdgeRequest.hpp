@@ -126,6 +126,18 @@ public:
     return fillZmqMessage(str);
   }
 
+  std::string serialize() const
+  {
+    std::string str;
+    bool b = request.SerializeToString(&str); 
+    if (!b) {
+      throw NetflowEdgeRequestException("Trouble serializing " 
+        "NetflowEdgeRequest"); 
+    }
+    return str;
+
+  }
+
   std::string toString() const
   {
     std::string rString = "Source: " + getSource() + 

@@ -293,8 +293,10 @@ addRequest(EdgeRequestType request)
     index = (sourceHash(src) * targetHash(trg)) % tableCapacity;
   } else
   {
-    throw EdgeRequestMapException("EdgeRequestMap::addRequest tried to"
-      " add a request with no source or target");
+    std::string message = "Node " + boost::lexical_cast<std::string>(nodeId) +
+      " EdgeRequestMap::addRequest tried to add a request with no source or"
+      " target";
+    throw EdgeRequestMapException(message);
   }
 
   mutexes[index].lock();

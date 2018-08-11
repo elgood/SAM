@@ -105,14 +105,14 @@ struct DoubleNodeFixture  {
                             hwm, graphCapacity, 
                             tableCapacity, resultsCapacity, 
                             numPushSockets, numPullThreads, timeout,
-                            timeWindow); 
+                            timeWindow, true); 
     graphStore1 = new GraphStoreType( 
                             numNodes, nodeId1, 
-                            hostnames, startingPort + 4,
+                            hostnames, startingPort,
                             hwm, graphCapacity, 
                             tableCapacity, resultsCapacity, 
                             numPushSockets, numPullThreads, timeout,
-                            timeWindow); 
+                            timeWindow, true); 
   
 
   }
