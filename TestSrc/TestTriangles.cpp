@@ -36,7 +36,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer,
                        StringHashFunction>
         PartitionType;
 
-
+/*
 BOOST_AUTO_TEST_CASE( test_triangles_exact )
 {
   /// In this test, we create two threads that generate random netflows.
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow);
+                          timeWindow, true);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId1,
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow);
+                          timeWindow, true);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects
@@ -307,10 +307,10 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
 
 
   printf("exiting\n");
-}
+}*/
 
 
-/*BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
+BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 {
   printf("Starting test_triangles_random_pool_of_vertices\n");
 
@@ -380,25 +380,26 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   edgeHostnames.push_back("localhost");
   edgePorts.push_back(10005);
 
-  size_t numThreads = 1;
+  size_t startingPort = 10002;
+  size_t numPushSockets = 1;
+  size_t numPullThreads = 1;
+  size_t timeout = 1000;
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
-                          context,
                           numNodes, nodeId0,
-                          requestHostnames, requestPorts,
-                          edgeHostnames, edgePorts,
+                          hostnames, startingPort,
                           hwm, graphCapacity,
-                          tableCapacity, resultsCapacity, timeWindow,
-                          numThreads);
+                          tableCapacity, resultsCapacity,
+                          numPushSockets, numPullThreads, timeout,
+                          timeWindow, true);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
-                          context,
                           numNodes, nodeId1,
-                          requestHostnames, requestPorts,
-                          edgeHostnames, edgePorts,
+                          hostnames, startingPort,
                           hwm, graphCapacity,
-                          tableCapacity, resultsCapacity, timeWindow,
-                          numThreads);
+                          tableCapacity, resultsCapacity, 
+                          numPushSockets, numPullThreads, timeout,
+                          timeWindow, true);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects
@@ -610,5 +611,5 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   delete pushPull1;
   delete generator0;
   delete generator1;
-}*/
+}
 

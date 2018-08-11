@@ -553,7 +553,7 @@ void PushPull::initializePullThreads()
       //printf("Node %lu timeDiff %lu\n", nodeId, timeDiff);
 
       if (numStop == numVisiblePushSockets) stop = true;
-      if (timeDiff > 1000) stop = true;
+      if (timeDiff > 2000) stop = true;
     }
 
     for (auto socket : sockets) {
