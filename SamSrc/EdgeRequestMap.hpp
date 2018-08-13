@@ -38,7 +38,6 @@ public:
   typedef EdgeRequest<TupleType, source, target> EdgeRequestType;
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
-  typedef TemporalSet<size_t, double> TemporalSetType;
 
 private:
   SourceHF sourceHash;
@@ -60,19 +59,8 @@ private:
 
   PushPull* edgeCommunicator;
 
-  /// Used to keep the edge push sockets thread safe.
-  //std::mutex* edgePushMutexes;
-
-  /// Keeps track of which edges have already been sent
-  //std::vector<std::shared_ptr<TemporalSetType>> seenEdges;
-
   /// Keeps track of how many edges we send
   std::atomic<size_t> edgePushCounter;
-
-  //std::atomic<size_t> savedEdgePushes;
-
-  /// This has all the push sockets that we use to send edges to other nodes.
-  std::vector<std::shared_ptr<zmq::socket_t>> pushers;
 
   std::function<size_t(TupleType const&)> sourceIndexFunction;
   std::function<bool(EdgeRequestType const&, TupleType const&)> 
@@ -281,8 +269,6 @@ addRequest(EdgeRequestType request)
   if (isNull(src) && !isNull(trg))
   {
     index = targetHash(trg) % tableCapacity;
-    //printf("hashing target %s index %lu edge request %s\n", 
-    //trg.c_str(), index, request.toString().c_str());
   } else
   if (!isNull(src) && isNull(trg))
   {
@@ -385,7 +371,6 @@ process(TupleType const& tuple,
            
             DETAIL_TIMING_BEG1
             std::string message = toString(tuple);
-            //zmq::message_t message = tupleToZmq(tuple);
             DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
               "EdgeRequestMap::process creating message exceeded tolerance")
             
@@ -396,9 +381,6 @@ process(TupleType const& tuple,
             DETAIL_TIMING_BEG2
             auto sendTimingBegin = std::chrono::high_resolution_clock::now();
             
-            //edgePushMutexes[node].lock();
-            //bool sent = pushers[node]->send(message);
-            //edgePushMutexes[node].unlock();
             bool sent = edgeCommunicator->send(message, node);
             
             auto sendTimingEnd = std::chrono::high_resolution_clock::now();

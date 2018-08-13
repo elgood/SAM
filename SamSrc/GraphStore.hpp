@@ -126,33 +126,6 @@ private:
   /// Flag indicating terminate was called.
   std::atomic<bool> terminated; 
   
-  /// There is another context in ZeroMQPushPull.  I think we can just
-  /// instantiate another one here.
-  //zmq::context_t& context; 
-
-  // Multiple threads used the request push sockets.  To make them thread safe,
-  // need to isolate access to each socket to one thread at a time.  An
-  // array of mutexes equal to the number of sockets is created.
-  //std::mutex* requestPushMutexes;
-
-  // Similar to the request push sockets, multiple threads use the edge push
-  // sockets.  These mutexes are used to keep them thread safe.
-  //std::mutex* edgePushMutexes;
-
-
-  /// The push sockets in charge of pushing requests to other nodes.
-  //std::vector<std::shared_ptr<zmq::socket_t>> requestPushers;
-
-  /// The push sockets in charge of pushing edges to other nodes.
-  //std::vector<std::shared_ptr<zmq::socket_t>> edgePushers;
-  
-  /// The thread that polls the request pull sockets.
-  //std::thread requestPullThread;
-
-  /// The thread that polls the edge pull sockets.
-  //std::thread edgePullThread;
-
-
   /// This is the count of how many edges we send from this class and not
   /// from the EdgeRequestMap.
   std::atomic<size_t> edgePushCounter; 
@@ -161,11 +134,6 @@ private:
   /// and not from the EdgeRequestMap.
   std::atomic<size_t> edgePushFails; 
   
-  //std::atomic<size_t> edgePullCounter; ///> Count of how many edges we pull
-  //std::atomic<size_t> requestPushCounter; ///>Count of how many requests we send
-  //std::atomic<size_t> requestPullCounter; ///>Count of how many requests we pull
-  //std::atomic<size_t> requestFails; ///> Count request sends failed.
-
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
 
@@ -359,6 +327,17 @@ public:
   double getTotalTimeConsumeResultMapProcess() const {
     return totalTimeConsumeResultMapProcess;
   }
+  double getTotalTimeConsumeEdgeRequestMapProcess() const {
+    return totalTimeConsumeEdgeRequestMapProcess;
+  }
+  double getTotalTimeConsumeCheckSubgraphQueries() const {
+    return totalTimeConsumeCheckSubgraphQueries;
+  }
+  double getTotalTimeConsumeProcessEdgeRequests() const {
+    return totalTimeConsumeProcessEdgeRequests;
+  }
+
+
   double getTotalTimeProcessAgainstGraph() const {
     return resultMap->getTotalTimeProcessAgainstGraph(); 
   }
@@ -671,10 +650,10 @@ consumeDoesTheWork(TupleType const& tuple)
   // elsewhere.
   DETAIL_TIMING_BEG2
   std::list<EdgeRequestType> edgeRequests;
-  resultMapLock.lock();
+  //resultMapLock.lock();
   size_t workResultMapProcess = 
     resultMap->process(myTuple, *csr, *csc, edgeRequests);
-  resultMapLock.unlock();
+  //resultMapLock.unlock();
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeResultMapProcess, 0.05,
                      "GraphStore::consumeDoesTheWork resultMap->process")
 
@@ -704,29 +683,27 @@ consumeDoesTheWork(TupleType const& tuple)
   double time_consume = time_space.count(); 
   totalTimeConsume += time_consume;
 
-  #ifdef DETAIL_TIMING
-  consumeTimes.push_back(time_consume);
-  #endif
+  //#ifdef DETAIL_TIMING
+  //consumeTimes.push_back(time_consume);
+  //#endif
 
-  #ifdef DETAIL_METRICS
-  totalWork = workAddEdge + workResultMapProcess + workEdgeRequestMap + 
-              workCheckSubgraphQueries + workProcessEdgeRequests;
-  printf("Node %lu GraphStore::consumeDoesTheWork DETAIL_METRICS "
-         "workAddEdge %lu "
-         "workResultMapProcess %lu "
-         "workEdgeRequestMap %lu "
-         "workCheckSubgraphQueries %lu "
-         "workProcessEdgeRequests %lu total work %lu time %f\n", 
-         nodeId, workAddEdge, workResultMapProcess,
-         workEdgeRequestMap, workCheckSubgraphQueries,
-         workProcessEdgeRequests, totalWork, time_consume);
-  #endif
+  //#ifdef DETAIL_METRICS
+  //totalWork = workAddEdge + workResultMapProcess + workEdgeRequestMap + 
+  //            workCheckSubgraphQueries + workProcessEdgeRequests;
+  //printf("Node %lu GraphStore::consumeDoesTheWork DETAIL_METRICS "
+  //       "workAddEdge %lu "
+  //       "workResultMapProcess %lu "
+  //       "workEdgeRequestMap %lu "
+  //       "workCheckSubgraphQueries %lu "
+  //       "workProcessEdgeRequests %lu total work %lu time %f\n", 
+  //       nodeId, workAddEdge, workResultMapProcess,
+  //       workEdgeRequestMap, workCheckSubgraphQueries,
+  //       workProcessEdgeRequests, totalWork, time_consume);
+  //#endif
   
   #endif
 
-  #ifdef DEBUG
-  printf("Node %lu exiting GraphStore::consumeDoesTheWork\n", nodeId);
-  #endif
+  DEBUG_PRINT("Node %lu exiting GraphStore::consumeDoesTheWork\n", nodeId);
 
   consumeThreadsActive.fetch_add(-1);
   return true;
@@ -882,9 +859,9 @@ GraphStore(
     // Process the new edge over results and see if it satifies
     // queries.  If it does, there may be new edge requests.
     std::list<EdgeRequestType> edgeRequests;
-    resultMapLock.lock();
+    //resultMapLock.lock();
     resultMap->process(tuple, *csr, *csc, edgeRequests);
-    resultMapLock.unlock();
+    //resultMapLock.unlock();
 
     DEBUG_PRINT("Node %lu GraphStore::edgeCallback processed"
       " edge %s\n", this->nodeId, sam::toString(tuple).c_str());

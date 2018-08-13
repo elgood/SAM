@@ -611,7 +611,7 @@ process(TupleType const& tuple,
   mutexes[index].lock();
   DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process(tuple, csr, csc, "
     "edgeRequests, indexFunction) alr[%lu].size() %lu\n",
-    nodeId, index, alr[index].size())
+    nodeId, index, alr[index].size());
   for(auto l = this->alr[index].begin();
         l != this->alr[index].end(); ) 
   {

@@ -9,7 +9,7 @@
 
 //#define DEBUG
 //#define TIMING
-//#define DETAIL_TIMING
+#define DETAIL_TIMING
 #define METRICS
 //#define DETAIL_METRICS
 //#define NOBLOCK
@@ -49,6 +49,93 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
 
 typedef GraphStoreType::ResultType ResultType;  
 
+void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
+  #ifdef TIMING
+  printf("Node %lu Timing total consume time: %f\n", nodeId, 
+    graphStore->getTotalTimeConsume());
+  printf("Node %lu Timing edge pull thread time: %f\n", nodeId, 
+    graphStore->getTotalTimeEdgePullThread());
+  printf("Node %lu Timing request pull thread time: %f\n", nodeId, 
+    graphStore->getTotalTimeRequestPullThread());
+  #endif
+
+  #ifdef DETAIL_TIMING
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::addEdge: %f\n", nodeId,
+    graphStore->getTotalTimeConsumeAddEdge());
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::resultMap->process: %f\n", 
+    nodeId, graphStore->getTotalTimeConsumeResultMapProcess());
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::edgeRequestMap->process: %f\n",
+    nodeId, graphStore->getTotalTimeConsumeEdgeRequestMapProcess());
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::checkSubgraphQueries: %f\n",
+    nodeId, graphStore->getTotalTimeConsumeCheckSubgraphQueries());
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::processEdgeRequests: %f\n",
+    nodeId, graphStore->getTotalTimeConsumeProcessEdgeRequests());
+
+
+  printf("Node %lu Detail Timing total processAgainstGraph time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessAgainstGraph());
+  printf("Node %lu Detail Timing total processSource time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessSource());
+  printf("Node %lu Detail Timing total processTarget time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessTarget());
+  printf("Node %lu Detail Timing total processSourceTarget time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessSourceTarget());
+  printf("Node %lu Detail Timing total processProcessAgainstGraph time: "
+    "%f\n", nodeId, graphStore->getTotalTimeProcessProcessAgainstGraph());
+  printf("Node %lu Detail Timing total processLoop1 time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessLoop1());
+  printf("Node %lu Detail Timing total processLoop2 time: %f\n",
+    nodeId, graphStore->getTotalTimeProcessLoop2());
+  #endif
+
+  #ifdef METRICS
+  printf("Node %lu ResultMap results added: %lu\n", nodeId,
+    graphStore->getTotalResultsCreatedInResultMap());
+  printf("Node %lu ResultMap results deleted: %lu\n", nodeId,
+    graphStore->getTotalResultsDeletedInResultMap());
+  printf("Node %lu Csr edges added: %lu\n", nodeId,
+    graphStore->getTotalEdgesAddedInCsr());
+  printf("Node %lu Csr edges deleted: %lu\n", nodeId,
+    graphStore->getTotalEdgesDeletedInCsr());
+  printf("Node %lu Csc edges added: %lu\n", nodeId,
+    graphStore->getTotalEdgesAddedInCsc());
+  printf("Node %lu Csc edges deleted: %lu\n", nodeId,
+    graphStore->getTotalEdgesDeletedInCsc());
+  printf("Node %lu total GraphStore edge push attempts: %lu\n", nodeId,
+    graphStore->getTotalEdgePushes());
+  printf("Node %lu total GraphStore edge push fails: %lu\n", nodeId,
+    graphStore->getTotalEdgePushFails());
+  printf("Node %lu total GraphStore request push attempts: %lu\n", nodeId,
+    graphStore->getTotalRequestPushes());
+  printf("Node %lu total GraphStore request fails: %lu\n", nodeId,
+    graphStore->getTotalRequestPushFails());
+  printf("Node %lu total EdgeRequestMap edge push attempts: %lu\n", nodeId,
+    graphStore->getTotalEdgeRequestMapPushes());
+
+  #endif
+
+  #ifdef DETAIL_TIMING
+  /*std::list<double> const& consumeTimes = graphStore->getConsumeTimes();
+  double average = std::accumulate(consumeTimes.begin(),
+                               consumeTimes.end(), 0.0) / consumeTimes.size();
+
+  std::list<double> diff;
+  std::transform(consumeTimes.begin(), consumeTimes.end(), diff.begin(),
+                 std::bind2nd(std::minus<double>(), average));
+  double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0);
+  double stdev = std::sqrt(sq_sum / consumeTimes.size());
+  size_t i = 0;
+  printf("Node %lu expected iteration time %f\n", nodeId, 1.0/rate);
+  for (double t : consumeTimes) {
+    if (t > average + 2 * stdev) {
+      printf("Node %lu Consume time outside 2 stddev (i, time): %lu %f\n", 
+        nodeId, i, t);
+    }
+    i++;
+  }*/
+  #endif
+ 
+}
 
 int main(int argc, char** argv) {
 	
@@ -74,6 +161,9 @@ int main(int argc, char** argv) {
   bool check;
   size_t additionalNetflows; ///> Number of additional netflows
   std::string outputNetflowFile = ""; ///> Where netflows should be written
+  size_t numPushSockets = 1;
+  size_t numPullThreads = 1;
+  size_t timeout = 1000;
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangels among the"
@@ -131,6 +221,12 @@ int main(int argc, char** argv) {
       "Performs check of results")
     ("writeNetflows", po::value<std::string>(&outputNetflowFile),
       "If specified, will write out the generated netflows to a file")
+    ("numPushSockets", po::value<size_t>(&numPushSockets)->default_value(1),
+      "Number of push sockets a node creates to talk to another node (default 1)"),
+    ("numPullThreads", po::value<size_t>(&numPullThreads)->default_value(1),
+      "Number of pull threads (default 1)"),
+    ("timeout", po::value<size_t>(&timeout)->default_value(1000),
+      "How long (in ms) to wait before a send call fails")
   ;
 
   // Parse the command line variables
@@ -186,10 +282,6 @@ int main(int argc, char** argv) {
                                     numNodes, nodeId,
                                     hostnames, ports,
                                     hwm);
-
-  size_t numPushSockets = 1;
-  size_t numPullThreads = 1;
-  size_t timeout = 1000;
 
   auto graphStore = std::make_shared<GraphStoreType>(
      numNodes, nodeId,
@@ -292,14 +384,21 @@ int main(int argc, char** argv) {
     }
     if (rate > 0) {
       auto currenttime = std::chrono::high_resolution_clock::now();
-      duration<double> diff = duration_cast<duration<double>>(currenttime - t1);
-      if (diff.count() < i * increment) {
-        size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+      double diff = duration_cast<duration<double>>(currenttime - t1).count();
+      if (diff < i * increment) {
+        size_t numMilliseconds = (i * increment - diff) * 1000;
         std::this_thread::sleep_for(
           std::chrono::milliseconds(numMilliseconds));
       } else {
-        printf("Node %lu Regular tuple behind by %f\n", nodeId,
-          diff.count() - i * increment);
+        if (diff - i * increment > 0.01) {
+          printf("Node %lu Regular tuple behind by %f\n", nodeId,
+            diff - i * increment);
+        }
+        if (diff - i * increment > 1) {
+           printf("Node %lu way behind (%f) exiting\n", nodeId, diff - i * increment);
+           printStuff(graphStore, nodeId);
+           exit(1);
+        }
         //if (i * increment - diff.count > dropTolerance) {
         //drop = true;
         //}
@@ -356,83 +455,8 @@ int main(int argc, char** argv) {
 
   pushPull->terminate();
   
-  #ifdef TIMING
-  printf("Node %lu Timing total consume time: %f\n", nodeId, 
-    graphStore->getTotalTimeConsume());
-  printf("Node %lu Timing edge pull thread time: %f\n", nodeId, 
-    graphStore->getTotalTimeEdgePullThread());
-  printf("Node %lu Timing request pull thread time: %f\n", nodeId, 
-    graphStore->getTotalTimeRequestPullThread());
-  #endif
-
-  #ifdef DETAIL_TIMING
-  printf("Node %lu Detail Timing total add edge consume time: %f\n", nodeId,
-    graphStore->getTotalTimeConsumeAddEdge());
-  printf("Node %lu Detail Timing total result map process consume time: %f\n", 
-    nodeId, graphStore->getTotalTimeConsumeResultMapProcess());
-  printf("Node %lu Detail Timing total processAgainstGraph time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessAgainstGraph());
-  printf("Node %lu Detail Timing total processSource time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessSource());
-  printf("Node %lu Detail Timing total processTarget time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessTarget());
-  printf("Node %lu Detail Timing total processSourceTarget time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessSourceTarget());
-  printf("Node %lu Detail Timing total processProcessAgainstGraph time: "
-    "%f\n", nodeId, graphStore->getTotalTimeProcessProcessAgainstGraph());
-  printf("Node %lu Detail Timing total processSourceLoop1 time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessLoop1());
-  printf("Node %lu Detail Timing total processSourceLoop2 time: %f\n",
-    nodeId, graphStore->getTotalTimeProcessLoop2());
-  #endif
-
-  #ifdef METRICS
-  printf("Node %lu ResultMap results added: %lu\n", nodeId,
-    graphStore->getTotalResultsCreatedInResultMap());
-  printf("Node %lu ResultMap results deleted: %lu\n", nodeId,
-    graphStore->getTotalResultsDeletedInResultMap());
-  printf("Node %lu Csr edges added: %lu\n", nodeId,
-    graphStore->getTotalEdgesAddedInCsr());
-  printf("Node %lu Csr edges deleted: %lu\n", nodeId,
-    graphStore->getTotalEdgesDeletedInCsr());
-  printf("Node %lu Csc edges added: %lu\n", nodeId,
-    graphStore->getTotalEdgesAddedInCsc());
-  printf("Node %lu Csc edges deleted: %lu\n", nodeId,
-    graphStore->getTotalEdgesDeletedInCsc());
-  printf("Node %lu total GraphStore edge push attempts: %lu\n", nodeId,
-    graphStore->getTotalEdgePushes());
-  printf("Node %lu total GraphStore edge push fails: %lu\n", nodeId,
-    graphStore->getTotalEdgePushFails());
-  printf("Node %lu total GraphStore request push attempts: %lu\n", nodeId,
-    graphStore->getTotalRequestPushes());
-  printf("Node %lu total GraphStore request fails: %lu\n", nodeId,
-    graphStore->getTotalRequestPushFails());
-  printf("Node %lu total EdgeRequestMap edge push attempts: %lu\n", nodeId,
-    graphStore->getTotalEdgeRequestMapPushes());
-
-  #endif
-
-  #ifdef DETAIL_TIMING
-  /*std::list<double> const& consumeTimes = graphStore->getConsumeTimes();
-  double average = std::accumulate(consumeTimes.begin(),
-                               consumeTimes.end(), 0.0) / consumeTimes.size();
-
-  std::list<double> diff;
-  std::transform(consumeTimes.begin(), consumeTimes.end(), diff.begin(),
-                 std::bind2nd(std::minus<double>(), average));
-  double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0);
-  double stdev = std::sqrt(sq_sum / consumeTimes.size());
-  size_t i = 0;
-  printf("Node %lu expected iteration time %f\n", nodeId, 1.0/rate);
-  for (double t : consumeTimes) {
-    if (t > average + 2 * stdev) {
-      printf("Node %lu Consume time outside 2 stddev (i, time): %lu %f\n", 
-        nodeId, i, t);
-    }
-    i++;
-  }*/
-  #endif
-  
+  printStuff(graphStore, nodeId);
+ 
   if (check) {
     for(size_t i = 0; i < numResults; i++)
     {

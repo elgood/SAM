@@ -392,7 +392,7 @@ void PushPull::createPushSockets()
   if (local) {
     actualStartingPort += nodeId * totalNumPushSockets;
   }
-  printf("totalNumPushSockets %lu \n", totalNumPushSockets);
+  DEBUG_PRINT("totalNumPushSockets %lu \n", totalNumPushSockets);
   for (size_t i = 0; i < totalNumPushSockets; i++) 
   {
     zmqLock.lock();
@@ -553,7 +553,7 @@ void PushPull::initializePullThreads()
       //printf("Node %lu timeDiff %lu\n", nodeId, timeDiff);
 
       if (numStop == numVisiblePushSockets) stop = true;
-      if (timeDiff > 2000) stop = true;
+      if (timeDiff > 10000) stop = true;
     }
 
     for (auto socket : sockets) {
