@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
   size_t timeout = 1000;
 
   po::options_description desc("This code creates a set of vertices "
-    " and generates edges amongst that set.  It finds triangels among the"
+    " and generates edges amongst that set.  It finds triangles among the"
     " edges");
   desc.add_options()
     ("help", "help message")
