@@ -39,16 +39,19 @@ class ZeroMQPushPull : public AbstractConsumer<std::string>,
 public:
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
+  typedef typename PushPull::FunctionType FunctionType;
 
 private:
   HF hash; ///> Hashes
   Tuplizer tuplizer; ///> Converts from string to tuple
   SimpleIdGenerator idGenerator; ///> Generates unique id for each tuple
-  volatile bool stopPull = false; ///> Allows exit from pullThread
+  //volatile bool stopPull = false; ///> Allows exit from pullThread
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
   std::vector<std::string> hostnames; ///> The hostnames of all the nodes
-  std::vector<std::size_t> ports;  ///> The ports of all the nodes
+  //std::vector<std::size_t> ports;  ///> The ports of all the nodes
+  size_t startingPort;
+  bool local;
   uint32_t hwm;  ///> The high water mark
   std::atomic<bool> terminated;
 
@@ -56,13 +59,13 @@ private:
   size_t metricInterval = 100000; ///> How many seen before spitting metrics out
 
   /// The zmq context
-  zmq::context_t& context; // = zmq::context_t(1);
+  //zmq::context_t& context; // = zmq::context_t(1);
 
   /// A vector of all the push sockets
-  std::vector<std::shared_ptr<zmq::socket_t> > pushers;
+  //std::vector<std::shared_ptr<zmq::socket_t> > pushers;
 
   // The thread that polls the pull sockets
-  std::thread pullThread;
+  //std::thread pullThread;
 
 public:
 
@@ -77,17 +80,21 @@ public:
    * \param ports The ports to connect to for each node in the cluster.
    * \param hwm The high water mark.
    */
-  ZeroMQPushPull(zmq::context_t& context,
-                 std::size_t queueLength,
-                 std::size_t numNodes, 
-                 std::size_t nodeId, 
+  ZeroMQPushPull(//zmq::context_t& context,
+                 size_t queueLength,
+                 size_t numNodes, 
+                 size_t nodeId, 
                  std::vector<std::string> hostnames, 
-                 std::vector<std::size_t> ports, 
+                 //std::vector<std::size_t> ports, 
+                 size_t startingPort,
+                 size_t timeout,
+                 bool local,
                  std::size_t hwm);
 
   virtual ~ZeroMQPushPull()
   {
     terminate();
+    delete communicator;
     DEBUG_PRINT("Node %lu end of ~ZeroMQPushPull\n", nodeId);
   }
   
@@ -106,7 +113,7 @@ public:
    * Starts up the the pull thread to accept data.  This allows us to register
    * consumers before reading data.
    */
-  void acceptData(); 
+  //void acceptData(); 
   
   size_t getConsumeCount() const { return consumeCount; }
 
@@ -114,35 +121,62 @@ public:
 
 private:
   bool acceptingData = false;
-  
+  PushPull* communicator;
 };
 
 template <typename TupleType, size_t source, size_t target, 
           typename Tuplizer, typename HF>
 ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
-                 zmq::context_t& _context,
-                 std::size_t queueLength,
-                 std::size_t numNodes, 
-                 std::size_t nodeId, 
+                 //zmq::context_t& _context,
+                 size_t queueLength,
+                 size_t numNodes, 
+                 size_t nodeId, 
                  std::vector<std::string> hostnames, 
-                 std::vector<std::size_t> ports, 
-                 std::size_t hwm)
-  : context(_context),
+                 //std::vector<std::size_t> ports, 
+                 size_t startingPort,
+                 size_t timeout,
+                 bool local,
+                 size_t hwm)
+  : //context(_context),
   BaseProducer<TupleType>(queueLength)
 {
   //std::cout << "Entering ZeroMQPushPull constructor" << std::endl; 
   this->numNodes  = numNodes;
   this->nodeId    = nodeId;
   this->hostnames = hostnames;
-  this->ports     = ports;
+  //this->ports     = ports;
+  this->startingPort = startingPort;
+  this->local     = local;
   this->hwm       = hwm;
   terminated.store(false);
+
+  auto callbackFunction = [this](std::string str)
+  {
+    size_t id = idGenerator.generate();
+    TupleType tuple = tuplizer(id, str);
+  
+    DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received tuple "
+    "%s\n", this->nodeId, sam::toString(tuple).c_str());
+            
+    this->parallelFeed(tuple);
+  };
+
+  // TODO make parameters of constructor
+  size_t numPushSockets = 1;
+  size_t numPullThreads = 1;
+
+  std::vector<FunctionType> communicatorFunctions;
+  communicatorFunctions.push_back(callbackFunction);
+
+  communicator = new PushPull(numNodes, nodeId, numPushSockets, numPullThreads,
+                              hostnames, hwm, communicatorFunctions,
+                              startingPort, timeout, local); 
 
   //std::shared_ptr<zmq::pollitem_t> items( new zmq::pollitem_t[numNodes],
   //  []( zmq::pollitem_t* p) { delete[] p; });
 
   //pushers.resize(numNodes);
-  createPushSockets(&context, numNodes, nodeId, hostnames, ports, pushers, hwm);
+  //createPushSockets(&context, numNodes, nodeId, hostnames, ports, pushers, hwm);
                    
  
   /*for (int i =0; i < numNodes; i++) 
@@ -184,23 +218,23 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
 }
 
 
-template <typename TupleType, size_t source, size_t target, 
-          typename Tuplizer, typename HF>
-void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
-{
+//template <typename TupleType, size_t source, size_t target, 
+//          typename Tuplizer, typename HF>
+//void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
+//{
   /**
    * This is the function executed by the pull thread.  The pull
    * thread is responsible for polling all the pull sockets and
    * receiving data.
    */
-  auto pullFunction = [this]() {
+//  auto pullFunction = [this]() {
 
     // All sockets passed to zmq_poll() function must belong to the same
     // thread calling zmq_poll().  Below we create the poll items and the
     // pull sockets.
 
     // minus 1 because we don't send things from this node to itself.
-    zmq::pollitem_t pollItems[this->numNodes - 1];
+/*    zmq::pollitem_t pollItems[this->numNodes - 1];
     std::vector<zmq::socket_t*> sockets;
 
     // When a node sends a terminate flag, the corresponding entry is 
@@ -294,7 +328,7 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::acceptData()
 
   acceptingData = true;
  
-}
+}*/
 
 template <typename TupleType, size_t source, size_t target, 
           typename Tuplizer, typename HF>
@@ -302,6 +336,8 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
 {
   printf("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
   if (!terminated) {
+
+    terminated = true;
     
     for (auto consumer : this->consumers) {
       consumer->terminate();
@@ -309,30 +345,32 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
 
     // If terminate was called, we aren't going to receive any more
     // data, so we can push out the terminate signal to all pull sockets. 
-    for(size_t i = 0; i < numNodes; i++) {
-      if (i != nodeId) {
-        zmq::message_t message = terminateZmqMessage();
+    //for(size_t i = 0; i < numNodes; i++) {
+    //  if (i != nodeId) {
+    //    zmq::message_t message = terminateZmqMessage();
         
-        printf("Node %lu ZeroMQPushPull::terminate sending terminate"
-          " signal to %lu\n", nodeId, i);
-        bool sent = false;
-        while (!sent) {
-          sent = pushers[i]->send(message);
-          if (!sent) {
-            printf("Node %lu->%lu ZeroMQPushPull::terminate failed to send "
-              "terminate message.  Trying again.\n", nodeId, i);
-          }
-        }
-      }
-    }
+    //    printf("Node %lu ZeroMQPushPull::terminate sending terminate"
+    //      " signal to %lu\n", nodeId, i);
+    //    bool sent = false;
+    //    while (!sent) {
+    //      sent = pushers[i]->send(message);
+    //      if (!sent) {
+    //        printf("Node %lu->%lu ZeroMQPushPull::terminate failed to send "
+    //          "terminate message.  Trying again.\n", nodeId, i);
+    //      }
+    //    }
+    //  }
+    //}
 
     // The thread running the pull sockets should terminate after 
     // receiving terminate messages from the other nodes.
-    pullThread.join();
+    //pullThread.join();
+
+    communicator->terminate();
   }
 
   DEBUG_PRINT("Node %lu exiting ZeroMQPushPull::terminate\n", nodeId);
-  terminated = true;
+  //terminated = true;
 
 }
 
@@ -342,10 +380,10 @@ template <typename TupleType, size_t source, size_t target,
 bool ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::
 consume(std::string const& s)
 {
-  if (!acceptingData) {
-    throw ZeroMQPushPullException("ZeroMQPushPull::consume tried to consume"
-      " an item but not accepting data yet.");
-  }
+  //if (!acceptingData) {
+  //  throw ZeroMQPushPullException("ZeroMQPushPull::consume tried to consume"
+  //    " an item but not accepting data yet.");
+  //}
 
   TupleType tuple = tuplizer(0, s);
 
@@ -369,22 +407,6 @@ consume(std::string const& s)
   SourceType src = std::get<source>(tuple);
   SourceType trg = std::get<target>(tuple);
 
-  // Get the source and dest ips.  We send the netflow twice, once to each
-  // node responsible for the found ips.
-  /*std::stringstream ss(s);
-  std::string item;
-  std::getline(ss, item, ','); //label
-  std::getline(ss, item, ','); //time
-  std::getline(ss, item, ','); //time
-  std::getline(ss, item, ','); //time
-  std::getline(ss, item, ','); //protocol
-  std::getline(ss, item, ','); //protocol
-  std::getline(ss, item, ','); //source ip
-  std::string source = item;
-  std::getline(ss, item, ','); //dest ip
-  std::string dest = item;
-  */
-
   size_t node1 = hash(src) % numNodes;
   size_t node2 = hash(trg) % numNodes;
 
@@ -393,12 +415,13 @@ consume(std::string const& s)
     hash(src), trg.c_str(), hash(trg), numNodes, node1, node2);
 
   if (node1 != this->nodeId) { // Don't send data to ourselves.
-    zmq::message_t message = fillZmqMessage(s);
+    //zmq::message_t message = fillZmqMessage(s);
     DEBUG_PRINT("Node %lu ZeroMQPushPull::consume because of source "
            "sending to %lu %s\n",
            nodeId, node1, s.c_str());
 
-    pushers[node1]->send(message);
+    //pushers[node1]->send(message);
+    communicator->send(s, node1);
   } else {
     DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel "
       "feed %s\n", nodeId, s.c_str());
@@ -411,12 +434,13 @@ consume(std::string const& s)
   // Don't send message twice
   if (node1 != node2) {
     if (node2 != this->nodeId) {  
-      zmq::message_t message = fillZmqMessage(s);
+      //zmq::message_t message = fillZmqMessage(s);
 
       DEBUG_PRINT("Node %lu ZeroMQPushPull::consume because of target "
         "sending to %lu %s\n", nodeId, node2, s.c_str());
       
-      pushers[node2]->send(message);
+      //pushers[node2]->send(message);
+      communicator->send(s, node2);
     } else {
       DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel"
         " feed %s\n", nodeId, s.c_str());

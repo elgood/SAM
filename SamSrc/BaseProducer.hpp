@@ -35,14 +35,14 @@ private:
   std::mutex lock;
 
 protected:
-	/// The list of consumers that consume from output from this producer
-	std::vector<std::shared_ptr<AbstractConsumer<T>>> consumers;
+  /// The list of consumers that consume from output from this producer
+  std::vector<std::shared_ptr<AbstractConsumer<T>>> consumers;
 
-	/// The producer has a queue of strings to send to the consumers
-	T* inputQueue;
+  /// The producer has a queue of strings to send to the consumers
+  T* inputQueue;
 
-	/// The length of the inputQueue
-	size_t queueLength;
+  /// The length of the inputQueue
+  size_t queueLength;
 
   /// The number of items in the queue
   size_t numItems;
@@ -51,15 +51,14 @@ protected:
   size_t numReadItems = 0;
 
 public:
-  //BaseProducer();
-	BaseProducer(size_t queueLength);
-	virtual ~BaseProducer();
+  BaseProducer(size_t queueLength);
+  virtual ~BaseProducer();
 
   /**
    * Registers a consumer that will consume the output of this producer.
    * \param consumer The object that consumes the output of this producer.
    */
-	void registerConsumer(std::shared_ptr<AbstractConsumer<T>> consumer);
+  void registerConsumer(std::shared_ptr<AbstractConsumer<T>> consumer);
 
   /**
    * Removes the consumer from list of consumers. (Note: not implemented)
@@ -87,8 +86,8 @@ public:
 
 template <typename T>
 BaseProducer<T>::BaseProducer(size_t queueLength) {
-	this->queueLength = queueLength;
-	inputQueue = new T[queueLength];
+  this->queueLength = queueLength;
+  inputQueue = new T[queueLength];
   numItems = 0;
 
   parallelFeedFunction = [this](size_t threadId) {
@@ -100,14 +99,14 @@ BaseProducer<T>::BaseProducer(size_t queueLength) {
 
 template <typename T>
 BaseProducer<T>::~BaseProducer() {
-	delete[] inputQueue;
+  delete[] inputQueue;
 }
 
 template <typename T>
 void BaseProducer<T>::registerConsumer(
   std::shared_ptr<AbstractConsumer<T>> consumer)
 {
-	consumers.push_back(consumer);
+  consumers.push_back(consumer);
   threads.resize(consumers.size());
 }
 

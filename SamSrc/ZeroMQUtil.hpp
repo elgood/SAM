@@ -185,6 +185,10 @@ private:
   size_t startingPort; ///> The starting port
   int timeout; ///> The timeout in ms for send() calls
 
+  /// If the pull thread receives no data for a while, it exits.
+  /// TODO add this to constructor
+  size_t pullThreadTimeout = 10000; 
+
   std::vector<std::shared_ptr<zmq::socket_t>> pushers;
 
   /// The push sockets are not thread safe.  PushPull::send() can be called
@@ -553,7 +557,7 @@ void PushPull::initializePullThreads()
       //printf("Node %lu timeDiff %lu\n", nodeId, timeDiff);
 
       if (numStop == numVisiblePushSockets) stop = true;
-      if (timeDiff > 10000) stop = true;
+      if (timeDiff > pullThreadTimeout) stop = true;
     }
 
     for (auto socket : sockets) {

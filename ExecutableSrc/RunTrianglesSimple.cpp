@@ -42,7 +42,6 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
         NetflowTuplizer, StringHashFunction>
         PartitionType;
 
-zmq::context_t context(1);
 
 
 int main(int argc, char** argv) {
@@ -144,15 +143,18 @@ int main(int argc, char** argv) {
     }
   }
 
+  //TODO Make a commandline parameter
+  size_t timeout = 1000;
+
   // Setting up the ZeroMQPushPull object
-  PartitionType* pushPull = new PartitionType(context, queueLength,
+  PartitionType* pushPull = new PartitionType(queueLength,
                                     numNodes, nodeId,
-                                    hostnames, ports,
+                                    hostnames, 
+                                    startingPort, timeout, false,
                                     hwm);
 
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
-  size_t timeout = 1000;
 
   auto graphStore = std::make_shared<GraphStoreType>(
      numNodes, nodeId,

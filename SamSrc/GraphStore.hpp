@@ -24,7 +24,7 @@
 
 namespace sam {
 
-#define MAX_NUM_FUTURES 64
+#define MAX_NUM_FUTURES 1028
 
 class GraphStoreException : public std::runtime_error {
 public:
@@ -84,8 +84,6 @@ private:
 
   #ifdef TIMING
   double totalTimeConsume = 0; 
-  double totalTimeEdgePullThread = 0;
-  double totalTimeRequestPullThread = 0;
   #endif
 
   #ifdef DETAIL_TIMING
@@ -94,6 +92,7 @@ private:
   double totalTimeConsumeEdgeRequestMapProcess = 0;
   double totalTimeConsumeCheckSubgraphQueries = 0;
   double totalTimeConsumeProcessEdgeRequests = 0;
+  double totalTimeEdgeCallbackResultMapProcess = 0;
 
   // A list of consume times
   std::list<double> consumeTimes;
@@ -144,8 +143,10 @@ private:
   /// Keeps track of how many consume threads are active.
   std::atomic<size_t> consumeThreadsActive; 
   
-  //size_t currentFuture = 0;
-  //std::future<bool> futures[MAX_NUM_FUTURES];
+  size_t currentFuture = 0;
+  std::future<bool> futures[MAX_NUM_FUTURES];
+
+  bool cycled = false;
 
   void processRequestAgainstGraph(EdgeRequestType const& edgeRequest);
   
@@ -314,10 +315,6 @@ public:
 
   #ifdef TIMING
   double getTotalTimeConsume() const { return totalTimeConsume; }
-  double getTotalTimeEdgePullThread() const { return totalTimeEdgePullThread; }
-  double getTotalTimeRequestPullThread() const { 
-    return totalTimeRequestPullThread; 
-  }
   #endif
 
   #ifdef DETAIL_TIMING
@@ -336,7 +333,9 @@ public:
   double getTotalTimeConsumeProcessEdgeRequests() const {
     return totalTimeConsumeProcessEdgeRequests;
   }
-
+  double getTotalTimeEdgeCallbackResultMapProcess() const {
+    return totalTimeEdgeCallbackResultMapProcess;
+  }
 
   double getTotalTimeProcessAgainstGraph() const {
     return resultMap->getTotalTimeProcessAgainstGraph(); 
@@ -594,16 +593,21 @@ consume(TupleType const& tuple)
   DEBUG_PRINT("Node %lu GraphStore::consume about to launch async (total"
     " asnyc threads right now %lu) for tuple %s\n",
     nodeId, consumeThreadsActive.load(), toString(tuple).c_str());
-  //futures[currentFuture] = std::async(std::launch::async, [this, &tuple]() {
+  if (cycled) {
+    futures[currentFuture].get();
+  }
+
+  futures[currentFuture] = std::async(std::launch::async, [this, &tuple]() {
+    return this->consumeDoesTheWork(tuple);
+  });
+  currentFuture++;
+  //auto _ = std::async(std::launch::async, [this, &tuple]() {
   // return this->consumeDoesTheWork(tuple);
   //});
-  std::async(std::launch::async, [this, &tuple]() {
-   return this->consumeDoesTheWork(tuple);
-  });
-  //currentFuture++;
-  //if (currentFuture >= MAX_NUM_FUTURES) {
-  //  currentFuture = 0;
-  //}
+  if (currentFuture >= MAX_NUM_FUTURES) {
+    cycled = true;
+    currentFuture = 0;
+  }
 
 
   consumeCount++;
@@ -624,6 +628,11 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
 consumeDoesTheWork(TupleType const& tuple)
 {
   size_t previousCount = consumeThreadsActive.fetch_add(1);
+  size_t warningLimit = 32;
+  if (previousCount > warningLimit) {
+    printf("Node %lu has %lu warning active consume threads\n", 
+      nodeId, previousCount);
+  }
 
   size_t totalWork = 0;
 
@@ -856,12 +865,15 @@ GraphStore(
     DEBUG_PRINT("Node %lu GraphStore::edgeCallback added edge %s\n",
       this->nodeId, sam::toString(tuple).c_str());
 
+    DETAIL_TIMING_BEG1
     // Process the new edge over results and see if it satifies
     // queries.  If it does, there may be new edge requests.
     std::list<EdgeRequestType> edgeRequests;
     //resultMapLock.lock();
     resultMap->process(tuple, *csr, *csc, edgeRequests);
     //resultMapLock.unlock();
+    DETAIL_TIMING_END_TOL1(this->nodeId, totalTimeEdgeCallbackResultMapProcess, 
+      0.05, "GraphStore::edgeCallback resultMap->process")
 
     DEBUG_PRINT("Node %lu GraphStore::edgeCallback processed"
       " edge %s\n", this->nodeId, sam::toString(tuple).c_str());

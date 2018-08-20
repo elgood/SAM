@@ -8,7 +8,7 @@
  */
 
 //#define DEBUG
-//#define TIMING
+#define TIMING
 #define DETAIL_TIMING
 #define METRICS
 //#define DETAIL_METRICS
@@ -53,10 +53,6 @@ void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
   #ifdef TIMING
   printf("Node %lu Timing total consume time: %f\n", nodeId, 
     graphStore->getTotalTimeConsume());
-  printf("Node %lu Timing edge pull thread time: %f\n", nodeId, 
-    graphStore->getTotalTimeEdgePullThread());
-  printf("Node %lu Timing request pull thread time: %f\n", nodeId, 
-    graphStore->getTotalTimeRequestPullThread());
   #endif
 
   #ifdef DETAIL_TIMING
@@ -70,6 +66,9 @@ void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
     nodeId, graphStore->getTotalTimeConsumeCheckSubgraphQueries());
   printf("Node %lu Detail Timing ConsumeDoesTheWork::processEdgeRequests: %f\n",
     nodeId, graphStore->getTotalTimeConsumeProcessEdgeRequests());
+  printf("Node %lu Detail Timing edgeCallback::totalTimeEdgeCallbackResul"
+    "tMapProcess: %f\n", 
+     nodeId, graphStore->getTotalTimeEdgeCallbackResultMapProcess());
 
 
   printf("Node %lu Detail Timing total processAgainstGraph time: %f\n",
@@ -140,8 +139,6 @@ void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
 int main(int argc, char** argv) {
 	
 
-  zmq::context_t *context = new zmq::context_t(1);
-
   /// Parameters
   size_t numNodes; ///> The number of nodes in the cluster
   size_t nodeId; ///> The node id of this node
@@ -208,9 +205,6 @@ int main(int argc, char** argv) {
     ("numNetflows",
       po::value<size_t>(&numNetflows)->default_value(10000),
       "How many netflows to generate (default: 10000")
-    ("numThreads",
-      po::value<size_t>(&numThreads)->default_value(1),
-      "How many threads to use for parallel for loops.")
     ("additionalNetflows",
       po::value<size_t>(&additionalNetflows)->default_value(1000),
       "Number of additional netflows to add at the end to flush out results.")
@@ -221,10 +215,10 @@ int main(int argc, char** argv) {
       "Performs check of results")
     ("writeNetflows", po::value<std::string>(&outputNetflowFile),
       "If specified, will write out the generated netflows to a file")
-    ("numPushSockets", po::value<size_t>(&numPushSockets)->default_value(1),
-      "Number of push sockets a node creates to talk to another node (default 1)"),
     ("numPullThreads", po::value<size_t>(&numPullThreads)->default_value(1),
-      "Number of pull threads (default 1)"),
+      "Number of pull threads (default 1)")
+    ("numPushSockets", po::value<size_t>(&numPushSockets)->default_value(1),
+      "Number of push sockets a node creates to talk to another node (default 1)")
     ("timeout", po::value<size_t>(&timeout)->default_value(1000),
       "How long (in ms) to wait before a send call fails")
   ;
@@ -278,9 +272,10 @@ int main(int argc, char** argv) {
   }
 
   // Setting up the ZeroMQPushPull object
-  PartitionType* pushPull = new PartitionType(*context, queueLength,
+  PartitionType* pushPull = new PartitionType(queueLength,
                                     numNodes, nodeId,
-                                    hostnames, ports,
+                                    hostnames,
+                                    startingPort, timeout, false, 
                                     hwm);
 
   auto graphStore = std::make_shared<GraphStoreType>(
@@ -356,7 +351,7 @@ int main(int argc, char** argv) {
 
   graphStore->registerQuery(query);
 
-  pushPull->acceptData();
+  //pushPull->acceptData();
 
   double time = 0.0;
   size_t triangleCounter = 0;
@@ -390,14 +385,15 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(
           std::chrono::milliseconds(numMilliseconds));
       } else {
-        if (diff - i * increment > 0.01) {
+        if (diff - i * increment > 0.1) {
           printf("Node %lu Regular tuple behind by %f\n", nodeId,
             diff - i * increment);
         }
         if (diff - i * increment > 1) {
-           printf("Node %lu way behind (%f) exiting\n", nodeId, diff - i * increment);
-           printStuff(graphStore, nodeId);
-           exit(1);
+           printf("Node %lu way behind (%f) \n", 
+             nodeId, diff - i * increment);
+           //printStuff(graphStore, nodeId);
+           //exit(1);
         }
         //if (i * increment - diff.count > dropTolerance) {
         //drop = true;
@@ -414,7 +410,14 @@ int main(int argc, char** argv) {
       time += increment;
 
       try {
+        auto consumeTime1 = std::chrono::high_resolution_clock::now();
         pushPull->consume(str);
+        auto consumeTime2 = std::chrono::high_resolution_clock::now();
+        double consumeTime = duration_cast<duration<double>>(
+          consumeTime2 - consumeTime1).count();
+        if (consumeTime > 0.1) {
+          printf("Node %lu warning consume took %f\n", nodeId, consumeTime);
+        }
       } catch (std::bad_alloc e) {
         printf("Node %lu caught a bad_alloc exception after calling "
           "pushPull->consume(str) where str = %s\n", nodeId, str.c_str());

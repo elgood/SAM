@@ -33,34 +33,32 @@ using namespace std::chrono;
 typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer, 
   StringHashFunction> PartitionType;
 
-zmq::context_t context(1);
-
 int main(int argc, char** argv) {
 
 #ifdef DEBUG
   cout << "DEBUG: At the beginning of main" << endl;
 #endif
 
-	// The ip to read the nc data from.
-	string ip;
+  // The ip to read the nc data from.
+  string ip;
 
-	// The port to read the nc data from.
-	int ncPort;
+  // The port to read the nc data from.
+  int ncPort;
 
-	// The number of nodes in the cluster
-	int numNodes;
+  // The number of nodes in the cluster
+  int numNodes;
 
-	// The node id of this node
-	int nodeId;
+  // The node id of this node
+  int nodeId;
 
-	// The prefix to the nodes
-	string prefix;
+  // The prefix to the nodes
+  string prefix;
 
-	// The starting port number
-	int startingPort;
+  // The starting port number
+  int startingPort;
 
-	// The high-water mark
-	long hwm;
+  // The high-water mark
+  long hwm;
 
   // The length of the input queue
   int queueLength;
@@ -71,7 +69,7 @@ int main(int argc, char** argv) {
   // The total number of elements in a sliding window
   int N;
 
-	time_t timestamp_sec1, timestamp_sec2;
+  time_t timestamp_sec1, timestamp_sec2;
 
   po::options_description desc("Allowed options");
   desc.add_options()
@@ -116,7 +114,7 @@ int main(int argc, char** argv) {
 #endif
 
 
-	ReadSocket receiver(ip, ncPort);
+  ReadSocket receiver(ip, ncPort);
 #ifdef DEBUG
   cout << "DEBUG: main created receiver " << endl;
 #endif
@@ -134,13 +132,15 @@ int main(int argc, char** argv) {
     }
   }
 
+  //TODO make parameter
+  size_t timeout = 1000;
+
   auto consumer = std::make_shared<PartitionType>(
-                               context,
                                queueLength,
                                numNodes, 
                                nodeId, 
                                hostnames, 
-                               ports, 
+                               startingPort, timeout, false,
                                hwm);
 
 #ifdef DEBUG
@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
   milliseconds ms2 = duration_cast<milliseconds>(
     system_clock::now().time_since_epoch()
   );
-	std::cout << nodeId << " Seconds " 
+  std::cout << nodeId << " Seconds " 
     << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;
 
 

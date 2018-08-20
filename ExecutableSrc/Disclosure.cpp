@@ -51,7 +51,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
         NetflowTuplizer, StringHashFunction>
         PartitionType;
 
-zmq::context_t context(1);
+//zmq::context_t context(1);
 
 void createPipeline(
                  std::shared_ptr<ReadCSV> readCSV,
@@ -66,17 +66,22 @@ void createPipeline(
                  std::size_t hwm,
                  std::size_t N,
                  std::size_t b,
-                 std::size_t k)
+                 std::size_t k,
+                 size_t startingPort)
 {
   std::cout << "before creating consumer " << std::endl;
   // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
   // getting the data from the receiver (e.g. a socket or a file) and then
   // publishing it in a load-balanced way to the cluster.
-  auto consumer = std::make_shared<PartitionType>(context, queueLength,
+
+  // TODO make command line parameter
+  size_t timeout = 1000;
+
+  auto consumer = std::make_shared<PartitionType>(queueLength,
                                  numNodes, 
                                  nodeId, 
                                  hostnames, 
-                                 ports, 
+                                 startingPort, timeout, false,
                                  hwm);
 
   std::cout << "consumer created " << std::endl;
@@ -495,14 +500,16 @@ int main(int argc, char** argv) {
 
     ReadSocket receiver(ip, ncPort);
 
+    size_t timeout = 1000;
+
     // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
     // getting the data from the receiver (e.g. a socket or a file) and then
     // publishing it in a load-balanced way to the cluster.
-    auto consumer = std::make_shared<PartitionType>(context, queueLength,
+    auto consumer = std::make_shared<PartitionType>(queueLength,
                                    numNodes, 
                                    nodeId, 
                                    hostnames, 
-                                   ports, 
+                                   startingPort, timeout, false,
                                    hwm);
 
     receiver.registerConsumer(consumer);

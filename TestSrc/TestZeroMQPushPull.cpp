@@ -30,27 +30,31 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   size_t nodeId0 = 0;
   size_t nodeId1 = 1;
   std::vector<std::string> hostnames;
-  std::vector<size_t> ports;
+  //std::vector<size_t> ports;
   size_t hwm = 1000;
+  size_t timeout = 1000;
+  size_t startingPort = 10000;
 
   hostnames.push_back("localhost");
-  ports.push_back(10000);
+  //ports.push_back(10000);
   hostnames.push_back("localhost");
-  ports.push_back(10001);
+  //ports.push_back(10001);
 
   size_t n = 10000;
 
   AbstractNetflowGenerator* generator0 = new UniformDestPort("192.168.0.1", 1);
   AbstractNetflowGenerator* generator1 = new UniformDestPort("192.168.0.2", 1);
    
-  PartitionType* pushPull0 = new PartitionType(context, queueLength,
+  PartitionType* pushPull0 = new PartitionType(queueLength,
                                     numNodes, nodeId0,
-                                    hostnames, ports,
+                                    hostnames, //ports,
+                                    startingPort, timeout, true,
                                     hwm);
 
-  PartitionType* pushPull1 = new PartitionType(context, queueLength,
+  PartitionType* pushPull1 = new PartitionType(queueLength,
                                     numNodes, nodeId1,
-                                    hostnames, ports,
+                                    hostnames, //ports,
+                                    startingPort, timeout, true,
                                     hwm);
 
 
@@ -65,8 +69,8 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
     pushPull->terminate();
   };
 
-  pushPull0->acceptData();
-  pushPull1->acceptData();
+  //pushPull0->acceptData();
+  //pushPull1->acceptData();
 
   std::thread thread0(function, generator0, pushPull0);
   std::thread thread1(function, generator1, pushPull1);

@@ -56,7 +56,7 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
         NetflowTuplizer, StringHashFunction>
         PartitionType;
 
-zmq::context_t context(1);
+//zmq::context_t context(1);
 
 void createPipeline(
                  std::shared_ptr<ReadCSV> readCSV,
@@ -733,14 +733,18 @@ int main(int argc, char** argv) {
 
     auto receiver = std::make_shared<ReadSocket>(ip, ncPort);
 
+    // Make a commandline argument
+    size_t timeout = 1000;
+
     // Creating the ZeroMQPushPull consumer.  This consumer is responsible for
     // getting the data from the receiver (e.g. a socket or a file) and then
     // publishing it in a load-balanced way to the cluster.
-    auto consumer = std::make_shared<PartitionType>(context, queueLength,
+    auto consumer = std::make_shared<PartitionType>(queueLength,
                                    numNodes, 
                                    nodeId, 
                                    hostnames, 
-                                   ports, 
+                                   //ports, 
+                                   startingPort, timeout, false,
                                    hwm);
 
     receiver->registerConsumer(consumer);

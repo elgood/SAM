@@ -19,7 +19,7 @@
 using namespace sam;
 using namespace std::chrono;
 
-zmq::context_t context(1);
+//zmq::context_t context(1);
 
 typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
@@ -336,13 +336,13 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   size_t nodeId0 = 0;
   size_t nodeId1 = 1;
   std::vector<std::string> hostnames;
-  std::vector<size_t> ports;
+  //std::vector<size_t> ports;
   size_t hwm = 1000;
 
   hostnames.push_back("localhost");
-  ports.push_back(10000);
+  //ports.push_back(10000);
   hostnames.push_back("localhost");
-  ports.push_back(10001);
+  //ports.push_back(10001);
   
   size_t numTuples = 10000;
 
@@ -351,14 +351,19 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   // no triangles occur.
   //size_t numExtra = 100;
 
-  PartitionType* pushPull0 = new PartitionType(context, queueLength,
+  size_t timeout = 1000;
+  size_t startingPort = 10000;
+
+  PartitionType* pushPull0 = new PartitionType(queueLength,
                                     numNodes, nodeId0,
-                                    hostnames, ports,
+                                    hostnames, //ports,
+                                    startingPort, timeout, true,
                                     hwm);
 
-  PartitionType* pushPull1 = new PartitionType(context, queueLength,
+  PartitionType* pushPull1 = new PartitionType(queueLength,
                                     numNodes, nodeId1,
-                                    hostnames, ports,
+                                    hostnames, 
+                                    startingPort, timeout, true,
                                     hwm);
 
   // Setting up GraphStore objects
@@ -380,10 +385,9 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   edgeHostnames.push_back("localhost");
   edgePorts.push_back(10005);
 
-  size_t startingPort = 10002;
+  startingPort = 10002;
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
-  size_t timeout = 1000;
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId0,
@@ -468,8 +472,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   std::vector<Netflow> netflowList;
   std::mutex lock;
 
-  pushPull0->acceptData();
-  pushPull1->acceptData();
+  //pushPull0->acceptData();
+  //pushPull1->acceptData();
 
   // The lambda function
   auto generateFunction = [numTuples, &time, increment,

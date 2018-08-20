@@ -29,39 +29,37 @@ typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
         NetflowTuplizer, StringHashFunction>
         PartitionType;
 
-zmq::context_t context(1);
-
 int main(int argc, char** argv) {
 
 #ifdef DEBUG
   cout << "DEBUG: At the beginning of main" << endl;
 #endif
 
-	// The ip to read the nc data from.
-	string ip;
+  // The ip to read the nc data from.
+  string ip;
 
-	// The port to read the nc data from.
-	int ncPort;
+  // The port to read the nc data from.
+  int ncPort;
 
-	// The number of nodes in the cluster
-	int numNodes;
+  // The number of nodes in the cluster
+  int numNodes;
 
-	// The node id of this node
-	int nodeId;
+  // The node id of this node
+  int nodeId;
 
-	// The prefix to the nodes
-	string prefix;
+  // The prefix to the nodes
+  string prefix;
 
-	// The starting port number
-	int startingPort;
+  // The starting port number
+  int startingPort;
 
-	// The high-water mark
-	long hwm;
+  // The high-water mark
+  long hwm;
 
   // The length of the input queue
   int queueLength;
 
-	time_t timestamp_sec1, timestamp_sec2;
+  time_t timestamp_sec1, timestamp_sec2;
 
   po::options_description desc("Allowed options");
   desc.add_options()
@@ -102,7 +100,7 @@ int main(int argc, char** argv) {
 #endif
 
 
-	sam::ReadSocket receiver(ip, ncPort);
+  sam::ReadSocket receiver(ip, ncPort);
 #ifdef DEBUG
   cout << "DEBUG: main created receiver " << endl;
 #endif
@@ -120,12 +118,15 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto consumer = std::make_shared<PartitionType>(context,
+  // TODO command line parameter
+  size_t timeout = 1000;
+
+  auto consumer = std::make_shared<PartitionType>(
                                queueLength,
                                numNodes, 
                                nodeId, 
                                hostnames, 
-                               ports, 
+                               startingPort, timeout, false,
                                hwm);
 
 #ifdef DEBUG
@@ -138,10 +139,10 @@ int main(int argc, char** argv) {
     std::cout << "Couldn't connected to " << ip << ":" << ncPort << std::endl;
     return -1;
   }
-	time(&timestamp_sec1);
+  time(&timestamp_sec1);
   receiver.receive();
-	time(&timestamp_sec2);
-	std::cout << "Seconds " << timestamp_sec2 - timestamp_sec1 << std::endl;
+  time(&timestamp_sec2);
+  std::cout << "Seconds " << timestamp_sec2 - timestamp_sec1 << std::endl;
 
 
 }

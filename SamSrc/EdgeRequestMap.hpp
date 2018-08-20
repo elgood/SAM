@@ -371,7 +371,7 @@ process(TupleType const& tuple,
            
             DETAIL_TIMING_BEG1
             std::string message = toString(tuple);
-            DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.001, 
+            DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.01, 
               "EdgeRequestMap::process creating message exceeded tolerance")
             
             DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
@@ -379,21 +379,8 @@ process(TupleType const& tuple,
             
             ////// Sending tuple and checking timing /////
             DETAIL_TIMING_BEG2
-            auto sendTimingBegin = std::chrono::high_resolution_clock::now();
-            
             bool sent = edgeCommunicator->send(message, node);
-            
-            auto sendTimingEnd = std::chrono::high_resolution_clock::now();
-            auto sendTimingDiff = 
-              std::chrono::duration_cast<std::chrono::duration<double>>(
-                sendTimingEnd - sendTimingBegin);
-            double sendTime = sendTimingDiff.count();
-            if (sendTime > 0.001) {
-              printf("Node %lu->%lu EdgeRequestMap::process sending "
-                " edge %s took %f\n", nodeId, node,
-                toString(tuple).c_str(), sendTime);
-            }
-            DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.001, 
+            DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.01, 
               "EdgeRequestMap::process sending message exceeded "
               "tolerance")
             
