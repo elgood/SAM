@@ -66,10 +66,16 @@ void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
     nodeId, graphStore->getTotalTimeConsumeCheckSubgraphQueries());
   printf("Node %lu Detail Timing ConsumeDoesTheWork::processEdgeRequests: %f\n",
     nodeId, graphStore->getTotalTimeConsumeProcessEdgeRequests());
-  printf("Node %lu Detail Timing edgeCallback::totalTimeEdgeCallbackResul"
-    "tMapProcess: %f\n", 
-     nodeId, graphStore->getTotalTimeEdgeCallbackResultMapProcess());
-
+  printf("Node %lu Detail Timing edgeCallback::totalTimeEdgeCallbackResultMap"
+    "Process: %f\n", nodeId, 
+    graphStore->getTotalTimeEdgeCallbackResultMapProcess());
+  
+  ///// EdgeRequestMap timing details //////////////////////////////
+  printf("Node %lu Detail Timing EdgeRequestMap::totalTimeLock %f\n",
+    nodeId, graphStore->getTotalTimeEdgeRequestMapLock());
+  printf("Node %lu Detail Timing EdgeRequestMap::totalTimePush %f\n",
+    nodeId, graphStore->getTotalTimeEdgeRequestMapPush());
+  ///// End EdgeRequestMap timing details ////////////////////////
 
   printf("Node %lu Detail Timing total processAgainstGraph time: %f\n",
     nodeId, graphStore->getTotalTimeProcessAgainstGraph());
@@ -88,6 +94,16 @@ void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
   #endif
 
   #ifdef METRICS
+  /////// EdgeRequestMap metrics /////////////////////////////////////
+  printf("Node %lu Metrics total EdgeRequestMap edge push attempts: %lu\n", nodeId,
+    graphStore->getTotalEdgeRequestMapPushes());
+  printf("Node %lu Metrics total EdgeRequestMap edge push fails: %lu\n", nodeId,
+    graphStore->getTotalEdgeRequestMapPushFails());
+  printf("Node %lu Metrics total EdgeRequestMap edge requests viewed: %lu\n", nodeId,
+    graphStore->getTotalEdgeRequestMapRequestsViewed());
+  /////// End EdgeRequestMap metrics /////////////////////////////////
+
+
   printf("Node %lu ResultMap results added: %lu\n", nodeId,
     graphStore->getTotalResultsCreatedInResultMap());
   printf("Node %lu ResultMap results deleted: %lu\n", nodeId,
@@ -108,8 +124,6 @@ void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
     graphStore->getTotalRequestPushes());
   printf("Node %lu total GraphStore request fails: %lu\n", nodeId,
     graphStore->getTotalRequestPushFails());
-  printf("Node %lu total EdgeRequestMap edge push attempts: %lu\n", nodeId,
-    graphStore->getTotalEdgeRequestMapPushes());
 
   #endif
 
@@ -161,6 +175,7 @@ int main(int argc, char** argv) {
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
   size_t timeout = 1000;
+  double dropTolerance;
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangles among the"
@@ -221,6 +236,8 @@ int main(int argc, char** argv) {
       "Number of push sockets a node creates to talk to another node (default 1)")
     ("timeout", po::value<size_t>(&timeout)->default_value(1000),
       "How long (in ms) to wait before a send call fails")
+    ("dropTolerance", po::value<double>(&dropTolerance)->default_value(1000),
+      "How long (in seconds) this process can get behind before dropping.")
   ;
 
   // Parse the command line variables
@@ -386,18 +403,18 @@ int main(int argc, char** argv) {
           std::chrono::milliseconds(numMilliseconds));
       } else {
         if (diff - i * increment > 0.1) {
-          printf("Node %lu Regular tuple behind by %f\n", nodeId,
+          DEBUG_PRINT("Node %lu Regular tuple behind by %f\n", nodeId,
             diff - i * increment);
         }
         if (diff - i * increment > 1) {
-           printf("Node %lu way behind (%f) \n", 
+           DEBUG_PRINT("Node %lu way behind (%f) \n", 
              nodeId, diff - i * increment);
            //printStuff(graphStore, nodeId);
            //exit(1);
         }
-        //if (i * increment - diff.count > dropTolerance) {
-        //drop = true;
-        //}
+        if (diff - i * increment > dropTolerance) {
+          drop = true;
+        }
       }
     }
 

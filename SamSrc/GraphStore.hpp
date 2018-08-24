@@ -25,6 +25,7 @@
 namespace sam {
 
 #define MAX_NUM_FUTURES 1028
+#define TOLERANCE 1.0 
 
 class GraphStoreException : public std::runtime_error {
 public:
@@ -240,19 +241,20 @@ public:
   size_t checkSubgraphQueries(TupleType const& tuple,
                             std::list<EdgeRequestType>& edgeRequests);
 
+  /**
+   * Returns the total number of completed query results were produced.
+   */
   size_t getNumResults() const { return resultMap->getNumResults(); }
   
   size_t getNumIntermediateResults() const { 
     return resultMap->getNumIntermediateResults();
   }
 
-  /**
-   * Returns how many tuples the graph store has received through
-   * edge pulls.
-   */
-  inline size_t getTotalEdgePulls() const { 
-    return edgeCommunicator->getTotalMessagesReceived(); 
+  ResultType getResult(size_t index) const {
+    return resultMap->getResult(index);
   }
+
+
 
   /**
    * Returns the total number of edges sent by the graphstore and the request
@@ -261,7 +263,23 @@ public:
   size_t getTotalEdgePushes() {
     return edgeCommunicator->getTotalMessagesSent();
   }
-  
+ 
+  /**
+   * Returns how many tuples the graph store has received through
+   * edge pulls.
+   */
+  size_t getTotalEdgePulls() const { 
+    return edgeCommunicator->getTotalMessagesReceived(); 
+  }
+
+  /**
+   * Returns the total number of times that send messages on the edge push
+   * sockets failed.
+   */
+  size_t getTotalEdgePushFails() { 
+    return edgeCommunicator->getTotalMessagesFailed(); 
+  }
+ 
   /**
    * Returns the total number of edge requests that this nodes has issued.
    */
@@ -277,14 +295,6 @@ public:
     return requestCommunicator->getTotalMessagesReceived();
   }
 
-
-  /**
-   * Returns the number of edge map pushes
-   */
-  size_t getTotalEdgeRequestMapPushes() {
-    return edgeRequestMap->getTotalEdgePushes();
-  }
-
   /**
    * Returns the total number of times that send messages on the request
    * push sockets failed.
@@ -293,31 +303,51 @@ public:
     return requestCommunicator->getTotalMessagesFailed(); 
   }
 
+  #ifdef METRICS
   /**
-   * Returns the total number of times that send messages on the edge push
-   * sockets failed.
+   * Returns the number of edge map pushes
    */
-  size_t getTotalEdgePushFails() { 
-    return edgeCommunicator->getTotalMessagesFailed(); 
+  size_t getTotalEdgeRequestMapPushes() {
+    return edgeRequestMap->getTotalEdgePushes();
   }
 
   /**
    * Returns how many push fails occurred for the EdgeRequestMap.
    */
-  size_t getEdgeRequestMapPushFails() {
+  size_t getTotalEdgeRequestMapPushFails() {
     return edgeRequestMap->getTotalEdgePushFails();
   }
 
-  ResultType getResult(size_t index) const {
-    return resultMap->getResult(index);
+  /**
+   * Returns how many edge requests were viewed by the EdgeRequestMap.
+   */
+  size_t getTotalEdgeRequestMapRequestsViewed() {
+    return edgeRequestMap->getTotalEdgeRequestsViewed();
   }
-
+  #endif
 
   #ifdef TIMING
   double getTotalTimeConsume() const { return totalTimeConsume; }
   #endif
 
   #ifdef DETAIL_TIMING
+
+  /**
+   * Returns how long the edgeRequestMap spent sending data to a push
+   * socket.
+   */
+  double getTotalTimeEdgeRequestMapPush() const {
+    return edgeRequestMap->getTotalTimePush();
+  }
+
+  /**
+   * Returns how long the edgeRequestMap spent waiting for a lock
+   * to an entry of the ale.
+   */
+  double getTotalTimeEdgeRequestMapLock() const {
+    return edgeRequestMap->getTotalTimeLock();
+  }
+
   double getTotalTimeConsumeAddEdge() const {
     return totalTimeConsumeAddEdge;
   }
@@ -337,9 +367,14 @@ public:
     return totalTimeEdgeCallbackResultMapProcess;
   }
 
+  /**
+   * Returns the total time spent checking against the graph in
+   * result map processing.
+   */
   double getTotalTimeProcessAgainstGraph() const {
     return resultMap->getTotalTimeProcessAgainstGraph(); 
   }
+
   double getTotalTimeProcessSource() const {
     return resultMap->getTotalTimeProcessSource();
   }
@@ -630,7 +665,7 @@ consumeDoesTheWork(TupleType const& tuple)
   size_t previousCount = consumeThreadsActive.fetch_add(1);
   size_t warningLimit = 32;
   if (previousCount > warningLimit) {
-    printf("Node %lu has %lu warning active consume threads\n", 
+    DEBUG_PRINT("Node %lu has %lu warning active consume threads\n", 
       nodeId, previousCount);
   }
 
@@ -651,7 +686,7 @@ consumeDoesTheWork(TupleType const& tuple)
   // Adds the edge to the graph
   DETAIL_TIMING_BEG1
   size_t workAddEdge = addEdge(myTuple);
-  DETAIL_TIMING_END_TOL1(nodeId, totalTimeConsumeAddEdge, 0.05, 
+  DETAIL_TIMING_END_TOL1(nodeId, totalTimeConsumeAddEdge, TOLERANCE, 
                      "GraphStore::consumeDoesTheWork addEdge")
 
   // Check against existing queryResults.  The edgeRequest list is populated
@@ -663,25 +698,25 @@ consumeDoesTheWork(TupleType const& tuple)
   size_t workResultMapProcess = 
     resultMap->process(myTuple, *csr, *csc, edgeRequests);
   //resultMapLock.unlock();
-  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeResultMapProcess, 0.05,
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeResultMapProcess,  TOLERANCE,
                      "GraphStore::consumeDoesTheWork resultMap->process")
 
   // See if anybody needs this tuple and send it out to them.
   DETAIL_TIMING_BEG2
   size_t workEdgeRequestMap = edgeRequestMap->process(myTuple);
-  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeEdgeRequestMapProcess, 0.05,
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeEdgeRequestMapProcess, TOLERANCE,
                      "GraphStore::consumeDoesTheWork edgeRequestMap->process")
 
   // Check against all registered queries
   DETAIL_TIMING_BEG2
   size_t workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
-  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 0.05,
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, TOLERANCE,
                      "GraphStore::consumeDoesTheWork checkSubgraphQueries")
 
   // Send out the edge requests to the other nodes.
   DETAIL_TIMING_BEG2
   size_t workProcessEdgeRequests = processEdgeRequests(edgeRequests);
-  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeProcessEdgeRequests, 0.05,
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeProcessEdgeRequests, TOLERANCE,
                      "GraphStore::consumeDoesTheWork processEdgeRequests")
 
   #ifdef TIMING
@@ -873,7 +908,7 @@ GraphStore(
     resultMap->process(tuple, *csr, *csc, edgeRequests);
     //resultMapLock.unlock();
     DETAIL_TIMING_END_TOL1(this->nodeId, totalTimeEdgeCallbackResultMapProcess, 
-      0.05, "GraphStore::edgeCallback resultMap->process")
+      TOLERANCE, "GraphStore::edgeCallback resultMap->process")
 
     DEBUG_PRINT("Node %lu GraphStore::edgeCallback processed"
       " edge %s\n", this->nodeId, sam::toString(tuple).c_str());
@@ -1331,7 +1366,7 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
 
       double placeholder = 0;
       DETAIL_TIMING_BEG1
-      DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
+      DETAIL_TIMING_END_TOL1(nodeId, placeholder, TOLERANCE, 
         "GraphStore::processRequestAgainstGraph obtaining lock exceeded "
         "tolerance")
       if (!terminated) {
@@ -1363,7 +1398,7 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
           edgePushCounter.fetch_add(1);
         }
         //#endif
-        DETAIL_TIMING_END_TOL1(nodeId, placeholder, 0.001, 
+        DETAIL_TIMING_END_TOL1(nodeId, placeholder, TOLERANCE, 
           "GraphStore::processRequestAgainstGraph sending message exceeded "
           "tolerance")
       }

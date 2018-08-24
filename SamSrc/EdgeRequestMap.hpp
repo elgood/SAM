@@ -10,6 +10,8 @@
 #include "TemporalSet.hpp"
 #include "ZeroMQUtil.hpp"
 
+#define TOLERANCE 1.0
+
 namespace sam {
 
 class EdgeRequestMapException : public std::runtime_error {
@@ -39,41 +41,6 @@ public:
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
 
-private:
-  SourceHF sourceHash;
-  TargetHF targetHash;
-  SourceEF sourceEquals;
-  TargetEF targetEquals;
-
-  size_t numNodes;
-  size_t nodeId;
-
-  /// The size of the hash table storing the edge requests.
-  size_t tableCapacity;
-
-  /// An array of lists of edge requests
-  std::list<EdgeRequestType> *ale;
-
-  /// mutexes for each array element of ale.
-  std::mutex* mutexes;
-
-  PushPull* edgeCommunicator;
-
-  /// Keeps track of how many edges we send
-  std::atomic<size_t> edgePushCounter;
-
-  std::function<size_t(TupleType const&)> sourceIndexFunction;
-  std::function<bool(EdgeRequestType const&, TupleType const&)> 
-    sourceCheckFunction;
-  std::function<size_t(TupleType const&)> targetIndexFunction;
-  std::function<bool(EdgeRequestType const&, TupleType const&)> 
-    targetCheckFunction;
-  std::function<size_t(TupleType const&)> sourceTargetIndexFunction;
-  std::function<bool(EdgeRequestType const&, TupleType const&)> 
-    sourceTargetCheckFunction;
-
-  std::atomic<size_t> sendFails; ///> How many pushes fail
-
 public:
   /**
    * Constructor.  
@@ -102,14 +69,35 @@ public:
    */
   size_t process(TupleType const& tuple);
 
-
+  #ifdef METRICS
   /**
    * Returns how many edges we've sent
    */
   size_t getTotalEdgePushes() { return edgePushCounter; }
 
-  size_t getTotalEdgePushFails() { return sendFails; }
+  /**
+   * Returns how many edge pushes failed (because of timeout).
+   */
+  size_t getTotalEdgePushFails() { return sendFailCounter; }
 
+  /**
+   * Returns how many total edge requests this class examines.
+   */
+  uint64_t getTotalEdgeRequestsViewed() { return edgeRequestsViewedCounter; }
+  #endif
+
+  #ifdef DETAIL_TIMING
+  /**
+   * Returns the total time spent pushing edges to a zmq socket.
+   */
+  double getTotalTimePush() { return totalTimePush; }
+
+  /**
+   * Returns the total time spent waiting for a lock to an ale entry.
+   */
+  double getTotalTimeLock() { return totalTimeLock; }
+  #endif
+	
   /**
    * Iterates through the edge push sockets and sends a terminate
    * signal.
@@ -123,9 +111,50 @@ private:
         std::function<bool(EdgeRequestType const&, TupleType const&)> 
           checkFunction);
 
+  //TODO move these from class template to std::functions.
+  SourceHF sourceHash;
+  TargetHF targetHash;
+  SourceEF sourceEquals;
+  TargetEF targetEquals;
+
+  size_t numNodes;
+  size_t nodeId;
+
+  /// The size of the hash table storing the edge requests.
+  size_t tableCapacity;
+
+  /// An array of lists of edge requests
+  std::list<EdgeRequestType> *ale;
+
+  /// mutexes for each array element of ale.
+  std::mutex* mutexes;
+
+  PushPull* edgeCommunicator;
+
+  std::function<size_t(TupleType const&)> sourceIndexFunction;
+  std::function<bool(EdgeRequestType const&, TupleType const&)> 
+    sourceCheckFunction;
+  std::function<size_t(TupleType const&)> targetIndexFunction;
+  std::function<bool(EdgeRequestType const&, TupleType const&)> 
+    targetCheckFunction;
+  std::function<size_t(TupleType const&)> sourceTargetIndexFunction;
+  std::function<bool(EdgeRequestType const&, TupleType const&)> 
+    sourceTargetCheckFunction;
+
+
+  #ifdef METRICS
+  /// Keeps track of how many edges we send
+  std::atomic<size_t> edgePushCounter;
+
+  /// How many pushes fail
+  std::atomic<size_t> sendFailCounter; 
+
+  std::atomic<uint64_t> edgeRequestsViewedCounter;
+  #endif 
 
   #ifdef DETAIL_TIMING
   double totalTimePush = 0;
+  double totalTimeLock = 0;
   #endif
 
   std::atomic<bool> terminated;
@@ -144,7 +173,11 @@ EdgeRequestMap( std::size_t numNodes,
 {
   this->edgeCommunicator = edgeCommunicator;
 
-  sendFails = 0;
+  #ifdef METRICS
+  sendFailCounter = 0;
+  edgePushCounter = 0;
+  edgeRequestsViewedCounter = 0;
+  #endif
 
   sourceIndexFunction = [this](TupleType const& tuple) {
     SourceType src = std::get<source>(tuple);
@@ -232,7 +265,6 @@ EdgeRequestMap( std::size_t numNodes,
   this->tableCapacity = tableCapacity;
   mutexes = new std::mutex[tableCapacity];
   ale = new std::list<EdgeRequestType>[tableCapacity];
-  edgePushCounter = 0;
 
 }
 
@@ -332,14 +364,20 @@ process(TupleType const& tuple,
   bool sentEdges[numNodes];
   for (size_t i = 0; i < numNodes; i++) sentEdges[i] = false;
 
-  size_t countSentEdges = 0;
-
+  DETAIL_TIMING_BEG1
   mutexes[index].lock();
+  DETAIL_TIMING_END_TOL1(nodeId, totalTimeLock, TOLERANCE, 
+    "EdgeRequestMap::process obtaining lock exceeded "
+    "tolerance")
   size_t count = 0;
 
   DEBUG_PRINT("Node %lu EdgeRequestMap::process number of requests to look at"
     " %lu processing tuple %s\n", nodeId, ale[index].size(), 
     toString(tuple).c_str());
+
+  #ifdef METRICS
+  edgeRequestsViewedCounter.fetch_add(ale[index].size());
+  #endif
 
   for(auto edgeRequest = ale[index].begin();
         edgeRequest != ale[index].end();)
@@ -369,18 +407,16 @@ process(TupleType const& tuple,
 
           if (!terminated) {
            
-            DETAIL_TIMING_BEG1
             std::string message = toString(tuple);
-            DETAIL_TIMING_END_TOL1(nodeId, totalTimePush, 0.01, 
-              "EdgeRequestMap::process creating message exceeded tolerance")
             
             DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process sending"
               " edge %s\n", nodeId, node, toString(tuple).c_str());
             
             ////// Sending tuple and checking timing /////
+            
             DETAIL_TIMING_BEG2
             bool sent = edgeCommunicator->send(message, node);
-            DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, 0.01, 
+            DETAIL_TIMING_END_TOL2(nodeId, totalTimePush, TOLERANCE, 
               "EdgeRequestMap::process sending message exceeded "
               "tolerance")
             
@@ -391,12 +427,18 @@ process(TupleType const& tuple,
             //seenEdges[node]->insert(edgeId, edgeTime);
 
             if (!sent) {
-              printf("Node %lu->%lu EdgeRequestMap::process error sending"
+              DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process error sending"
                 " edge %s\n", nodeId, node, toString(tuple).c_str());
-              sendFails.fetch_add(1);
+              
+              #ifdef METRICS
+              sendFailCounter.fetch_add(1);
+              #endif
+
             } else {
+ 
+              #ifdef METRICS
               edgePushCounter.fetch_add(1);
-              countSentEdges++;
+              #endif
             }
           }
         }
@@ -405,9 +447,6 @@ process(TupleType const& tuple,
     }
   }
 
-  DEBUG_PRINT("Node %lu EdgeRequestMap::process countSentEdges %lu\n",
-    nodeId, countSentEdges);
-  
   mutexes[index].unlock();
   return count;
 }
@@ -420,12 +459,12 @@ EdgeRequestMap<TupleType, source, target, time,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate()
 {
-  printf("Node %lu entering EdgeRequestMap::terminate\n", nodeId);
+  DEBUG_PRINT("Node %lu entering EdgeRequestMap::terminate\n", nodeId);
   if (!terminated) {
     edgeCommunicator->terminate();
   }
   terminated = true;
-  printf("Node %lu exiting EdgeRequestMap::terminate\n", nodeId);
+  DEBUG_PRINT("Node %lu exiting EdgeRequestMap::terminate\n", nodeId);
 }
 
 
