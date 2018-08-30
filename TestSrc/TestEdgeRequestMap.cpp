@@ -1,6 +1,7 @@
 #define BOOST_TEST_MAIN TestEdgeRequestList
 
 #define DEBUG
+#define METRICS
 
 #include <boost/test/unit_test.hpp>
 #include "EdgeRequestMap.hpp"
@@ -48,7 +49,7 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   PushPull* edgeCommunicator1 = new PushPull(numNodes, 1, numPushSockets,
                                              numPullThreads, hostnames, hwm,
                                              functions, 
-																						 startingPort, 
+                                             startingPort, 
                                              timeout, true);
  
   MapType map0(numNodes, nodeId0, tableCapacity, edgeCommunicator0);
@@ -163,10 +164,10 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   BOOST_CHECK_EQUAL(map0.getTotalEdgePushes(), n);
   BOOST_CHECK_EQUAL(map1.getTotalEdgePushes(), n);
 
-	printf("big blah\n");
+  printf("big blah\n");
 	
-	edgeCommunicator0->terminate();
-	edgeCommunicator1->terminate();
+  edgeCommunicator0->terminate();
+  edgeCommunicator1->terminate();
 
   delete edgeCommunicator0;
   delete edgeCommunicator1;

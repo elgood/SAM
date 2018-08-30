@@ -93,7 +93,10 @@ private:
   double totalTimeConsumeEdgeRequestMapProcess = 0;
   double totalTimeConsumeCheckSubgraphQueries = 0;
   double totalTimeConsumeProcessEdgeRequests = 0;
+  double totalTimeEdgeCallbackProcessEdgeRequests = 0;
   double totalTimeEdgeCallbackResultMapProcess = 0;
+  double totalTimeRequestCallbackAddRequest = 0; 
+  double totalTimeRequestCallbackProcessAgainstGraph = 0; 
 
   // A list of consume times
   std::list<double> consumeTimes;
@@ -363,8 +366,17 @@ public:
   double getTotalTimeConsumeProcessEdgeRequests() const {
     return totalTimeConsumeProcessEdgeRequests;
   }
+  double getTotalTimeEdgeCallbackProcessEdgeRequests() const {
+    return totalTimeEdgeCallbackProcessEdgeRequests;
+  }
   double getTotalTimeEdgeCallbackResultMapProcess() const {
     return totalTimeEdgeCallbackResultMapProcess;
+  }
+  double getTotalTimeRequestCallbackAddRequest() const {
+    return totalTimeRequestCallbackAddRequest;
+  } 
+  double getTotalTimeRequestCallbackProcessAgainstGraph() const {
+    return totalTimeRequestCallbackProcessAgainstGraph;
   }
 
   /**
@@ -914,7 +926,11 @@ GraphStore(
       " edge %s\n", this->nodeId, sam::toString(tuple).c_str());
 
     // Send out the edge requests to the other nodes.
+    DETAIL_TIMING_BEG2
     processEdgeRequests(edgeRequests);
+    DETAIL_TIMING_END_TOL2(this->nodeId, 
+      totalTimeEdgeCallbackProcessEdgeRequests, TOLERANCE, 
+      "GraphStore::edgeCallbackk processEdgeRequests")
   };
 
   std::vector<FunctionType> edgeCommunicatorFunctions;
@@ -954,12 +970,20 @@ GraphStore(
       " length = %lu: %s %s\n", this->nodeId, str.size(), str.c_str(),
       request.toString().c_str());
 
+    DETAIL_TIMING_BEG1
     edgeRequestMap->addRequest(request);
+    DETAIL_TIMING_END_TOL1(this->nodeId, 
+      totalTimeRequestCallbackAddRequest, 
+      TOLERANCE, "GraphStore::requestCallback edgeRequestMap->addRequest")
     DEBUG_PRINT("Node %lu RequestPullThread added edge request to map"
       ": %s\n", this->nodeId, request.toString().c_str());
       
 
+    DETAIL_TIMING_BEG2
     processRequestAgainstGraph(request);
+    DETAIL_TIMING_END_TOL2(this->nodeId, 
+      totalTimeRequestCallbackProcessAgainstGraph, 
+      TOLERANCE, "GraphStore::requestCallback processRequestAgainstGraph")
     DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
       " against graph: %s\n", this->nodeId, request.toString().c_str());
       

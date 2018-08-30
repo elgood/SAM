@@ -60,15 +60,24 @@ void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
     graphStore->getTotalTimeConsumeAddEdge());
   printf("Node %lu Detail Timing ConsumeDoesTheWork::resultMap->process: %f\n", 
     nodeId, graphStore->getTotalTimeConsumeResultMapProcess());
-  printf("Node %lu Detail Timing ConsumeDoesTheWork::edgeRequestMap->process: %f\n",
-    nodeId, graphStore->getTotalTimeConsumeEdgeRequestMapProcess());
-  printf("Node %lu Detail Timing ConsumeDoesTheWork::checkSubgraphQueries: %f\n",
-    nodeId, graphStore->getTotalTimeConsumeCheckSubgraphQueries());
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::edgeRequestMap->process:"
+    " %f\n", nodeId, graphStore->getTotalTimeConsumeEdgeRequestMapProcess());
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::checkSubgraphQueries: %f"
+    "\n", nodeId, graphStore->getTotalTimeConsumeCheckSubgraphQueries());
   printf("Node %lu Detail Timing ConsumeDoesTheWork::processEdgeRequests: %f\n",
     nodeId, graphStore->getTotalTimeConsumeProcessEdgeRequests());
   printf("Node %lu Detail Timing edgeCallback::totalTimeEdgeCallbackResultMap"
     "Process: %f\n", nodeId, 
     graphStore->getTotalTimeEdgeCallbackResultMapProcess());
+  printf("Node %lu Detail Timing edgeCallback::totalTimeEdgeCallbackProcessEdge"
+    "Requests: %f\n", nodeId, 
+    graphStore->getTotalTimeEdgeCallbackProcessEdgeRequests());
+  printf("Node %lu Detail Timing requestCallback::totalTimeRequestCallback"
+    "ResultMapProcess: %f\n", nodeId, 
+    graphStore->getTotalTimeRequestCallbackAddRequest());
+  printf("Node %lu Detail Timing reqeustCallback::totalTimeRequestCallback"
+    "ProcessAgainstGraph: %f\n", nodeId, 
+    graphStore->getTotalTimeRequestCallbackProcessAgainstGraph());
   
   ///// EdgeRequestMap timing details //////////////////////////////
   printf("Node %lu Detail Timing EdgeRequestMap::totalTimeLock %f\n",
