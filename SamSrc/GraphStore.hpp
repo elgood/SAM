@@ -168,6 +168,11 @@ private:
   void sendEdgeRequest(EdgeRequestType const& edgeRequest,
     std::function<size_t(EdgeRequestType const&)> addressFunction);
 
+  double keepQueries = 1;
+  std::random_device rd;
+  std::mt19937 myRand;
+  std::uniform_real_distribution<> dist;
+
 public:
 
   /**
@@ -210,6 +215,7 @@ public:
              size_t numPullThreads,
              size_t timeout,
              double timeWindow,
+             double keepQueries,
              bool local=false);
 
   ~GraphStore();
@@ -716,14 +722,19 @@ consumeDoesTheWork(TupleType const& tuple)
   // See if anybody needs this tuple and send it out to them.
   DETAIL_TIMING_BEG2
   size_t workEdgeRequestMap = edgeRequestMap->process(myTuple);
-  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeEdgeRequestMapProcess, TOLERANCE,
-                     "GraphStore::consumeDoesTheWork edgeRequestMap->process")
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeEdgeRequestMapProcess, 
+    TOLERANCE, "GraphStore::consumeDoesTheWork edgeRequestMap->process")
 
   // Check against all registered queries
-  DETAIL_TIMING_BEG2
-  size_t workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
-  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, TOLERANCE,
-                     "GraphStore::consumeDoesTheWork checkSubgraphQueries")
+  
+  size_t workCheckSubgraphQueries = 0;
+  if (dist(myRand) < keepQueries) {
+
+    DETAIL_TIMING_BEG2
+    workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
+    DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 
+      TOLERANCE, "GraphStore::consumeDoesTheWork checkSubgraphQueries")
+  }
 
   // Send out the edge requests to the other nodes.
   DETAIL_TIMING_BEG2
@@ -851,6 +862,7 @@ GraphStore(
              size_t numPullThreads,
              size_t timeout,
              double timeWindow,
+             double keepQueries,
              bool local)
 {
   sourceAddressFunction = [this](EdgeRequestType const& edgeRequest) {
@@ -988,7 +1000,6 @@ GraphStore(
       " against graph: %s\n", this->nodeId, request.toString().c_str());
       
 
-    //generalLock.unlock();
     DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
       ": %s\n", this->nodeId, request.toString().c_str());
       
@@ -1003,294 +1014,9 @@ GraphStore(
                                      newStartingPort, timeout, local);
 
 
-  //std::atomic<size_t>* requestPullCounterPtr = &requestPullCounter;
-
-  /// The requestPullFunction is responsible for polling all the edge request
-  /// pull sockets.
-  //auto requestPullFunction = [this, requestHostnames, requestPorts, hwm,
-  //  requestPullCounterPtr]() 
-  /*{
-    #ifdef TIMING
-    auto t1 = std::chrono::high_resolution_clock::now();
-    #endif
-    // All sockets passed to zmq_poll() function must belong to the same
-    // thread calling zmq_poll().  Below we create the poll items and the
-    // pull sockets.
-    zmq::pollitem_t pollItems[this->numNodes - 1];
-    std::vector<zmq::socket_t*> sockets;
-
-    // When a node sends a terminate flag, the corresponding entry is 
-    // turned to true.  When all flags are true, the thread terminates.
-    bool terminate[this->numNodes - 1];
-
-    int numAdded = 0;
-    for(int i = 0; i < this->numNodes; i++) {
-      if (i != this->nodeId) {
-
-        // Creating the zmq pull socket.
-        zmq::socket_t* socket = new zmq::socket_t((this->context), ZMQ_PULL);
-        
-        // Creating the address.  
-        std::string ip = getIpString(requestHostnames[i]);
-        std::string url = "";
-        url = "tcp://" + ip + ":";
-        try {
-          url = url + boost::lexical_cast<std::string>(
-                              requestPorts[this->nodeId]);
-        } catch (std::exception e) {
-          std::string message = "Trouble with lexical cast:" + 
-            std::string(e.what());
-          throw GraphStoreException(message);
-        }
-
-        try {
-          socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
-        } catch (std::exception e) {
-          std::string message = std::string("Problem setting pull socket's") + 
-            std::string(" send high water mark: ") + e.what();
-          throw GraphStoreException(message);
-        }
-       
-        try { 
-          DEBUG_PRINT("Node %lu GraphStore request pull function connecting "
-            "to %s\n", this->nodeId, url.c_str());
-          socket->connect(url);
-        } catch (std::exception e) {
-          std::string message = "Couldn't connect to url " + url;
-          throw GraphStoreException(message);
-        }
-        sockets.push_back(socket);
-
-        pollItems[numAdded].socket = *socket;
-        pollItems[numAdded].events = ZMQ_POLLIN;
-        terminate[numAdded] = false;
-        numAdded++;
-      }
-    }
-
-    zmq::message_t message;
-    bool stop = false;
-
-    while (!stop) {
-
-      //if (terminated.load()) {
-      //  stop = true;
-      //}
-
-      int rValue = zmq::poll(pollItems, this->numNodes -1, 1);
-      int numStop = 0;
-      for (size_t i = 0; i < this->numNodes -1; i++) {
-        if (pollItems[i].revents & ZMQ_POLLIN) {
-          sockets[i]->recv(&message);
-          if (isTerminateMessage(message)) {
-            
-            printf("Node %lu RequestPullThread received a terminate "
-                   "message from %lu\n", this->nodeId, i);
-
-            terminate[i] = true;
-          } else if (message.size() > 0) {
-          
-            requestPullCounterPtr->fetch_add(1);
-
-            std::string str = getStringFromZmqMessage(message);
-            EdgeRequestType request(str);
-
-            DEBUG_PRINT("Node %lu RequestPullThread Received an edge request"
-              " length = %lu: %s\n", 
-              this->nodeId, message.size(), request.toString().c_str());
-
-            // When we get an edge request, we need to check against
-            // the graph (existing matches) and add it to the list 
-            // so that any new matches are caught.  Since there are
-            // two other threads that add to the graph 
-            // (the edgeRequest pull thread and the consume thread),
-            // we need a lock to make sure we don't miss edges are add
-            // edge multiple times. 
-            
-            //generalLock.lock();
-
-            edgeRequestMap->addRequest(request);
-            DEBUG_PRINT("Node %lu RequestPullThread added edge request to map"
-              ": %s\n", 
-              this->nodeId, request.toString().c_str());
-
-            processRequestAgainstGraph(request);
-            DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
-              " against graph: %s\n", 
-              this->nodeId, request.toString().c_str());
-
-            //generalLock.unlock();
-            DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
-              ": %s\n", 
-              this->nodeId, request.toString().c_str());
-
-
-          } else {
-            printf("Node %lu GraphStore::requestPullFunction received"
-              " mystery message %s\n", this->nodeId,
-              getStringFromZmqMessage(message).c_str());
-          }
-        }
-
-        if (terminate[i]) numStop++;
-      }
-      DEBUG_PRINT("Node %lu RequestPullThread numStop %lu numNodes %lu\n",
-        this->nodeId, numStop, this->numNodes);
-      if (numStop == this->numNodes - 1) stop = true;
-    }
-
-
-    for (auto socket : sockets) {
-      printf("Node %lu deleting request pull socket\n", this->nodeId);
-      delete socket;
-      printf("Node %lu deleted request pull socket\n", this->nodeId);
-    }
-
-    #ifdef TIMING
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> time_space = 
-      std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-    double timeRequestPullThread = time_space.count(); 
-    totalTimeRequestPullThread += timeRequestPullThread;
-    #endif
-    printf("Node %lu exiting requestPullThread\n", this->nodeId);
-  };
-
-  requestPullThread = std::thread(requestPullFunction);
-
-  // Function that is responsible for pulling edges from other nodes
-  // that result from edge requests. 
-  auto edgePullFunction = [this, edgeHostnames, 
-                           edgePorts, hwm]() 
-  {
-    #ifdef TIMING
-    auto t1 = std::chrono::high_resolution_clock::now();
-    #endif
-
-    zmq::pollitem_t pollItems[this->numNodes - 1];
-    std::vector<zmq::socket_t*> sockets;
-
-    bool terminate[this->numNodes - 1];
-
-    int numAdded = 0;
-    for(size_t i = 0; i < this->numNodes; i++) {
-      if (i != this->nodeId)
-      {
-        zmq::socket_t* socket = new zmq::socket_t((this->context), ZMQ_PULL);
-        std::string ip = getIpString(edgeHostnames[i]);
-        std::string url = "";
-        url = "tcp://" + ip + ":";
-        try {
-          url = url + boost::lexical_cast<std::string>(edgePorts[this->nodeId]);
-        } catch (std::exception e) {
-          std::string message = "Trouble with lexical_cast: " +
-            std::string(e.what());
-          throw GraphStoreException(message);
-        }
-        try {
-          DEBUG_PRINT("Node %lu GraphStore edge pull function connecting "
-            "to %s\n", this->nodeId, url.c_str());
-          socket->connect(url);
-        } catch (std::exception e) {
-          std::string message = "Couldn't connect to url " + url;
-          throw GraphStoreException(message);
-        }
-        sockets.push_back(socket);
-
-        pollItems[numAdded].socket = *socket;
-        pollItems[numAdded].events = ZMQ_POLLIN;
-        terminate[numAdded] = false;
-        numAdded++;
-      }
-    }
-
-    zmq::message_t message;
-    bool stop = false;
-    while (!stop) {
-
-      //if (terminated.load()) {
-      //  stop = true;
-      //}
-
-      size_t numStop = 0;
-      int rvalue = zmq::poll(pollItems, this->numNodes - 1, 1);
-      for (size_t i = 0; i < this->numNodes - 1; i++) {
-        if (pollItems[i].revents & ZMQ_POLLIN) {
-          sockets[i]->recv(&message);
-          if (isTerminateMessage(message)) {
-            
-            printf("Node %lu GraphStore::edgePullThread received a"
-             " terminate message from %lu\n", this->nodeId, i);
-
-            terminate[i] = true;
-          } else if (message.size() > 0) {
-            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction else\n", 
-              this->nodeId);
-
-            // Increment the counter indicating we got another edge by pulling.
-            edgePullCounter.fetch_add(1);
-
-            // Change the zmq message into a string.
-            std::string str = getStringFromZmqMessage(message);
-
-            // We give the edge a new id that is unique to this node.
-            size_t id = idGenerator.generate();
-
-            // Change the string into the expected tuple type.
-            TupleType tuple = tuplizer(id, str);
-
-            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction received a"
-              " tuple %s\n", this->nodeId, sam::toString(tuple).c_str());
-
-            // Do we need to do this?
-            // Add the edge to the graph
-            //addEdge(tuple);
-
-            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction added edge %s\n",
-              this->nodeId, sam::toString(tuple).c_str());
-
-            // Process the new edge over results and see if it satifies
-            // queries.  If it does, there may be new edge requests.
-            std::list<EdgeRequestType> edgeRequests;
-            resultMapLock.lock();
-            resultMap->process(tuple, *csr, *csc, edgeRequests);
-            resultMapLock.unlock();
-
-            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction processed"
-              " edge %s\n", this->nodeId, sam::toString(tuple).c_str());
-
-            // Send out the edge requests to the other nodes.
-            processEdgeRequests(edgeRequests);
-
-          } else {
-            DEBUG_PRINT("Node %lu GraphStore::edgePullFunction received"
-              " mystery message %s\n", this->nodeId, 
-              getStringFromZmqMessage(message).c_str());
-          }
-
-        }
-        if (terminate[i]) numStop++;
-      }
-      if (numStop == this->numNodes - 1 && this->terminated) stop = true;
-    }
-
-    printf("Node %lu exiting edge pull thread\n", this->nodeId);
-    
-    for (auto socket : sockets) {
-      delete socket;
-    }
-    
-    #ifdef TIMING
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> time_space = 
-      std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-    double timeEdgePullThread = time_space.count(); 
-    totalTimeEdgePullThread += timeEdgePullThread;
-    #endif
-  };
-
-  edgePullThread = std::thread(edgePullFunction);
-  */
+  this->keepQueries = keepQueries;
+  myRand = std::mt19937(rd());
+  dist = std::uniform_real_distribution<>(0.0, 1.0);
 }
 
 template <typename TupleType, typename Tuplizer, 

@@ -185,6 +185,7 @@ int main(int argc, char** argv) {
   size_t numPullThreads = 1;
   size_t timeout = 1000;
   double dropTolerance;
+  double keepQueries;
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangles among the"
@@ -242,11 +243,14 @@ int main(int argc, char** argv) {
     ("numPullThreads", po::value<size_t>(&numPullThreads)->default_value(1),
       "Number of pull threads (default 1)")
     ("numPushSockets", po::value<size_t>(&numPushSockets)->default_value(1),
-      "Number of push sockets a node creates to talk to another node (default 1)")
+      "Number of push sockets a node creates to talk to another node "
+      "(default 1)")
     ("timeout", po::value<size_t>(&timeout)->default_value(1000),
       "How long (in ms) to wait before a send call fails")
     ("dropTolerance", po::value<double>(&dropTolerance)->default_value(1000),
       "How long (in seconds) this process can get behind before dropping.")
+    ("keepQueries", po::value<double>(&keepQueries)->default_value(1.0),
+      "Percentage of checks aginst queries to keep") 
   ;
 
   // Parse the command line variables
@@ -310,7 +314,7 @@ int main(int argc, char** argv) {
      hwm, graphCapacity,
      tableCapacity, resultsCapacity, 
      numPushSockets, numPullThreads, timeout,
-     timeWindow);
+     timeWindow, keepQueries);
 
   // Set up GraphStore object to get input from ZeroMQPushPull objects
   pushPull->registerConsumer(graphStore);
