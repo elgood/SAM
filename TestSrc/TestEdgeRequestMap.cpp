@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   PushPull* edgeCommunicator1 = new PushPull(numNodes, 1, numPushSockets,
                                              numPullThreads, hostnames, hwm,
                                              functions, 
-																						 startingPort, 
+                                             startingPort, 
                                              timeout, true);
  
   MapType map0(numNodes, nodeId0, tableCapacity, edgeCommunicator0);

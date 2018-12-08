@@ -17,6 +17,7 @@
 #include "SubgraphQueryResultMap.hpp"
 #include "EdgeRequestMap.hpp"
 #include "ZeroMQUtil.hpp"
+#include "FeatureMap.hpp"
 #include <zmq.hpp>
 #include <thread>
 #include <cstdlib>
@@ -93,7 +94,10 @@ private:
   double totalTimeConsumeEdgeRequestMapProcess = 0;
   double totalTimeConsumeCheckSubgraphQueries = 0;
   double totalTimeConsumeProcessEdgeRequests = 0;
+  double totalTimeEdgeCallbackProcessEdgeRequests = 0;
   double totalTimeEdgeCallbackResultMapProcess = 0;
+  double totalTimeRequestCallbackAddRequest = 0; 
+  double totalTimeRequestCallbackProcessAgainstGraph = 0; 
 
   // A list of consume times
   std::list<double> consumeTimes;
@@ -157,13 +161,19 @@ private:
    */
   size_t processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests);
 
-
   /**
    * Sends the edge request out.  Uses the address function to determine
    * which node to send the request to.
    */
   void sendEdgeRequest(EdgeRequestType const& edgeRequest,
     std::function<size_t(EdgeRequestType const&)> addressFunction);
+
+  double keepQueries = 1;
+  std::random_device rd;
+  std::mt19937 myRand;
+  std::uniform_real_distribution<> dist;
+
+  std::shared_ptr<FeatureMap> featureMap;
 
 public:
 
@@ -192,7 +202,7 @@ public:
    * \param timeout How long in milliseconds should the communicator's pull
    *  threads wait for data before exiting the pull loop.
    * \param timeWindow How long do we keep edges.
-   * \param local Bollean indicating that we are on one node.
+   * \param local Boolean indicating that we are on one node.
    */
   GraphStore(
              std::size_t numNodes,
@@ -207,6 +217,8 @@ public:
              size_t numPullThreads,
              size_t timeout,
              double timeWindow,
+             double keepQueries,
+             std::shared_ptr<FeatureMap> featureMap,
              bool local=false);
 
   ~GraphStore();
@@ -363,8 +375,17 @@ public:
   double getTotalTimeConsumeProcessEdgeRequests() const {
     return totalTimeConsumeProcessEdgeRequests;
   }
+  double getTotalTimeEdgeCallbackProcessEdgeRequests() const {
+    return totalTimeEdgeCallbackProcessEdgeRequests;
+  }
   double getTotalTimeEdgeCallbackResultMapProcess() const {
     return totalTimeEdgeCallbackResultMapProcess;
+  }
+  double getTotalTimeRequestCallbackAddRequest() const {
+    return totalTimeRequestCallbackAddRequest;
+  } 
+  double getTotalTimeRequestCallbackProcessAgainstGraph() const {
+    return totalTimeRequestCallbackProcessAgainstGraph;
   }
 
   /**
@@ -479,7 +500,7 @@ checkSubgraphQueries(TupleType const& tuple,
         sourceHash(src) % numNodes);
 
       if (sourceHash(src) % numNodes == nodeId) {
-        ResultType queryResult(&query, tuple);
+        ResultType queryResult(&query, tuple, featureMap);
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries adding"
           " queryResult %s from tuple %s\n", this->nodeId, 
@@ -708,10 +729,15 @@ consumeDoesTheWork(TupleType const& tuple)
     TOLERANCE, "GraphStore::consumeDoesTheWork edgeRequestMap->process")
 
   // Check against all registered queries
-  DETAIL_TIMING_BEG2
-  size_t workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
-  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, TOLERANCE,
-                     "GraphStore::consumeDoesTheWork checkSubgraphQueries")
+  
+  size_t workCheckSubgraphQueries = 0;
+  if (dist(myRand) < keepQueries) {
+
+    DETAIL_TIMING_BEG2
+    workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
+    DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 
+      TOLERANCE, "GraphStore::consumeDoesTheWork checkSubgraphQueries")
+  }
 
   // Send out the edge requests to the other nodes.
   DETAIL_TIMING_BEG2
@@ -839,8 +865,12 @@ GraphStore(
              size_t numPullThreads,
              size_t timeout,
              double timeWindow,
+             double keepQueries,
+             std::shared_ptr<FeatureMap> featureMap,
              bool local)
 {
+  this->featureMap = featureMap;
+
   sourceAddressFunction = [this](EdgeRequestType const& edgeRequest) {
     SourceType src = edgeRequest.getSource();
     size_t node = sourceHash(src) % this->numNodes;
@@ -902,7 +932,11 @@ GraphStore(
       " edge %s\n", this->nodeId, sam::toString(tuple).c_str());
 
     // Send out the edge requests to the other nodes.
+    DETAIL_TIMING_BEG2
     processEdgeRequests(edgeRequests);
+    DETAIL_TIMING_END_TOL2(this->nodeId, 
+      totalTimeEdgeCallbackProcessEdgeRequests, TOLERANCE, 
+      "GraphStore::edgeCallbackk processEdgeRequests")
   };
 
   std::vector<FunctionType> edgeCommunicatorFunctions;
@@ -941,17 +975,24 @@ GraphStore(
       " length = %lu: %s %s\n", this->nodeId, str.size(), str.c_str(),
       request.toString().c_str());
 
+    DETAIL_TIMING_BEG1
     edgeRequestMap->addRequest(request);
+    DETAIL_TIMING_END_TOL1(this->nodeId, 
+      totalTimeRequestCallbackAddRequest, 
+      TOLERANCE, "GraphStore::requestCallback edgeRequestMap->addRequest")
     DEBUG_PRINT("Node %lu RequestPullThread added edge request to map"
       ": %s\n", this->nodeId, request.toString().c_str());
       
 
+    DETAIL_TIMING_BEG2
     processRequestAgainstGraph(request);
+    DETAIL_TIMING_END_TOL2(this->nodeId, 
+      totalTimeRequestCallbackProcessAgainstGraph, 
+      TOLERANCE, "GraphStore::requestCallback processRequestAgainstGraph")
     DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
       " against graph: %s\n", this->nodeId, request.toString().c_str());
       
 
-    //generalLock.unlock();
     DEBUG_PRINT("Node %lu RequestPullThread processed edge request"
       ": %s\n", this->nodeId, request.toString().c_str());
       
@@ -965,6 +1006,9 @@ GraphStore(
                                      requestCommunicatorFunctions,
                                      newStartingPort, timeout, local);
 
+  this->keepQueries = keepQueries;
+  myRand = std::mt19937(rd());
+  dist = std::uniform_real_distribution<>(0.0, 1.0);
 }
 
 template <typename TupleType, typename Tuplizer, 

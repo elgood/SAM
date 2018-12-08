@@ -60,15 +60,24 @@ void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
     graphStore->getTotalTimeConsumeAddEdge());
   printf("Node %lu Detail Timing ConsumeDoesTheWork::resultMap->process: %f\n", 
     nodeId, graphStore->getTotalTimeConsumeResultMapProcess());
-  printf("Node %lu Detail Timing ConsumeDoesTheWork::edgeRequestMap->process: %f\n",
-    nodeId, graphStore->getTotalTimeConsumeEdgeRequestMapProcess());
-  printf("Node %lu Detail Timing ConsumeDoesTheWork::checkSubgraphQueries: %f\n",
-    nodeId, graphStore->getTotalTimeConsumeCheckSubgraphQueries());
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::edgeRequestMap->process:"
+    " %f\n", nodeId, graphStore->getTotalTimeConsumeEdgeRequestMapProcess());
+  printf("Node %lu Detail Timing ConsumeDoesTheWork::checkSubgraphQueries: %f"
+    "\n", nodeId, graphStore->getTotalTimeConsumeCheckSubgraphQueries());
   printf("Node %lu Detail Timing ConsumeDoesTheWork::processEdgeRequests: %f\n",
     nodeId, graphStore->getTotalTimeConsumeProcessEdgeRequests());
   printf("Node %lu Detail Timing edgeCallback::totalTimeEdgeCallbackResultMap"
     "Process: %f\n", nodeId, 
     graphStore->getTotalTimeEdgeCallbackResultMapProcess());
+  printf("Node %lu Detail Timing edgeCallback::totalTimeEdgeCallbackProcessEdge"
+    "Requests: %f\n", nodeId, 
+    graphStore->getTotalTimeEdgeCallbackProcessEdgeRequests());
+  printf("Node %lu Detail Timing requestCallback::totalTimeRequestCallback"
+    "ResultMapProcess: %f\n", nodeId, 
+    graphStore->getTotalTimeRequestCallbackAddRequest());
+  printf("Node %lu Detail Timing reqeustCallback::totalTimeRequestCallback"
+    "ProcessAgainstGraph: %f\n", nodeId, 
+    graphStore->getTotalTimeRequestCallbackProcessAgainstGraph());
   
   ///// EdgeRequestMap timing details //////////////////////////////
   printf("Node %lu Detail Timing EdgeRequestMap::totalTimeLock %f\n",
@@ -176,6 +185,7 @@ int main(int argc, char** argv) {
   size_t numPullThreads = 1;
   size_t timeout = 1000;
   double dropTolerance;
+  double keepQueries;
 
   po::options_description desc("This code creates a set of vertices "
     " and generates edges amongst that set.  It finds triangles among the"
@@ -233,11 +243,14 @@ int main(int argc, char** argv) {
     ("numPullThreads", po::value<size_t>(&numPullThreads)->default_value(1),
       "Number of pull threads (default 1)")
     ("numPushSockets", po::value<size_t>(&numPushSockets)->default_value(1),
-      "Number of push sockets a node creates to talk to another node (default 1)")
+      "Number of push sockets a node creates to talk to another node "
+      "(default 1)")
     ("timeout", po::value<size_t>(&timeout)->default_value(1000),
       "How long (in ms) to wait before a send call fails")
     ("dropTolerance", po::value<double>(&dropTolerance)->default_value(1000),
       "How long (in seconds) this process can get behind before dropping.")
+    ("keepQueries", po::value<double>(&keepQueries)->default_value(1.0),
+      "Percentage of checks aginst queries to keep") 
   ;
 
   // Parse the command line variables
@@ -301,7 +314,7 @@ int main(int argc, char** argv) {
      hwm, graphCapacity,
      tableCapacity, resultsCapacity, 
      numPushSockets, numPullThreads, timeout,
-     timeWindow);
+     timeWindow, keepQueries);
 
   // Set up GraphStore object to get input from ZeroMQPushPull objects
   pushPull->registerConsumer(graphStore);

@@ -295,6 +295,8 @@ public:
 
   size_t getLastPort() const
   {
+    //printf("PushPull::getLastPort() startingPort %lu numPushSockets %lu last socket %lu\n",
+    //  startingPort, numPushSockets, startingPort + (numNodes - 1) * numPushSockets - 1);
     return startingPort + (numNodes - 1) * numPushSockets - 1;
   }
 
@@ -404,7 +406,7 @@ void PushPull::createPushSockets()
       new zmq::socket_t(context, ZMQ_PUSH));
     std::string url = "tcp://" + ip + ":";
       url = url + boost::lexical_cast<std::string>(actualStartingPort + i);
-      DEBUG_PRINT("Node %lu binding to %s\n", nodeId, url.c_str());
+    printf("Node %lu binding to %s\n", nodeId, url.c_str());
 
     // The function complains if you use std::size_t, so be sure to use the
     // uint32_t class member for hwm.
