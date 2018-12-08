@@ -41,7 +41,7 @@ public:
    */
   bool operator()(std::string variable, std::string vertex)
   {
-    std::cout << "variable " << variable << std::endl;
+    //std::cout << "variable " << variable << std::endl;
     auto existsVertex = [vertex](Feature const * feature)->bool {
       auto topKFeature = static_cast<TopKFeature const *>(feature);
       auto keys = topKFeature->getKeys();
@@ -52,13 +52,18 @@ public:
       return false;
     };
     // Check the vertex constraints
-    std::cout << "Length of constraints for variable " << variable
-              << ": " << subgraphQuery->getConstraints(variable).size()
-              << std::endl;
+    //std::cout << "Length of constraints for variable " << variable
+    //          << ": " << subgraphQuery->getConstraints(variable).size()
+    //          << std::endl;
     for (auto constraint : subgraphQuery->getConstraints(variable))
     {
       std::string featureName = constraint.featureName;
-      std::cout << "featureName " << featureName << std::endl;
+     
+      // If the feature doesn't exist, return false. 
+      if (!featureMap->exists("", featureName)) {
+        return false;
+      }
+
       auto feature = featureMap->at("", featureName);
       switch(constraint.op)
       {
@@ -67,11 +72,13 @@ public:
           {
             return false;
           }
+          break;
         case VertexOperator::NotIn:
           if (feature->evaluate<bool>(existsVertex))
           {
             return false;
           }
+          break;
         default:
           throw SubgraphQueryResultException("Unsupported vertex constraint.");   
       }
