@@ -79,7 +79,7 @@ void createPipeline(
   int k = 2;
   int N = 10000;
   int b = 1000;
-  auto topk = std::make_shared<TopK<size_t, Netflow, 
+  auto topk = std::make_shared<TopK<Netflow, 
                                DestPort, DestIp>>(
                                N, b, k, nodeId,
                                featureMap, identifier);

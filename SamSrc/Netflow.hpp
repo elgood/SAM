@@ -37,7 +37,6 @@
 #include "Util.hpp"
 
 #define DEFAULT_LABEL -1
-//#define EMPTY_NETFLOW "EMPTY_NETFLOW"
 
 namespace sam {
 

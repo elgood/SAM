@@ -99,8 +99,7 @@ void createPipeline(
   label->registerSubscriber(subscriber, identifier); 
 
   identifier = "top2";
-  auto topk = std::make_shared<TopK<size_t, Netflow, DestPort, 
-                              DestIp>>
+  auto topk = std::make_shared<TopK< Netflow, DestPort, DestIp>>
                               (N, b, k, nodeId, featureMap, identifier);
                                
   consumer->registerConsumer(topk); 
@@ -264,7 +263,7 @@ void createPipeline(
   auto aveFunction = [](std::list<std::shared_ptr<Feature>> myList)->double {
     double sum = 0;
     for (auto feature : myList) {
-      sum = sum + feature->evaluate(valueFunc); 
+      sum = sum + feature->evaluate<double>(valueFunc); 
     }
     return sum / myList.size();
   };

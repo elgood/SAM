@@ -427,7 +427,7 @@ public:
       };
 
       // Pushing back the previous value onto the stack.
-      double result = feature->evaluate(valueFunc); 
+      double result = feature->template evaluate<double>(valueFunc); 
       mystack.push(result);
     } 
 

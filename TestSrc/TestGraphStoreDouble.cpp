@@ -6,9 +6,10 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <zmq.hpp>
 #include "GraphStore.hpp"
 #include "NetflowGenerators.hpp"
-#include <zmq.hpp>
+#include "FeatureMap.hpp"
 
 
 using namespace sam;
@@ -47,6 +48,7 @@ typedef EdgeDescription<Netflow, TimeSeconds, DurationSeconds>
 
 struct DoubleNodeFixture  {
 
+  std::shared_ptr<FeatureMap> featureMap;
 
   size_t numNodes = 2;
   size_t nodeId0 = 0;
@@ -84,7 +86,9 @@ struct DoubleNodeFixture  {
   AbstractNetflowGenerator *generator0;
   AbstractNetflowGenerator *generator1;
    
-  DoubleNodeFixture () {
+  DoubleNodeFixture () 
+  {
+    featureMap = std::make_shared<FeatureMap>(1000);
     y2x = new EdgeExpression(nodey, e1, nodex);
     z2x = new EdgeExpression(nodez, e2, nodex);
     startY2Xboth = new TimeEdgeExpression(starttimeFunction,
@@ -98,21 +102,21 @@ struct DoubleNodeFixture  {
     generator0 = new UniformDestPort("192.168.0.0", 1);
     generator1 = new UniformDestPort("192.168.0.1", 1);
     
-      
+    double keepQueries = 1.0;      
     graphStore0 = new GraphStoreType( 
                             numNodes, nodeId0, 
                             hostnames, startingPort,
                             hwm, graphCapacity, 
                             tableCapacity, resultsCapacity, 
                             numPushSockets, numPullThreads, timeout,
-                            timeWindow, true); 
+                            timeWindow, keepQueries, featureMap, true); 
     graphStore1 = new GraphStoreType( 
                             numNodes, nodeId1, 
                             hostnames, startingPort,
                             hwm, graphCapacity, 
                             tableCapacity, resultsCapacity, 
                             numPushSockets, numPullThreads, timeout,
-                            timeWindow, true); 
+                            timeWindow, keepQueries, featureMap, true); 
   
 
   }

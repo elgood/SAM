@@ -25,7 +25,21 @@ public:
   /**
    * Applies a function to this feature and returns the result.
    */
-  double evaluate(std::function<double(Feature const *)> func) const  {
+  //template <typename T>
+  /*double evaluate(std::function<double(Feature const *)> func) const
+  {
+    return func(this);
+  }*/
+  
+  /*
+  bool evaluate(std::function<bool(Feature const *)> func) const
+  {
+    return func(this);
+  }*/
+
+  template <typename T>
+  T evaluate(std::function<T(Feature const *)> func) const
+  {
     return func(this);
   }
 
@@ -238,6 +252,8 @@ public:
   std::vector<double> const& getFrequencies() const {
     return frequencies;
   }
+
+  std::vector<std::string> const& getKeys() const { return keys; }
 
   void update(Feature const& feature) {
     keys = static_cast<TopKFeature const&>(feature).keys;

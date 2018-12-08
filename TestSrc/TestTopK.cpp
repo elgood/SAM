@@ -10,7 +10,55 @@
 
 using namespace sam;
 
-BOOST_AUTO_TEST_CASE( test_topk )
+struct F
+{
+  std::shared_ptr<FeatureMap> featureMap;
+  string identifier = "topk";
+  int N = 10000; 
+  int b = 1000;
+  int k = 3;
+
+  F()
+  {
+    featureMap = std::make_shared<FeatureMap>();
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE( test_topk_no_key, F )
+{
+  size_t queueLength = 1000;
+  size_t numPopular = 2;
+  size_t numExamples = 100000;
+  double probabilityPop = 0.5;
+
+  PopularSites producer(queueLength, numExamples, numPopular,
+                        probabilityPop);
+
+  auto topk = std::make_shared<TopK<Netflow, DestIp>>
+    (N, b, k, 0, featureMap, identifier);
+
+  producer.registerConsumer(topk);
+
+  producer.run();
+
+  std::shared_ptr<Feature const> feature = featureMap->at("", identifier);
+
+  auto func0 = [](Feature const * feature)->double {
+    auto topKFeature = static_cast<TopKFeature const *>(feature);
+    return topKFeature->getFrequencies()[0];    
+  };
+  auto func1 = [](Feature const * feature)->double {
+    auto topKFeature = static_cast<TopKFeature const *>(feature);
+    return topKFeature->getFrequencies()[1];    
+  };
+
+  double frequency0 = feature->evaluate<double>(func0);
+  double frequency1 = feature->evaluate<double>(func0);
+  BOOST_CHECK_CLOSE(frequency0, 0.25, 5); 
+  BOOST_CHECK_CLOSE(frequency1, 0.25, 5);
+}
+
+BOOST_FIXTURE_TEST_CASE( test_topk_server, F )
 {
   int queueLength = 1000;
   int numExamples = 100000;
@@ -21,21 +69,21 @@ BOOST_AUTO_TEST_CASE( test_topk )
   // and numNonservers non-servers.  A server is defined as > 90% of traffic
   // to the top two ports.
   TopKProducer producer(queueLength, numExamples, numServers, numNonservers);
-  auto featureMap = std::make_shared<FeatureMap>();
-  std::vector<size_t> keyFields;
-  keyFields.push_back(6);
-  int valueField = 8;
-  string identifier = "top2";
-  int N = 10000; 
-  int b = 1000;
-  int k = 3;
-  auto top2 = std::make_shared<TopK<size_t, Netflow, DestPort, DestIp>>
+ 
+  // Creating the topk computation and registering it as a consumer
+  // of the data source: producer.
+  auto topk = std::make_shared<TopK<Netflow, DestPort, DestIp>>
     (N, b, k, 0, featureMap, identifier);
-                              
+  producer.registerConsumer(topk);
 
-  producer.registerConsumer(top2);
+  // TODO: The below section creating the filter isn't actually tested.
+  // Add more tests to see that the filter works.
 
-  // Five tokens for the 
+  /////// Creating the filter expression /////////////////////////
+  // We create an infix expression to filter for servers, i.e.
+  //  Servers = FILTER VertsByDest BY top2.value(0) + top2.value(1) < 0.9;
+  // The infix is the part after the BY.
+
   // First function token
   auto function1 = [](Feature const * feature)->double {
     auto topKFeature = static_cast<TopKFeature const *>(feature);
@@ -83,11 +131,13 @@ BOOST_AUTO_TEST_CASE( test_topk )
       return topKFeature->getFrequencies()[index1];    
     };
 
-    double value = feature->evaluate(function1);
+    // TopKProducer sends data in a uniform random way to two ports to the 
+    // server ips, so the top two values should both be about 0.5 frequency.
+    double value = feature->evaluate<double>(function1);
     BOOST_CHECK_CLOSE(value, 0.5, 0.01);
     
     index1 = 1; 
-    value = feature->evaluate(function1);
+    value = feature->evaluate<double>(function1);
     BOOST_CHECK_CLOSE(value, 0.5, 0.01);
   }
   for (std::string ip : producer.getNonserverIps()) {
@@ -101,17 +151,17 @@ BOOST_AUTO_TEST_CASE( test_topk )
       return topKFeature->getFrequencies()[index1];    
     };
 
-
-
-    double value = feature->evaluate(function1);
+    // TopKProducer sends data in a uniform random way to three ports
+    // to the non-server ips, so the top three values should all be about 0.33
+    double value = feature->evaluate<double>(function1);
     BOOST_CHECK_CLOSE(value, 0.333333, 0.01);
     
     index1 = 1;
-    value = feature->evaluate(function1);
+    value = feature->evaluate<double>(function1);
     BOOST_CHECK_CLOSE(value, 0.333333, 0.01);
 
     index1 = 2;
-    value = feature->evaluate(function1);
+    value = feature->evaluate<double>(function1);
     BOOST_CHECK_CLOSE(value, 0.333333, 0.01);
   }
 }

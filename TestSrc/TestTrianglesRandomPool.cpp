@@ -11,6 +11,7 @@
 #include "GraphStore.hpp"
 #include "EdgeDescription.hpp"
 #include "SubgraphQuery.hpp"
+#include "FeatureMap.hpp"
 #include <zmq.hpp>
 #include <cstdlib>
 #include <chrono>
@@ -101,6 +102,9 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   startingPort = 10002;
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
+  double keepQueries = 1.0;
+
+  auto featureMap = std::make_shared<FeatureMap>(1000);
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId0,
@@ -108,7 +112,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout, 
-                          timeWindow);
+                          timeWindow, keepQueries, featureMap, true);
                           
 
   startingPort += numPushSockets * (2 - 1) * 2;
@@ -118,7 +122,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow);
+                          timeWindow, keepQueries, featureMap, true);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects

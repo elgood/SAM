@@ -14,6 +14,63 @@
  ******************************************************************/
 
 namespace sam {
+
+/**
+ * Creates a situation where there are n popular sites that recieve
+ * p fraction of the traffic.  
+ */
+class PopularSites : public BaseProducer<Netflow>
+{
+private:
+  size_t numExamples; ///> Number of netflows to produce
+  size_t numPopular; ///> How many IPs are popular.
+  double p; ///> Probability of netflow being to popular site
+
+public:
+  PopularSites(size_t queueLength,
+              size_t numExamples,
+              size_t numPopular,
+              double p);
+
+  virtual ~PopularSites() {} 
+  
+  void run();
+};
+
+PopularSites::PopularSites(size_t queueLength,
+                           size_t numExamples,
+                           size_t numPopular,
+                           double p) :
+                           BaseProducer(queueLength)
+{
+  this->numExamples = numExamples;
+  this->numPopular = numPopular;
+  this->p = p;
+}
+
+void PopularSites::run()
+{
+  RandomGenerator generator;
+  std::random_device rd;
+  std::mt19937 myRand;
+  std::uniform_real_distribution<> dis(0, 1.0);
+  std::uniform_int_distribution<> whichPop(1, numPopular);
+
+  for ( size_t i = 0; i < numExamples; i++) 
+  {
+    std::string s = generator.generate();
+    Netflow netflow = makeNetflow(i, s);
+
+    if (dis(myRand) < p) {
+      size_t popId = whichPop(myRand);
+      std::get<DestIp>(netflow) = boost::lexical_cast<std::string>(popId);
+    }
+
+    parallelFeed(netflow);
+  }
+}
+
+
  
 /**
  * Class that allows you to produce a scenario where some IPs have

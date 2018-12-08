@@ -35,7 +35,6 @@ public:
    */
   FeatureMap(int capacity = 1000) {
     this->capacity = capacity;  
-    //std::cout << "capacity " << capacity << std::endl;
     features = new std::shared_ptr<Feature>[capacity];
     flag = new std::atomic<int>[capacity];
     keys = new std::string[capacity];
@@ -69,10 +68,16 @@ public:
   bool updateInsert(std::string const& key, 
                      std::string const& featureName,  
                      Feature const& f);
-  
+ 
+  /**
+   * Gets a constant shared pointer to the feature found in the map with
+   * the given key/featureName combo.
+   * \throws std::out_of_range If the key/featureName combo doesn't exists,
+   *   throws exception.
+   * \return Returns the feature if it exists.  Exception thrown if it doesn't.
+   */
   std::shared_ptr<const Feature> at(std::string const& key,
                                std::string const& featureName) const; 
-
 
   /**
    * Checks if the key/featureName combo exists.
@@ -154,9 +159,7 @@ bool FeatureMap::updateInsert(std::string const& key,
                                std::string const& featureName,  
                                Feature const& f) 
 {
-  //std::cout << "updateInsert " << std::endl;
   std::string combinedKey = key + featureName;
-  //std::cout << "combinedKey " << combinedKey << std::endl;
   unsigned int hash = hashFunction(combinedKey);
   //std::cout << "hash " << hash << std::endl;
   //std::cout << "capacity " << capacity << std::endl;

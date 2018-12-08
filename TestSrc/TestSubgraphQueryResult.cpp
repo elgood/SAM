@@ -4,6 +4,7 @@
 #include "Util.hpp"
 #include "SubgraphQueryResult.hpp"
 #include "SubgraphQuery.hpp"
+#include "FeatureMap.hpp"
 
 
 using namespace sam;
@@ -36,6 +37,7 @@ struct F {
   std::shared_ptr<TimeEdgeExpression> startTimeExpressionE2_end;
   std::shared_ptr<EdgeExpression> targetE2Controller;
   
+  std::shared_ptr<FeatureMap> featureMap;
 
   F () {
     endTimeExpressionE1 = std::make_shared<TimeEdgeExpression>(
@@ -47,6 +49,7 @@ struct F {
       EdgeFunction::StartTime, "e2", EdgeOperator::LessThan, 10);
     targetE2Controller = std::make_shared<EdgeExpression>("target1", "e2",
       "controller");
+    featureMap = std::make_shared<FeatureMap>(1000);
   }
 
   ~F() {
@@ -57,6 +60,7 @@ struct F {
 
 BOOST_FIXTURE_TEST_CASE( test_check_one_edge, F )
 {
+
   // Creates a subgraph query with just one edge and checks that
   // a query result after adding a netflow satisfies the query and 
   // completes it.
@@ -65,12 +69,13 @@ BOOST_FIXTURE_TEST_CASE( test_check_one_edge, F )
   query.addExpression(*targetE1Bait);
  
   // Throws an error because query has not been finalized. 
-  BOOST_CHECK_THROW( ResultType result(&query, netflow1),
+  BOOST_CHECK_THROW( ResultType result(&query, netflow1, featureMap),
                    SubgraphQueryResultException);
 
   query.finalize();
 
-  ResultType result(&query, netflow1);
+
+  ResultType result(&query, netflow1, featureMap);
 
   BOOST_CHECK(result.complete());
 }
@@ -87,7 +92,7 @@ BOOST_FIXTURE_TEST_CASE( test_check_two_edges, F )
   query.addExpression(*targetE2Controller);
   query.finalize();
 
-  ResultType result(&query, netflow1);
+  ResultType result(&query, netflow1, featureMap);
 
   BOOST_CHECK(!result.complete());
 
@@ -121,7 +126,7 @@ BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
 
   BOOST_CHECK_EQUAL(query.getMaxOffset(), maxOffset);
 
-  ResultType result(&query, netflow1);
+  ResultType result(&query, netflow1, featureMap);
 
   double netflow1Time = std::get<TimeSeconds>(netflow1);
   BOOST_CHECK_EQUAL(result.getExpireTime(), netflow1Time+maxOffset+10);

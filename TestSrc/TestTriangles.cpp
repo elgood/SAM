@@ -389,13 +389,16 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
 
+  auto featureMap = std::make_shared<FeatureMap>(1000);
+  double keepQueries = 1.0;
+
   auto graphStore0 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId0,
                           hostnames, startingPort,
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity,
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow, true);
+                          timeWindow, keepQueries, featureMap, true);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId1,
@@ -403,7 +406,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow, true);
+                          timeWindow, keepQueries, featureMap, true);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects

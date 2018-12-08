@@ -48,6 +48,8 @@ struct F {
   CsrType* csr;
   CscType* csc;
 
+  std::shared_ptr<FeatureMap> featureMap;
+
   F () {
     y2x = std::make_shared<EdgeExpression>(nodey, e1, nodex);
     z2x = std::make_shared<EdgeExpression>(nodez, e2, nodex);
@@ -58,6 +60,7 @@ struct F {
     generator = std::make_shared<UniformDestPort>("192.168.0.2", 1);
     csr = new CsrType(capacity, window);
     csc = new CscType(capacity, window);
+    featureMap = std::make_shared<FeatureMap>(1000);
   }
 
   ~F () {
@@ -86,6 +89,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   query.addExpression(*y2x);
   query.finalize();
 
+
   std::list<EdgeRequestType> edgeRequests;
   size_t n = 10000;
   for(size_t i = 0; i < n; i++) 
@@ -93,7 +97,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
     std::string str = generator->generate();
     Netflow netflow = makeNetflow(0, str);
     SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
-                        DurationSeconds> result(&query, netflow);
+                        DurationSeconds> result(&query, netflow, featureMap);
     map.add(result, *csr, *csc, edgeRequests);
   }
 
@@ -136,7 +140,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
     double startTime = std::get<TimeSeconds>(netflow);
     if (query.satisfies(netflow, 0, startTime)) { 
       SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
-                          DurationSeconds> result(&query, netflow);
+                          DurationSeconds> result(&query, netflow, featureMap);
       map.add(result, *csr, *csc, edgeRequests);
     }
   }
@@ -193,7 +197,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
     std::string str = generator->generate(time);
     time += increment;
     Netflow netflow = makeNetflow(i, str);
-    QueryResultType result(&query, netflow);
+    QueryResultType result(&query, netflow, featureMap);
                          
     map.add(result, *csr, *csc, edgeRequests);
     map.process(netflow, *csr, *csc, edgeRequests);
@@ -255,7 +259,7 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   query.addExpression(startTimeExpressionC2D);
   query.finalize();
 
-  QueryResultType result(&query, netflow1);
+  QueryResultType result(&query, netflow1, featureMap);
 
   std::list<EdgeRequestType> edgeRequests;
   

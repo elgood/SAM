@@ -164,8 +164,7 @@ int main(int argc, char** argv) {
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     string identifier = "topk" + boost::lexical_cast<string>(i);
-    auto topk = std::make_shared<TopK<size_t, Netflow, DestPort, 
-                                     DestIp>>(
+    auto topk = std::make_shared<TopK<Netflow, DestPort, DestIp>>(
                                      N, b, k, nodeId, featureMap, identifier);
                                           
     consumer->registerConsumer(topk); 

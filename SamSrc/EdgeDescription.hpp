@@ -62,6 +62,22 @@ inline const std::string toString(EdgeOperator e)
   }
 }
 
+enum class VertexOperator {
+  In,
+  NotIn
+};
+
+inline const std::string toString(VertexOperator e)
+{
+  switch(e)
+  {
+    case VertexOperator::In: return "In";
+    case VertexOperator::NotIn: return "NotIn";
+    default: return "Unknown vertex operator";
+  }
+}
+
+
 /**
  * List of functions that can be applied to edges.  Examples:
  * startime(e1) < 10: Extracts the start time of the edge and satisfies
@@ -107,12 +123,14 @@ public:
 
 };
 
-class TimeEdgeExpression : public BaseExpression {
+class TimeEdgeExpression : public BaseExpression 
+{
 public:
   EdgeFunction function;
   std::string edgeId;
   EdgeOperator op;
   double value;
+  
   TimeEdgeExpression(EdgeFunction function, 
                      std::string edgeId, 
                      EdgeOperator op, 
@@ -129,6 +147,27 @@ public:
     return ::sam::toString(function) + "(" + edgeId + ") " + 
            ::sam::toString(op) + " " +
            boost::lexical_cast<std::string>(value);   
+  }
+};
+
+class VertexConstraintExpression : public BaseExpression 
+{
+public:
+  std::string vertexId;
+  VertexOperator op;
+  std::string featureName;
+
+  VertexConstraintExpression(std::string vertexId,
+                             VertexOperator op,
+                             std::string featureName)
+  {
+    this->vertexId = vertexId;
+    this->op       = op;
+    this->featureName = featureName;
+  }
+
+  std::string toString() {
+    return vertexId + " " + ::sam::toString(op) + " " + featureName;
   }
 };
 

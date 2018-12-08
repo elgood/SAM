@@ -440,6 +440,8 @@ void PushPull::initializePullThreads()
 
     size_t beg = get_begin_index(totalNumPushSockets, threadId, numPullThreads);
     size_t end = get_end_index(totalNumPushSockets, threadId, numPullThreads);
+    DEBUG_PRINT("PushPull::initializePullThreads pullFunction beg %lu end %lu"
+      "\n", beg, end);
 
     this->zmqLock.lock();
     size_t numVisiblePushSockets = end - beg;

@@ -140,11 +140,9 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
   : //context(_context),
   BaseProducer<TupleType>(queueLength)
 {
-  //std::cout << "Entering ZeroMQPushPull constructor" << std::endl; 
   this->numNodes  = numNodes;
   this->nodeId    = nodeId;
   this->hostnames = hostnames;
-  //this->ports     = ports;
   this->startingPort = startingPort;
   this->local     = local;
   this->hwm       = hwm;

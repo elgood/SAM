@@ -9,7 +9,7 @@ using namespace sam;
 BOOST_AUTO_TEST_CASE( single_feature )
 {
   SingleFeature feature(10.5);
-  BOOST_CHECK_EQUAL(feature.evaluate(valueFunc), 10.5);
+  BOOST_CHECK_EQUAL(feature.evaluate<double>(valueFunc), 10.5);
    
 }
 
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE( map_feature )
   auto aveFunction = [](std::list<std::shared_ptr<Feature>> myList)->double {
     double sum = 0;
     for (auto feature : myList) {
-      sum = sum + feature->evaluate(valueFunc);
+      sum = sum + feature->evaluate<double>(valueFunc);
     }
     return sum / myList.size();
   };
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE( topk_feature )
     return topkFeature->getFrequencies()[0];
   };
   
-  BOOST_CHECK_EQUAL(top2.evaluate(topkValueFunction),0.4);
+  BOOST_CHECK_EQUAL(top2.evaluate<double>(topkValueFunction),0.4);
 }
 
 BOOST_AUTO_TEST_CASE( test_equality )

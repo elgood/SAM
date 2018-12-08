@@ -23,7 +23,6 @@ public:
   SubgraphQueryException(std::string message) : std::runtime_error(message) {}
 };
 
-
 /**
  * This class represents a subgraph query.  The overall process is to
  * create a subgraph query with a constructor, add expressions to the query,
@@ -32,6 +31,7 @@ public:
  * SubgraphQuery query;
  * query.addExpression(timeEdgeExpression);
  * query.addExpression(edgeExpression);
+ * query.addExpression(vertexConstraintExpression);
  * query.finalize();
  * 
  * An exception is thrown if you try to add an expression after finalize 
@@ -55,8 +55,14 @@ public:
 
 private:
   
-  /// A mapping from edge id to the corresponding edge description. 
+  /// A mapping from edge id (variable name) to the corresponding edge 
+  /// description. 
   std::map<std::string, EdgeDesc> edges;
+
+  /// A mapping from vertex id (variable name) to list of corresponding 
+  /// vertex constraints
+  std::map<std::string, std::list<VertexConstraintExpression>> 
+    vertexConstraints;
   
   ///Sorted on startTime
   EdgeList sortedEdges; 
@@ -93,6 +99,12 @@ public:
    */
   const_iterator end() const { return sortedEdges.end(); }
 
+  std::list<VertexConstraintExpression> const& 
+  getConstraints(std::string variable) const
+  {
+    return vertexConstraints.at(variable);
+  }
+
   /**
    * Returns a constant reference to the ith EdgeDescription in the
    * sorted list.
@@ -118,6 +130,16 @@ public:
    * been finalized.
    */
   void addExpression(EdgeExpression expression);
+
+  /**
+   * Adds a VertexConstraintExpression to the subgraph query.  The
+   * VertexConstraintExpression specifies a constraint on the vertex
+   * regarding an extracted feature.
+   *
+   * This method throws a SubgraphQueryException if the query has already
+   * been finalized.
+   */
+  void addExpression(VertexConstraintExpression expression);
 
   /**
    * This is called after all the expressions have been added.  If sorts
@@ -306,7 +328,6 @@ addExpression(TimeEdgeExpression expression)
         expression.toString();
       throw SubgraphQueryException(message);
   }
-
 }
 
 template <typename TupleType, size_t time, size_t duration>
@@ -349,6 +370,24 @@ addExpression(EdgeExpression expression)
     edges[edgeId] = desc;
 
   }
+}
+
+template <typename TupleType, size_t time, size_t duration>
+void SubgraphQuery<TupleType, time, duration>::
+addExpression(VertexConstraintExpression expression)
+{
+  if (finalized) {
+    std::string message = "SubgraphQuery::addExpression(TimeEdgeExpression)"
+      " Tried to add TimeEdgeExpression but the query had already been "
+      "finalized.";
+    throw SubgraphQueryException(message);
+  }
+
+  std::string variable = expression.vertexId;
+  if (vertexConstraints.count(variable) == 0) {
+    vertexConstraints[variable] = std::list<VertexConstraintExpression>();
+  }
+  vertexConstraints[variable].push_back(expression);
 }
 
 }

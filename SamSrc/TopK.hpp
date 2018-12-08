@@ -19,8 +19,7 @@ public:
 
 };
 
-template <typename T, 
-          typename TupleType, 
+template <typename TupleType, 
           size_t valueField,
           size_t... keyFields>
 class TopK: public AbstractConsumer<TupleType>, 
@@ -28,13 +27,24 @@ class TopK: public AbstractConsumer<TupleType>,
             public FeatureProducer
 {
 private:
+  typedef typename std::tuple_element<valueField, TupleType>::type ValueType;
+
   size_t N; ///>Total number of elements
   size_t b; ///>Number of elements per window
   size_t k; ///>Top k elements managed
 
-  std::map<std::string, std::shared_ptr<SlidingWindow<T>>> allWindows; 
+  std::map<std::string, std::shared_ptr<SlidingWindow<ValueType>>> allWindows; 
   
 public:
+  /**
+   * Constructor
+   * \param N Total number of elements in big window.
+   * \param b Number of elements in smaller window.
+   * \param k Top k elements to be managed.
+   * \param nodeId The id of the node running this computation.
+   * \param featureMap The FeatureMap object that stores results.
+   * \param identifier The identifier for this feature producer.
+   */
   TopK(size_t N, size_t b, size_t k,
        size_t nodeId,
        std::shared_ptr<FeatureMap> featureMap,
@@ -47,9 +57,8 @@ public:
      
 };
 
-template <typename T, typename TupleType, size_t valueField, 
-          size_t... keyFields>
-TopK<T, TupleType, valueField, keyFields...>::TopK(
+template <typename TupleType, size_t valueField, size_t... keyFields>
+TopK<TupleType, valueField, keyFields...>::TopK(
       size_t N, 
       size_t b, 
       size_t k,
@@ -63,9 +72,8 @@ TopK<T, TupleType, valueField, keyFields...>::TopK(
   this->k = k;
 }
 
-template <typename T, typename TupleType, size_t valueField,
-          size_t... keyFields>
-bool TopK<T, TupleType, valueField, keyFields...>::consume(
+template <typename TupleType, size_t valueField, size_t... keyFields>
+bool TopK<TupleType, valueField, keyFields...>::consume(
   TupleType const& tuple) 
 {
   //std::cout << "tuple in topk " << toString(tuple) << std::endl;
@@ -77,27 +85,17 @@ bool TopK<T, TupleType, valueField, keyFields...>::consume(
 
   // Creating a hopefully unique key from the key fields
   std::string key = generateKey<keyFields...>(tuple);
+  //std::cout << "Key from generateKey " << key << std::endl;
   
   if (allWindows.count(key) == 0) {
-    auto sw = std::shared_ptr<SlidingWindow<size_t>>(
-                new SlidingWindow<size_t>(N,b,k));
-    std::pair<std::string, std::shared_ptr<SlidingWindow<size_t>>> p(key, sw);
+    auto sw = std::shared_ptr<SlidingWindow<ValueType>>(
+                new SlidingWindow<ValueType>(N,b,k));
+    std::pair<std::string, std::shared_ptr<
+              SlidingWindow<ValueType>>> p(key, sw);
     allWindows[key] = sw;    
   }
   
-  std::string sValue;
-  try { 
-    sValue = boost::lexical_cast<std::string>(std::get<valueField>(tuple));
-  } catch (std::exception e) {
-    throw TopKException(e.what()); 
-  }
- 
-  T value;
-  try { 
-    value = boost::lexical_cast<T>(sValue);
-  } catch (std::exception e) {
-    throw TopKException(e.what()); 
-  }
+  ValueType value = std::get<valueField>(tuple);
   
   auto sw = allWindows[key];
   sw->add(value);

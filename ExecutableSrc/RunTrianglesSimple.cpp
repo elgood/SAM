@@ -155,6 +155,9 @@ int main(int argc, char** argv) {
 
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
+  double keepQueries = 1.0;
+
+  auto featureMap = std::make_shared<FeatureMap>(1000);
 
   auto graphStore = std::make_shared<GraphStoreType>(
      numNodes, nodeId,
@@ -162,7 +165,7 @@ int main(int argc, char** argv) {
      hwm, graphCapacity,
      tableCapacity, resultsCapacity, 
      numPushSockets, numPullThreads, timeout,
-     timeWindow);
+     timeWindow, keepQueries, featureMap);
 
   // Set up GraphStore object to get input from ZeroMQPushPull objects
   pushPull->registerConsumer(graphStore);

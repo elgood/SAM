@@ -75,6 +75,111 @@ std::string AbstractNetflowGenerator::generate()
   return generate(epochTime);
 }
 
+/**
+ * This creates a watering hole attack signature.  There are n clients
+ * that access m servers.  Generally n >> m.  When a netflow is created,
+ * the client and server IPs are uniformly randomly selected from the 
+ * client and server IP pools.  Also, a controller IP is designated.  A
+ * target machine is selected (the first IP), and it communicates with
+ * the controller a specified number of times at the end of the simulation.
+ */
+class WateringHoleGenerator : public AbstractNetflowGenerator
+{
+private:
+  size_t numClients; ///> How many client ip's.
+  size_t numServers; ///> How many server ip's.
+  std::uniform_int_distribution<size_t> clientDist; ///> client distribution
+  std::uniform_int_distribution<size_t> serverDist; ///> Server distribution
+  std::mt19937 myRand; ///> random engine
+
+public:
+
+  /**
+   * Constructor.
+   * \param numClients How many client Ip's.
+   * \param numServers How many server Ip's.
+   */
+  WateringHoleGenerator(size_t numClients, size_t numServers);
+  
+
+  std::string generate() { return AbstractNetflowGenerator::generate(); }
+    
+
+  /**
+   * This function allows you to specify the time of the generated netflow.
+   * \param epochTime The time in seconds since the epoch. 
+   */
+  std::string generate(double epochTime);
+
+  /**
+   * The regular generate string creates "benign traffic."  This creates
+   * messages from node0 to the controller, thus finishing the 
+   * watering hole pattern. 
+   */
+  std::string generateControlMessage(double epochTime);
+
+};
+
+/**
+ * Constructor.
+ */
+WateringHoleGenerator::WateringHoleGenerator(size_t numClients,
+                                             size_t numServers)
+{
+  this->numClients = numClients;
+  this->numServers = numServers;
+  std::random_device rd;
+  myRand = std::mt19937(rd());
+  clientDist = std::uniform_int_distribution<size_t>(0, numClients - 1);
+  serverDist = std::uniform_int_distribution<size_t>(0, numServers - 1);
+}
+
+std::string WateringHoleGenerator::generate(double epochTime)
+{
+  std::string sourceIp = boost::lexical_cast<std::string>(clientDist(myRand));
+  std::string destIp = boost::lexical_cast<std::string>(serverDist(myRand));
+    
+    
+  std::string result;
+  result = boost::lexical_cast<std::string>(epochTime) + ",";
+  result = result + "parseDate,dateTimeStr,ipLayerProtocol,";
+  result = result + "ipLayerProtocolCode," + sourceIp + ",";
+  result = result + destIp + ",";
+  result = result + boost::lexical_cast<std::string>(generateRandomPort());
+  result = result + ",";
+  result = result + boost::lexical_cast<std::string>(generateRandomPort());
+  result = result + ",1,1,1,";
+  result = result + "1,1,";
+  result = result + "1,1,";
+  result = result + "1,1,";
+  result = result + "1";
+
+  return result;
+}
+
+std::string WateringHoleGenerator::generateControlMessage(double epochTime)
+{
+  std::string sourceIp = "0"; 
+  std::string destIp = "controller";
+    
+  std::string result;
+  result = boost::lexical_cast<std::string>(epochTime) + ",";
+  result = result + "parseDate,dateTimeStr,ipLayerProtocol,";
+  result = result + "ipLayerProtocolCode," + sourceIp + ",";
+  result = result + destIp + ",";
+  result = result + boost::lexical_cast<std::string>(generateRandomPort());
+  result = result + ",";
+  result = result + boost::lexical_cast<std::string>(generateRandomPort());
+  result = result + ",1,1,1,";
+  result = result + "1,1,";
+  result = result + "1,1,";
+  result = result + "1,1,";
+  result = result + "1";
+
+  return result;
+
+
+}
 
 /**
  * Evenly spreads out the traffic to one IP along n destination ports.
