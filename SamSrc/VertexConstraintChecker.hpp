@@ -50,6 +50,9 @@ public:
     
       // If the feature doesn't exist, return false. 
       if (!featureMap->exists("", featureName)) {
+        DEBUG_PRINT("VertexConstraintChecker returning false for "
+            "variable %s and vertex %s becaure featureName %s doesn't exist\n",
+            variable.c_str(), vertex.c_str(), featureName.c_str());
         return false;
       }
 

@@ -300,7 +300,10 @@ bool SubgraphQuery<TupleType, source, target, time, duration>::
 satisfiesEdgeConstraints(size_t index, TupleType const& tuple, 
                          double startTime) const
 {
-  return sortedEdges[index].satisfies(tuple, startTime);
+  bool b = sortedEdges[index].satisfies(tuple, startTime);
+  DEBUG_PRINT("satisfiesEdgeConstraints returning %d tuple %s\n",
+               b, sam::toString(tuple).c_str());
+  return b;
 }
 
 
@@ -315,9 +318,13 @@ satisfiesVertexConstraints(size_t index, TupleType const& tuple) const
   NodeType edgeTarget = std::get<target>(tuple);
   if (check->check(src, edgeSource)) {
     if (check->check(trg, edgeTarget)) {
+       DEBUG_PRINT("satisfiesVertexConstraints returning true tuple %s\n",
+                   sam::toString(tuple).c_str());
       return true;
     }
   }
+  DEBUG_PRINT("satisfiesVertexConstraints returning false tuple %s\n",
+               sam::toString(tuple).c_str());
   return false;
 }
 

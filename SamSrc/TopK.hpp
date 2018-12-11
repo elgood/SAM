@@ -76,7 +76,7 @@ template <typename TupleType, size_t valueField, size_t... keyFields>
 bool TopK<TupleType, valueField, keyFields...>::consume(
   TupleType const& tuple) 
 {
-  //std::cout << "tuple in topk " << toString(tuple) << std::endl;
+  DEBUG_PRINT("Node %lu TopK::consume %s\n", nodeId, toString(tuple));
   this->feedCount++;
   if (this->feedCount % this->metricInterval == 0) {
     std::cout << "NodeId " << this->nodeId << " allWindows.size() " 
@@ -107,6 +107,8 @@ bool TopK<TupleType, valueField, keyFields...>::consume(
     //std::cout << "keys.size() " << keys.size() << " frequencies.size() " 
     //          << frequencies.size() << std::endl;
     TopKFeature feature(keys, frequencies);
+    DEBUG_PRINT("Node %lu TopK::consume keys.size() %lu\n",
+      nodeId, keys.size());
     //std::cout << "Createad feature " << std::endl;
     //std::cout << "key " << key << " identifier " << this->identifier << std::endl;
     this->featureMap->updateInsert(key, this->identifier, feature);

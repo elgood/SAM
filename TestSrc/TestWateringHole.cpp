@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
 {
   size_t numClients = 1000;
   size_t numServers = 5;
-  size_t numNetflows = 1;
+  size_t numNetflows = 1000;
 
   WateringHoleGenerator generator(numClients, numServers);
 
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   query.addExpression(startE1First);
   query.addExpression(startE1Second);
   query.addExpression(baitTopK);
-  //query.addExpression(controllerNotTopK);
+  query.addExpression(controllerNotTopK);
   query.finalize();
 
   graphStore->registerQuery(query);
@@ -144,20 +144,40 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     }
 
     std::string str = generator.generate(time);
-    Netflow netflow = makeNetflow(i, str);
+    printf("Netflow %s\n", str.c_str()); 
     time += increment;
-    graphStore->consume(netflow);
+    pushPull->consume(str);
   }
-  /*
-
+  
   // Sending malicious messages
-  for (size_t i = 0; i < numBadMessages; i++)
+  for (size_t i = numNetflows; i < numBadMessages + numNetflows; i++)
   {
     std::string str = generator.generateControlMessage(time);
-    Netflow netflow = makeNetflow(i, str);
+    printf("Netflow %s\n", str.c_str()); 
     time += increment;
-    graphStore->consume(netflow);
-  }*/
+    pushPull->consume(str);
+  }
+
+  // Sending benign message
+  for (size_t i = numNetflows + numBadMessages; 
+       i < 2*numNetflows + numBadMessages; i++) 
+  {
+    auto currenttime = std::chrono::high_resolution_clock::now();
+    duration<double> diff = duration_cast<duration<double>>(
+      currenttime - starttime);
+    if (diff.count() < i * increment) {
+      size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+      std::this_thread::sleep_for(
+        std::chrono::milliseconds(numMilliseconds));
+    }
+
+    std::string str = generator.generate(time);
+    printf("Netflow %s\n", str.c_str()); 
+    time += increment;
+    pushPull->consume(str);
+  }
+ 
+  pushPull->terminate();
 
   BOOST_CHECK_EQUAL(graphStore->getNumResults(), numBadMessages);
 
