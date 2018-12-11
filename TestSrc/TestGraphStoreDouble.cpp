@@ -15,6 +15,7 @@
 using namespace sam;
 using namespace std::chrono;
 
+
 /**
  * Manufactured hash function that sends 192.168.0.1 and 192.168.0.2
  * to node 0 and 192.168.0.3 and 192.168.0.4 to node 1.
@@ -45,6 +46,8 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 
 typedef EdgeDescription<Netflow, TimeSeconds, DurationSeconds>
         EdgeDescriptionType;
+
+typedef GraphStoreType::QueryType QueryType;
 
 struct DoubleNodeFixture  {
 
@@ -237,7 +240,7 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   TimeEdgeExpression startC2Dbeg(EdgeFunction::StartTime, e3, 
                                   EdgeOperator::GreaterThan, 0);
 
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
   query.addExpression(a2b);
   query.addExpression(b2c);
   query.addExpression(c2d);

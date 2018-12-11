@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
   TimeEdgeExpression startE1Both(starttimeFunction,e1,greater_edge_operator, 0);
   TimeEdgeExpression startE2Both(starttimeFunction,e2,greater_edge_operator, 0);
 
-  SubgraphQueryType query;
+  SubgraphQueryType query(featureMap);
   query.addExpression(x2y);
   query.addExpression(y2z);
   query.addExpression(z2x);

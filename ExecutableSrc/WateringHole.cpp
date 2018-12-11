@@ -213,7 +213,7 @@ int main(int argc, char** argv)
   VertexConstraintExpression controllerNotTopK(controller, 
                                                VertexOperator::NotIn, topkId);
 
-  SubgraphQueryType query;
+  SubgraphQueryType query(featureMap);
   query.addExpression(target2Bait);
   query.addExpression(target2Controller);
   query.addExpression(endE0Second);

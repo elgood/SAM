@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
   TimeEdgeExpression startE2Second(starttimeFunction,e2,
                                    less_edge_operator, queryTimeWindow);
 
-  SubgraphQueryType query;
+  SubgraphQueryType query(featureMap);
   query.addExpression(x2y);
   query.addExpression(y2z);
   query.addExpression(z2x);

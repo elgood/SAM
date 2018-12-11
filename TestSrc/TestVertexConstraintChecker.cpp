@@ -1,15 +1,17 @@
 #define BOOST_TEST_MAIN TestVertexConstraintChecker
 
 #include <boost/test/unit_test.hpp>
+#include "VertexConstraintChecker.hpp"
 #include "SubgraphQueryResult.hpp"
 #include "SubgraphQuery.hpp"
 #include "FeatureMap.hpp"
 #include "EdgeDescription.hpp"
 
 using namespace sam;
-using namespace sam::details;
+using namespace sam;
 
-typedef SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> SubgraphQueryType;
+typedef SubgraphQuery<Netflow, SourceIp, DestIp, TimeSeconds, DurationSeconds> 
+  SubgraphQueryType;
 typedef SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds, 
                             DurationSeconds> SubgraphQueryResultType;
 typedef VertexConstraintChecker<SubgraphQueryType> CheckerType;
@@ -18,7 +20,7 @@ typedef VertexConstraintChecker<SubgraphQueryType> CheckerType;
 struct F 
 {
   std::shared_ptr<FeatureMap> featureMap;
-  SubgraphQueryType query;
+  std::shared_ptr<SubgraphQueryType> query;
   std::string alice = "alice";
   std::string e0    = "e0";
   std::string bob   = "bob";
@@ -40,8 +42,9 @@ struct F
                                           featureName);
 
     featureMap = std::make_shared<FeatureMap>();
-    query.addExpression(edgeExpression);
-    query.addExpression(timeExpression);
+    query = std::make_shared<SubgraphQueryType>(featureMap);
+    query->addExpression(edgeExpression);
+    query->addExpression(timeExpression);
   }
 
   ~F()
@@ -54,9 +57,9 @@ struct F
 
 BOOST_FIXTURE_TEST_CASE( test_check_vertex_nothing, F )
 {
-  query.addExpression(*inExpression);
-  query.finalize();
-  CheckerType checkVertex(featureMap, &query);
+  query->addExpression(*inExpression);
+  query->finalize();
+  CheckerType checkVertex(featureMap, query.get());
 
   BOOST_CHECK_EQUAL(checkVertex(alice, "Alice"), false);
 
@@ -64,10 +67,10 @@ BOOST_FIXTURE_TEST_CASE( test_check_vertex_nothing, F )
 
 BOOST_FIXTURE_TEST_CASE( test_check_vertex_in, F )
 {
-  query.addExpression(*inExpression);
-  query.finalize();
+  query->addExpression(*inExpression);
+  query->finalize();
   std::string vertex = "Alice";
-  CheckerType checkVertex(featureMap, &query);
+  CheckerType checkVertex(featureMap, query.get());
   
   std::vector<std::string> keys;
   keys.push_back(vertex);
@@ -82,10 +85,10 @@ BOOST_FIXTURE_TEST_CASE( test_check_vertex_in, F )
 
 BOOST_FIXTURE_TEST_CASE( test_check_vertex_notin, F )
 {
-  query.addExpression(*notInExpression);
-  query.finalize();
+  query->addExpression(*notInExpression);
+  query->finalize();
   std::string vertex = "Alice";
-  CheckerType checkVertex(featureMap, &query);
+  CheckerType checkVertex(featureMap, query.get());
   
   std::vector<std::string> keys;
   keys.push_back(vertex);

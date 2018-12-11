@@ -5,13 +5,24 @@
 #include <vector>
 #include "SubgraphQuery.hpp"
 #include "Netflow.hpp"
+#include "FeatureMap.hpp"
 
 using namespace sam;
 
 typedef EdgeDescription<Netflow, TimeSeconds, DurationSeconds> 
   EdgeDescriptionType;
+typedef SubgraphQuery<Netflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
+  QueryType;
 
-BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
+struct F {
+  std::shared_ptr<FeatureMap> featureMap;
+
+  F() {
+    featureMap = std::make_shared<FeatureMap>();
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE( test_bad_finalize_no_source_target, F )
 {
   // Prepares this subgraph query:
   // endtime(e1) = 0;
@@ -21,7 +32,7 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
   // target1 e3 controller
   // starttime(e3) > 1 
 
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
 
   // endtime(e1) = 0;
   std::string e1 = "e1";
@@ -96,15 +107,15 @@ BOOST_AUTO_TEST_CASE( test_bad_finalize_no_source_target )
   }
 }
 
-BOOST_AUTO_TEST_CASE( test_negative_offset )
+BOOST_FIXTURE_TEST_CASE( test_negative_offset, F )
 {
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
   BOOST_CHECK_THROW(query.setMaxOffset(-1), SubgraphQueryException);
 }
 
-BOOST_AUTO_TEST_CASE( test_unspecified_startendtime )
+BOOST_FIXTURE_TEST_CASE( test_unspecified_startendtime, F )
 {
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
 
   std::string target1 = "target1";
   std::string e1 = "e1";
@@ -117,9 +128,9 @@ BOOST_AUTO_TEST_CASE( test_unspecified_startendtime )
   BOOST_CHECK_THROW(query.finalize(), EdgeDescriptionException); 
 }
 
-BOOST_AUTO_TEST_CASE( test_conflicting_sources )
+BOOST_FIXTURE_TEST_CASE( test_conflicting_sources, F )
 {
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
   
   std::string target1 = "target1";
   std::string e1 = "e1";
@@ -140,7 +151,7 @@ BOOST_AUTO_TEST_CASE( test_conflicting_sources )
 // starttime(e2) < 10;
 // bait in Top1000;
 // controller not in Top1000;"
-BOOST_AUTO_TEST_CASE( test_watering_hole )
+BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
 {
   std::string target = "target";
   std::string e1 = "e1";
@@ -172,7 +183,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
                      less_edge_operator, 
                      starttime_e2_value_end);  
 
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
   double maxOffset = 15.0;
   query.setMaxOffset(maxOffset);
   query.addExpression(targetE1Bait);
@@ -188,7 +199,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     query.getEdgeDescription(1);
 
   BOOST_CHECK_EQUAL(edge0.startTimeRange.first, endtime_e1_value-maxOffset);
-  BOOST_CHECK_EQUAL(edge0.startTimeRange.second, endtime_e1_value-maxOffset);
+  BOOST_CHECK_EQUAL(edge0.startTimeRange.second, endtime_e1_value);
   BOOST_CHECK_EQUAL(edge0.endTimeRange.first, endtime_e1_value);
   BOOST_CHECK_EQUAL(edge0.endTimeRange.second, endtime_e1_value); 
   BOOST_CHECK_EQUAL(edge1.startTimeRange.first, starttime_e2_value_begin);
@@ -197,14 +208,14 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   BOOST_CHECK_EQUAL(edge1.endTimeRange.second, starttime_e2_value_end
     + maxOffset);
 
-  // Checking the maxTimeExtent, which should be final edge starttime - 
-  // first edge starttime
+  // Checking the maxTimeExtent, which should be final edge endtime - 
+  // first edge endtime
   BOOST_CHECK_EQUAL(query.getMaxTimeExtent(), 
     starttime_e2_value_end + maxOffset -
-    (endtime_e1_value-maxOffset));
+    (endtime_e1_value));
 }
 
-BOOST_AUTO_TEST_CASE( test_defined_start_undefined_end )
+BOOST_FIXTURE_TEST_CASE( test_defined_start_undefined_end, F )
 {
   // Here we test setting the start time but not the end time.  The 
   
@@ -219,7 +230,7 @@ BOOST_AUTO_TEST_CASE( test_defined_start_undefined_end )
                                 starttime_e1_value);
   
    
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
   query.addExpression(edge);
   query.addExpression(starttimeExpression);
  

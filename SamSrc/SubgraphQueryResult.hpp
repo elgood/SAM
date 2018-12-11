@@ -2,10 +2,10 @@
 #define SAM_SUBGRAPH_QUERY_RESULT_HPP
 
 #include "SubgraphQuery.hpp"
-#include "FeatureMap.hpp"
 #include "Null.hpp"
 #include "EdgeRequest.hpp"
 #include "Util.hpp"
+#include "VertexConstraintChecker.hpp"
 #include <set>
 
 namespace sam {
@@ -17,77 +17,6 @@ public:
   SubgraphQueryResultException(std::string message) : 
     std::runtime_error(message) { }
 };
-
-namespace details {
-
-template <typename SubgraphQueryType>
-class VertexConstraintChecker
-{
-private:
-  std::shared_ptr<FeatureMap> featureMap;  
-  SubgraphQueryType const* subgraphQuery;
-public:
-  VertexConstraintChecker(std::shared_ptr<FeatureMap> featureMap,
-                          SubgraphQueryType const* subgraphQuery)
-  {
-    this->featureMap = featureMap;
-    this->subgraphQuery = subgraphQuery;
-  }
-
-  /**
-   *
-   * \param variable The variable name of the vertex.
-   * \param vertex The actual value of the vertex.
-   */
-  bool operator()(std::string variable, std::string vertex)
-  {
-    //std::cout << "variable " << variable << std::endl;
-    auto existsVertex = [vertex](Feature const * feature)->bool {
-      auto topKFeature = static_cast<TopKFeature const *>(feature);
-      auto keys = topKFeature->getKeys();
-      auto it = std::find(keys.begin(), keys.end(), vertex);
-      if (it != keys.end()) {
-        return true;
-      }
-      return false;
-    };
-    // Check the vertex constraints
-    //std::cout << "Length of constraints for variable " << variable
-    //          << ": " << subgraphQuery->getConstraints(variable).size()
-    //          << std::endl;
-    for (auto constraint : subgraphQuery->getConstraints(variable))
-    {
-      std::string featureName = constraint.featureName;
-     
-      // If the feature doesn't exist, return false. 
-      if (!featureMap->exists("", featureName)) {
-        return false;
-      }
-
-      auto feature = featureMap->at("", featureName);
-      switch(constraint.op)
-      {
-        case VertexOperator::In:
-          if (!feature->evaluate<bool>(existsVertex))
-          {
-            return false;
-          }
-          break;
-        case VertexOperator::NotIn:
-          if (feature->evaluate<bool>(existsVertex))
-          {
-            return false;
-          }
-          break;
-        default:
-          throw SubgraphQueryResultException("Unsupported vertex constraint.");   
-      }
-    }
-    return true;
-  }
-};
-
-}
 
 /**
  * This contains the data that satisfies a SubgraphQuery.  The overall
@@ -113,7 +42,8 @@ public:
   typedef SourceType NodeType;
   typedef SubgraphQueryResult<TupleType, source, target, time, duration> 
     SubgraphQueryResultType;
-  typedef SubgraphQuery<TupleType, time, duration> SubgraphQueryType;
+  typedef SubgraphQuery<TupleType, source, target, time, duration> 
+    SubgraphQueryType;
   typedef EdgeDescription<TupleType, time, duration> EdgeDescriptionType;
   typedef EdgeRequest<TupleType, source, target> EdgeRequestType;
   
@@ -137,7 +67,8 @@ private:
   /// epoch).
   double expireTime = 0;
 
-  /// The time that the query started (starttime of first edge)
+  /// The time that the query started (either starttime or endtime of 
+  /// first edge)
   double startTime = 0;
 
   /// Seen edges.  It is possible for the same edge to be presented to the
@@ -147,9 +78,6 @@ private:
   /// We want to prevent that.  We create a string from time,source,target,
   /// and then store them in this set so that we only see it once.
   std::set<std::string> seenEdges;
-
-  /// We use the featureMap to find out if vertex constraints are satisfied.
-  std::shared_ptr<FeatureMap> featureMap;
 
 public:
   /**
@@ -165,8 +93,7 @@ public:
    * \param firstEdge The first edge that satisfies the first edge description.
    */
   SubgraphQueryResult(SubgraphQueryType const* query, 
-                      TupleType firstEdge,
-                      std::shared_ptr<FeatureMap> featureMap);
+                      TupleType firstEdge);
 
   /** 
    * Tries to add the edge to the subgraph query result. If successful
@@ -275,12 +202,7 @@ public:
    * Returns true if the query has been satisfied.
    */
   bool complete() const {
-    //std::cout << "currentEdge " << currentEdge << " numEdges " << numEdges
-    //          << std::endl;
-    #ifdef DEBUG
-    printf("SubgraphQueryResult::complete() %s\n", toString().c_str());
-    #endif
-
+    DEBUG_PRINT("SubgraphQueryResult::complete() %s\n", toString().c_str());
     return currentEdge == numEdges; 
   } 
 
@@ -342,7 +264,6 @@ public:
 
 private:
 
-  
   void addTimeInfoFromCurrent(EdgeRequestType & edgeRequest,
                               double previousStartTime) const;
   double getPreviousStartTime() const;
@@ -354,25 +275,31 @@ template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration>
 SubgraphQueryResult<TupleType, source, target, time, duration>::
 SubgraphQueryResult(SubgraphQueryType const* query,
-                    TupleType firstEdge, 
-                    std::shared_ptr<FeatureMap> featureMap) :
+                    TupleType firstEdge) : 
   subgraphQuery(query)
 {
   DEBUG_PRINT("SubgraphQueryResult::SubgraphQueryResult(query, firstedge) "
     "Creating subgraphquery result, first edge: %s\n", 
     sam::toString(firstEdge).c_str());
 
-  this->featureMap = featureMap;
-  
   //TODO: Maybe remove this to improve performance
   if (!query->isFinalized()) {
     throw SubgraphQueryResultException("Subgraph query passed to "
       "SubgraphQueryResult is not finalized.");
   }
+ 
   numEdges = subgraphQuery->size();
-  double currentTime = std::get<time>(firstEdge);
-  startTime = currentTime; 
-  expireTime = currentTime + query->getMaxTimeExtent();
+
+  // If the query has start time defined relative to the start of the edge,
+  // we set start time to be the start of the first edge.  Otherwise,
+  // we set the start time of the query to be the end time of the first edge. 
+  if (subgraphQuery->zeroTimeRelativeToStart()) {
+    startTime = std::get<time>(firstEdge);
+  } else {
+    startTime = std::get<time>(firstEdge) + std::get<duration>(firstEdge);
+  }
+  expireTime = startTime + query->getMaxTimeExtent();
+ 
   if (!addEdgeInPlace(firstEdge)) {
     throw SubgraphQueryResultException("SubgraphQueryResult::"
       "SubgraphQueryResult(query, firstEdge) Tried to add edge in "
@@ -446,21 +373,17 @@ hash(SourceHF const& sourceHash,
 
   EdgeDescriptionType desc = subgraphQuery->getEdgeDescription(currentEdge);
 
-  #ifdef DEBUG
-  printf("SubgraphQueryResult::hash currentEdge %lu start time range "
+  DEBUG_PRINT("SubgraphQueryResult::hash currentEdge %lu start time range "
     "%f %f stop time range %f %f\n",
     currentEdge, desc.startTimeRange.first, desc.startTimeRange.second,
     desc.endTimeRange.first, desc.endTimeRange.second);
-  printf("SubgraphQueryResult::hash src %s trg %s\n", src.c_str(), trg.c_str());
-  #endif
+  DEBUG_PRINT("SubgraphQueryResult::hash src %s trg %s\n", src.c_str(), trg.c_str());
   
   // Case when the source is unbound but the target is bound to a value. 
   if (sam::isNull(src) && !sam::isNull(trg)) {
 
-    #ifdef DEBUG
-    printf("SubgraphQueryResult::hash: source is unbound, target is bound to"
+    DEBUG_PRINT("SubgraphQueryResult::hash: source is unbound, target is bound to"
       " %s\n", trg.c_str());
-    #endif 
   
     // If the target hashes to a different node, we need to make an edge
     // request to that node.  
@@ -496,11 +419,6 @@ hash(SourceHF const& sourceHash,
       numNodes, nodeId); 
     #endif
     if (sourceHash(src) % numNodes != nodeId) {
-
-
-      #ifdef DEBUG
-
-      #endif
 
       EdgeRequestType edgeRequest;
       edgeRequest.setSource(src);
@@ -601,19 +519,25 @@ addEdgeInPlace(TupleType const& edge)
 
   // We need to check if it fulfills the constraints of the edge description
   // and also it fits the existing variable bindings.
+  if (!subgraphQuery->satisfiesConstraints(currentEdge, edge, startTime))
+  {
+    return false;
+  }
 
   // Checking against edge description constraints
-  EdgeDescriptionType const& edgeDescription = 
-    subgraphQuery->getEdgeDescription(currentEdge);
-
+  /*
   if (!edgeDescription.satisfies(edge, this->startTime)) {
     return false;
   }
 
-  std::string src = edgeDescription.getSource();
-  std::string trg = edgeDescription.getTarget();
 
   DEBUG_PRINT("addEdgeInPlace src %s trg %s\n", src.c_str(), trg.c_str());
+  */
+
+  EdgeDescriptionType const& edgeDescription = 
+    subgraphQuery->getEdgeDescription(currentEdge);
+  std::string src = edgeDescription.getSource();
+  std::string trg = edgeDescription.getTarget();
 
   // Case when the source has been bound but the target has not
   if (var2BoundValue.count(src) > 0 &&
@@ -727,10 +651,17 @@ addEdge(TupleType const& edge)
     }
 
     // Checking against edge description constraints
-    EdgeDescriptionType const& edgeDescription = 
-      subgraphQuery->getEdgeDescription(currentEdge);
+    //EdgeDescriptionType const& edgeDescription = 
+    //  subgraphQuery->getEdgeDescription(currentEdge);
 
-    if (!edgeDescription.satisfies(edge, this->startTime)) {
+    if (!subgraphQuery->satisfiesConstraints(currentEdge, edge, startTime)) {
+      DEBUG_PRINT("SubgraphQueryResult::addEdge this tuple %s did not satisfy"
+        " this edge constraings\n", sam::toString(edge).c_str());
+    }
+
+
+    /*if (!edgeDescription.satisfiesEdgeConstraints(
+          currentEdge, this->startTime)) {
 
       DEBUG_PRINT("SubgraphQueryResult::addEdge this tuple %s did not satisfy"
         " this edgeDescription %s\n", sam::toString(edge).c_str(), 
@@ -740,13 +671,17 @@ addEdge(TupleType const& edge)
         SubgraphQueryResultType());
     }
 
-    std::string src = edgeDescription.getSource();
+    if (!subgraphQuery->satisfiesVertexConstraints(currentEdge, edge))
+    {
+      return std::pair<bool, SubgraphQueryResultType>(false,
+        SubgraphQueryResultType()); 
+    }*/
+   
+    /*std::string src = edgeDescription.getSource();
     std::string trg = edgeDescription.getTarget();
-    NodeType edgeSource = std::get<source>(edge);
-    NodeType edgeTarget = std::get<target>(edge);
 
-    details::VertexConstraintChecker<SubgraphQueryType> check(featureMap, 
-                                                              subgraphQuery);
+    VertexConstraintChecker<SubgraphQueryType> check(*featureMap, 
+                                                     *subgraphQuery);
     if (!check(src, edgeSource)) {
       return std::pair<bool, SubgraphQueryResultType>(false,
         SubgraphQueryResultType()); 
@@ -754,9 +689,16 @@ addEdge(TupleType const& edge)
     if (!check(trg, edgeTarget)) {
       return std::pair<bool, SubgraphQueryResultType>(false,
         SubgraphQueryResultType()); 
-    }
+    }*/
 
     SubgraphQueryResultType newResult(*this);
+
+    EdgeDescriptionType const& edgeDescription = 
+      subgraphQuery->getEdgeDescription(currentEdge);
+    std::string src = edgeDescription.getSource();
+    std::string trg = edgeDescription.getTarget();
+    NodeType edgeSource = std::get<source>(edge);
+    NodeType edgeTarget = std::get<target>(edge);
 
     // Case when the source has been bound but the target has not
     if (var2BoundValue.count(src) > 0 &&
@@ -855,10 +797,6 @@ getCurrentSource() const
 
   std::string sourceVar = subgraphQuery->getEdgeDescription(
                             currentEdge).getSource();
-  std::string blah = "getCurrentSource var2BoundValue:\n";
-  for(auto p : var2BoundValue) {
-    blah = blah + p.first + "->" + p.second + "\n";
-  }
   if (var2BoundValue.count(sourceVar) > 0) {
     return var2BoundValue.at(sourceVar);
   } else {

@@ -6,30 +6,33 @@
 #include "SubgraphQuery.hpp"
 #include "FeatureMap.hpp"
 
-
 using namespace sam;
 
+typedef SubgraphQuery<Netflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
+  QueryType;
+
 struct F {
-  std::string netflowString1 = "1,1,82756.384094,2013-04-10 08:32:36,"
+  std::string netflowString1 = "1,1,156.0,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
-                           "bait,29986,1900,0,0,0,133,0,1,0,1,0,0"; 
+                           "bait,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
   Netflow netflow1 = makeNetflow(netflowString1);
 
-  std::string netflowString2 = "1,1,82766.374094,2013-04-10 08:32:36,"
+  std::string netflowString2 = "1,1,166.0,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
-                           "controller,29986,1900,0,0,0,133,0,1,0,1,0,0"; 
+                           "controller,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
 
   Netflow netflow2 = makeNetflow(netflowString2);
 
-  std::string netflowString3 = "1,1,82867.384094,2013-04-10 08:32:36,"
+  std::string netflowString3 = "1,1,267.01,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
-                           "controller,29986,1900,0,0,0,133,0,1,0,1,0,0"; 
+                           "controller,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
 
   Netflow netflow3 = makeNetflow(netflowString3);
 
   typedef SubgraphQueryResult<Netflow, SourceIp, DestIp, 
                               TimeSeconds, DurationSeconds> ResultType;
 
+  std::shared_ptr<TimeEdgeExpression> startTimeExpressionE1;
   std::shared_ptr<TimeEdgeExpression> endTimeExpressionE1;
   std::shared_ptr<EdgeExpression> targetE1Bait;
 
@@ -40,8 +43,10 @@ struct F {
   std::shared_ptr<FeatureMap> featureMap;
 
   F () {
-    endTimeExpressionE1 = std::make_shared<TimeEdgeExpression>(
+    startTimeExpressionE1 = std::make_shared<TimeEdgeExpression>(
       EdgeFunction::StartTime, "e1", EdgeOperator::Assignment, 0);
+    endTimeExpressionE1 = std::make_shared<TimeEdgeExpression>(
+      EdgeFunction::EndTime, "e1", EdgeOperator::Assignment, 0);
     targetE1Bait = std::make_shared<EdgeExpression>("target1", "e1", "bait");
     startTimeExpressionE2_begin = std::make_shared<TimeEdgeExpression>(
       EdgeFunction::StartTime, "e2", EdgeOperator::GreaterThan, 0);
@@ -64,18 +69,17 @@ BOOST_FIXTURE_TEST_CASE( test_check_one_edge, F )
   // Creates a subgraph query with just one edge and checks that
   // a query result after adding a netflow satisfies the query and 
   // completes it.
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
-  query.addExpression(*endTimeExpressionE1);
+  QueryType query(featureMap);
+  query.addExpression(*startTimeExpressionE1);
   query.addExpression(*targetE1Bait);
  
   // Throws an error because query has not been finalized. 
-  BOOST_CHECK_THROW( ResultType result(&query, netflow1, featureMap),
+  BOOST_CHECK_THROW( ResultType result(&query, netflow1),
                    SubgraphQueryResultException);
 
   query.finalize();
 
-
-  ResultType result(&query, netflow1, featureMap);
+  ResultType result(&query, netflow1);
 
   BOOST_CHECK(result.complete());
 }
@@ -84,15 +88,15 @@ BOOST_FIXTURE_TEST_CASE( test_check_two_edges, F )
 {
   // target e1 bait
   // target e2 controller
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
-  query.addExpression(*endTimeExpressionE1);
+  QueryType query(featureMap);
+  query.addExpression(*startTimeExpressionE1);
   query.addExpression(*targetE1Bait);
   query.addExpression(*startTimeExpressionE2_begin);
   query.addExpression(*startTimeExpressionE2_end);
   query.addExpression(*targetE2Controller);
   query.finalize();
 
-  ResultType result(&query, netflow1, featureMap);
+  ResultType result(&query, netflow1);
 
   BOOST_CHECK(!result.complete());
 
@@ -101,6 +105,7 @@ BOOST_FIXTURE_TEST_CASE( test_check_two_edges, F )
   BOOST_CHECK(result.complete());
 
 }
+
 
 BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
 {
@@ -114,19 +119,20 @@ BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
   // Tests giving an edge that doesn't fulfill time constraint.
   // Also checks that the query result is determined to be expired
   // when given a time that is past the max extent of the query.
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
   double maxOffset = 100.0;
   query.setMaxOffset(maxOffset);
-  query.addExpression(*endTimeExpressionE1);
+  query.addExpression(*startTimeExpressionE1);
   query.addExpression(*targetE1Bait);
   query.addExpression(*startTimeExpressionE2_begin);
   query.addExpression(*startTimeExpressionE2_end);
   query.addExpression(*targetE2Controller);
   query.finalize();
 
+  BOOST_CHECK_EQUAL(query.getMaxTimeExtent(), 110);
   BOOST_CHECK_EQUAL(query.getMaxOffset(), maxOffset);
 
-  ResultType result(&query, netflow1, featureMap);
+  ResultType result(&query, netflow1);
 
   double netflow1Time = std::get<TimeSeconds>(netflow1);
   BOOST_CHECK_EQUAL(result.getExpireTime(), netflow1Time+maxOffset+10);
@@ -142,4 +148,45 @@ BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
 
   BOOST_CHECK_EQUAL(result.getExpireTime(), netflow1Time + 
     startTimeExpressionE2_end->value + maxOffset);
+}
+
+BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
+{
+  // Query
+  // target e1 bait
+  // endtime(e1) = 0;
+  // target e2 controller;
+  // starttime(e2) > 0;
+  // starttime(e2) < 10;
+  //
+
+  QueryType query(featureMap);
+  double maxOffset = 100.0;
+  query.setMaxOffset(maxOffset);
+  query.addExpression(*endTimeExpressionE1);
+  query.addExpression(*targetE1Bait);
+  query.addExpression(*startTimeExpressionE2_begin);
+  query.addExpression(*startTimeExpressionE2_end);
+  query.addExpression(*targetE2Controller);
+  query.finalize();
+  BOOST_CHECK_EQUAL(query.getMaxTimeExtent(), 110);
+  BOOST_CHECK_EQUAL(query.getMaxOffset(), maxOffset);
+
+  ResultType result(&query, netflow1);
+
+  double netflow1Time = std::get<TimeSeconds>(netflow1);
+  double duration = std::get<DurationSeconds>(netflow1);
+  double expireTime = netflow1Time + duration + maxOffset + 10;
+  BOOST_CHECK_EQUAL(result.getExpireTime(), expireTime);
+
+  BOOST_CHECK(!result.complete());
+
+  auto pair = result.addEdge(netflow2);
+  BOOST_CHECK(pair.first);
+  BOOST_CHECK(pair.second.complete());
+
+  double currentTime = std::get<TimeSeconds>(netflow3);
+
+  BOOST_CHECK_EQUAL(pair.second.getExpireTime(), expireTime); 
+
 }

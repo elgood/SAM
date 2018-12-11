@@ -1,4 +1,6 @@
 
+#define DEBUG
+
 #define BOOST_TEST_MAIN TestWateringHole
 #include <boost/test/unit_test.hpp>
 #include <chrono>
@@ -7,7 +9,6 @@
 #include "ZeroMQPushPull.hpp"
 #include "TopK.hpp"
 
-#define DEBUG
 
 using namespace sam;
 using namespace std::chrono;
@@ -30,7 +31,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
 {
   size_t numClients = 1000;
   size_t numServers = 5;
-  size_t numNetflows = 10000;
+  size_t numNetflows = 1;
 
   WateringHoleGenerator generator(numClients, numServers);
 
@@ -78,7 +79,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
                                              tableCapacity, resultsCapacity,
                                              numPushSockets, numPullThreads,
                                              timeout, timeWindow, keepQueries,
-                                             featureMap);
+                                             featureMap, true);
 
   pushPull->registerConsumer(graphStore);
 
@@ -112,14 +113,14 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   VertexConstraintExpression controllerNotTopK(controller, 
                                                VertexOperator::NotIn, topkId);
 
-  SubgraphQueryType query;
+  SubgraphQueryType query(featureMap);
   query.addExpression(target2Bait);
   query.addExpression(target2Controller);
   query.addExpression(endE0Second);
   query.addExpression(startE1First);
   query.addExpression(startE1Second);
   query.addExpression(baitTopK);
-  query.addExpression(controllerNotTopK);
+  //query.addExpression(controllerNotTopK);
   query.finalize();
 
   graphStore->registerQuery(query);
@@ -147,6 +148,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     time += increment;
     graphStore->consume(netflow);
   }
+  /*
 
   // Sending malicious messages
   for (size_t i = 0; i < numBadMessages; i++)
@@ -155,7 +157,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     Netflow netflow = makeNetflow(i, str);
     time += increment;
     graphStore->consume(netflow);
-  }
+  }*/
 
   BOOST_CHECK_EQUAL(graphStore->getNumResults(), numBadMessages);
 

@@ -55,7 +55,7 @@ public:
   typedef SubgraphQueryResultMap<TupleType, source, target, time, duration,
     SourceHF, TargetHF, SourceEF, TargetEF> ResultMapType;
 
-  typedef SubgraphQuery<TupleType, time, duration> QueryType;
+  typedef SubgraphQuery<TupleType, source, target, time, duration> QueryType;
 
   typedef SubgraphQueryResult<TupleType, source, target, time, duration>
           ResultType;
@@ -483,12 +483,21 @@ checkSubgraphQueries(TupleType const& tuple,
 
   size_t totalWork = 0;
 
-  // The start time of the query result is the time field of the first 
-  // tuple in the query.  
-  double startTime = std::get<time>(tuple);
   for (QueryType const& query : queries) {
     totalWork++;
-    if (query.satisfies(tuple, 0, startTime)) {
+
+    //TODO: Don't really like this.  I think SubgraphQueryResult should
+    // have a constructor that just takes the query, and then we can
+    // call addEdgeInPlace.  Then we wouldn't need this logic in this class.
+    double queryStart;
+    if (query.zeroTimeRelativeToStart()) {
+      queryStart = std::get<time>(tuple);
+    } else {
+      queryStart = std::get<time>(tuple) + std::get<duration>(tuple);
+    }
+
+    if (query.satisfiesConstraints(0, tuple, queryStart)) 
+    {
 
       // We only want one node to own the query result, so we make sure
       // that this node owns the source
@@ -500,7 +509,7 @@ checkSubgraphQueries(TupleType const& tuple,
         sourceHash(src) % numNodes);
 
       if (sourceHash(src) % numNodes == nodeId) {
-        ResultType queryResult(&query, tuple, featureMap);
+        ResultType queryResult(&query, tuple);
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries adding"
           " queryResult %s from tuple %s\n", this->nodeId, 

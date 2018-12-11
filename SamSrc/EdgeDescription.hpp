@@ -3,6 +3,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <cmath>
+#include "Util.hpp"
 
 namespace sam {
 
@@ -102,7 +103,7 @@ inline const std::string toString(EdgeFunction e)
 
 class BaseExpression {
 public:
-  virtual std::string toString() = 0;
+  virtual std::string toString() const = 0;
 };
 
 class EdgeExpression : public BaseExpression {
@@ -117,7 +118,7 @@ public:
     this->target = target;
   }
 
-  std::string toString() {
+  std::string toString() const {
     return source + " " + edgeId + " " + target;   
   }
 
@@ -143,7 +144,7 @@ public:
   }
 
 
-  std::string toString() {
+  std::string toString() const {
     return ::sam::toString(function) + "(" + edgeId + ") " + 
            ::sam::toString(op) + " " +
            boost::lexical_cast<std::string>(value);   
@@ -166,7 +167,7 @@ public:
     this->featureName = featureName;
   }
 
-  std::string toString() {
+  std::string toString() const {
     return vertexId + " " + ::sam::toString(op) + " " + featureName;
   }
 };
@@ -182,6 +183,7 @@ template <typename TupleType, size_t time, size_t duration>
 class EdgeDescription
 {
 public:
+ 
   std::string source = ""; ///> The source of the edge
   std::string edgeId = ""; ///> Edge identifer
   std::string target = ""; ///> The target of the edge
@@ -218,7 +220,7 @@ public:
     bool sb = (startTimeRange.first != std::numeric_limits<double>::lowest());
     bool se = (startTimeRange.second != std::numeric_limits<double>::max());
     
-    //printf("fixTimeRange eb %d ee %d sb %d se %d\n", eb,ee,sb,se);
+    DEBUG_PRINT("fixTimeRange eb %d ee %d sb %d se %d\n", eb,ee,sb,se);
     
     if (eb && ee && sb && se) {
       //do nothing
@@ -227,8 +229,8 @@ public:
     } else if (eb && ee && !sb && se) {
       //do nothing
     } else if (eb && ee && !sb && !se) {
-      startTimeRange.first = endTimeRange.first - maxOffset;
-      startTimeRange.second = endTimeRange.second - maxOffset;
+      startTimeRange.second = endTimeRange.first;
+      startTimeRange.first = startTimeRange.second - maxOffset;
     } else if (eb && !ee && sb && se) {
     } else if (eb && !ee && sb && !se) {
       //do nothing
@@ -243,8 +245,9 @@ public:
     } else if (!eb && ee && !sb && se) {
       //do nothing
     } else if (!eb && ee && !sb && !se) {
-      startTimeRange.first = endTimeRange.first - 2*maxOffset;
-      startTimeRange.second = endTimeRange.second - maxOffset;
+      endTimeRange.first = endTimeRange.second;
+      startTimeRange.first = endTimeRange.first - maxOffset;
+      startTimeRange.second = endTimeRange.first;
     } else if (!eb && !ee && sb && se) {
       endTimeRange.first = startTimeRange.first;
       endTimeRange.second = startTimeRange.second + maxOffset;
@@ -314,7 +317,6 @@ public:
     }
   }
 
-
   bool unspecifiedSource() const {
     if (source.compare("") == 0)
       return true;
@@ -345,11 +347,14 @@ public:
   /**
    * Returns true if the tuple satisifies the constraints laid out by 
    * this edge description.
+   * \param tuple The tuple we are testing.
+   * \param queryStart When the query is considered to have begun. 
    */
-  bool satisfies(TupleType const& tuple, double startTime) const {
-    DEBUG_PRINT("EdgeDescription::satisfies tuple: %s startTime: %f\n",
-      sam::toString(tuple).c_str(), startTime);
-    if (!satisfiesTimeConstraints(tuple, startTime)) {
+  bool satisfies(TupleType const& tuple, double queryStart) const
+  {
+    DEBUG_PRINT("EdgeDescription::satisfies tuple: %s queryStart: %f\n",
+      sam::toString(tuple).c_str(), queryStart);
+    if (!satisfiesTimeConstraints(tuple, queryStart)) {
       DEBUG_PRINT("EdgeDescription::satisfies returning false for tuple: %s\n",
         sam::toString(tuple).c_str());
       return false;
@@ -359,22 +364,22 @@ public:
     return true;
   }
 
-  bool satisfiesTimeConstraints(TupleType const& tuple, double startTime) const
+  bool satisfiesTimeConstraints(TupleType const& tuple, double queryStart) const
   {
     double edgeActualStartTime = std::get<time>(tuple);
     double edgeActualEndTime = edgeActualStartTime +
       std::get<duration>(tuple);
-    double constraintStartTime_beg = startTimeRange.first + startTime; 
-    double constraintStartTime_end = startTimeRange.second + startTime;
-    double constraintEndTime_beg = endTimeRange.first + startTime;
-    double constraintEndTime_end = endTimeRange.second + startTime;
+    double constraintStartTime_beg = startTimeRange.first + queryStart; 
+    double constraintStartTime_end = startTimeRange.second + queryStart;
+    double constraintEndTime_beg = endTimeRange.first + queryStart;
+    double constraintEndTime_end = endTimeRange.second + queryStart;
     
     DEBUG_PRINT("EdgeDescription::satisfiesTimeConstraints tuple %s "
-      "startTime %f "
+      "queryStart %f "
       "edgeActualStartTime %f edgeActualEndTime %f "
-      "startTimeRange %f %f endTimeRange %f %f "
+      "queryStartRange %f %f endTimeRange %f %f "
       "constraintStartTime %f %f constraintEndTime %f %f\n",
-      sam::toString(tuple).c_str(), startTime,
+      sam::toString(tuple).c_str(), queryStart,
       edgeActualStartTime, edgeActualEndTime, 
       startTimeRange.first, startTimeRange.second,
       endTimeRange.first, endTimeRange.second,

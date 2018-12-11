@@ -256,15 +256,6 @@ public:
     int timeout,
     bool local = false);
 
-  /**
-   * This can be used to explicity set the hostnames and ports for all
-   * the sockets.  This is useful for testing purposes when on the same
-   * host
-   */
-
-
-
-
   ~PushPull();
 
   /**
@@ -316,6 +307,7 @@ private:
   void initializePullThreads();
 };
 
+// Constructor
 PushPull::PushPull(
   size_t numNodes,
   size_t nodeId,
@@ -328,6 +320,7 @@ PushPull::PushPull(
   int timeout,
   bool local)
 {
+  DEBUG_PRINT("Node %lu Entering PushPull Constructor", nodeId)
   this->numNodes       = numNodes;
   this->nodeId         = nodeId;
   this->numPushSockets = numPushSockets;

@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                                    less_edge_operator, queryTimeWindow);
 
 
-  SubgraphQueryType query;
+  SubgraphQueryType query(featureMap);
   query.addExpression(x2y);
   query.addExpression(y2z);
   query.addExpression(z2x);

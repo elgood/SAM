@@ -21,7 +21,7 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 
 typedef GraphStoreType::EdgeRequestType EdgeRequestType;
 
-typedef GraphStoreType::QueryType SubgraphQueryType;
+typedef GraphStoreType::QueryType QueryType;
 
 /*BOOST_AUTO_TEST_CASE( test_graph_store )
 {
@@ -154,6 +154,7 @@ struct SingleNodeFixture  {
   AbstractNetflowGenerator* generator;
 
   GraphStoreType* graphStore0;
+  std::shared_ptr<FeatureMap> featureMap;
 
   SingleNodeFixture () {
     y2x = new EdgeExpression(nodey, e1, nodex);
@@ -171,7 +172,7 @@ struct SingleNodeFixture  {
     hostnames.push_back("localhost");
     double keepQueries = 1.0;
 
-    auto featureMap = std::make_shared<FeatureMap>(1000);
+    featureMap = std::make_shared<FeatureMap>(1000);
 
     graphStore0 = new GraphStoreType(numNodes, nodeId0, 
                         hostnames, startingPort,
@@ -197,7 +198,7 @@ struct SingleNodeFixture  {
 ///
 BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
 {
-  SubgraphQueryType query;
+  QueryType query(featureMap);
 
   query.addExpression(*startY2Xboth);
   query.addExpression(*y2x);
@@ -236,7 +237,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_terminate, SingleNodeFixture )
 ///
 BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
 {
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  QueryType query(featureMap);
 
   TimeEdgeExpression endTimeExpressionE1(endtimeFunction, e1, 
                                          equal_edge_operator, 0);
@@ -366,7 +367,7 @@ BOOST_FIXTURE_TEST_CASE( test_triangle_same_time, SingleNodeFixture )
   TimeEdgeExpression endE2Second(endtimeFunction,e2,
                                    less_edge_operator, queryTimeWindow);
 
-  SubgraphQueryType query;
+  QueryType query(featureMap);
   query.addExpression(x2y);
   query.addExpression(y2z);
   query.addExpression(z2x);

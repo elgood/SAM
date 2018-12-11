@@ -11,7 +11,10 @@
 #include <limits>
 #include <iterator>
 #include <algorithm>
+#include <type_traits>
 #include "EdgeDescription.hpp"
+#include "FeatureMap.hpp"
+#include "VertexConstraintChecker.hpp"
 
 #define MAX_START_END_OFFSET 100
 
@@ -45,13 +48,18 @@ public:
  * by the add addExpression methods, does some checks, and then sorts them
  * by starttime.
  */
-template <typename TupleType, size_t time, size_t duration>
+template <typename TupleType, size_t source, size_t target,  
+          size_t time, size_t duration>
 class SubgraphQuery {
 public:
   typedef EdgeDescription<TupleType, time, duration> EdgeDesc;
   typedef std::vector<EdgeDesc> EdgeList; 
   typedef typename EdgeList::iterator iterator;
   typedef typename EdgeList::const_iterator const_iterator;
+  typedef SubgraphQuery<TupleType, source, target, time, duration> SubgraphQueryType;
+  typedef typename std::tuple_element<source, TupleType>::type SourceType;
+  typedef typename std::tuple_element<source, TupleType>::type TargetType;
+  typedef typename std::tuple_element<source, TupleType>::type NodeType;
 
 private:
   
@@ -78,7 +86,15 @@ private:
   /// end start time of the last edge.
   double maxTimeExtent = 0;
 
+  std::shared_ptr<const VertexConstraintChecker<SubgraphQueryType>> check;
+
+  std::list<VertexConstraintExpression> emptyList;
 public:
+  
+  /**
+   * Constructor.
+   */
+  SubgraphQuery(std::shared_ptr<const FeatureMap> featureMap);
 
   std::string toString() const 
   {
@@ -102,7 +118,10 @@ public:
   std::list<VertexConstraintExpression> const& 
   getConstraints(std::string variable) const
   {
-    return vertexConstraints.at(variable);
+    if (vertexConstraints.find(variable) != vertexConstraints.end()) {
+      return vertexConstraints.at(variable);
+    }
+    return emptyList; 
   }
 
   /**
@@ -183,27 +202,143 @@ public:
   double getMaxTimeExtent() const;
 
   /**
-   * Returns whether the tuple satisfies the edge description (without any
-   * variable bindings).
+   * Returns whether the tuple satisfies the first edge description. 
    * \param tuple The Tuple under question.
-   * \param index The index of the edge description in sortedEdges.
-   * \param startTime The time that the edge begins
+   * \param featureMap Uses featureMap for vertex constraints.
    */
-  bool satisfies(TupleType const& tuple, size_t index, double startTime) const; 
+  //bool satisfiesFirst(TupleType const& tuple) const; 
+                
+                
+  /**
+   * Checks whether vertex and edge constraints are satisfied.
+   * \param index Index of query edge
+   * \param tuple The tuple under consideration.
+   * \param queryStart The time that the query started.
+   */  
+  bool satisfiesConstraints(size_t index, TupleType const& tuple,
+                            double queryStart) const;
 
+  /**
+   * Returns true if the query has been finalized.
+   */ 
   bool isFinalized() const { return finalized; }
+
+  /**
+   * The start of the query can be defined relative to the starttime of the
+   * first edge or the endtime of the first edge.  This returns true
+   * if the start of the query is defined relative to the start time of
+   * the first edge.
+   */
+  bool zeroTimeRelativeToStart() const;
+
+private:
+ 
+  /**
+   * Checks whether the tuple satisfies any defined vertex constraints.
+   * \param index Which edge are we considering.
+   * \param tuple The tuple that we are checking to see if fulfills the 
+   *   constraints.
+   */
+  bool satisfiesVertexConstraints(size_t index, TupleType const& tuple) const;
+
+  /**
+   * Checks whether the tuple satisfies any defined edge constraints.
+   * \param index Which edge are we considering.
+   * \param tuple The tuple that we are checking to see if fulfills the 
+   *   constraints.
+   * \param queryStart The time that the query started.
+   */
+  bool satisfiesEdgeConstraints(size_t index, TupleType const& tuple,
+                                double queryStart) const;
+
 
 };
 
-template <typename TupleType, size_t time, size_t duration>
-bool SubgraphQuery<TupleType, time, duration>::
-satisfies(TupleType const& tuple, size_t index, double startTime) const
+// Constructor
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+SubgraphQuery<TupleType, source, target, time, duration>::
+SubgraphQuery(std::shared_ptr<const FeatureMap> featureMap)
+{
+  check = std::make_shared<const VertexConstraintChecker<SubgraphQueryType>>(
+            featureMap, this);  
+  static_assert(std::is_same<SourceType, TargetType>::value,
+                "SourceType and TargetType must be the same.");
+  static_assert(std::is_same<SourceType, NodeType>::value,
+                "SourceType and NodeType must be the same.");
+}
+
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+bool 
+SubgraphQuery<TupleType, source, target, time, duration>::
+zeroTimeRelativeToStart() const
+{
+  if (sortedEdges[0].startTimeRange.first == 0) {
+    return true;
+  }
+  if (sortedEdges[0].endTimeRange.second == 0) {
+    return false;
+  }
+  throw SubgraphQueryException("Couldn't figure out relative start of query");
+}
+
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+bool SubgraphQuery<TupleType, source, target, time, duration>::
+satisfiesConstraints(size_t index, TupleType const& tuple,
+                     double startTime) const
+{
+  return satisfiesEdgeConstraints(index, tuple, startTime) &&
+         satisfiesVertexConstraints(index, tuple);
+}
+
+
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+bool SubgraphQuery<TupleType, source, target, time, duration>::
+satisfiesEdgeConstraints(size_t index, TupleType const& tuple, 
+                         double startTime) const
 {
   return sortedEdges[index].satisfies(tuple, startTime);
 }
 
-template <typename TupleType, size_t time, size_t duration>
-size_t SubgraphQuery<TupleType, time, duration>::size() const 
+
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+bool SubgraphQuery<TupleType, source, target, time, duration>::
+satisfiesVertexConstraints(size_t index, TupleType const& tuple) const
+{
+  std::string src = sortedEdges[index].getSource();
+  std::string trg = sortedEdges[index].getTarget();
+  NodeType edgeSource = std::get<source>(tuple);
+  NodeType edgeTarget = std::get<target>(tuple);
+  if (check->check(src, edgeSource)) {
+    if (check->check(trg, edgeTarget)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+bool SubgraphQuery<TupleType, source, target, time, duration>::
+satisfiesFirst(TupleType const& tuple) const
+{
+  double startTime = std::get<time>(tuple);
+  if (sortedEdges[0].satisfies(tuple, startTime, check))
+  {
+    if (satisfiesVertexConstraints(0, tuple)) {
+      return true;
+    }
+  }
+  return false; 
+}*/
+
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+size_t SubgraphQuery<TupleType, source, target, time, duration>::size() const 
 {
   if (!finalized) {
     std::string message = "SubgraphQuery::size() Tried to get the size of the " 
@@ -213,8 +348,11 @@ size_t SubgraphQuery<TupleType, time, duration>::size() const
   return sortedEdges.size(); 
 }
 
-template <typename TupleType, size_t time, size_t duration>
-double SubgraphQuery<TupleType, time, duration>::getMaxTimeExtent() const
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+double 
+SubgraphQuery<TupleType, source, target, 
+              time, duration>::getMaxTimeExtent() const
 {
   if (!finalized) {
     std::string message = "SubgraphQuery::size() Tried to get the maxTimeExtent"
@@ -225,8 +363,9 @@ double SubgraphQuery<TupleType, time, duration>::getMaxTimeExtent() const
   return maxTimeExtent; 
 }
 
-template <typename TupleType, size_t time, size_t duration>
-void SubgraphQuery<TupleType, time, duration>::finalize()
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+void SubgraphQuery<TupleType, source, target, time, duration>::finalize()
 {
   // Confirm that all edges have a start time or end time
   for (auto keypair : edges) {
@@ -244,10 +383,6 @@ void SubgraphQuery<TupleType, time, duration>::finalize()
     edge.fixTimeRange(maxOffset);
   }
 
-  // TODO Need to add other constaints defined on edges
-
-
-
   transform(edges.begin(), edges.end(), 
             back_inserter(sortedEdges), [](auto val){ return val.second;}); 
 
@@ -257,14 +392,21 @@ void SubgraphQuery<TupleType, time, duration>::finalize()
       return i.startTimeRange.first < j.startTimeRange.first; 
     });
 
-  maxTimeExtent = sortedEdges[sortedEdges.size()-1].endTimeRange.second 
-                  - sortedEdges[0].startTimeRange.first;
+  if (zeroTimeRelativeToStart()) {
+    maxTimeExtent = sortedEdges[sortedEdges.size()-1].endTimeRange.second 
+                    - sortedEdges[0].startTimeRange.first;
+  } else {
+    maxTimeExtent = sortedEdges[sortedEdges.size()-1].endTimeRange.second 
+                    - sortedEdges[0].endTimeRange.first;
+
+  }
 
   finalized = true;
 }
 
-template <typename TupleType, size_t time, size_t duration>
-void SubgraphQuery<TupleType, time, duration>::
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+void SubgraphQuery<TupleType, source, target, time, duration>::
 addExpression(TimeEdgeExpression expression)
 {
   if (finalized) {
@@ -330,8 +472,9 @@ addExpression(TimeEdgeExpression expression)
   }
 }
 
-template <typename TupleType, size_t time, size_t duration>
-void SubgraphQuery<TupleType, time, duration>::
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+void SubgraphQuery<TupleType, source, target, time, duration>::
 addExpression(EdgeExpression expression)
 {
   if (finalized) {
@@ -340,15 +483,15 @@ addExpression(EdgeExpression expression)
       "finalized.";
     throw SubgraphQueryException(message);
   }
-  std::string source = expression.source;
+  std::string src = expression.source;
   std::string edgeId = expression.edgeId;
-  std::string target = expression.target;
+  std::string trg = expression.target;
 
   if (edges.count(edgeId) > 0) {
     if (edges[edgeId].unspecifiedSource()) {
-      edges[edgeId].source = source;
+      edges[edgeId].source = src;
     } else {
-      if (edges[edgeId].source.compare(source) != 0) {
+      if (edges[edgeId].source.compare(src) != 0) {
         std::string message = "When adding expression: " +
           expression.toString() + ", the source conflicts with the already" +
           " specified source " + edges[edgeId].source;
@@ -356,9 +499,9 @@ addExpression(EdgeExpression expression)
       }
     }
     if (edges[edgeId].unspecifiedTarget()) {
-      edges[edgeId].target = target;
+      edges[edgeId].target = trg;
     } else {
-      if (edges[edgeId].target.compare(target) != 0) {
+      if (edges[edgeId].target.compare(trg) != 0) {
         std::string message = "When adding expression: " +
           expression.toString() + ", the target conflicts with the already" +
           " specified target " + edges[edgeId].source;
@@ -366,14 +509,15 @@ addExpression(EdgeExpression expression)
       }
     }
   } else {
-    EdgeDesc desc(source, edgeId, target);
+    EdgeDesc desc(src, edgeId, trg);
     edges[edgeId] = desc;
 
   }
 }
 
-template <typename TupleType, size_t time, size_t duration>
-void SubgraphQuery<TupleType, time, duration>::
+template <typename TupleType, size_t source, size_t target, 
+          size_t time, size_t duration>
+void SubgraphQuery<TupleType, source, target, time, duration>::
 addExpression(VertexConstraintExpression expression)
 {
   if (finalized) {
