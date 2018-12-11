@@ -41,19 +41,21 @@ struct F {
   std::shared_ptr<EdgeExpression> targetE2Controller;
   
   std::shared_ptr<FeatureMap> featureMap;
+  std::string bait = "bait";
+  std::string controller = "controller";
 
   F () {
     startTimeExpressionE1 = std::make_shared<TimeEdgeExpression>(
       EdgeFunction::StartTime, "e1", EdgeOperator::Assignment, 0);
     endTimeExpressionE1 = std::make_shared<TimeEdgeExpression>(
       EdgeFunction::EndTime, "e1", EdgeOperator::Assignment, 0);
-    targetE1Bait = std::make_shared<EdgeExpression>("target1", "e1", "bait");
+    targetE1Bait = std::make_shared<EdgeExpression>("target1", "e1", bait);
     startTimeExpressionE2_begin = std::make_shared<TimeEdgeExpression>(
       EdgeFunction::StartTime, "e2", EdgeOperator::GreaterThan, 0);
     startTimeExpressionE2_end = std::make_shared<TimeEdgeExpression>(
       EdgeFunction::StartTime, "e2", EdgeOperator::LessThan, 10);
     targetE2Controller = std::make_shared<EdgeExpression>("target1", "e2",
-      "controller");
+      controller);
     featureMap = std::make_shared<FeatureMap>(1000);
   }
 
@@ -158,7 +160,18 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
   // target e2 controller;
   // starttime(e2) > 0;
   // starttime(e2) < 10;
-  //
+  // bait in topk
+  // controller not in topk
+
+  std::string topkId = "topk";
+
+  //bait in Topk
+  VertexConstraintExpression baitTopK(bait, VertexOperator::In, topkId);
+
+  //controller not in Topk
+  VertexConstraintExpression controllerNotTopK(controller,
+                                               VertexOperator::NotIn, topkId);
+
 
   QueryType query(featureMap);
   double maxOffset = 100.0;
@@ -168,10 +181,23 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
   query.addExpression(*startTimeExpressionE2_begin);
   query.addExpression(*startTimeExpressionE2_end);
   query.addExpression(*targetE2Controller);
+  query.addExpression(baitTopK);
+  query.addExpression(controllerNotTopK);
   query.finalize();
   BOOST_CHECK_EQUAL(query.getMaxTimeExtent(), 110);
   BOOST_CHECK_EQUAL(query.getMaxOffset(), maxOffset);
 
+  BOOST_CHECK_THROW(ResultType(&query, netflow1), SubgraphQueryResultException);
+   
+  // TopKFeature 
+  std::vector<std::string> keys;
+  std::vector<double> frequencies;
+  keys.push_back(bait);
+  frequencies.push_back(0.8);
+  TopKFeature feature(keys, frequencies); 
+
+  featureMap->updateInsert("", topkId, feature);
+  
   ResultType result(&query, netflow1);
 
   double netflow1Time = std::get<TimeSeconds>(netflow1);
@@ -188,5 +214,5 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
   double currentTime = std::get<TimeSeconds>(netflow3);
 
   BOOST_CHECK_EQUAL(pair.second.getExpireTime(), expireTime); 
-
+  
 }
