@@ -112,6 +112,12 @@ public:
   std::string generate(double epochTime);
 
   /**
+   * This creates message from node0 to a server, providing the first
+   * message of the pattern.
+   */
+  std::string generateInfection(double epochTime);
+
+  /**
    * The regular generate string creates "benign traffic."  This creates
    * messages from node0 to the controller, thus finishing the 
    * watering hole pattern. 
@@ -130,7 +136,9 @@ WateringHoleGenerator::WateringHoleGenerator(size_t numClients,
   this->numServers = numServers;
   std::random_device rd;
   myRand = std::mt19937(rd());
-  clientDist = std::uniform_int_distribution<size_t>(0, numClients - 1);
+  // We reserve out node 0.  Node 0 only creates traffic with the 
+  // generateInfection and generateControlMessage methods.
+  clientDist = std::uniform_int_distribution<size_t>(1, numClients - 1);
   serverDist = std::uniform_int_distribution<size_t>(0, numServers - 1);
 }
 
@@ -156,6 +164,31 @@ std::string WateringHoleGenerator::generate(double epochTime)
 
   return result;
 }
+
+std::string WateringHoleGenerator::generateInfection(double epochTime)
+{
+  std::string sourceIp = "0"; 
+  std::string destIp = "1";
+    
+  std::string result;
+  result = boost::lexical_cast<std::string>(epochTime) + ",";
+  result = result + "parseDate,dateTimeStr,ipLayerProtocol,";
+  result = result + "ipLayerProtocolCode," + sourceIp + ",";
+  result = result + destIp + ",";
+  result = result + boost::lexical_cast<std::string>(generateRandomPort());
+  result = result + ",";
+  result = result + boost::lexical_cast<std::string>(generateRandomPort());
+  result = result + ",1,1,1,";
+  result = result + "1,1,";
+  result = result + "1,1,";
+  result = result + "1,1,";
+  result = result + "1";
+
+  return result;
+
+
+}
+
 
 std::string WateringHoleGenerator::generateControlMessage(double epochTime)
 {

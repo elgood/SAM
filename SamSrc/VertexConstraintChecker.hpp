@@ -47,6 +47,8 @@ public:
     for (auto constraint : subgraphQuery->getConstraints(variable))
     {
       std::string featureName = constraint.featureName;
+      DEBUG_PRINT("VertexConstraintChecker variable %s vertex %s featureName"
+        " %s\n", variable.c_str(), vertex.c_str(), featureName.c_str());
     
       // If the feature doesn't exist, return false. 
       if (!featureMap->exists("", featureName)) {
@@ -62,7 +64,7 @@ public:
         case VertexOperator::In:
           if (!feature->template evaluate<bool>(existsVertex))
           {
-            DEBUG_PRINT("VertexConstraintChecker returning false for "
+            DEBUG_PRINT("VertexConstraintChecker(In) returning false for "
               "variable %s and vertex %s\n", variable.c_str(), vertex.c_str());
             return false;
           }
@@ -70,8 +72,8 @@ public:
         case VertexOperator::NotIn:
           if (feature->template evaluate<bool>(existsVertex))
           {
-            DEBUG_PRINT("VertexConstraintChecker returning false for variable"
-              " %s and vertex %s\n", variable.c_str(), vertex.c_str());
+            DEBUG_PRINT("VertexConstraintChecker(NotIn) returning false for"
+              " variable %s and vertex %s\n", variable.c_str(), vertex.c_str());
             return false;
           }
           break;

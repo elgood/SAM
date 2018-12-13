@@ -76,7 +76,8 @@ template <typename TupleType, size_t valueField, size_t... keyFields>
 bool TopK<TupleType, valueField, keyFields...>::consume(
   TupleType const& tuple) 
 {
-  DEBUG_PRINT("Node %lu TopK::consume %s\n", nodeId, toString(tuple));
+  DEBUG_PRINT("Node %lu TopK::consume %s\n", nodeId, 
+              sam::toString(tuple).c_str());
   this->feedCount++;
   if (this->feedCount % this->metricInterval == 0) {
     std::cout << "NodeId " << this->nodeId << " allWindows.size() " 

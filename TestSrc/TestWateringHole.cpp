@@ -55,9 +55,9 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   ////////////////// Setting up topk operator /////////////////////
   size_t capacity = 100000;
   auto featureMap = std::make_shared<FeatureMap>(capacity);
-  size_t N; ///> The total number of elements in a sliding window
-  size_t b; ///> The number of elements in a dormant or active window
-  size_t k; ///> The number of elements to keep track of
+  size_t N = 1000; ///> The total number of elements in a sliding window
+  size_t b = 100; ///> The number of elements in a dormant or active window
+  size_t k = 5; ///> The number of elements to keep track of
   std::string topkId = "topk";
   auto topk = std::make_shared<
     TopK<Netflow, DestIp>>(N, b, k, nodeId0, featureMap, topkId);
@@ -129,6 +129,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   double increment = 0.01;
 
   size_t numBadMessages = 5;
+  size_t totalNumMessages = 0;
  
   auto starttime = std::chrono::high_resolution_clock::now();
   // Sending benign message
@@ -137,8 +138,9 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     auto currenttime = std::chrono::high_resolution_clock::now();
     duration<double> diff = duration_cast<duration<double>>(
       currenttime - starttime);
-    if (diff.count() < i * increment) {
-      size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+    if (diff.count() < totalNumMessages * increment) {
+      size_t numMilliseconds = 
+        (totalNumMessages * increment - diff.count()) * 1000;
       std::this_thread::sleep_for(
         std::chrono::milliseconds(numMilliseconds));
     }
@@ -147,26 +149,27 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     printf("Netflow %s\n", str.c_str()); 
     time += increment;
     pushPull->consume(str);
-  }
-  
-  // Sending malicious messages
-  for (size_t i = numNetflows; i < numBadMessages + numNetflows; i++)
-  {
-    std::string str = generator.generateControlMessage(time);
-    printf("Netflow %s\n", str.c_str()); 
-    time += increment;
-    pushPull->consume(str);
+    totalNumMessages++;
   }
 
-  // Sending benign message
-  for (size_t i = numNetflows + numBadMessages; 
-       i < 2*numNetflows + numBadMessages; i++) 
+  // Create the infection message.
+  std::string str = generator.generateInfection(time);
+  time += increment;
+  pushPull->consume(str);
+  totalNumMessages++;
+
+  // Sending some benign messages so that the infection message completes
+  // (the pattern is that the malicious messages begin after the end
+  // of the infection message).  The duration of each message is one second,
+  // so we create enough messages to fill one second.
+  for (size_t i = 0; i < 1/increment + 1; i++) 
   {
     auto currenttime = std::chrono::high_resolution_clock::now();
     duration<double> diff = duration_cast<duration<double>>(
       currenttime - starttime);
-    if (diff.count() < i * increment) {
-      size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+    if (diff.count() < totalNumMessages * increment) {
+      size_t numMilliseconds = 
+          (totalNumMessages * increment - diff.count()) * 1000;
       std::this_thread::sleep_for(
         std::chrono::milliseconds(numMilliseconds));
     }
@@ -175,6 +178,49 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     printf("Netflow %s\n", str.c_str()); 
     time += increment;
     pushPull->consume(str);
+    totalNumMessages++;
+  }
+  
+  
+  // Sending malicious messages
+  for (size_t i = 0; i < numBadMessages; i++)
+  {
+    auto currenttime = std::chrono::high_resolution_clock::now();
+    duration<double> diff = duration_cast<duration<double>>(
+      currenttime - starttime);
+    if (diff.count() < totalNumMessages * increment) {
+      size_t numMilliseconds = 
+        (totalNumMessages * increment - diff.count()) * 1000;
+      std::this_thread::sleep_for(
+        std::chrono::milliseconds(numMilliseconds));
+    }
+
+    std::string str = generator.generateControlMessage(time);
+    printf("Netflow %s\n", str.c_str()); 
+    time += increment;
+    pushPull->consume(str);
+    totalNumMessages++;
+  }
+
+  // Sending benign message
+  for (size_t i = 0; i < numNetflows; i++) 
+       
+  {
+    auto currenttime = std::chrono::high_resolution_clock::now();
+    duration<double> diff = duration_cast<duration<double>>(
+      currenttime - starttime);
+    if (diff.count() < totalNumMessages * increment) {
+      size_t numMilliseconds = 
+          (totalNumMessages * increment - diff.count()) * 1000;
+      std::this_thread::sleep_for(
+        std::chrono::milliseconds(numMilliseconds));
+    }
+
+    std::string str = generator.generate(time);
+    printf("Netflow %s\n", str.c_str()); 
+    time += increment;
+    pushPull->consume(str);
+    totalNumMessages++;
   }
  
   pushPull->terminate();
