@@ -43,9 +43,12 @@ public:
       }
       return false;
     };
+    printf("blah1\n");
 
+    printf("blah2\n");
     for (auto constraint : subgraphQuery->getConstraints(variable))
     {
+      printf("blah2.2\n");
       std::string featureName = constraint.featureName;
       DEBUG_PRINT("VertexConstraintChecker variable %s vertex %s featureName"
         " %s\n", variable.c_str(), vertex.c_str(), featureName.c_str());
@@ -82,6 +85,7 @@ public:
             "Unsupported vertex constraint.");   
       }
     }
+    printf("blah3\n");
     DEBUG_PRINT("VertexConstraintChecker returning true for variable %s and "
       "vertex %s\n", variable.c_str(), vertex.c_str());
     return true;

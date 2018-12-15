@@ -445,25 +445,25 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                                    less_edge_operator, queryTimeWindow);
 
 
-  SubgraphQueryType query(featureMap);
-  query.addExpression(x2y);
-  query.addExpression(y2z);
-  query.addExpression(z2x);
-  query.addExpression(startE0First);
-  query.addExpression(startE1First);
-  query.addExpression(startE2First);
-  query.addExpression(startE0Second);
-  query.addExpression(startE1Second);
-  query.addExpression(startE2Second);
-  query.finalize();
+  auto query = std::make_shared<SubgraphQueryType>(featureMap);
+  query->addExpression(x2y);
+  query->addExpression(y2z);
+  query->addExpression(z2x);
+  query->addExpression(startE0First);
+  query->addExpression(startE1First);
+  query->addExpression(startE2First);
+  query->addExpression(startE0Second);
+  query->addExpression(startE1Second);
+  query->addExpression(startE2Second);
+  query->finalize();
 
   graphStore0->registerQuery(query);
   graphStore1->registerQuery(query);
 
   // Checking that the query laid out how we expect
-  EdgeDescriptionType const& edge0 = query.getEdgeDescription(0);
-  EdgeDescriptionType const& edge1 = query.getEdgeDescription(1);
-  EdgeDescriptionType const& edge2 = query.getEdgeDescription(2);
+  EdgeDescriptionType const& edge0 = query->getEdgeDescription(0);
+  EdgeDescriptionType const& edge1 = query->getEdgeDescription(1);
+  EdgeDescriptionType const& edge2 = query->getEdgeDescription(2);
 
   BOOST_CHECK_EQUAL(edge0.source, nodex);
   BOOST_CHECK_EQUAL(edge1.source, nodey);

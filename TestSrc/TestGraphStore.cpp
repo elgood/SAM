@@ -198,15 +198,15 @@ struct SingleNodeFixture  {
 ///
 BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
 {
-  QueryType query(featureMap);
+  auto query = std::make_shared<QueryType>(featureMap);
 
-  query.addExpression(*startY2Xboth);
-  query.addExpression(*y2x);
+  query->addExpression(*startY2Xboth);
+  query->addExpression(*y2x);
 
   // Should complain that the query hasn't been finalized
   BOOST_CHECK_THROW(graphStore0->registerQuery(query), GraphStoreException);
 
-  query.finalize();
+  query->finalize();
 
   graphStore0->registerQuery(query);
 
@@ -237,16 +237,16 @@ BOOST_FIXTURE_TEST_CASE( test_double_terminate, SingleNodeFixture )
 ///
 BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
 {
-  QueryType query(featureMap);
+  auto query = std::make_shared<QueryType>(featureMap);
 
   TimeEdgeExpression endTimeExpressionE1(endtimeFunction, e1, 
                                          equal_edge_operator, 0);
                                          
  
-  query.addExpression(*startY2Xboth);
-  query.addExpression(endTimeExpressionE1);
-  query.addExpression(*y2x);
-  query.finalize();
+  query->addExpression(*startY2Xboth);
+  query->addExpression(endTimeExpressionE1);
+  query->addExpression(*y2x);
+  query->finalize();
 
   graphStore0->registerQuery(query);
 
@@ -367,20 +367,20 @@ BOOST_FIXTURE_TEST_CASE( test_triangle_same_time, SingleNodeFixture )
   TimeEdgeExpression endE2Second(endtimeFunction,e2,
                                    less_edge_operator, queryTimeWindow);
 
-  QueryType query(featureMap);
-  query.addExpression(x2y);
-  query.addExpression(y2z);
-  query.addExpression(z2x);
-  query.addExpression(startE0First);
-  query.addExpression(startE1First);
-  query.addExpression(startE2First);
-  query.addExpression(startE0Second);
-  query.addExpression(startE1Second);
-  query.addExpression(startE2Second);
-  query.addExpression(endE0Second);
-  query.addExpression(endE1Second);
-  query.addExpression(endE2Second);
-  query.finalize();
+  auto query = std::make_shared<QueryType>(featureMap);
+  query->addExpression(x2y);
+  query->addExpression(y2z);
+  query->addExpression(z2x);
+  query->addExpression(startE0First);
+  query->addExpression(startE1First);
+  query->addExpression(startE2First);
+  query->addExpression(startE0Second);
+  query->addExpression(startE1Second);
+  query->addExpression(startE2Second);
+  query->addExpression(endE0Second);
+  query->addExpression(endE1Second);
+  query->addExpression(endE2Second);
+  query->finalize();
 
   graphStore0->registerQuery(query);
 

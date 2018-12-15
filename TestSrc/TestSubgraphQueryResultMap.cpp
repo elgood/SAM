@@ -86,11 +86,11 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   size_t nodeId = 0;
   MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
 
-  QueryType query(featureMap);
+  auto query = std::make_shared<QueryType>(featureMap);
 
-  query.addExpression(*startY2Xboth);
-  query.addExpression(*y2x);
-  query.finalize();
+  query->addExpression(*startY2Xboth);
+  query->addExpression(*y2x);
+  query->finalize();
 
 
   std::list<EdgeRequestType> edgeRequests;
@@ -100,7 +100,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
     std::string str = generator->generate();
     Netflow netflow = makeNetflow(0, str);
     SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
-                        DurationSeconds> result(&query, netflow);
+                        DurationSeconds> result(query, netflow);
     map.add(result, *csr, *csc, edgeRequests);
   }
 
@@ -122,17 +122,17 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
   size_t nodeId = 0;
   MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
 
-  QueryType query(featureMap);
+  auto query = std::make_shared<QueryType>(featureMap);
 
 
   TimeEdgeExpression endTimeExpressionE1(endtimeFunction, e1, 
                                          equal_edge_operator, 0);
                                          
  
-  query.addExpression(*startY2Xboth);
-  query.addExpression(endTimeExpressionE1);
-  query.addExpression(*y2x);
-  query.finalize();
+  query->addExpression(*startY2Xboth);
+  query->addExpression(endTimeExpressionE1);
+  query->addExpression(*y2x);
+  query->finalize();
 
   std::list<EdgeRequestType> edgeRequests;
   size_t n = 10000;
@@ -141,9 +141,9 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
     std::string str = generator->generate();
     Netflow netflow = makeNetflow(0, str);
     double startTime = std::get<TimeSeconds>(netflow);
-    if (query.satisfiesConstraints(0, netflow, startTime)) { 
+    if (query->satisfiesConstraints(0, netflow, startTime)) { 
       SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
-                          DurationSeconds> result(&query, netflow);
+                          DurationSeconds> result(query, netflow);
       map.add(result, *csr, *csc, edgeRequests);
     }
   }
@@ -164,18 +164,18 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
   size_t nodeId = 0;
   MapType map(numNodes, nodeId, tableCapacity, resultCapacity); 
 
-  QueryType query(featureMap);
+  auto query = std::make_shared<QueryType>(featureMap);
 
 
   TimeEdgeExpression startTimeExpressionE2(starttimeFunction, e2,
                                            greater_edge_operator, 0);
  
 
-  query.addExpression(*startY2Xboth);
-  query.addExpression(*startZ2Xbeg);
-  query.addExpression(*y2x);
-  query.addExpression(*z2x);
-  query.finalize();
+  query->addExpression(*startY2Xboth);
+  query->addExpression(*startZ2Xbeg);
+  query->addExpression(*y2x);
+  query->addExpression(*z2x);
+  query->finalize();
 
   std::list<EdgeRequestType> edgeRequests;
   size_t n = 50;
@@ -200,7 +200,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
     std::string str = generator->generate(time);
     time += increment;
     Netflow netflow = makeNetflow(i, str);
-    QueryResultType result(&query, netflow);
+    QueryResultType result(query, netflow);
                          
     map.add(result, *csr, *csc, edgeRequests);
     map.process(netflow, *csr, *csc, edgeRequests);
@@ -241,7 +241,7 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   csc->addEdge(netflow2);
   csc->addEdge(netflow3);
 
-  QueryType query(featureMap);
+  auto query = std::make_shared<QueryType>(featureMap);
 
   EdgeExpression A2B("nodea", "e0", "nodeb");
   EdgeExpression B2C("nodeb", "e1", "nodec");
@@ -254,15 +254,15 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
                                            greater_edge_operator, 0);
  
 
-  query.addExpression(A2B);
-  query.addExpression(B2C);
-  query.addExpression(C2D);
-  query.addExpression(startTimeExpressionA2B);
-  query.addExpression(startTimeExpressionB2C);
-  query.addExpression(startTimeExpressionC2D);
-  query.finalize();
+  query->addExpression(A2B);
+  query->addExpression(B2C);
+  query->addExpression(C2D);
+  query->addExpression(startTimeExpressionA2B);
+  query->addExpression(startTimeExpressionB2C);
+  query->addExpression(startTimeExpressionC2D);
+  query->finalize();
 
-  QueryResultType result(&query, netflow1);
+  QueryResultType result(query, netflow1);
 
   std::list<EdgeRequestType> edgeRequests;
   

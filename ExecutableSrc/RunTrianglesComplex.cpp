@@ -366,20 +366,20 @@ int main(int argc, char** argv) {
   TimeEdgeExpression endE2Second(endtimeFunction, e2, less_edge_operator,
     queryTimeWindow);*/
 
-  SubgraphQueryType query(featureMap);
-  query.addExpression(x2y);
-  query.addExpression(y2z);
-  query.addExpression(z2x);
-  query.addExpression(startE0First);
-  query.addExpression(startE1First);
-  query.addExpression(startE2First);
-  query.addExpression(startE0Second);
-  query.addExpression(startE1Second);
-  query.addExpression(startE2Second);
+  auto query = std::make_shared<SubgraphQueryType>(featureMap);
+  query->addExpression(x2y);
+  query->addExpression(y2z);
+  query->addExpression(z2x);
+  query->addExpression(startE0First);
+  query->addExpression(startE1First);
+  query->addExpression(startE2First);
+  query->addExpression(startE0Second);
+  query->addExpression(startE1Second);
+  query->addExpression(startE2Second);
   //query.addExpression(endE0Second);
   //query.addExpression(endE1Second);
   //query.addExpression(endE2Second);
-  query.finalize();
+  query->finalize();
 
   graphStore->registerQuery(query);
 

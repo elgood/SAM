@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
 {
   size_t numClients = 1000;
   size_t numServers = 5;
-  size_t numNetflows = 1000;
+  size_t numNetflows = 100;
 
   WateringHoleGenerator generator(numClients, numServers);
 
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   auto featureMap = std::make_shared<FeatureMap>(capacity);
   size_t N = 1000; ///> The total number of elements in a sliding window
   size_t b = 100; ///> The number of elements in a dormant or active window
-  size_t k = 5; ///> The number of elements to keep track of
+  size_t k = numServers; ///> The number of elements to keep track of
   std::string topkId = "topk";
   auto topk = std::make_shared<
     TopK<Netflow, DestIp>>(N, b, k, nodeId0, featureMap, topkId);
@@ -65,8 +65,8 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   pushPull->registerConsumer(topk);
 
   /////////////// Setting up GraphStore /////////////////////////////////
-  size_t graphCapacity = 1000; //For csc and csr
-  size_t tableCapacity = 1000; //For SubgraphQueryResultMap intermediate results
+  size_t graphCapacity = 100000; //For csc and csr
+  size_t tableCapacity = 100000; //For intermediate results
   size_t resultsCapacity = 1000; //For final results
   double timeWindow = 10000;
   size_t numPushSockets = 1;
@@ -113,15 +113,15 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   VertexConstraintExpression controllerNotTopK(controller, 
                                                VertexOperator::NotIn, topkId);
 
-  SubgraphQueryType query(featureMap);
-  query.addExpression(target2Bait);
-  query.addExpression(target2Controller);
-  query.addExpression(endE0Second);
-  query.addExpression(startE1First);
-  query.addExpression(startE1Second);
-  query.addExpression(baitTopK);
-  query.addExpression(controllerNotTopK);
-  query.finalize();
+  auto query = std::make_shared<SubgraphQueryType>(featureMap);
+  query->addExpression(target2Bait);
+  query->addExpression(target2Controller);
+  query->addExpression(endE0Second);
+  query->addExpression(startE1First);
+  query->addExpression(startE1Second);
+  query->addExpression(baitTopK);
+  query->addExpression(controllerNotTopK);
+  query->finalize();
 
   graphStore->registerQuery(query);
 
@@ -180,7 +180,8 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     pushPull->consume(str);
     totalNumMessages++;
   }
-  
+ 
+  graphStore->clearResults(); 
   
   // Sending malicious messages
   for (size_t i = 0; i < numBadMessages; i++)
@@ -226,5 +227,5 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   pushPull->terminate();
 
   BOOST_CHECK_EQUAL(graphStore->getNumResults(), numBadMessages);
-
+  printf("The End\n");
 }

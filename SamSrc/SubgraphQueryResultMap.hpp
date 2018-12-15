@@ -128,6 +128,13 @@ public:
     return numQueryResults; 
   }
 
+  /**
+   * Resets the counter for the results.
+   */
+  void clearResults() {
+    numQueryResults = 0;
+  }
+
   size_t getNumIntermediateResults() const {
     size_t total = 0;
     for(size_t i = 0; i < tableCapacity; i++) {

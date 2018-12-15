@@ -71,17 +71,17 @@ BOOST_FIXTURE_TEST_CASE( test_check_one_edge, F )
   // Creates a subgraph query with just one edge and checks that
   // a query result after adding a netflow satisfies the query and 
   // completes it.
-  QueryType query(featureMap);
-  query.addExpression(*startTimeExpressionE1);
-  query.addExpression(*targetE1Bait);
+  auto query = std::make_shared<QueryType>(featureMap);
+  query->addExpression(*startTimeExpressionE1);
+  query->addExpression(*targetE1Bait);
  
   // Throws an error because query has not been finalized. 
-  BOOST_CHECK_THROW( ResultType result(&query, netflow1),
+  BOOST_CHECK_THROW( ResultType result(query, netflow1),
                    SubgraphQueryResultException);
 
-  query.finalize();
+  query->finalize();
 
-  ResultType result(&query, netflow1);
+  ResultType result(query, netflow1);
 
   BOOST_CHECK(result.complete());
 }
@@ -90,15 +90,15 @@ BOOST_FIXTURE_TEST_CASE( test_check_two_edges, F )
 {
   // target e1 bait
   // target e2 controller
-  QueryType query(featureMap);
-  query.addExpression(*startTimeExpressionE1);
-  query.addExpression(*targetE1Bait);
-  query.addExpression(*startTimeExpressionE2_begin);
-  query.addExpression(*startTimeExpressionE2_end);
-  query.addExpression(*targetE2Controller);
-  query.finalize();
+  auto query = std::make_shared<QueryType>(featureMap);
+  query->addExpression(*startTimeExpressionE1);
+  query->addExpression(*targetE1Bait);
+  query->addExpression(*startTimeExpressionE2_begin);
+  query->addExpression(*startTimeExpressionE2_end);
+  query->addExpression(*targetE2Controller);
+  query->finalize();
 
-  ResultType result(&query, netflow1);
+  ResultType result(query, netflow1);
 
   BOOST_CHECK(!result.complete());
 
@@ -121,20 +121,20 @@ BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
   // Tests giving an edge that doesn't fulfill time constraint.
   // Also checks that the query result is determined to be expired
   // when given a time that is past the max extent of the query.
-  QueryType query(featureMap);
+  auto query = std::make_shared<QueryType>(featureMap);
   double maxOffset = 100.0;
-  query.setMaxOffset(maxOffset);
-  query.addExpression(*startTimeExpressionE1);
-  query.addExpression(*targetE1Bait);
-  query.addExpression(*startTimeExpressionE2_begin);
-  query.addExpression(*startTimeExpressionE2_end);
-  query.addExpression(*targetE2Controller);
-  query.finalize();
+  query->setMaxOffset(maxOffset);
+  query->addExpression(*startTimeExpressionE1);
+  query->addExpression(*targetE1Bait);
+  query->addExpression(*startTimeExpressionE2_begin);
+  query->addExpression(*startTimeExpressionE2_end);
+  query->addExpression(*targetE2Controller);
+  query->finalize();
 
-  BOOST_CHECK_EQUAL(query.getMaxTimeExtent(), 110);
-  BOOST_CHECK_EQUAL(query.getMaxOffset(), maxOffset);
+  BOOST_CHECK_EQUAL(query->getMaxTimeExtent(), 110);
+  BOOST_CHECK_EQUAL(query->getMaxOffset(), maxOffset);
 
-  ResultType result(&query, netflow1);
+  ResultType result(query, netflow1);
 
   double netflow1Time = std::get<TimeSeconds>(netflow1);
   BOOST_CHECK_EQUAL(result.getExpireTime(), netflow1Time+maxOffset+10);
@@ -173,21 +173,21 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
                                                VertexOperator::NotIn, topkId);
 
 
-  QueryType query(featureMap);
+  auto query = std::make_shared<QueryType>(featureMap);
   double maxOffset = 100.0;
-  query.setMaxOffset(maxOffset);
-  query.addExpression(*endTimeExpressionE1);
-  query.addExpression(*targetE1Bait);
-  query.addExpression(*startTimeExpressionE2_begin);
-  query.addExpression(*startTimeExpressionE2_end);
-  query.addExpression(*targetE2Controller);
-  query.addExpression(baitTopK);
-  query.addExpression(controllerNotTopK);
-  query.finalize();
-  BOOST_CHECK_EQUAL(query.getMaxTimeExtent(), 110);
-  BOOST_CHECK_EQUAL(query.getMaxOffset(), maxOffset);
+  query->setMaxOffset(maxOffset);
+  query->addExpression(*endTimeExpressionE1);
+  query->addExpression(*targetE1Bait);
+  query->addExpression(*startTimeExpressionE2_begin);
+  query->addExpression(*startTimeExpressionE2_end);
+  query->addExpression(*targetE2Controller);
+  query->addExpression(baitTopK);
+  query->addExpression(controllerNotTopK);
+  query->finalize();
+  BOOST_CHECK_EQUAL(query->getMaxTimeExtent(), 110);
+  BOOST_CHECK_EQUAL(query->getMaxOffset(), maxOffset);
 
-  BOOST_CHECK_THROW(ResultType(&query, netflow1), SubgraphQueryResultException);
+  BOOST_CHECK_THROW(ResultType(query, netflow1), SubgraphQueryResultException);
    
   // TopKFeature 
   std::vector<std::string> keys;
@@ -198,7 +198,7 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
 
   featureMap->updateInsert("", topkId, feature);
   
-  ResultType result(&query, netflow1);
+  ResultType result(query, netflow1);
 
   double netflow1Time = std::get<TimeSeconds>(netflow1);
   double duration = std::get<DurationSeconds>(netflow1);

@@ -240,19 +240,19 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   TimeEdgeExpression startC2Dbeg(EdgeFunction::StartTime, e3, 
                                   EdgeOperator::GreaterThan, 0);
 
-  QueryType query(featureMap);
-  query.addExpression(a2b);
-  query.addExpression(b2c);
-  query.addExpression(c2d);
-  query.addExpression(startA2Bboth);
-  query.addExpression(startB2Cbeg);
-  query.addExpression(startC2Dbeg);
-  query.finalize();
+  auto query = std::make_shared<QueryType>(featureMap);
+  query->addExpression(a2b);
+  query->addExpression(b2c);
+  query->addExpression(c2d);
+  query->addExpression(startA2Bboth);
+  query->addExpression(startB2Cbeg);
+  query->addExpression(startC2Dbeg);
+  query->finalize();
 
   // Checking that the query laid out how we expect
-  EdgeDescriptionType const& edge1 = query.getEdgeDescription(0);
-  EdgeDescriptionType const& edge2 = query.getEdgeDescription(1);
-  EdgeDescriptionType const& edge3 = query.getEdgeDescription(2);
+  EdgeDescriptionType const& edge1 = query->getEdgeDescription(0);
+  EdgeDescriptionType const& edge2 = query->getEdgeDescription(1);
+  EdgeDescriptionType const& edge3 = query->getEdgeDescription(2);
 
   BOOST_CHECK_EQUAL(edge1.source, nodeA);
   BOOST_CHECK_EQUAL(edge2.source, nodeB);

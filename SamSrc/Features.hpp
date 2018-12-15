@@ -25,18 +25,6 @@ public:
   /**
    * Applies a function to this feature and returns the result.
    */
-  //template <typename T>
-  /*double evaluate(std::function<double(Feature const *)> func) const
-  {
-    return func(this);
-  }*/
-  
-  /*
-  bool evaluate(std::function<bool(Feature const *)> func) const
-  {
-    return func(this);
-  }*/
-
   template <typename T>
   T evaluate(std::function<T(Feature const *)> func) const
   {
@@ -247,6 +235,15 @@ public:
   {
     this->keys   = keys;
     this->frequencies = frequencies;
+    #ifdef DEBUG
+    std::string kv = "";
+    for (size_t i = 0; i < keys.size(); i++) {
+      kv += keys[i] + " " +
+        boost::lexical_cast<std::string>(frequencies[i]) + ", ";
+    }
+    DEBUG_PRINT("TopKFeature: creating feature with keys/values %s\n", 
+                kv.c_str());
+    #endif
   }
 
   std::vector<double> const& getFrequencies() const {

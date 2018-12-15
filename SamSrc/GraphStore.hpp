@@ -143,7 +143,7 @@ private:
 
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
-  std::vector<QueryType> queries; ///> The list of queries to run.
+  std::vector<std::shared_ptr<QueryType>> queries; ///> The list of queries to run.
   
   /// Keeps track of how many consume threads are active.
   std::atomic<size_t> consumeThreadsActive; 
@@ -242,8 +242,8 @@ public:
   /**
    * Registers a subgraph query to run against the data
    */
-  void registerQuery(QueryType query) {
-    if (!query.isFinalized()) {
+  void registerQuery(std::shared_ptr<QueryType> query) {
+    if (!query->isFinalized()) {
       throw GraphStoreException("Tried to add query that had not been"
         " finalized");
     }
@@ -257,6 +257,15 @@ public:
    * Returns the total number of completed query results were produced.
    */
   size_t getNumResults() const { return resultMap->getNumResults(); }
+
+  /**
+   * Resets the results to be nothing.
+   */ 
+  void clearResults() 
+  {
+    DEBUG_PRINT("Node %lu GraphStore::clearResults\n", nodeId);
+    resultMap->clearResults(); 
+  }
   
   size_t getNumIntermediateResults() const { 
     return resultMap->getNumIntermediateResults();
@@ -483,20 +492,20 @@ checkSubgraphQueries(TupleType const& tuple,
 
   size_t totalWork = 0;
 
-  for (QueryType const& query : queries) {
+  for (std::shared_ptr<const QueryType> query : queries) {
     totalWork++;
 
     //TODO: Don't really like this.  I think SubgraphQueryResult should
     // have a constructor that just takes the query, and then we can
     // call addEdgeInPlace.  Then we wouldn't need this logic in this class.
     double queryStart;
-    if (query.zeroTimeRelativeToStart()) {
+    if (query->zeroTimeRelativeToStart()) {
       queryStart = std::get<time>(tuple);
     } else {
       queryStart = std::get<time>(tuple) + std::get<duration>(tuple);
     }
 
-    if (query.satisfiesConstraints(0, tuple, queryStart)) 
+    if (query->satisfiesConstraints(0, tuple, queryStart)) 
     {
 
       // We only want one node to own the query result, so we make sure
@@ -509,7 +518,7 @@ checkSubgraphQueries(TupleType const& tuple,
         sourceHash(src) % numNodes);
 
       if (sourceHash(src) % numNodes == nodeId) {
-        ResultType queryResult(&query, tuple);
+        ResultType queryResult(query, tuple);
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries adding"
           " queryResult %s from tuple %s\n", this->nodeId, 
@@ -531,7 +540,7 @@ checkSubgraphQueries(TupleType const& tuple,
     } else {
       DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries tuple %s"
         " didn't satisfy query %s\n", this->nodeId, 
-        sam::toString(tuple).c_str(), query.toString().c_str());
+        sam::toString(tuple).c_str(), query->toString().c_str());
     }
   }
   #ifdef DEBUG

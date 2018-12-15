@@ -49,7 +49,7 @@ public:
   
 private:
   /// The SubgraphQuery that this is a result for.
-  SubgraphQueryType const* subgraphQuery;
+  std::shared_ptr<const SubgraphQueryType> subgraphQuery;
 
   /// A mapping from the variable name to the bound value.
   std::map<std::string, NodeType> var2BoundValue;
@@ -92,7 +92,7 @@ public:
    * \param query The SubgraphQuery we are trying to satisfy.
    * \param firstEdge The first edge that satisfies the first edge description.
    */
-  SubgraphQueryResult(SubgraphQueryType const* query, 
+  SubgraphQueryResult(std::shared_ptr<const SubgraphQueryType>  query, 
                       TupleType firstEdge);
 
   /** 
@@ -255,7 +255,7 @@ public:
    */
   bool isNull() const 
   {
-    return subgraphQuery == nullptr;
+    return subgraphQuery.get() == nullptr;
   }
 
   TupleType getResultTuple(size_t i) const {
@@ -274,7 +274,7 @@ private:
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration>
 SubgraphQueryResult<TupleType, source, target, time, duration>::
-SubgraphQueryResult(SubgraphQueryType const* query,
+SubgraphQueryResult(std::shared_ptr<const SubgraphQueryType> query,
                     TupleType firstEdge) : 
   subgraphQuery(query)
 {
@@ -657,6 +657,8 @@ addEdge(TupleType const& edge)
     if (!subgraphQuery->satisfiesConstraints(currentEdge, edge, startTime)) {
       DEBUG_PRINT("SubgraphQueryResult::addEdge this tuple %s did not satisfy"
         " this edge constraings\n", sam::toString(edge).c_str());
+      return std::pair<bool, SubgraphQueryResultType>(false, 
+          SubgraphQueryResultType());
     }
 
 
