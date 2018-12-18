@@ -151,13 +151,6 @@ int main(int argc, char** argv)
   auto receiver = std::make_shared<ReadSocket>(ip, ncPort);
   size_t timeout = 1000;
 
-  auto consumer = std::make_shared<PartitionType>(queueLength,
-                                                  numNodes, nodeId,
-                                                  hostnames,
-                                                  startingPort, timeout, false,
-                                                  hwm);
-
-
   // Setting up the ZeroMQPushPull object
   auto pushPull = std::make_shared<PartitionType>(queueLength,
                                     numNodes, nodeId,
@@ -230,7 +223,8 @@ int main(int argc, char** argv)
     system_clock::now().time_since_epoch()
   ); 
 
-
+  size_t numResults = graphStore->getNumResults();
+  std::cout << "Number of results " << numResults << std::endl;
 
 
 }
