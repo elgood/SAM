@@ -110,8 +110,6 @@ int main(int argc, char** argv)
       "(default: 100).")
   ;
 
-  double keepQueries =  1;
-
   // Parse the command line variables
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -172,7 +170,7 @@ int main(int argc, char** argv)
      hwm, graphCapacity,
      tableCapacity, resultsCapacity,
      numPushSockets, numPullThreads, timeout,
-     timeWindow, keepQueries, featureMap);
+     timeWindow, featureMap);
 
   // Set up GraphStore object to get input from ZeroMQPushPull objects
   pushPull->registerConsumer(graphStore);

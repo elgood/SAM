@@ -161,14 +161,13 @@ int main(int argc, char** argv) {
 
   auto featureMap = std::make_shared<FeatureMap>(1000);
 
-  double keepQueries = 1.0;
   auto graphStore = std::make_shared<GraphStoreType>(
      numNodes, nodeId,
      hostnames, startingPort + numNodes, 
      hwm, graphCapacity,
      tableCapacity, resultsCapacity, 
      numPushSockets, numPullThreads, timeout,
-     timeWindow, keepQueries, featureMap);
+     timeWindow, featureMap);
 
   pushPull->registerConsumer(graphStore);
 

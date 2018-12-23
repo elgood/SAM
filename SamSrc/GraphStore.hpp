@@ -168,7 +168,9 @@ private:
   void sendEdgeRequest(EdgeRequestType const& edgeRequest,
     std::function<size_t(EdgeRequestType const&)> addressFunction);
 
+#ifdef DROP_QUERIES
   double keepQueries = 1;
+#endif
   std::random_device rd;
   std::mt19937 myRand;
   std::uniform_real_distribution<> dist;
@@ -217,7 +219,9 @@ public:
              size_t numPullThreads,
              size_t timeout,
              double timeWindow,
+#ifdef DROP_QUERIES
              double keepQueries,
+#endif
              std::shared_ptr<FeatureMap> featureMap,
              bool local=false);
 
@@ -749,13 +753,17 @@ consumeDoesTheWork(TupleType const& tuple)
   // Check against all registered queries
   
   size_t workCheckSubgraphQueries = 0;
+#ifdef DROP_QUERIES
   if (dist(myRand) < keepQueries) {
+#endif
 
     DETAIL_TIMING_BEG2
     workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
     DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 
       TOLERANCE, "GraphStore::consumeDoesTheWork checkSubgraphQueries")
+#ifdef DROP_QUERIES
   }
+#endif
 
   // Send out the edge requests to the other nodes.
   DETAIL_TIMING_BEG2
@@ -883,7 +891,9 @@ GraphStore(
              size_t numPullThreads,
              size_t timeout,
              double timeWindow,
+#ifdef DROP_QUERIES
              double keepQueries,
+#endif
              std::shared_ptr<FeatureMap> featureMap,
              bool local)
 {
@@ -1024,7 +1034,9 @@ GraphStore(
                                      requestCommunicatorFunctions,
                                      newStartingPort, timeout, local);
 
+#ifdef DROP_QUERIES
   this->keepQueries = keepQueries;
+#endif
   myRand = std::mt19937(rd());
   dist = std::uniform_real_distribution<>(0.0, 1.0);
 }

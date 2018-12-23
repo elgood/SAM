@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestGraphStore
 
-//#define DEBUG
+#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
@@ -22,8 +22,8 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 typedef GraphStoreType::EdgeRequestType EdgeRequestType;
 
 typedef GraphStoreType::QueryType QueryType;
-
-/*BOOST_AUTO_TEST_CASE( test_graph_store )
+/*
+BOOST_AUTO_TEST_CASE( test_graph_store )
 {
   /// In this test we create a graphstore on two nodes (both local addresses).
   ///
@@ -116,8 +116,8 @@ typedef GraphStoreType::QueryType QueryType;
 
   delete graphStore0;
   delete graphStore1;
-}
-*/
+}*/
+
 
 struct SingleNodeFixture  {
 
@@ -170,8 +170,6 @@ struct SingleNodeFixture  {
     size_t numThreads = 1;
 
     hostnames.push_back("localhost");
-    double keepQueries = 1.0;
-
     featureMap = std::make_shared<FeatureMap>(1000);
 
     graphStore0 = new GraphStoreType(numNodes, nodeId0, 
@@ -179,7 +177,7 @@ struct SingleNodeFixture  {
                         hwm, graphCapacity, 
                         tableCapacity, resultsCapacity, 
                         numPushSockets, numPullThreads, timeout,
-                        timeWindow, keepQueries, featureMap, true); 
+                        timeWindow, featureMap, true); 
   }
 
   ~SingleNodeFixture() {
@@ -191,7 +189,7 @@ struct SingleNodeFixture  {
     delete graphStore0;
   }
 };
-
+/*
 ///
 /// In this test the query is simply an edge such that every edge
 /// matches.
@@ -259,30 +257,31 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
   }
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), 0);
- 
 }
+*/
 
-/*
-TODO: This is getting stuck for some reason.
+
+//TODO: This is getting stuck for some reason.
 ///
 /// In this test the query is two connected edges.
 ///
 BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
 {
-  SubgraphQuery<Netflow, TimeSeconds, DurationSeconds> query;
+  auto query = std::make_shared<QueryType>(featureMap);
 
   TimeEdgeExpression startTimeExpressionE2(starttimeFunction, e2,
                                            greater_edge_operator, 0);
  
-  query.addExpression(*startY2Xboth);
-  query.addExpression(*startZ2Xbeg);
-  query.addExpression(*y2x);
-  query.addExpression(*z2x);
-  query.finalize();
+  query->addExpression(*startY2Xboth);
+  query->addExpression(*startZ2Xbeg);
+  query->addExpression(*y2x);
+  query->addExpression(*z2x);
+  query->finalize();
 
   graphStore0->registerQuery(query);
 
-  size_t numExtra = 1000;
+  //size_t numExtra = 1000;
+  size_t numExtra = 1;
 
   double rate = 1000;
   double increment = 1 / rate;
@@ -290,30 +289,47 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
 
   auto t1 = std::chrono::high_resolution_clock::now();
   
-  size_t n = 2110;
+  size_t n = 2;
+  size_t totalNetflows = 0;
   for(size_t i = 0; i < n; i++) 
   {
     printf("i %lu\n", i);
     auto currenttime = std::chrono::high_resolution_clock::now();
     duration<double> diff = duration_cast<duration<double>>(currenttime - t1);
-    if (diff.count() < i * increment) {
-      size_t numMilliseconds = (i * increment - diff.count()) * 1000;
+    if (diff.count() < totalNetflows * increment) 
+    {
+      size_t numMilliseconds = (totalNetflows * increment - diff.count())*1000;
       std::this_thread::sleep_for(
         std::chrono::milliseconds(numMilliseconds));
     } 
 
     std::string str = generator->generate(time);
-    Netflow netflow = makeNetflow(i, str);
+    Netflow netflow = makeNetflow(totalNetflows, str);
     graphStore0->consume(netflow);
     time += increment;
+    totalNetflows++;
   }
 
   RandomGenerator randomGenerator;
   for(size_t i = 0; i < numExtra; i++) 
   {
+    printf("extra %lu\n", i);
+    auto currenttime = std::chrono::high_resolution_clock::now();
+    duration<double> diff = duration_cast<duration<double>>(currenttime - t1);
+    if (diff.count() < totalNetflows * increment) 
+    {
+      size_t numMilliseconds = 
+        (totalNetflows * increment - diff.count()) * 1000;
+      std::this_thread::sleep_for(
+        std::chrono::milliseconds(numMilliseconds));
+    }
+
     std::string str = randomGenerator.generate();
-    Netflow netflow = makeNetflow(i, str);
-    graphStore0->consume(netflow);
+    Netflow netflow = makeNetflow(totalNetflows, str);
+     
+
+   graphStore0->consume(netflow);
+   totalNetflows++;
   }
 
   graphStore0->terminate();
@@ -321,7 +337,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), (n-1)*(n)/2);
  
 }
-*/
+/*
 ///
 /// This tests where two of the edges in the triangle have the same 
 /// time.  We are assuming strictly increasing time for the edges, but
@@ -415,5 +431,5 @@ BOOST_FIXTURE_TEST_CASE( test_triangle_same_time, SingleNodeFixture )
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), 0);
 }
-
+*/
 

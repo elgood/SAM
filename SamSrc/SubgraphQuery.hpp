@@ -118,16 +118,11 @@ public:
   std::list<VertexConstraintExpression> const& 
   getConstraints(std::string variable) const
   {
-    DEBUG_PRINT("subgraphQuery::getConstraints variables %s\n", variable.c_str());
-    std::cout << "address " << &vertexConstraints << std::endl;
-    std::cout << vertexConstraints.size() << std::endl;
-    //std::cout << (vertexConstraints.find(variable) == vertexConstraints.end()) << std::endl;
-    printf("blah0 subgraphQuery\n");
+    DEBUG_PRINT("subgraphQuery::getConstraints variables %s\n", 
+                variable.c_str());
     if (vertexConstraints.find(variable) != vertexConstraints.end()) {
-      printf("blah1 sugraphQuery\n");
       return vertexConstraints.at(variable);
     }
-    printf("blah2 sugraphQuery\n");
     return emptyList; 
   }
 

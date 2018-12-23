@@ -71,14 +71,13 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   double timeWindow = 10000;
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
-  double keepQueries = 1.0;
 
   auto graphStore = std::make_shared<GraphStoreType>( numNodes, nodeId0,
                                              hostnames, startingPort,
                                              hwm, graphCapacity,
                                              tableCapacity, resultsCapacity,
                                              numPushSockets, numPullThreads,
-                                             timeout, timeWindow, keepQueries,
+                                             timeout, timeWindow,
                                              featureMap, true);
 
   pushPull->registerConsumer(graphStore);

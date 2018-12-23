@@ -504,7 +504,7 @@ void PushPull::initializePullThreads()
     while (!stop) {
       zmq::message_t message;
       // Third parameter is the timeout in milliseconds to wait for input.
-      int numStop = 0;
+      size_t numStop = 0;
       int rValue = zmq::poll(pollItems, numVisiblePushSockets, 1);
       for (size_t i = 0; i < numVisiblePushSockets; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
@@ -512,8 +512,6 @@ void PushPull::initializePullThreads()
           sockets[i]->recv(&message);
           if (isTerminateMessage(message)) {
 
-            
-            
             DEBUG_PRINT("Node %lu PushPull pullThread received terminate "
               "from %lu\n", nodeId, i);
             terminate[i] = true;
@@ -553,8 +551,17 @@ void PushPull::initializePullThreads()
      
       //printf("Node %lu timeDiff %lu\n", nodeId, timeDiff);
 
-      if (numStop == numVisiblePushSockets) stop = true;
-      if (timeDiff > pullThreadTimeout) stop = true;
+      if (numStop == numVisiblePushSockets) {
+        DEBUG_PRINT("Node %lu PullPull::pullThread stop set to true because"
+          " of numVisiblePushSockets %lu == numStop %lu\n", nodeId, 
+          numVisiblePushSockets, numStop);
+         stop = true;
+      }
+      if (timeDiff > pullThreadTimeout) {
+        DEBUG_PRINT("Node %lu PullPull::pullThread stop set to true because"
+          " of timeout\n", nodeId);
+        stop = true;
+      }
     }
 
     for (auto socket : sockets) {
@@ -563,7 +570,8 @@ void PushPull::initializePullThreads()
     
     this->totalMessagesReceived.fetch_add(receivedMessages);
 
-    printf("Node %lu pullThread exiting\n", this->nodeId);
+    DEBUG_PRINT("Node %lu PushPull::pullThread exiting, received "
+      "messages %lu\n", this->nodeId, this->totalMessagesReceived.load());
 
   };
 
