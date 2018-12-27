@@ -528,7 +528,7 @@ checkSubgraphQueries(TupleType const& tuple,
           " queryResult %s from tuple %s\n", this->nodeId, 
           queryResult.toString().c_str(), toString(tuple).c_str());
 
-        resultMap->add(queryResult, *csr, *csc, edgeRequests);  
+        resultMap->add(queryResult, edgeRequests);  
         
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries added"
           " queryResult %s for tuple %s.  EdgeRequests.size() %lu\n", 
@@ -739,7 +739,7 @@ consumeDoesTheWork(TupleType const& tuple)
   std::list<EdgeRequestType> edgeRequests;
   //resultMapLock.lock();
   size_t workResultMapProcess = 
-    resultMap->process(myTuple, *csr, *csc, edgeRequests);
+    resultMap->process(myTuple, edgeRequests);
   //resultMapLock.unlock();
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeResultMapProcess,  TOLERANCE,
                      "GraphStore::consumeDoesTheWork resultMap->process")
@@ -919,12 +919,13 @@ GraphStore(
   edgePushFails = 0;
   consumeThreadsActive = 0;
 
-  resultMap = 
-    std::make_shared< ResultMapType>( numNodes, nodeId, 
-      tableCapacity, resultsCapacity);
-
   csr = std::make_shared<csrType>(graphCapacity, timeWindow); 
   csc = std::make_shared<cscType>(graphCapacity, timeWindow); 
+  
+  resultMap = 
+    std::make_shared< ResultMapType>( numNodes, nodeId, 
+      tableCapacity, resultsCapacity, *csr, *csc);
+
 
   typedef PushPull::FunctionType FunctionType;
 
@@ -951,7 +952,7 @@ GraphStore(
     // queries.  If it does, there may be new edge requests.
     std::list<EdgeRequestType> edgeRequests;
     //resultMapLock.lock();
-    resultMap->process(tuple, *csr, *csc, edgeRequests);
+    resultMap->process(tuple, edgeRequests);
     //resultMapLock.unlock();
     DETAIL_TIMING_END_TOL1(this->nodeId, totalTimeEdgeCallbackResultMapProcess, 
       TOLERANCE, "GraphStore::edgeCallback resultMap->process")

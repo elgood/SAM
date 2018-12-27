@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           timeWindow, featureMap, true);
                           
 
-  startingPort += numPushSockets * (2 - 1) * 2;
+  //startingPort += numPushSockets * (2 - 1) * 2;
   auto graphStore1 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId1,
                           hostnames, startingPort,  

@@ -36,6 +36,9 @@ private:
   SourceEF sourceEquals;
   TargetEF targetEquals;
 
+  CsrType const& csr;
+  CscType const& csc;
+
   /// The size of the hash table storing intermediate query results.
   size_t tableCapacity;
 
@@ -78,6 +81,7 @@ private:
 
 public:
   /**
+   * Constructor.
    * \param numNodes How many nodes in the cluster.
    * \param nodeId The node id of this node.
    * \param tableCapacity How many bins for intermediate query results.
@@ -86,7 +90,9 @@ public:
   SubgraphQueryResultMap( size_t numNodes,
                           size_t nodeId,
                           size_t tableCapacity,
-                          size_t resultsCapacity);
+                          size_t resultsCapacity,
+                          CsrType const& _csr,
+                          CscType const& _csc);
 
   ~SubgraphQueryResultMap();
 
@@ -102,23 +108,17 @@ public:
    * query.  We look for them in this method.
    *
    * \param tuple The edge to process.
-   * \param csr The compressed sparse row graph.
-   * \param csc The compressed sparse column graph.
    * \param edgeRequests Any edge requests that result are added here.
    * \return Returns a number representing the amount of work that this call
    *  required.
    */
   size_t process(TupleType const& tuple, 
-               CsrType const& csr,
-               CscType const& csc, 
                std::list<EdgeRequestType>& edgeRequests);
 
   /**
    * Adds a new intermediate result. 
    */ 
   void add(QueryResultType const& result, 
-           CsrType const& csr,
-           CscType const& csc, 
            std::list<EdgeRequestType>& edgeRequests);
 
   /**
@@ -201,24 +201,20 @@ private:
   std::function<bool(QueryResultType const&)> sourceTargetCheckFunction;
 
   /**
-   * Adds a new intermediate result. 
+   * Adds a new intermediate result.  Doesn't check graphs.
    * \param result The intermediate result to add.
    * \param edgeRequests Any result edge requests are added to this list.
    * \return Returns a number representing the amount of work.
    */ 
-  size_t add(QueryResultType const& result, 
+  size_t add_nocheck(QueryResultType const& result, 
            std::list<EdgeRequestType>& edgeRequests);
 
   size_t process(TupleType const& tuple,
-        CsrType const& csr,
-        CscType const& csc,
         std::list<EdgeRequestType>& edgeRequests,
         std::function<size_t(TupleType const&)> indexFunction, 
         std::function<bool(QueryResultType const&)> checkFunction );
 
-  size_t processAgainstGraph(std::list<QueryResultType>& rehash,
-                           CsrType const& csr,
-                           CscType const& csc);
+  size_t processAgainstGraph(std::list<QueryResultType>& rehash);
 };
 
 /// Constructor
@@ -231,7 +227,10 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
  SubgraphQueryResultMap( size_t numNodes,
                          size_t nodeId,
                          size_t tableCapacity,
-                         size_t resultCapacity)
+                         size_t resultCapacity,
+                         CsrType const& _csr,
+                         CscType const& _csc) :
+                         csc(_csc), csr(_csr)
 {
   sourceIndexFunction = [this](TupleType const& tuple) {
     SourceType src = std::get<source>(tuple);
@@ -310,8 +309,6 @@ void
 SubgraphQueryResultMap<TupleType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 add(QueryResultType const& result, 
-    CsrType const& csr,
-    CscType const& csc,
     std::list<EdgeRequestType>& edgeRequests)
 {
   DETAIL_TIMING_BEG1
@@ -322,7 +319,7 @@ add(QueryResultType const& result,
   std::list<QueryResultType> localQueryResults;
   localQueryResults.push_back(result);
 
-  processAgainstGraph(localQueryResults, csr, csc);
+  processAgainstGraph(localQueryResults);
 
   for (auto localQueryResult : localQueryResults) {
     DEBUG_PRINT("Node %lu SubgraphQueryResultMap::add considering query result"
@@ -388,7 +385,7 @@ template <typename TupleType, size_t source, size_t target,
 size_t
 SubgraphQueryResultMap<TupleType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-add(QueryResultType const& result, 
+add_nocheck(QueryResultType const& result, 
     std::list<EdgeRequestType>& edgeRequests)
 {
   DEBUG_PRINT("Node %lu SubgraphQueryResultMap::add edge request size %lu\n",
@@ -450,8 +447,6 @@ size_t
 SubgraphQueryResultMap<TupleType, source, target, time, duration,
                         SourceHF, TargetHF, SourceEF, TargetEF>::
 process(TupleType const& tuple, 
-        CsrType const& csr,
-        CscType const& csc,
         std::list<EdgeRequestType>& edgeRequests)
 {
 
@@ -460,17 +455,17 @@ process(TupleType const& tuple,
    sam::toString(tuple).c_str())
 
   DETAIL_TIMING_BEG1
-  size_t workProcessSource = process(tuple, csr, csc, edgeRequests, 
+  size_t workProcessSource = process(tuple, edgeRequests, 
                                    sourceIndexFunction, sourceCheckFunction);
   DETAIL_TIMING_END1(totalTimeProcessSource)
 
   DETAIL_TIMING_BEG2
-  size_t workProcessTarget = process(tuple, csr, csc, edgeRequests,
+  size_t workProcessTarget = process(tuple, edgeRequests,
                                    targetIndexFunction, targetCheckFunction);
   DETAIL_TIMING_END2(totalTimeProcessTarget)
   
   DETAIL_TIMING_BEG2
-  size_t workProcessSourceTarget = process(tuple, csr, csc, edgeRequests, 
+  size_t workProcessSourceTarget = process(tuple, edgeRequests, 
                           sourceTargetIndexFunction, sourceTargetCheckFunction);
   DETAIL_TIMING_END2(totalTimeProcessSourceTarget)
 
@@ -487,10 +482,7 @@ template <typename TupleType, size_t source, size_t target,
 size_t 
 SubgraphQueryResultMap<TupleType, source, target, time, duration,
                        SourceHF, TargetHF, SourceEF, TargetEF>::
-processAgainstGraph(
-              std::list<QueryResultType>& rehash,
-              CsrType const& csr,
-              CscType const& csc)
+processAgainstGraph(std::list<QueryResultType>& rehash)
 {
   DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph rehash size"
     " %lu at begining\n", nodeId, rehash.size());
@@ -595,8 +587,6 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
                        SourceHF, TargetHF, SourceEF, TargetEF>::
 
 process(TupleType const& tuple,
-        CsrType const& csr,
-        CscType const& csc,
         std::list<EdgeRequestType>& edgeRequests,
         std::function<size_t(TupleType const&)> indexFunction,
         std::function<bool(QueryResultType const&)> checkFunction )
@@ -666,7 +656,7 @@ process(TupleType const& tuple,
  
   // See if the graph can further the queries
   DETAIL_TIMING_BEG2
-  size_t graphWork = processAgainstGraph(rehash, csr, csc);
+  size_t graphWork = processAgainstGraph(rehash);
   DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process work from process"
     "AgainstGraph: %lu\n", this->nodeId, graphWork);
   totalWork += graphWork;
@@ -678,7 +668,7 @@ process(TupleType const& tuple,
     DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process rehashing " 
            "query result %s\n", nodeId, result.toString().c_str());
     
-    addWork += add(result, edgeRequests);
+    addWork += add_nocheck(result, edgeRequests);
   }
   DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process addWork %lu"
     " rehash size %lu\n", nodeId, addWork, rehash.size());
