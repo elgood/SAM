@@ -47,6 +47,9 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   /// find, and then manually create them, interspersed though the generation
   /// of the random netflows.
 
+  // Setting up featureMap
+  auto featureMap = std::make_shared<FeatureMap>(1000);
+
   // Setting up random generators
   AbstractNetflowGenerator *generator0 = new RandomGenerator();
   AbstractNetflowGenerator *generator1 = new RandomGenerator();
@@ -75,14 +78,19 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   // no triangles occur.
   size_t numExtra = 10000;
 
-  PartitionType* pushPull0 = new PartitionType(context, queueLength,
+  size_t startingPort = 10000;
+  size_t timeout = 1000;
+
+  PartitionType* pushPull0 = new PartitionType(queueLength,
                                     numNodes, nodeId0,
-                                    hostnames, ports,
+                                    hostnames, 
+                                    startingPort, timeout, true,
                                     hwm);
 
-  PartitionType* pushPull1 = new PartitionType(context, queueLength,
+  PartitionType* pushPull1 = new PartitionType(queueLength,
                                     numNodes, nodeId1,
-                                    hostnames, ports,
+                                    hostnames, 
+                                    startingPort, timeout, true,
                                     hwm);
 
   // Setting up GraphStore objects
@@ -91,10 +99,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   size_t resultsCapacity = 1000; //For final results
   double timeWindow = 100;
 
-  size_t startingPort = 10002;
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
-  size_t timeout = 1000;
 
   auto graphStore0 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId0,
@@ -102,7 +108,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow, true);
+                          timeWindow, featureMap, MAX_NUM_FUTURES, true);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId1,
@@ -110,7 +116,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow, true);
+                          timeWindow, featureMap, MAX_NUM_FUTURES, true);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects
@@ -137,22 +143,22 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   TimeEdgeExpression startE1Both(starttimeFunction,e1,greater_edge_operator, 0);
   TimeEdgeExpression startE2Both(starttimeFunction,e2,greater_edge_operator, 0);
 
-  SubgraphQueryType query;
-  query.addExpression(x2y);
-  query.addExpression(y2z);
-  query.addExpression(z2x);
-  query.addExpression(startE0Both);
-  query.addExpression(startE1Both);
-  query.addExpression(startE2Both);
-  query.finalize();
+  auto query = std::make_shared<SubgraphQueryType>(featureMap);
+  query->addExpression(x2y);
+  query->addExpression(y2z);
+  query->addExpression(z2x);
+  query->addExpression(startE0Both);
+  query->addExpression(startE1Both);
+  query->addExpression(startE2Both);
+  query->finalize();
 
   graphStore0->registerQuery(query);
   graphStore1->registerQuery(query);
 
   // Checking that the query laid out how we expect
-  EdgeDescriptionType const& edge0 = query.getEdgeDescription(0);
-  EdgeDescriptionType const& edge1 = query.getEdgeDescription(1);
-  EdgeDescriptionType const& edge2 = query.getEdgeDescription(2);
+  EdgeDescriptionType const& edge0 = query->getEdgeDescription(0);
+  EdgeDescriptionType const& edge1 = query->getEdgeDescription(1);
+  EdgeDescriptionType const& edge2 = query->getEdgeDescription(2);
 
   BOOST_CHECK_EQUAL(edge0.source, nodex);
   BOOST_CHECK_EQUAL(edge1.source, nodey);
@@ -160,9 +166,6 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
 
   double time = 0.0;
   double increment = 0.01;
-
-  pushPull0->acceptData();
-  pushPull1->acceptData();
 
   // The lambda function
   auto generateFunction = [numTuples, numTriangles, modValue, numExtra,
@@ -356,7 +359,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 
   PartitionType* pushPull0 = new PartitionType(queueLength,
                                     numNodes, nodeId0,
-                                    hostnames, //ports,
+                                    hostnames, 
                                     startingPort, timeout, true,
                                     hwm);
 
@@ -397,7 +400,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity,
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow, featureMap, true);
+                          timeWindow, featureMap, MAX_NUM_FUTURES, true);
 
   auto graphStore1 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId1,
@@ -405,7 +408,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow, featureMap, true);
+                          timeWindow, featureMap, MAX_NUM_FUTURES, true );
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects
@@ -520,7 +523,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
         std::this_thread::sleep_for(
           std::chrono::milliseconds(numMilliseconds));
       } else {
-        printf("behind by %f\n", i * increment + numTuples * increment - diff.count());
+        printf("behind by %f\n", i * increment + numTuples * increment - 
+               diff.count());
       }
 
      

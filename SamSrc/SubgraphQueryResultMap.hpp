@@ -313,7 +313,7 @@ add(QueryResultType const& result,
 {
   DETAIL_TIMING_BEG1
 
-  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::add with csr and csc"
+  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::add "
     " edge request size %lu\n", nodeId, edgeRequests.size())
 
   std::list<QueryResultType> localQueryResults;
@@ -511,7 +511,7 @@ processAgainstGraph(std::list<QueryResultType>& rehash)
       // Only look at the graph if the result is not complete.
       if (!frontier->complete()) {
         std::list<TupleType> foundEdges;
-        try {
+        //try {
           csr.findEdges(frontier->getCurrentSource(),
                       frontier->getCurrentTarget(),
                       frontier->getCurrentStartTimeFirst(),
@@ -519,14 +519,15 @@ processAgainstGraph(std::list<QueryResultType>& rehash)
                       frontier->getCurrentEndTimeFirst(),
                       frontier->getCurrentEndTimeSecond(),
                       foundEdges);
-        } catch (std::exception e) {
-          std::string message = "SubgraphQueryResultMap::"
-            "processAgainstGraph caught exception: " + std::string(e.what());
-          throw SubgraphQueryResultMapException(message);
-        }
+        //} catch (std::exception e) {
+        //  printf("e.what %s\n", e.what());
+        //  std::string message = "SubgraphQueryResultMap::"
+        //    "processAgainstGraph csr caught exception: " + std::string(e.what());
+        //  throw SubgraphQueryResultMapException(message);
+        //}
 
         DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph "
-          "iter %lu number of found edges: %lu\n", nodeId, iter, 
+          "iter %lu number of found edges from csr: %lu\n", nodeId, iter, 
           foundEdges.size());
 
         for (auto edge : foundEdges) {
@@ -546,6 +547,46 @@ processAgainstGraph(std::list<QueryResultType>& rehash)
             rehash.push_back(p.second);
           }
         }
+
+        foundEdges.clear();
+
+        //try {
+          csc.findEdges(frontier->getCurrentTarget(),
+                      frontier->getCurrentSource(),
+                      frontier->getCurrentStartTimeFirst(),
+                      frontier->getCurrentStartTimeSecond(),
+                      frontier->getCurrentEndTimeFirst(),
+                      frontier->getCurrentEndTimeSecond(),
+                      foundEdges);
+        //} catch (std::exception e) {
+        //  printf("e.what %s\n", e.what());
+        //  std::string message = "SubgraphQueryResultMap::"
+        //    "processAgainstGraph csc caught exception: " + std::string(e.what());
+        //  throw SubgraphQueryResultMapException(message);
+        //}
+
+        DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph "
+          "iter %lu number of found edges from csc: %lu\n", nodeId, iter, 
+          foundEdges.size());
+
+        for (auto edge : foundEdges) {
+          totalWork += 1;
+         
+          DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph "
+            "iter %luconsidering found edge %s for query result %s\n",
+            nodeId, iter, sam::toString(edge).c_str(), 
+            frontier->toString().c_str());
+          
+          std::pair<bool, QueryResultType> p = frontier->addEdge(edge);
+          if (p.first) {
+            DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph "
+              "iter %lu Created a new QueryResult: %s\n", nodeId, iter,
+              p.second.toString().c_str());
+            // push the new result to the end of the rehash list.
+            rehash.push_back(p.second);
+          }
+        }
+
         DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph at" 
           " end of for loop over found edges\n", nodeId);
 
@@ -606,9 +647,10 @@ process(TupleType const& tuple,
   size_t totalWork = 0;
 
   mutexes[index].lock();
-  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process(tuple, csr, csc, "
-    "edgeRequests, indexFunction) alr[%lu].size() %lu\n",
-    nodeId, index, alr[index].size());
+  DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process(tuple, "
+    "edgeRequests, indexFunction, checkFunction) alr[%lu].size() %lu "
+    "tuple %s\n", nodeId, index, alr[index].size(), toString(tuple).c_str());
+    
   for(auto l = this->alr[index].begin();
         l != this->alr[index].end(); ) 
   {

@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestGraphStore
 
-#define DEBUG
+//#define DEBUG
 
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
@@ -22,7 +22,7 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 typedef GraphStoreType::EdgeRequestType EdgeRequestType;
 
 typedef GraphStoreType::QueryType QueryType;
-/*
+
 BOOST_AUTO_TEST_CASE( test_graph_store )
 {
   /// In this test we create a graphstore on two nodes (both local addresses).
@@ -48,7 +48,6 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   size_t numPushSockets = 1;
   size_t numPullThreads = 1;
   size_t timeout = 1000;
-  double keepQueries = 1.0;
   auto featureMap = std::make_shared<FeatureMap>(1000);
 
   GraphStoreType* graphStore0 = new GraphStoreType(
@@ -57,7 +56,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
                         hwm, graphCapacity, 
                         tableCapacity, resultsCapacity, 
                         numPushSockets, numPullThreads, timeout, 
-                        timeWindow, keepQueries, featureMap, true); 
+                        timeWindow, featureMap, 1, true); 
 
   // One thread runs this.
   auto graph_function0 = [graphStore0, n]()
@@ -82,7 +81,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
                         hwm, graphCapacity, 
                         tableCapacity, resultsCapacity, 
                         numPushSockets, numPullThreads, timeout, 
-                        timeWindow, keepQueries, featureMap, true); 
+                        timeWindow, featureMap, 1, true); 
 
   // Another thread runs this.
   auto graph_function1 = [graphStore1, n]()
@@ -116,7 +115,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
 
   delete graphStore0;
   delete graphStore1;
-}*/
+}
 
 
 struct SingleNodeFixture  {
@@ -165,8 +164,6 @@ struct SingleNodeFixture  {
                                                  e2, greater_edge_operator, 0); 
     generator = new UniformDestPort("192.168.0.2", 1);
 
-
-
     size_t numThreads = 1;
 
     hostnames.push_back("localhost");
@@ -177,7 +174,7 @@ struct SingleNodeFixture  {
                         hwm, graphCapacity, 
                         tableCapacity, resultsCapacity, 
                         numPushSockets, numPullThreads, timeout,
-                        timeWindow, featureMap, true); 
+                        timeWindow, featureMap, 1, true); 
   }
 
   ~SingleNodeFixture() {
@@ -189,7 +186,7 @@ struct SingleNodeFixture  {
     delete graphStore0;
   }
 };
-/*
+
 ///
 /// In this test the query is simply an edge such that every edge
 /// matches.
@@ -218,6 +215,8 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
 
   graphStore0->terminate();
 
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(1000));
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), n);
 }
 
@@ -258,10 +257,8 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), 0);
 }
-*/
 
 
-//TODO: This is getting stuck for some reason.
 ///
 /// In this test the query is two connected edges.
 ///
@@ -280,16 +277,16 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
 
   graphStore0->registerQuery(query);
 
-  //size_t numExtra = 1000;
-  size_t numExtra = 1;
+  size_t numExtra = 100;
+  //size_t numExtra = 1;
 
-  double rate = 1000;
+  double rate = 100;
   double increment = 1 / rate;
   double time = 0.0;
 
   auto t1 = std::chrono::high_resolution_clock::now();
   
-  size_t n = 2;
+  size_t n = 100;
   size_t totalNetflows = 0;
   for(size_t i = 0; i < n; i++) 
   {
@@ -334,10 +331,12 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
 
   graphStore0->terminate();
 
+  printf("numResults %zu expected %zu\n", graphStore0->getNumResults(),
+         (n-1)*(n)/2);
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), (n-1)*(n)/2);
  
 }
-/*
+
 ///
 /// This tests where two of the edges in the triangle have the same 
 /// time.  We are assuming strictly increasing time for the edges, but
@@ -431,5 +430,5 @@ BOOST_FIXTURE_TEST_CASE( test_triangle_same_time, SingleNodeFixture )
 
   BOOST_CHECK_EQUAL(graphStore0->getNumResults(), 0);
 }
-*/
+
 

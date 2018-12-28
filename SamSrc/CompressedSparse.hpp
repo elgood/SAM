@@ -230,27 +230,21 @@ findEdges(
   std::list<TupleType>& foundEdges)
 const
 {
-  #ifdef DEBUG
-  printf("CompressedSparse::findEdges src %s trg %s %f %f %f %f\n",
+  DEBUG_PRINT("CompressedSparse::findEdges src %s trg %s %f %f %f %f\n",
     src.c_str(), trg.c_str(),
     startTimeFirst, startTimeSecond, endTimeFirst, endTimeSecond);
-  #endif
   
   size_t index = hash(src) % capacity;
 
   std::lock_guard<std::mutex> lock(mutexes[index]);
 
-  #ifdef DEBUG
-  printf("CompressedSparse::findEdges number of lists to consider: %lu\n",
-    alle[index].size());
-  #endif
+  DEBUG_PRINT("CompressedSparse::findEdges src %s trg %s  number of lists"
+    " to consider: %lu\n", src.c_str(), trg.c_str(), alle[index].size());
   for (auto & l : alle[index]) {
     // l should be a list of lists
 
-    #ifdef DEBUG
-    printf("CompressedSparse::findEdges number of edges to consider: %lu\n",
-      l.size());
-    #endif
+    DEBUG_PRINT("CompressedSparse::findEdges number of edges to consider: "
+      "%lu\n", l.size());
 
     if(l.size() > 0) {
 
@@ -306,24 +300,20 @@ const
                   passed = false;
                 }
               }
-              #ifdef DEBUG
-              printf("CompressedSparse::findEdges pass after checking "
+              DEBUG_PRINT("CompressedSparse::findEdges pass after checking "
                 "source/target: %d\n", passed);
-              #endif
 
               if (passed) {
                 double candTime = std::get<time>(*it);
                 double candDuration = std::get<duration>(*it);
                 // Check that the time is after starttime and 
                 // before stoptime
-                #ifdef DEBUG
-                printf("CompressedSparse::findEdges candTime %f "
+                DEBUG_PRINT("CompressedSparse::findEdges candTime %f "
                   "candDuration %f "
                   "startTimeFirst %f startTimeSecond %f "
                   "endTimeFirst %f endTimeSecond %f\n",
                   candTime, candDuration, startTimeFirst, startTimeSecond,
                   endTimeFirst, endTimeSecond);
-                #endif
                 if (candTime < startTimeFirst ||
                     candTime > startTimeSecond ||
                     candTime + candDuration < endTimeFirst ||
@@ -339,9 +329,8 @@ const
             } else {
               // The edge has expired, so we get rid of it.
 
-              #ifdef DEBUG
-              printf("CompressedSparse::findEdges the edge has expired\n");
-              #endif
+              DEBUG_PRINT("CompressedSparse::findEdges the edge has expired"
+                " %s\n", toString(*it).c_str());
               
               it = l.erase(it);
               METRICS_INCREMENT(this->totalEdgesDeleted)

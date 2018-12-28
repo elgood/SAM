@@ -440,6 +440,9 @@ process(TupleType const& tuple,
               edgePushCounter.fetch_add(1);
               #endif
             }
+          } else {
+            DEBUG_PRINT("Node %lu EdgeRequestMap::process existing because"
+              " terminated\n", nodeId);
           }
         }
       }

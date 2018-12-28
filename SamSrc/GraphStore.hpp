@@ -143,7 +143,7 @@ private:
 
   std::shared_ptr<csrType> csr; ///> Compressed Sparse Row graph
   std::shared_ptr<cscType> csc; ///> Compressed Sparse column graph
-  std::vector<std::shared_ptr<QueryType>> queries; ///> The list of queries to run.
+  std::vector<std::shared_ptr<QueryType>> queries; ///> The list of queries.
   
   /// Keeps track of how many consume threads are active.
   std::atomic<size_t> consumeThreadsActive; 
@@ -177,6 +177,8 @@ private:
 
   std::shared_ptr<FeatureMap> featureMap;
 
+  size_t maxFutures; ///> How many async threads can be active
+
 public:
 
   /**
@@ -204,6 +206,10 @@ public:
    * \param timeout How long in milliseconds should the communicator's pull
    *  threads wait for data before exiting the pull loop.
    * \param timeWindow How long do we keep edges.
+   * \param keepQueries If compiled to include, can set what fraction of queries
+   *   to keep.
+   * \param featureMap The featureMap that is being used by this node.
+   * \param maxFutures The number of async threads that can be created.
    * \param local Boolean indicating that we are on one node.
    */
   GraphStore(
@@ -223,6 +229,7 @@ public:
              double keepQueries,
 #endif
              std::shared_ptr<FeatureMap> featureMap,
+             size_t maxFutures = MAX_NUM_FUTURES,
              bool local=false);
 
   ~GraphStore();
@@ -682,7 +689,7 @@ consume(TupleType const& tuple)
   //auto _ = std::async(std::launch::async, [this, &tuple]() {
   // return this->consumeDoesTheWork(tuple);
   //});
-  if (currentFuture >= MAX_NUM_FUTURES) {
+  if (currentFuture >= maxFutures) {
     cycled = true;
     currentFuture = 0;
   }
@@ -895,9 +902,16 @@ GraphStore(
              double keepQueries,
 #endif
              std::shared_ptr<FeatureMap> featureMap,
+             size_t maxFutures,
              bool local)
 {
   this->featureMap = featureMap;
+
+  if (maxFutures > MAX_NUM_FUTURES) {
+    std::string msg = "maxFutures must be less than " + 
+      boost::lexical_cast<std::string>(MAX_NUM_FUTURES);
+    throw GraphStoreException(msg);
+  }
 
   sourceAddressFunction = [this](EdgeRequestType const& edgeRequest) {
     SourceType src = edgeRequest.getSource();

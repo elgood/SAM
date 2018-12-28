@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout, 
-                          timeWindow, featureMap, true);
+                          timeWindow, featureMap, MAX_NUM_FUTURES, true);
                           
 
   //startingPort += numPushSockets * (2 - 1) * 2;
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           hwm, graphCapacity,
                           tableCapacity, resultsCapacity, 
                           numPushSockets, numPullThreads, timeout,
-                          timeWindow, featureMap, true);
+                          timeWindow, featureMap, MAX_NUM_FUTURES, true);
 
 
   // Set up GraphStore objects to get input from ZeroMQPushPull objects
