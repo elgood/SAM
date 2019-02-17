@@ -2,12 +2,12 @@
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include <vector>
-#include "TupleExpression.hpp"
-#include "FeatureMap.hpp"
-#include "FeatureSubscriber.hpp"
-#include "TransformProducer.hpp"
-#include "Netflow.hpp"
-#include "Identity.hpp"
+#include <sam/TupleExpression.hpp>
+#include <sam/FeatureMap.hpp>
+#include <sam/FeatureSubscriber.hpp>
+#include <sam/TransformProducer.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/Identity.hpp>
 
 using namespace sam;
 

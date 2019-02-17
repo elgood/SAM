@@ -45,12 +45,13 @@ include_directories("${ZMQ_INCLUDE_DIRS}")
 
 
 ####################### Include directories #################
-include_directories(SamSrc)
+#include_directories(../)
 
 ############# The SAM Library ################
 
 add_library(SamLib INTERFACE)
 target_include_directories(SamLib INTERFACE SamSrc/)
+#target_include_directories(SamLib INTERFACE ../)
 
 ################# Executables ###############################
 file (GLOB EXE_SRCS ExecutableSrc/*.cpp)

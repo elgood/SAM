@@ -15,10 +15,10 @@
 
 #include <boost/program_options.hpp>
 
-#include "ReadSocket.hpp"
-#include "ZeroMQPushPull.hpp"
-#include "SimpleSum.hpp"
-#include "Netflow.hpp"
+#include <sam/ReadSocket.hpp>
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/SimpleSum.hpp>
+#include <sam/Netflow.hpp>
 
 using std::string;
 using std::vector;

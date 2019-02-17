@@ -5,8 +5,8 @@
 #include <tuple>
 #include <string>
 #include <random>
-#include "ZeroMQUtil.hpp"
-#include "Netflow.hpp"
+#include <sam/ZeroMQUtil.hpp>
+#include <sam/Netflow.hpp>
 
 using namespace sam;
 

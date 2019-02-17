@@ -18,15 +18,15 @@
 //#include <mlpack/core.hpp>
 //#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
 
-#include "ReadSocket.hpp"
-#include "ReadCSV.hpp"
-#include "ZeroMQPushPull.hpp"
-#include "TopK.hpp"
-#include "Expression.hpp"
-#include "Filter.hpp"
-#include "Netflow.hpp"
-//#include "Learning.hpp"
-#include "Identity.hpp"
+#include <sam/ReadSocket.hpp>
+#include <sam/ReadCSV.hpp>
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/TopK.hpp>
+#include <sam/Expression.hpp>
+#include <sam/Filter.hpp>
+#include <sam/Netflow.hpp>
+//#include <sam/Learning.hpp>
+#include <sam/Identity.hpp>
 
 #define DEBUG 1
 

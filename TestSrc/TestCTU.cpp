@@ -10,14 +10,13 @@
 #include <stdio.h>
 #include <deque>
 
-#include "Netflow.hpp"
-#include "FeatureSubscriber.hpp"
-//#include "ZeroMQPushPull.hpp"
-#include "ReadCSV.hpp"
-#include "Identity.hpp"
-#include "ExponentialHistogramSum.hpp"
-#include "ExponentialHistogramVariance.hpp"
-#include "ZeroMQPushPull.hpp"
+#include <sam/Netflow.hpp>
+#include <sam/FeatureSubscriber.hpp>
+#include <sam/ReadCSV.hpp>
+#include <sam/Identity.hpp>
+#include <sam/ExponentialHistogramSum.hpp>
+#include <sam/ExponentialHistogramVariance.hpp>
+#include <sam/ZeroMQPushPull.hpp>
 
 using namespace sam;
 

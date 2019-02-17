@@ -6,8 +6,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "ZeroMQPushPull.hpp"
-#include "NetflowGenerators.hpp"
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/NetflowGenerators.hpp>
 #include <zmq.hpp>
 
 using namespace sam;

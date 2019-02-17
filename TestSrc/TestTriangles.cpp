@@ -6,11 +6,11 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "ZeroMQPushPull.hpp"
-#include "NetflowGenerators.hpp"
-#include "GraphStore.hpp"
-#include "EdgeDescription.hpp"
-#include "SubgraphQuery.hpp"
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/NetflowGenerators.hpp>
+#include <sam/GraphStore.hpp>
+#include <sam/EdgeDescription.hpp>
+#include <sam/SubgraphQuery.hpp>
 #include <zmq.hpp>
 #include <cstdlib>
 #include <chrono>

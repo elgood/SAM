@@ -1,11 +1,11 @@
 #define BOOST_TEST_MAIN TestVertexConstraintChecker
 
 #include <boost/test/unit_test.hpp>
-#include "VertexConstraintChecker.hpp"
-#include "SubgraphQueryResult.hpp"
-#include "SubgraphQuery.hpp"
-#include "FeatureMap.hpp"
-#include "EdgeDescription.hpp"
+#include <sam/VertexConstraintChecker.hpp>
+#include <sam/SubgraphQueryResult.hpp>
+#include <sam/SubgraphQuery.hpp>
+#include <sam/FeatureMap.hpp>
+#include <sam/EdgeDescription.hpp>
 
 using namespace sam;
 using namespace sam;

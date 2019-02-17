@@ -17,21 +17,21 @@
 //#include <mlpack/core.hpp>
 //#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
 
-#include "ReadSocket.hpp"
-#include "ReadCSV.hpp"
-#include "ZeroMQPushPull.hpp"
-#include "TopK.hpp"
-#include "Expression.hpp"
-#include "TupleExpression.hpp"
-#include "Filter.hpp"
-#include "ExponentialHistogramSum.hpp"
-#include "ExponentialHistogramVariance.hpp"
-#include "Netflow.hpp"
-#include "TransformProducer.hpp"
-#include "Project.hpp"
-#include "CollapsedConsumer.hpp"
-//#include "Learning.hpp"
-#include "Identity.hpp"
+#include <sam/ReadSocket.hpp>
+#include <sam/ReadCSV.hpp>
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/TopK.hpp>
+#include <sam/Expression.hpp>
+#include <sam/TupleExpression.hpp>
+#include <sam/Filter.hpp>
+#include <sam/ExponentialHistogramSum.hpp>
+#include <sam/ExponentialHistogramVariance.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/TransformProducer.hpp>
+#include <sam/Project.hpp>
+#include <sam/CollapsedConsumer.hpp>
+//#include <sam/Learning.hpp>
+#include <sam/Identity.hpp>
 
 //#define DEBUG 1
 

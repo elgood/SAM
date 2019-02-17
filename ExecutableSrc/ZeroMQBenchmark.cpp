@@ -7,8 +7,8 @@
 #include <vector>
 #include <string>
 #include <random>
-#include "Util.hpp"
-#include "ZeroMQUtil.hpp"
+#include <sam/Util.hpp>
+#include <sam/ZeroMQUtil.hpp>
 
 
 namespace po = boost::program_options;

@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 #include <zmq.hpp>
-#include "GraphStore.hpp"
-#include "NetflowGenerators.hpp"
-#include "FeatureMap.hpp"
+#include <sam/GraphStore.hpp>
+#include <sam/NetflowGenerators.hpp>
+#include <sam/FeatureMap.hpp>
 
 
 using namespace sam;

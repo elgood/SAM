@@ -1,7 +1,7 @@
 #define BOOST_TEST_MAIN TestTestProducers
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include "TestProducers.hpp"
+#include <sam/TestProducers.hpp>
 
 using namespace sam;
 

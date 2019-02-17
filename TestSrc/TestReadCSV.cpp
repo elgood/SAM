@@ -2,8 +2,8 @@
 #include <boost/test/unit_test.hpp>
 #include <string>
 #include <fstream>
-#include "NetflowGenerators.hpp"
-#include "ReadCSV.hpp"
+#include <sam/NetflowGenerators.hpp>
+#include <sam/ReadCSV.hpp>
 
 using namespace sam;
 

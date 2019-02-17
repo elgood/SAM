@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <boost/test/unit_test.hpp>
-#include "Expression.hpp"
+#include <sam/Expression.hpp>
 
 using std::string;
 using std::vector;

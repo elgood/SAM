@@ -3,8 +3,8 @@
 #include <boost/lexical_cast.hpp>
 #include <stdexcept>
 #include <thread>
-#include "FeatureMap.hpp"
-#include "Features.hpp"
+#include <sam/FeatureMap.hpp>
+#include <sam/Features.hpp>
 
 using namespace sam; 
 

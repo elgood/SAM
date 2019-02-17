@@ -2,9 +2,9 @@
 #include <iostream>
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
-#include "DormantWindow.hpp"
-#include "ActiveWindow.hpp"
-#include "SlidingWindow.hpp"
+#include <sam/DormantWindow.hpp>
+#include <sam/ActiveWindow.hpp>
+#include <sam/SlidingWindow.hpp>
 
 using std::endl;
 using std::cout;

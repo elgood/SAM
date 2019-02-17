@@ -5,8 +5,8 @@
 #include <tuple>
 #include <string>
 #include <random>
-#include "Util.hpp"
-#include "Netflow.hpp"
+#include <sam/Util.hpp>
+#include <sam/Netflow.hpp>
 
 using namespace sam;
 

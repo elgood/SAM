@@ -2,11 +2,11 @@
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include <iostream>
-#include "TestProducers.hpp"
-#include "TopK.hpp"
-#include "Filter.hpp"
-#include "Expression.hpp"
-#include "Netflow.hpp"
+#include <sam/TestProducers.hpp>
+#include <sam/TopK.hpp>
+#include <sam/Filter.hpp>
+#include <sam/Expression.hpp>
+#include <sam/Netflow.hpp>
 
 using namespace sam;
 

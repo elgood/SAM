@@ -3,9 +3,9 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "SubgraphQuery.hpp"
-#include "Netflow.hpp"
-#include "FeatureMap.hpp"
+#include <sam/SubgraphQuery.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/FeatureMap.hpp>
 
 using namespace sam;
 

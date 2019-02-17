@@ -13,23 +13,23 @@
 
 #include <boost/program_options.hpp>
 
-#include "ReadSocket.hpp"
-#include "ReadFile.hpp"
-#include "ReadCSV.hpp"
-#include "ZeroMQPushPull.hpp"
-#include "TopK.hpp"
-#include "Expression.hpp"
-#include "TupleExpression.hpp"
-#include "Filter.hpp"
-#include "ExponentialHistogramSum.hpp"
-#include "ExponentialHistogramVariance.hpp"
-#include "Netflow.hpp"
-#include "TransformProducer.hpp"
-#include "Project.hpp"
-#include "CollapsedConsumer.hpp"
-#include "Identity.hpp"
-#include "AbstractDataSource.hpp"
-#include "Netflow.hpp"
+#include <sam/ReadSocket.hpp>
+#include <sam/ReadFile.hpp>
+#include <sam/ReadCSV.hpp>
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/TopK.hpp>
+#include <sam/Expression.hpp>
+#include <sam/TupleExpression.hpp>
+#include <sam/Filter.hpp>
+#include <sam/ExponentialHistogramSum.hpp>
+#include <sam/ExponentialHistogramVariance.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/TransformProducer.hpp>
+#include <sam/Project.hpp>
+#include <sam/CollapsedConsumer.hpp>
+#include <sam/Identity.hpp>
+#include <sam/AbstractDataSource.hpp>
+#include <sam/Netflow.hpp>
 
 using std::string;
 using std::vector;

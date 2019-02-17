@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 #include <zmq.hpp>
-#include "Edge.hpp"
-#include "Netflow.hpp"
-#include "NetflowGenerators.hpp"
+#include <sam/Edge.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/NetflowGenerators.hpp>
 
 using namespace sam;
 

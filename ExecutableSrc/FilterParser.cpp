@@ -6,7 +6,7 @@
 #include <boost/spirit/include/qi_parse.hpp>
 #include <string>
 
-//#include "Grammars.hpp"
+//#include <sam/Grammars.hpp>
 
 //using boost::spirit::ascii::space;
 

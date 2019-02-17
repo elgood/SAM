@@ -3,12 +3,12 @@
 //#define DEBUG
 
 #include <boost/test/unit_test.hpp>
-#include "Util.hpp"
-#include "SubgraphQuery.hpp"
-#include "SubgraphQueryResult.hpp"
-#include "SubgraphQueryResultMap.hpp"
-#include "Netflow.hpp"
-#include "NetflowGenerators.hpp"
+#include <sam/Util.hpp>
+#include <sam/SubgraphQuery.hpp>
+#include <sam/SubgraphQueryResult.hpp>
+#include <sam/SubgraphQueryResultMap.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/NetflowGenerators.hpp>
 
 
 using namespace sam;

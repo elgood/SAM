@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <boost/test/unit_test.hpp>
-#include "FeatureMap.hpp"
+#include <sam/FeatureMap.hpp>
 
 using namespace sam;
 

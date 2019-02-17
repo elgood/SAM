@@ -1,7 +1,7 @@
 #define BOOST_TEST_MAIN TestNetflow
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
-#include "Netflow.hpp"
+#include <sam/Netflow.hpp>
 
 using namespace sam;
 

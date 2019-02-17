@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestNull
 
-#include "Null.hpp"
+#include <sam/Null.hpp>
 #include <string>
 #include <boost/test/unit_test.hpp>
 

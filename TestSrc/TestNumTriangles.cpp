@@ -5,9 +5,9 @@
 
 //#define DEBUG
 
-#include "Util.hpp"
-#include "NetflowGenerators.hpp"
-#include "Netflow.hpp"
+#include <sam/Util.hpp>
+#include <sam/NetflowGenerators.hpp>
+#include <sam/Netflow.hpp>
 #include <boost/test/unit_test.hpp>
 #include <map>
 

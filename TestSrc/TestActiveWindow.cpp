@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestActiveWindow
 #include <boost/test/unit_test.hpp>
-#include "ActiveWindow.hpp"
+#include <sam/ActiveWindow.hpp>
 
 using namespace sam;
 

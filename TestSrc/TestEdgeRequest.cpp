@@ -1,8 +1,8 @@
 #define BOOST_TEST_MAIN TestEdgeRequest
 #include <boost/test/unit_test.hpp>
-#include "EdgeRequest.hpp"
-#include "Netflow.hpp"
-#include "Null.hpp"
+#include <sam/EdgeRequest.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/Null.hpp>
 
 using namespace sam;
 

@@ -6,11 +6,11 @@
 #include <zmq.hpp>
 #include <thread>
 #include <atomic>
-#include "Edge.hpp"
-#include "Netflow.hpp"
-#include "NetflowGenerators.hpp"
-#include "CompressedSparse.hpp"
-#include "Util.hpp"
+#include <sam/Edge.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/NetflowGenerators.hpp>
+#include <sam/CompressedSparse.hpp>
+#include <sam/Util.hpp>
 
 using namespace sam;
 

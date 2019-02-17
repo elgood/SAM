@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestTemporalSet
 
-#include "TemporalSet.hpp"
+#include <sam/TemporalSet.hpp>
 #include <boost/test/unit_test.hpp>
 #include <thread>
 #include <vector>

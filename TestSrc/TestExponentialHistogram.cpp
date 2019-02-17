@@ -1,7 +1,7 @@
 #define BOOST_TEST_MAIN TestExponentialHistogram
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
-#include "ExponentialHistogram.hpp"
+#include <sam/ExponentialHistogram.hpp>
 
 using namespace sam;
 

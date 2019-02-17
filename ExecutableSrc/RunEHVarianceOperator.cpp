@@ -2,9 +2,9 @@
 
 //#define DEBUG 1
 
-#include "ReadSocket.hpp"
-#include "ZeroMQPushPull.hpp"
-#include "ExponentialHistogramVariance.hpp"
+#include <sam/ReadSocket.hpp>
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/ExponentialHistogramVariance.hpp>
 
 #include <boost/program_options.hpp>
 

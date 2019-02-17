@@ -1,7 +1,7 @@
 #define BOOST_TEST_MAIN TestEdgeDescription
 #include <boost/test/unit_test.hpp>
-#include "EdgeDescription.hpp"
-#include "Netflow.hpp"
+#include <sam/EdgeDescription.hpp>
+#include <sam/Netflow.hpp>
 
 using namespace sam;
 

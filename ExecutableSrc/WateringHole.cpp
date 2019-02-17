@@ -6,12 +6,12 @@
  * Author: elgood
  */
 
-#include "GraphStore.hpp"
-#include "EdgeDescription.hpp"
-#include "SubgraphQuery.hpp"
-#include "ZeroMQPushPull.hpp"
-#include "ReadSocket.hpp"
-#include "TopK.hpp"
+#include <sam/GraphStore.hpp>
+#include <sam/EdgeDescription.hpp>
+#include <sam/SubgraphQuery.hpp>
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/ReadSocket.hpp>
+#include <sam/TopK.hpp>
 #include <boost/program_options.hpp>
 #include <string>
 #include <vector>

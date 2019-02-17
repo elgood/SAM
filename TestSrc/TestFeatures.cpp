@@ -1,7 +1,7 @@
 #define BOOST_TEST_MAIN TestActiveWindow
 #include <boost/test/unit_test.hpp>
-#include "Features.hpp"
-#include "FeatureMap.hpp"
+#include <sam/Features.hpp>
+#include <sam/FeatureMap.hpp>
 
 using namespace sam;
 

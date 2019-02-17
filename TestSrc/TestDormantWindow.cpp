@@ -1,8 +1,8 @@
 #define BOOST_TEST_MAIN TestDormantWindow
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
-#include "DormantWindow.hpp"
-#include "ActiveWindow.hpp"
+#include <sam/DormantWindow.hpp>
+#include <sam/ActiveWindow.hpp>
 
 using namespace sam;
 

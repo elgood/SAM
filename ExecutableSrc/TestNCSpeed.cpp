@@ -12,7 +12,7 @@
 #include <chrono>
 #include <stdlib.h>
 
-#include "ReadSocket.hpp"
+#include <sam/ReadSocket.hpp>
 
 
 namespace po = boost::program_options;

@@ -6,8 +6,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "GraphStore.hpp"
-#include "NetflowGenerators.hpp"
+#include <sam/GraphStore.hpp>
+#include <sam/NetflowGenerators.hpp>
 #include <zmq.hpp>
 
 using namespace sam;

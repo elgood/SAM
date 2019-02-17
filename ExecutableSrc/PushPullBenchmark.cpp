@@ -2,7 +2,7 @@
 //#define DEBUG
 
 #include <boost/program_options.hpp>
-#include "ZeroMQUtil.hpp"
+#include <sam/ZeroMQUtil.hpp>
 
 /**
  * Benchmarking the PullPull class.

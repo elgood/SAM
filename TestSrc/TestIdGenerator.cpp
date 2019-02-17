@@ -2,7 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 #include <string>
-#include "IdGenerator.hpp"
+#include <sam/IdGenerator.hpp>
 #include <atomic>
 #include <thread>
 

@@ -8,8 +8,8 @@
 #define DETAIL_TIMING
 #include <fstream>
 #include <boost/program_options.hpp>
-#include "Util.hpp"
-#include "Netflow.hpp"
+#include <sam/Util.hpp>
+#include <sam/Netflow.hpp>
 
 
 namespace po = boost::program_options;

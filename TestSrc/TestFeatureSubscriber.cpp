@@ -7,13 +7,13 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
-#include "FeatureProducer.hpp"
-#include "FeatureSubscriber.hpp"
-#include "NetflowGenerators.hpp"
-#include "TestProducers.hpp"
-#include "FeatureMap.hpp"
-#include "ExponentialHistogramSum.hpp"
-#include "ExponentialHistogramVariance.hpp"
+#include <sam/FeatureProducer.hpp>
+#include <sam/FeatureSubscriber.hpp>
+#include <sam/NetflowGenerators.hpp>
+#include <sam/TestProducers.hpp>
+#include <sam/FeatureMap.hpp>
+#include <sam/ExponentialHistogramSum.hpp>
+#include <sam/ExponentialHistogramVariance.hpp>
 #include <stdio.h>
 
 using namespace sam;

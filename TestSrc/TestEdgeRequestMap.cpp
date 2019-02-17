@@ -4,8 +4,8 @@
 #define METRICS
 
 #include <boost/test/unit_test.hpp>
-#include "EdgeRequestMap.hpp"
-#include "NetflowGenerators.hpp"
+#include <sam/EdgeRequestMap.hpp>
+#include <sam/NetflowGenerators.hpp>
 #include <thread>
 
 using namespace sam;

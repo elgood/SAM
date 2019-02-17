@@ -3,9 +3,9 @@
 #include <stdexcept>
 #include <stack>
 #include <tuple>
-#include "Tokens.hpp"
-#include "Netflow.hpp"
-#include "FeatureMap.hpp"
+#include <sam/Tokens.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/FeatureMap.hpp>
 
 using namespace sam;
 

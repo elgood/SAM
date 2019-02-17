@@ -1,7 +1,7 @@
 #define BOOST_TEST_MAIN TestSimpleSum
 #include <boost/test/unit_test.hpp>
-#include "SimpleSum.hpp"
-#include "Netflow.hpp"
+#include <sam/SimpleSum.hpp>
+#include <sam/Netflow.hpp>
 
 using namespace sam;
 using std::string;

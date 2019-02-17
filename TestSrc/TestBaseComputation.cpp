@@ -3,9 +3,9 @@
 #include <stdexcept>
 #include <vector>
 #include <string>
-#include "BaseComputation.hpp"
-#include "Netflow.hpp"
-#include "Util.hpp"
+#include <sam/BaseComputation.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/Util.hpp>
 
 using namespace sam;
 

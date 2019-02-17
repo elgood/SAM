@@ -2,7 +2,7 @@
 
 #include <zmq.hpp>
 #include <boost/lexical_cast.hpp>
-#include "Util.hpp"
+#include <sam/Util.hpp>
 
 using namespace sam;
 

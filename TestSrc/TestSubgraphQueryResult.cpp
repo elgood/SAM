@@ -1,10 +1,10 @@
 #define BOOST_TEST_MAIN TestSubgraphQueryResult
 
 #include <boost/test/unit_test.hpp>
-#include "Util.hpp"
-#include "SubgraphQueryResult.hpp"
-#include "SubgraphQuery.hpp"
-#include "FeatureMap.hpp"
+#include <sam/Util.hpp>
+#include <sam/SubgraphQueryResult.hpp>
+#include <sam/SubgraphQuery.hpp>
+#include <sam/FeatureMap.hpp>
 
 using namespace sam;
 

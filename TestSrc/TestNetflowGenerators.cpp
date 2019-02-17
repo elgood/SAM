@@ -7,9 +7,9 @@
 #include <string>
 #include <map>
 #include <vector>
-#include "NetflowGenerators.hpp"
-#include "Netflow.hpp"
-#include "Util.hpp"
+#include <sam/NetflowGenerators.hpp>
+#include <sam/Netflow.hpp>
+#include <sam/Util.hpp>
 
 using namespace sam;
 

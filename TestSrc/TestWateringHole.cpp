@@ -4,10 +4,10 @@
 #define BOOST_TEST_MAIN TestWateringHole
 #include <boost/test/unit_test.hpp>
 #include <chrono>
-#include "GraphStore.hpp"
-#include "NetflowGenerators.hpp"
-#include "ZeroMQPushPull.hpp"
-#include "TopK.hpp"
+#include <sam/GraphStore.hpp>
+#include <sam/NetflowGenerators.hpp>
+#include <sam/ZeroMQPushPull.hpp>
+#include <sam/TopK.hpp>
 
 
 using namespace sam;
