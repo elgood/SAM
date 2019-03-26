@@ -11,9 +11,9 @@ SAM.
 * proto - The protobuf description files.
 * scripts - Largely python code that was used to perform analysis.
 
-To build:
-cd SAM
-mkdir build
-cd build
-cmake ..
-make
+To build:  
+cd SAM  
+mkdir build  
+cd build  
+cmake ..  
+make  
