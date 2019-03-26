@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 2.6)
 
 project(SAM)
 
+add_subdirectory(SAL)
+
 ENABLE_LANGUAGE(CXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
