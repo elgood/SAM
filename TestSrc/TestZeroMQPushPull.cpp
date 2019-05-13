@@ -8,12 +8,15 @@
 #include <vector>
 #include <sam/ZeroMQPushPull.hpp>
 #include <sam/NetflowGenerators.hpp>
+#include <sam/Util.hpp>
 #include <zmq.hpp>
 
 using namespace sam;
 
-typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, NetflowTuplizer, 
-                       StringHashFunction>
+typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 zmq::context_t context(1);

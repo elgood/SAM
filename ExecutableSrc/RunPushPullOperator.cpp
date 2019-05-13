@@ -25,8 +25,9 @@ using std::endl;
 namespace po = boost::program_options;
 using namespace sam;
 
-typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, 
-        NetflowTuplizer, StringHashFunction>
+typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 int main(int argc, char** argv) {

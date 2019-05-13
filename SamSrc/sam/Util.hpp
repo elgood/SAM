@@ -169,13 +169,31 @@ uint64_t hashFunction(std::string const& key)
   return hash;
 }
 
+/**
+ * A function object for hashing strings using std::hash.
+ */
 class StringHashFunction
 {
 public:
   inline
   uint64_t operator()(std::string const& s) const {
     return std::hash<std::string>{}(s);
-    //return hashFunction(s);
+  }
+};
+
+/**
+ * A templated function object for hashing string using std::hash.
+ * The first template parameter is the tuple type, which is passed to
+ * the () operator.  The Index parameter indicates which tuple element
+ * should be extracted from the tuple and then hashed.
+ */
+template <typename TupleType, int Index>
+class TupleStringHashFunction
+{
+public:
+  inline
+  uint64_t operator()(TupleType const& tuple) const {
+    return std::hash<std::string>{}(std::get<Index>(tuple));
   }
 };
 
@@ -667,7 +685,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
   std::list<PartialTriangleType>* alr = 
     new std::list<PartialTriangleType>[tableSize];
 
-  StringHashFunction hash;
+  TupleStringHashFunction<TupleType, source> hashSource;
 
   size_t numProcessed = 0;
 
@@ -696,9 +714,10 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     // Lock used to add things to newPartials in a thread-safe way.
     std::mutex lock;
  
-    std::string src = std::get<source>(tuple);
-    size_t index = hash(src) % tableSize; 
-    DEBUG_PRINT("Looking for src %s index %lu\n", src.c_str(), index);
+    //std::string src = std::get<source>(tuple);
+    size_t index = hashSource(tuple) % tableSize; 
+    DEBUG_PRINT("Looking for src %s index %lu\n", 
+      std::get<source>(tuple).c_str(), index);
 
     //DEBUG_PRINT("num partialTriangles %lu\n", countPartials(alr, tableSize));
 
@@ -739,21 +758,20 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
       threads[t] = std::thread([&alr, &mutexes, &newPartials, t,
        numThreads, tuple, queryTime, &lock, &numTriangles, tableSize  ]() 
       {
-        StringHashFunction hash;
+        TupleStringHashFunction<TupleType, target> hashTarget;
 
         size_t beg = get_begin_index(newPartials.size(), t, numThreads); 
         size_t end = get_end_index(newPartials.size(), t, numThreads);
         for (size_t i = beg; i < end; i++) {
           PartialTriangleType partial = newPartials[i];
-          std::string trg;
+          size_t index;
           if (partial.numEdges == 1) {
-            trg = std::get<target>(partial.netflow1);
+            index = hashTarget(partial.netflow1);
           } else {
-            trg = std::get<target>(partial.netflow2);
+            index = hashTarget(partial.netflow2);
           }
-          size_t index = hash(trg) % tableSize;
           DEBUG_PRINT("Hashing partial %s based on target %s index %lu\n",
-            partial.toString().c_str(), trg.c_str(), index);
+            partial.toString().c_str(), std::get<target>(tuple).c_str(), index);
           mutexes[index].lock();
           alr[index].push_back(partial);
           mutexes[index].unlock();

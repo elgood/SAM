@@ -44,8 +44,9 @@ typedef GraphStoreType::QueryType SubgraphQueryType;
 
 typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 
-typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, 
-        NetflowTuplizer, StringHashFunction>
+typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 typedef GraphStoreType::ResultType ResultType;  

@@ -31,41 +31,31 @@ public:
   ZeroMQPushPullException(std::string message) : std::runtime_error(message) {}
 };
 
-template <typename TupleType, size_t source, size_t target, 
-          typename Tuplizer, typename HF>
+//template <typename TupleType, size_t source, size_t target, 
+//          typename Tuplizer, typename HF>
+template <typename TupleType, typename Tuplizer, typename... HF>
 class ZeroMQPushPull : public AbstractConsumer<std::string>, 
                        public BaseProducer<TupleType>
 {
 public:
-  typedef typename std::tuple_element<source, TupleType>::type SourceType;
-  typedef typename std::tuple_element<target, TupleType>::type TargetType;
+  //typedef typename std::tuple_element<source, TupleType>::type SourceType;
+  //typedef typename std::tuple_element<target, TupleType>::type TargetType;
   typedef typename PushPull::FunctionType FunctionType;
 
 private:
-  HF hash; ///> Hashes
+  //HF hash; ///> Hashes
   Tuplizer tuplizer; ///> Converts from string to tuple
   SimpleIdGenerator idGenerator; ///> Generates unique id for each tuple
-  //volatile bool stopPull = false; ///> Allows exit from pullThread
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
   std::vector<std::string> hostnames; ///> The hostnames of all the nodes
-  //std::vector<std::size_t> ports;  ///> The ports of all the nodes
-  size_t startingPort;
-  bool local;
+  size_t startingPort;  ///> Starting port from which the range is created.
+  bool local; ///> Indicates that we are running on one node.
   uint32_t hwm;  ///> The high water mark
   std::atomic<bool> terminated;
 
   size_t consumeCount = 0; ///> How many items this node has seen through feed()
   size_t metricInterval = 100000; ///> How many seen before spitting metrics out
-
-  /// The zmq context
-  //zmq::context_t& context; // = zmq::context_t(1);
-
-  /// A vector of all the push sockets
-  //std::vector<std::shared_ptr<zmq::socket_t> > pushers;
-
-  // The thread that polls the pull sockets
-  //std::thread pullThread;
 
 public:
 
@@ -77,7 +67,11 @@ public:
    * \param numNodes The number of nodes in the cluster.
    * \param nodeId The id of this node.
    * \param hostnames The hostnames of the nodes in the cluster.
-   * \param ports The ports to connect to for each node in the cluster.
+   * \param startingPort Specifies the begining of the range of ports used
+   *                      by the communicator.
+   * \param timeout Communicator parameter specifying how long to wait when
+   *                 trying to send a message to a socket.
+   * \param local Specifies that we aren't actually talking to any other nodes.
    * \param hwm The high water mark.
    */
   ZeroMQPushPull(//zmq::context_t& context,
@@ -85,7 +79,6 @@ public:
                  size_t numNodes, 
                  size_t nodeId, 
                  std::vector<std::string> hostnames, 
-                 //std::vector<std::size_t> ports, 
                  size_t startingPort,
                  size_t timeout,
                  bool local,
@@ -109,12 +102,6 @@ public:
    */
   void terminate();
 
-  /**
-   * Starts up the the pull thread to accept data.  This allows us to register
-   * consumers before reading data.
-   */
-  //void acceptData(); 
-  
   size_t getConsumeCount() const { return consumeCount; }
 
 
@@ -122,22 +109,46 @@ public:
 private:
   bool acceptingData = false;
   PushPull* communicator;
+
+  /**
+   * Compile-time base function of recursion for sending tuples along all
+   * partition dimensions.
+   *
+   * \param tuple The tuple to send.
+   * \param s The tuple in string form.
+   * \param seenNodes Keeps track of which nodes have seen the tuple already.
+   */
+  template<typename TupleType2>
+  void sendTuple(TupleType2 const& tuple,
+                 std::string const& s,
+                 std::set<int> seenNodes);
+  /**
+   * Compile-time recursive function of for sending tuples along all
+   * partition dimensions.
+   *
+   * \param tuple The tuple to send.
+   * \param s The tuple in string form.
+   * \param seenNodes Keeps track of which nodes have seen the tuple already.
+   */
+  template<typename TupleType2, typename First, typename... Rest>
+  void sendTuple(TupleType2 const& tuple,
+                 std::string const& s,
+                 std::set<int> seenNodes);
+
 };
 
-template <typename TupleType, size_t source, size_t target, 
-          typename Tuplizer, typename HF>
-ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
+template <typename TupleType, typename Tuplizer, typename... HF>
+ZeroMQPushPull<TupleType, Tuplizer, HF...>::ZeroMQPushPull(
                  //zmq::context_t& _context,
                  size_t queueLength,
                  size_t numNodes, 
                  size_t nodeId, 
                  std::vector<std::string> hostnames, 
-                 //std::vector<std::size_t> ports, 
                  size_t startingPort,
                  size_t timeout,
                  bool local,
                  size_t hwm)
-  : //context(_context),
+  : 
   BaseProducer<TupleType>(queueLength)
 {
   this->numNodes  = numNodes;
@@ -169,13 +180,10 @@ ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::ZeroMQPushPull(
   communicator = new PushPull(numNodes, nodeId, numPushSockets, numPullThreads,
                               hostnames, hwm, communicatorFunctions,
                               startingPort, timeout, local); 
-
-
 }
 
-template <typename TupleType, size_t source, size_t target, 
-          typename Tuplizer, typename HF>
-void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate() 
+template <typename TupleType, typename Tuplizer, typename ...HF>
+void ZeroMQPushPull<TupleType, Tuplizer, HF...>::terminate() 
 {
   printf("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
   if (!terminated) {
@@ -191,10 +199,46 @@ void ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::terminate()
   DEBUG_PRINT("Node %lu exiting ZeroMQPushPull::terminate\n", nodeId);
 }
 
+template <typename TupleType, typename Tuplizer, typename ...HF>
+template<typename TupleType2>
+void ZeroMQPushPull<TupleType, Tuplizer, HF...>::sendTuple(
+  TupleType2 const& tuple,
+  std::string const& s,
+  std::set<int> seenNodes)
+{}
 
-template <typename TupleType, size_t source, size_t target, 
-          typename Tuplizer, typename HF>
-bool ZeroMQPushPull<TupleType, source, target, Tuplizer, HF>::
+template <typename TupleType, typename Tuplizer, typename ...HF>
+template<typename TupleType2, typename First, typename... Rest>
+void ZeroMQPushPull<TupleType, Tuplizer, HF...>::sendTuple(
+  TupleType2 const& tuple,
+  std::string const& s,
+  std::set<int> seenNodes)
+{
+  First first;
+  size_t node1 = first(tuple) % numNodes;
+
+  if (node1 != this->nodeId) { // Don't send data to ourselves.
+           
+    if (seenNodes.count(node1) == 0) {
+      DEBUG_PRINT("Node %lu ZeroMQPushPull::consume because of source "
+             "sending to %lu %s\n", nodeId, node1, s.c_str());
+      communicator->send(s, node1);
+    }
+  } else {
+    DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel "
+      "feed %s\n", nodeId, s.c_str());
+
+    uint32_t id = idGenerator.generate();
+    TupleType tuple = tuplizer(id, s);
+    this->parallelFeed(tuple);
+  }
+
+  sendTuple<TupleType, Rest...>(tuple, s, seenNodes);
+}
+
+
+template <typename TupleType, typename Tuplizer, typename ...HF>
+bool ZeroMQPushPull<TupleType, Tuplizer, HF...>::
 consume(std::string const& s)
 {
   //if (!acceptingData) {
@@ -221,7 +265,13 @@ consume(std::string const& s)
     printf("%s", debugMessage.c_str());
   }
 
-  SourceType src = std::get<source>(tuple);
+  std::set<int> seenNodes; ///> Keeps track of which nodes have seen the tuple.
+  
+  // Compile time recursive call to send the tuple along all partition
+  // dimensions.
+  sendTuple<TupleType, HF...>(tuple, s, seenNodes);  
+
+  /*SourceType src = std::get<source>(tuple);
   SourceType trg = std::get<target>(tuple);
 
   size_t node1 = hash(src) % numNodes;
@@ -265,7 +315,7 @@ consume(std::string const& s)
       TupleType tuple = tuplizer(id, s);
       this->parallelFeed(tuple);
     }
-  }
+  }*/
   return true;
 }
 

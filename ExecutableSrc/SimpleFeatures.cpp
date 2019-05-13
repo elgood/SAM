@@ -39,7 +39,6 @@
 #include <sam/TransformProducer.hpp>
 #include <sam/Project.hpp>
 #include <sam/CollapsedConsumer.hpp>
-//#include <sam/Learning.hpp>
 #include <sam/Identity.hpp>
 
 using std::string;
@@ -52,8 +51,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,  
-        NetflowTuplizer, StringHashFunction>
+typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 //zmq::context_t context(1);

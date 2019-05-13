@@ -1,6 +1,6 @@
 /*
  * Servers.cpp
- * This does the server query as described in Disclosure.
+ * This performs the server query as described in Disclosure.
  *
  *  Created on: March 15, 2017
  *      Author: elgood
@@ -15,9 +15,6 @@
 
 #include <boost/program_options.hpp>
 
-//#include <mlpack/core.hpp>
-//#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
-
 #include <sam/ReadSocket.hpp>
 #include <sam/ReadCSV.hpp>
 #include <sam/ZeroMQPushPull.hpp>
@@ -25,7 +22,6 @@
 #include <sam/Expression.hpp>
 #include <sam/Filter.hpp>
 #include <sam/Netflow.hpp>
-//#include <sam/Learning.hpp>
 #include <sam/Identity.hpp>
 
 #define DEBUG 1
@@ -40,11 +36,10 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, 
-        NetflowTuplizer, StringHashFunction>
+typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
-
-//zmq::context_t context(1);
 
 void createPipeline(
                  std::shared_ptr<ReadCSV> readCSV,

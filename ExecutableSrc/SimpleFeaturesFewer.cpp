@@ -41,8 +41,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
-        NetflowTuplizer, StringHashFunction>
+typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 //zmq::context_t context(1);

@@ -31,8 +31,9 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 
 typedef GraphStoreType::QueryType SubgraphQueryType;
 
-typedef ZeroMQPushPull<Netflow, SourceIp, DestIp,
-        NetflowTuplizer, StringHashFunction>
+typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 int main(int argc, char** argv)

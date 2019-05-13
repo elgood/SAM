@@ -14,9 +14,6 @@
 
 #include <boost/program_options.hpp>
 
-//#include <mlpack/core.hpp>
-//#include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
-
 #include <sam/ReadSocket.hpp>
 #include <sam/ReadCSV.hpp>
 #include <sam/ZeroMQPushPull.hpp>
@@ -30,7 +27,6 @@
 #include <sam/TransformProducer.hpp>
 #include <sam/Project.hpp>
 #include <sam/CollapsedConsumer.hpp>
-//#include <sam/Learning.hpp>
 #include <sam/Identity.hpp>
 
 //#define DEBUG 1
@@ -44,11 +40,10 @@ namespace po = boost::program_options;
 
 using namespace sam;
 using namespace std::chrono;
-//using namespace mlpack;
-//using namespace mlpack::naive_bayes;
 
-typedef ZeroMQPushPull<Netflow, SourceIp, DestIp, 
-        NetflowTuplizer, StringHashFunction>
+typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 //zmq::context_t context(1);
