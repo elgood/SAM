@@ -7,16 +7,17 @@
 #include <string>
 #include <vector>
 #include <sam/ZeroMQPushPull.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/Util.hpp>
 #include <zmq.hpp>
 
 using namespace sam;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
 
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 zmq::context_t context(1);
@@ -45,8 +46,8 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
 
   size_t n = 10000;
 
-  AbstractNetflowGenerator* generator0 = new UniformDestPort("192.168.0.1", 1);
-  AbstractNetflowGenerator* generator1 = new UniformDestPort("192.168.0.2", 1);
+  AbstractVastNetflowGenerator* generator0 = new UniformDestPort("192.168.0.1", 1);
+  AbstractVastNetflowGenerator* generator1 = new UniformDestPort("192.168.0.2", 1);
    
   PartitionType* pushPull0 = new PartitionType(queueLength,
                                     numNodes, nodeId0,
@@ -61,7 +62,7 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
                                     hwm);
 
 
-  auto function = [n](AbstractNetflowGenerator *generator,
+  auto function = [n](AbstractVastNetflowGenerator *generator,
                       PartitionType* pushPull)
   {
     for(size_t i = 0; i < n; i++) {

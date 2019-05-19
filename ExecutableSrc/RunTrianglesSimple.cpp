@@ -16,7 +16,7 @@
 #include <sam/EdgeDescription.hpp>
 #include <sam/SubgraphQuery.hpp>
 #include <sam/ZeroMQPushPull.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <boost/program_options.hpp>
 #include <string>
 #include <vector>
@@ -28,7 +28,7 @@ using std::string;
 using std::vector;
 using namespace std::chrono;
 
-typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
+typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -38,11 +38,11 @@ typedef GraphStoreType::QueryType SubgraphQueryType;
 
 typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 int main(int argc, char** argv) {
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
   size_t modValue = numNetflows / numTriangles;
 
   // Setting up the random netflow generator
-  AbstractNetflowGenerator* generator = new RandomGenerator();
+  AbstractVastNetflowGenerator* generator = new RandomGenerator();
 
   // All the hosts in the cluster.  The names are created with a 
   // concatenation of prefix with integer id of the node.
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
         boost::lexical_cast<std::string>(triangleCounter) +
         "_" + boost::lexical_cast<std::string>(nodeId);
 
-      Netflow netflow0 = makeNetflow(0, str);
+      VastNetflow netflow0 = makeNetflow(0, str);
       std::get<SourceIp>(netflow0) = nodex;
       std::get<DestIp>(netflow0) = nodey;
 
@@ -235,8 +235,8 @@ int main(int argc, char** argv) {
       time += increment;
       std::string str2 = generator->generate(time);
       time += increment;
-      Netflow netflow1 = makeNetflow(0, str1);
-      Netflow netflow2 = makeNetflow(0, str2);
+      VastNetflow netflow1 = makeNetflow(0, str1);
+      VastNetflow netflow2 = makeNetflow(0, str2);
       std::get<SourceIp>(netflow1) = nodey;
       std::get<DestIp>(netflow1) = nodez;
       std::get<SourceIp>(netflow2) = nodez;

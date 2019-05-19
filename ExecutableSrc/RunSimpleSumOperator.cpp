@@ -18,7 +18,7 @@
 #include <sam/ReadSocket.hpp>
 #include <sam/ZeroMQPushPull.hpp>
 #include <sam/SimpleSum.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 
 using std::string;
 using std::vector;
@@ -30,9 +30,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash> 
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash> 
         PartitionType;
 
 int main(int argc, char** argv) {
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
   auto featureMap = std::make_shared<FeatureMap>();
   for (int i = 0; nop > 0 && i < nop; i++) {
     string identifier = "simplesum" + boost::lexical_cast<string>(i);
-    auto sum = std::make_shared<SimpleSum<size_t, Netflow, 14, DestIp>>
+    auto sum = std::make_shared<SimpleSum<size_t, VastNetflow, 14, DestIp>>
                     (N, nodeId, featureMap, identifier);
     consumer->registerConsumer(sum); 
   }

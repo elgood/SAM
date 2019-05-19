@@ -9,7 +9,7 @@
 #include <boost/foreach.hpp>
 #include <sam/FeatureProducer.hpp>
 #include <sam/FeatureSubscriber.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <sam/TestProducers.hpp>
 #include <sam/FeatureMap.hpp>
 #include <sam/ExponentialHistogramSum.hpp>
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   auto generator = std::make_shared<OnePairSizeDist>(destIp, sourceIp,
                             meanDestFlowSize, meanSourceFlowSize,
                             devDestFlowSize, devSourceFlowSize);
-  std::vector<std::shared_ptr<AbstractNetflowGenerator>> generators;
+  std::vector<std::shared_ptr<AbstractVastNetflowGenerator>> generators;
   generators.push_back(generator);
 
   int queueLength = 1000;
@@ -225,22 +225,22 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   int nodeId = 0;
   std::string idAveSourceFlowSize = "aveSourceFlowSize";
   auto aveSourceFlowSize = std::make_shared<ExponentialHistogramAve<
-                             double, Netflow, SrcPayloadBytes, DestIp>>(
+                             double, VastNetflow, SrcPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idAveSourceFlowSize);
                             
   std::string idAveDestFlowSize = "aveDestFlowSize";
   auto aveDestFlowSize = std::make_shared<ExponentialHistogramAve<
-                             double, Netflow, DestPayloadBytes, DestIp>>(
+                             double, VastNetflow, DestPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idAveDestFlowSize);
 
   std::string idVarSourceFlowSize = "varSourceFlowSize";
   auto varSourceFlowSize = std::make_shared<ExponentialHistogramVariance<
-                             double, Netflow, SrcPayloadBytes, DestIp>>(
+                             double, VastNetflow, SrcPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idVarSourceFlowSize);
   
   std::string idVarDestFlowSize = "varDestFlowSize";
   auto varDestFlowSize = std::make_shared<ExponentialHistogramVariance<
-                             double, Netflow, DestPayloadBytes, DestIp>>(
+                             double, VastNetflow, DestPayloadBytes, DestIp>>(
                              N, k, nodeId, featureMap, idVarDestFlowSize);
 
   // Connect the feature producers to the netflow producer. 

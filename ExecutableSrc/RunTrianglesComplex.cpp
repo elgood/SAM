@@ -21,7 +21,7 @@
 #include <sam/EdgeDescription.hpp>
 #include <sam/SubgraphQuery.hpp>
 #include <sam/ZeroMQPushPull.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <boost/program_options.hpp>
 #include <string>
 #include <vector>
@@ -34,7 +34,7 @@ using std::string;
 using std::vector;
 using namespace std::chrono;
 
-typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
+typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -44,9 +44,9 @@ typedef GraphStoreType::QueryType SubgraphQueryType;
 
 typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 typedef GraphStoreType::ResultType ResultType;  
@@ -274,10 +274,10 @@ int main(int argc, char** argv) {
   srand(nodeId);
 
   // Setting up the random pool generator
-  AbstractNetflowGenerator* generator = new RandomPoolGenerator(numVertices);
+  AbstractVastNetflowGenerator* generator = new RandomPoolGenerator(numVertices);
   
   // Used at the end to clear things out
-  AbstractNetflowGenerator *otherGenerator = new RandomGenerator(); 
+  AbstractVastNetflowGenerator *otherGenerator = new RandomGenerator(); 
 
   // All the hosts in the cluster.  The names are created with a 
   // concatenation of prefix with integer id of the node.
@@ -499,9 +499,9 @@ int main(int argc, char** argv) {
     {
       ResultType result = graphStore->getResult(i);
       //printf("%s\n", result.toString().c_str());
-      Netflow n0 = result.getResultTuple(0);
-      Netflow n1 = result.getResultTuple(1);
-      Netflow n2 = result.getResultTuple(2);
+      VastNetflow n0 = result.getResultTuple(0);
+      VastNetflow n1 = result.getResultTuple(1);
+      VastNetflow n2 = result.getResultTuple(2);
       double starttime0 = std::get<TimeSeconds>(n0);
       double starttime1 = std::get<TimeSeconds>(n1);
       double starttime2 = std::get<TimeSeconds>(n2);

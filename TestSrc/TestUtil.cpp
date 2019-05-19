@@ -6,7 +6,7 @@
 #include <string>
 #include <random>
 #include <sam/Util.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 
 using namespace sam;
 
@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_CASE( test_subtuple )
                          "20130410083236.384094,17,UDP,172.20.2.18," 
                          "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
 
-  Netflow netflow = makeNetflow(netflowString1);
+  VastNetflow netflow = makeNetflow(netflowString1);
 
   typedef std::tuple<std::string, int> OutputType;
   OutputType outTuple;
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE( test_generate_key )
                          "20130410083236.384094,17,UDP,172.20.2.18," 
                          "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
 
-  Netflow netflow = makeNetflow(netflowString1);
+  VastNetflow netflow = makeNetflow(netflowString1);
 
   std::string key = generateKey<ParseDate, TimeSeconds>(netflow);
   BOOST_CHECK_EQUAL(key, "2013-04-10 08:32:361365582756.384094"); 
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE( test_makeTuple_to_toString)
     " 06:59:04,20130411065904.468336,6,TCP,172.20.1.93,10.0.0.10,10582" 
     ",80,0,0,16,184,73140,2588,76064,40,54,0";
 
-  Netflow netflow = makeNetflow(netflowString);
+  VastNetflow netflow = makeNetflow(netflowString);
   
   std::string stringAgain = toString(netflow);
   BOOST_CHECK_EQUAL(netflowString, stringAgain); 

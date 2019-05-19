@@ -15,7 +15,7 @@
 #include <arpa/inet.h>
 
 #include <sam/BaseProducer.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/AbstractDataSource.hpp>
 
 #define READ_SOCKET_BUFFER_SIZE 4096 

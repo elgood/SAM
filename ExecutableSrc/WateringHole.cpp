@@ -23,7 +23,7 @@ using namespace std::chrono;
 using std::string;
 using std::vector;
 
-typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
+typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -31,9 +31,9 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 
 typedef GraphStoreType::QueryType SubgraphQueryType;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 int main(int argc, char** argv)
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 
   std::string topkId = "topk";
   auto topk = std::make_shared<
-    TopK<Netflow, DestIp>>(N, b, k, nodeId, featureMap, topkId);
+    TopK<VastNetflow, DestIp>>(N, b, k, nodeId, featureMap, topkId);
     
   pushPull->registerConsumer(topk);
 

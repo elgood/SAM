@@ -17,7 +17,6 @@
 
 #include <sam/AbstractConsumer.hpp>
 #include <sam/BaseProducer.hpp>
-#include <sam/Netflow.hpp>
 #include <sam/IdGenerator.hpp>
 #include <sam/Util.hpp>
 #include <sam/ZeroMQUtil.hpp>

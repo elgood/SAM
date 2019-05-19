@@ -6,8 +6,8 @@
 //#define DEBUG
 
 #include <sam/Util.hpp>
-#include <sam/NetflowGenerators.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflowGenerators.hpp>
+#include <sam/VastNetflow.hpp>
 #include <boost/test/unit_test.hpp>
 #include <map>
 
@@ -15,7 +15,7 @@ using namespace sam;
 using namespace std::chrono;
 using namespace sam::numTrianglesDetails;
 
-typedef PartialTriangle<Netflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
+typedef PartialTriangle<VastNetflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
     PartialTriangleType;
 
 
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE( test_partial_triangle )
   std::string s1 = "0.47,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node167,node167,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  Netflow n1 = makeNetflow(0, s1);
+  VastNetflow n1 = makeNetflow(0, s1);
 
   partial.numEdges = 1;
   partial.netflow1 = n1;
@@ -63,16 +63,16 @@ BOOST_AUTO_TEST_CASE( test_self_edge )
   std::string s9 = "0.58000000000000029,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node167,node167,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  Netflow n1 = makeNetflow(0, s1);
-  Netflow n2 = makeNetflow(1, s2);
-  Netflow n3 = makeNetflow(2, s3);
-  Netflow n4 = makeNetflow(3, s4);
-  Netflow n5 = makeNetflow(4, s5);
-  Netflow n6 = makeNetflow(5, s6);
-  Netflow n7 = makeNetflow(6, s7);
-  Netflow n8 = makeNetflow(7, s8);
-  Netflow n9 = makeNetflow(8, s9);
-  std::vector<Netflow> netflowList;
+  VastNetflow n1 = makeNetflow(0, s1);
+  VastNetflow n2 = makeNetflow(1, s2);
+  VastNetflow n3 = makeNetflow(2, s3);
+  VastNetflow n4 = makeNetflow(3, s4);
+  VastNetflow n5 = makeNetflow(4, s5);
+  VastNetflow n6 = makeNetflow(5, s6);
+  VastNetflow n7 = makeNetflow(6, s7);
+  VastNetflow n8 = makeNetflow(7, s8);
+  VastNetflow n9 = makeNetflow(8, s9);
+  std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n2);
   netflowList.push_back(n3);
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE( test_self_edge )
   //netflowList.push_back(n9);
  
   size_t calculatedNumTriangles = 
-    sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
+    sam::numTriangles<VastNetflow, SourceIp, DestIp, TimeSeconds,
                       DurationSeconds>(netflowList, 10);
 
   BOOST_CHECK_EQUAL(1, calculatedNumTriangles); 
@@ -104,16 +104,16 @@ BOOST_AUTO_TEST_CASE( test_edge_same_time )
   std::string s3 = "0.52000000000000024,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node167,node167,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  Netflow n1 = makeNetflow(0, s1);
-  Netflow n2 = makeNetflow(1, s2);
-  Netflow n3 = makeNetflow(2, s3);
-  std::vector<Netflow> netflowList;
+  VastNetflow n1 = makeNetflow(0, s1);
+  VastNetflow n2 = makeNetflow(1, s2);
+  VastNetflow n3 = makeNetflow(2, s3);
+  std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n2);
   netflowList.push_back(n3);
  
   size_t calculatedNumTriangles = 
-    sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
+    sam::numTriangles<VastNetflow, SourceIp, DestIp, TimeSeconds,
                       DurationSeconds>(netflowList, 10);
 
   BOOST_CHECK_EQUAL(0, calculatedNumTriangles); 
@@ -129,9 +129,9 @@ BOOST_AUTO_TEST_CASE( test_counting )
   std::string s2 = "0.1,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node2,node3,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  Netflow n1 = makeNetflow(0, s1);
-  Netflow n2 = makeNetflow(1, s2);
-  std::vector<Netflow> netflowList;
+  VastNetflow n1 = makeNetflow(0, s1);
+  VastNetflow n2 = makeNetflow(1, s2);
+  std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n2);
 
@@ -153,13 +153,13 @@ BOOST_AUTO_TEST_CASE( test_counting )
       DEBUG_PRINT("Invalid tuple %s\n", s.c_str());
     }
     time += increment; 
-    Netflow n = makeNetflow(id, s);
+    VastNetflow n = makeNetflow(id, s);
     id++;
     netflowList.push_back(n);
   }
  
   size_t calculatedNumTriangles = 
-    sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
+    sam::numTriangles<VastNetflow, SourceIp, DestIp, TimeSeconds,
                       DurationSeconds>(netflowList, queryTime);
 
   BOOST_CHECK_EQUAL(numValid, calculatedNumTriangles); 
@@ -177,10 +177,10 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
 
   double queryTime = 10;
   size_t n = 701;
-  Netflow n1 = makeNetflow(0, s1);
-  Netflow n3 = makeNetflow(n, s3);
+  VastNetflow n1 = makeNetflow(0, s1);
+  VastNetflow n3 = makeNetflow(n, s3);
   double timeThirdEdge = std::get<TimeSeconds>(n3);
-  std::vector<Netflow> netflowList;
+  std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n3);
 
@@ -197,13 +197,13 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
       ",parseDate,dateTimeStr,ipLayerProtocol,"
       "ipLayerProtocolCode,node2,node3,51482,40020,1,1,1,1,1,1,1,1,1,1";
     time += increment; 
-    Netflow n = makeNetflow(id, s);
+    VastNetflow n = makeNetflow(id, s);
     id++;
     netflowList.push_back(n);
   }
  
   size_t calculatedNumTriangles = 
-    sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
+    sam::numTriangles<VastNetflow, SourceIp, DestIp, TimeSeconds,
                       DurationSeconds>(netflowList, queryTime);
 
   BOOST_CHECK_EQUAL(numValid, calculatedNumTriangles); 
@@ -220,16 +220,16 @@ BOOST_AUTO_TEST_CASE( test_specific_example )
   std::string s3 = "19.680000000000277,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node639,node153,30162,31196,1,1,1,1,1,1,1,1,1,1";
 
-  Netflow n1 = makeNetflow(0, s1);
-  Netflow n2 = makeNetflow(1, s2);
-  Netflow n3 = makeNetflow(2, s3);
-  std::vector<Netflow> netflowList;
+  VastNetflow n1 = makeNetflow(0, s1);
+  VastNetflow n2 = makeNetflow(1, s2);
+  VastNetflow n3 = makeNetflow(2, s3);
+  std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n2);
   netflowList.push_back(n3);
 
   size_t calculatedNumTriangles = 
-    sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
+    sam::numTriangles<VastNetflow, SourceIp, DestIp, TimeSeconds,
                       DurationSeconds>(netflowList, 10);
 
   BOOST_CHECK_EQUAL(1, calculatedNumTriangles); 

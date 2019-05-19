@@ -2,13 +2,13 @@
 #define SAM_READCSV_HPP
 
 #include <sam/BaseProducer.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/AbstractDataSource.hpp>
 #include <fstream>
 
 namespace sam {
 
-class ReadCSV : public BaseProducer<Netflow>, public AbstractDataSource
+class ReadCSV : public BaseProducer<VastNetflow>, public AbstractDataSource
 {
   std::string filename;
   std::ifstream file;
@@ -37,7 +37,7 @@ public:
       //std::cout << "ReadCSV::receive got line " << line << std::endl;
       // We will use the order they come in as the SamGeneratedId.
       // This assumes that there is a label in each line.
-      Netflow netflow = makeNetflow(i, line);
+      VastNetflow netflow = makeNetflow(i, line);
       //std::cout << "blah" << std::endl;
       for (auto consumer: consumers) {
         consumer->consume(netflow);

@@ -6,7 +6,7 @@
 #include <sam/FeatureMap.hpp>
 #include <sam/FeatureSubscriber.hpp>
 #include <sam/TransformProducer.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/Identity.hpp>
 
 using namespace sam;
@@ -21,31 +21,31 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
 
   auto featureMap = std::make_shared<FeatureMap>();
 
-  std::vector<std::shared_ptr<Expression<Netflow>>> expressions;
+  std::vector<std::shared_ptr<Expression<VastNetflow>>> expressions;
   std::vector<std::string> names;
   names.push_back("TimeDiff");
 
   // Expression TimeSeconds - Prev.TimeSeconds
   // 
   // TimeSeconds field token 
-  std::shared_ptr<ExpressionToken<Netflow>> fieldToken = std::make_shared<
-    FieldToken<TimeSeconds, Netflow>>(featureMap);
+  std::shared_ptr<ExpressionToken<VastNetflow>> fieldToken = std::make_shared<
+    FieldToken<TimeSeconds, VastNetflow>>(featureMap);
   // Sub operator token
-  std::shared_ptr<ExpressionToken<Netflow>> subToken = std::make_shared<
-    SubOperator<Netflow>>(featureMap);
+  std::shared_ptr<ExpressionToken<VastNetflow>> subToken = std::make_shared<
+    SubOperator<VastNetflow>>(featureMap);
   // Prev.TimeSeconds
-  std::shared_ptr<ExpressionToken<Netflow>> prevToken = std::make_shared<
-    PrevToken<TimeSeconds, Netflow>>(featureMap);
+  std::shared_ptr<ExpressionToken<VastNetflow>> prevToken = std::make_shared<
+    PrevToken<TimeSeconds, VastNetflow>>(featureMap);
 
-  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
+  std::list<std::shared_ptr<ExpressionToken<VastNetflow>>> infixList;
   infixList.push_back(fieldToken);
   infixList.push_back(subToken);
   infixList.push_back(prevToken);
 
-  auto expression = std::make_shared<Expression<Netflow>>( infixList );
+  auto expression = std::make_shared<Expression<VastNetflow>>( infixList );
   expressions.push_back(expression);
   
-  auto tupleExpression =std::make_shared<TupleExpression<Netflow>>(expressions);
+  auto tupleExpression =std::make_shared<TupleExpression<VastNetflow>>(expressions);
   size_t nodeId = 0;
   std::string identifier = "destsrc_timelapseseries";
 
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
   // fill up the queue but want immediate response.
   int queueLength = 1;
 
-  auto timeLapseSeries = new TransformProducer<Netflow, TimeLapseDestSrc, 
+  auto timeLapseSeries = new TransformProducer<VastNetflow, TimeLapseDestSrc, 
                                DestIp, SourceIp>
                               (tupleExpression,
                                nodeId,
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE( test_transform_producer )
     // Creating the string that represents the netflow and feeding it to
     // the timeLapseSeries.
     std::string s = before + boost::lexical_cast<std::string>(i) + after;
-    Netflow netflow = makeNetflow(s);
+    VastNetflow netflow = makeNetflow(s);
     timeLapseSeries->consume(netflow);
   }
 

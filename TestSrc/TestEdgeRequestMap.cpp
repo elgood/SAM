@@ -5,7 +5,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <sam/EdgeRequestMap.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <thread>
 
 using namespace sam;
@@ -13,7 +13,7 @@ using namespace sam;
 zmq::context_t context(1);
 
 
-typedef EdgeRequestMap<Netflow, SourceIp, DestIp, TimeSeconds,
+typedef EdgeRequestMap<VastNetflow, SourceIp, DestIp, TimeSeconds,
   LastOctetHashFunction, LastOctetHashFunction,
   StringEqualityFunction, StringEqualityFunction> MapType;
 
@@ -56,9 +56,9 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   MapType map1(numNodes, nodeId1, tableCapacity, edgeCommunicator1);
                
   // Two generators for each thread 
-  std::shared_ptr<AbstractNetflowGenerator> generator0 = 
+  std::shared_ptr<AbstractVastNetflowGenerator> generator0 = 
     std::make_shared<UniformDestPort>("192.168.0.0", 1);
-  std::shared_ptr<AbstractNetflowGenerator> generator1 = 
+  std::shared_ptr<AbstractVastNetflowGenerator> generator1 = 
     std::make_shared<UniformDestPort>("192.168.0.1", 1);
 
   EdgeRequestType edgeRequest0;
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
   size_t n = 10;
 
   auto mapFunction = [](MapType* map,
-                        std::shared_ptr<AbstractNetflowGenerator> generator, 
+                        std::shared_ptr<AbstractVastNetflowGenerator> generator, 
                         size_t n,
                         size_t id)
   {
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
     size_t i = 0;
     while (i < n) {
       std::string str = generator->generate();
-      Netflow netflow = makeNetflow(i, str);
+      VastNetflow netflow = makeNetflow(i, str);
       DEBUG_PRINT("Node %lu processing netflow %s\n", id, 
         toString(netflow).c_str());
         

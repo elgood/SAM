@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <deque>
 
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/FeatureSubscriber.hpp>
 #include <sam/ReadCSV.hpp>
 #include <sam/Identity.hpp>
@@ -59,30 +59,11 @@ BOOST_AUTO_TEST_CASE( test_sample )
     auto receiver = std::make_shared<ReadCSV>(dataFile);
     std::size_t numNodes = 1; ///> The number of nodes in the cluster
     std::size_t nodeId = 0; ///> The node id of this node
-    /*std::vector<std::string> hostnames(numNodes); // A vector of hosts in the cluster
-    std::vector<std::size_t> ports(numNodes); // Vector of ports to use in the cluster
-    hostnames[0] = "127.0.0.1";
-    ports[0] = 10000;
-    std::size_t hwm = 1; ///> The high-water mark (zeromq parameter)
-    std::size_t queueLength = 10000; ///> The length of the input queue
-    
-
-    auto pushpull = std::make_shared<ZeroMQPushPull>(queueLength,
-                                   numNodes, 
-                                   nodeId, 
-                                   hostnames, 
-                                   ports, 
-                                   hwm);
-    
-    receiver->registerConsumer(pushpull);
-    */
-   
     
     // Get the label
     // Doesn't really need a key, but provide one anyway to the template.
     std::string identifier = "identity";
-    auto label = std::make_shared<Identity<Netflow, SamLabel, DestIp>>
-    //auto label = new Identity<Netflow, Label, DestIp>
+    auto label = std::make_shared<Identity<VastNetflow, SamLabel, DestIp>>
                 (nodeId, featureMap, identifier);
     receiver->registerConsumer(label);
     label->registerSubscriber(subscriber, identifier);
@@ -90,7 +71,7 @@ BOOST_AUTO_TEST_CASE( test_sample )
     identifier = "averageSrcTotalBytes";
     int N = 189;
     auto averageSrcTotalBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -99,10 +80,10 @@ BOOST_AUTO_TEST_CASE( test_sample )
 
     identifier = "varSrcTotalBytes";
     auto varSrcTotalBytes = std::make_shared<
-                                   ExponentialHistogramVariance<double, Netflow,
-                                                                 SrcTotalBytes,
-                                                                 DestIp>>
-                                   (N, 2, nodeId, featureMap, identifier);
+                               ExponentialHistogramVariance<double, VastNetflow,
+                                                             SrcTotalBytes,
+                                                             DestIp>>
+                               (N, 2, nodeId, featureMap, identifier);
     receiver->registerConsumer(varSrcTotalBytes);
     varSrcTotalBytes->registerSubscriber(subscriber, identifier);
 

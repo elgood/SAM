@@ -6,7 +6,7 @@
 #include <string>
 #include <random>
 #include <sam/ZeroMQUtil.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 
 using namespace sam;
 

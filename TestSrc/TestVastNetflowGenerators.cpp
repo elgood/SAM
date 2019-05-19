@@ -1,4 +1,4 @@
-#define BOOST_TEST_MAIN TestNetflowGenerators
+#define BOOST_TEST_MAIN TestVastNetflowGenerators
 #include <boost/test/unit_test.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
@@ -7,8 +7,8 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <sam/NetflowGenerators.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflowGenerators.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/Util.hpp>
 
 using namespace sam;
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE( test_netflow_conversion )
     std::vector<std::string> v = convertToTokens(addedMissing);
 
     // We'll use i as the SamGeneratedId.
-    Netflow n = makeNetflow(i, str);
+    VastNetflow n = makeNetflow(i, str);
 
     checkTokens(n, v);
 
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE( test_uniform_dest_port )
     std::string netflowStr = generator1.generate();
 
     // use i as the SamGeneratedId
-    Netflow netflow = makeNetflow(i, netflowStr);
+    VastNetflow netflow = makeNetflow(i, netflowStr);
     //std::vector<std::string> v = convertToTokens(netflow);
 
     // In all cases the destIp should the same.
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE( test_uniform_dest_port )
     portCounts.clear();
     for(int i = 0; i < numIters; i++) {
       std::string netflowStr = generator2.generate();
-      Netflow netflow = makeNetflow(i, netflowStr);
+      VastNetflow netflow = makeNetflow(i, netflowStr);
       BOOST_CHECK_EQUAL(std::get<DestIp>(netflow).compare(destIp), 0);
       portCounts[std::get<DestPort>(netflow)]++;
     }
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE( test_uniform_dest_port_set_time )
 
   for(int i = 0; i < numIters; i++) {
     std::string netflowStr = generator1.generate(time);
-    Netflow netflow = makeNetflow(i, netflowStr);
+    VastNetflow netflow = makeNetflow(i, netflowStr);
     BOOST_CHECK_EQUAL(std::get<TimeSeconds>(netflow), time);
     time = time + increment;
   }
@@ -193,7 +193,7 @@ BOOST_FIXTURE_TEST_CASE( test_one_pair_size_dist, OnePairFixture )
   {
     std::string netflowString = generator->generate();
     // i is the sam generated id
-    Netflow netflow = makeNetflow(i, netflowString); 
+    VastNetflow netflow = makeNetflow(i, netflowString); 
     destFlowSizes.push_back(std::get<DestPayloadBytes>(netflow)); 
     sourceFlowSizes.push_back(std::get<SrcPayloadBytes>(netflow));
   }
@@ -218,7 +218,7 @@ BOOST_FIXTURE_TEST_CASE( test_specify_time_one_pair, OnePairFixture )
   for(int i = 0; i < numIter; i++) 
   {
     std::string netflowString = generator->generate(time);
-    Netflow netflow = makeNetflow(i, netflowString); 
+    VastNetflow netflow = makeNetflow(i, netflowString); 
     double netflowTime = std::get<TimeSeconds>(netflow);
     BOOST_CHECK_EQUAL(netflowTime, time);
     time = time + increment;
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE( test_random_pool_generator )
   for(size_t i = 0; i < numIter; i++)
   {
     std::string str = generator.generate();
-    Netflow netflow = makeNetflow(i, str);
+    VastNetflow netflow = makeNetflow(i, str);
     std::string source = std::get<SourceIp>(netflow);
     std::string target = std::get<DestIp>(netflow);
     size_t sourceInt = boost::lexical_cast<size_t>(source.substr(4));

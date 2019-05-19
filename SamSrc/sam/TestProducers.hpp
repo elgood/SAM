@@ -5,8 +5,8 @@
 #include <boost/lexical_cast.hpp>
 #include <map>
 #include <sam/BaseProducer.hpp>
-#include <sam/NetflowGenerators.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflowGenerators.hpp>
+#include <sam/VastNetflow.hpp>
 
 /******************************************************************
  * Producers used to create repeatable and understandable scenarios
@@ -19,7 +19,7 @@ namespace sam {
  * Creates a situation where there are n popular sites that recieve
  * p fraction of the traffic.  
  */
-class PopularSites : public BaseProducer<Netflow>
+class PopularSites : public BaseProducer<VastNetflow>
 {
 private:
   size_t numExamples; ///> Number of netflows to produce
@@ -59,7 +59,7 @@ void PopularSites::run()
   for ( size_t i = 0; i < numExamples; i++) 
   {
     std::string s = generator.generate();
-    Netflow netflow = makeNetflow(i, s);
+    VastNetflow netflow = makeNetflow(i, s);
 
     if (dis(myRand) < p) {
       size_t popId = whichPop(myRand);
@@ -80,7 +80,7 @@ void PopularSites::run()
  * server IPs and nonserver IPs when using a filter that uses the topk 
  * feature.
  */
-class TopKProducer : public BaseProducer<Netflow>
+class TopKProducer : public BaseProducer<VastNetflow>
 {
 private:
   int numExamples;
@@ -161,7 +161,7 @@ void TopKProducer::run() {
 
       // Obtaining metrics on the netflows generated
       // Using i and serverId as the SamGeneratedId
-      Netflow netflow = makeNetflow(serverId * numExamples + i, s);
+      VastNetflow netflow = makeNetflow(serverId * numExamples + i, s);
       auto ipPort = std::pair<std::string, int>(
         std::get<DestIp>(netflow),
         std::get<DestPort>(netflow));
@@ -176,7 +176,7 @@ void TopKProducer::run() {
       std::string s = g->generate();
 
       // Obtaining metrics on the netflows generated
-      Netflow netflow = makeNetflow(serverId* numExamples + i, s);
+      VastNetflow netflow = makeNetflow(serverId* numExamples + i, s);
       ipPortMap[std::pair<std::string, int>(std::get<DestIp>(netflow),
         std::get<DestPort>(netflow))] += 1;
 
@@ -202,14 +202,14 @@ std::list<std::string> const& TopKProducer::getNonserverIps() const
  * to produce netflows.  Generates a netflow numExamples times for
  * each generator.
  */
-class GeneralNetflowProducer : public BaseProducer<Netflow>
+class GeneralNetflowProducer : public BaseProducer<VastNetflow>
 {
-  std::vector<std::shared_ptr<AbstractNetflowGenerator>> generators;
+  std::vector<std::shared_ptr<AbstractVastNetflowGenerator>> generators;
   int numExamples;
 public:
   GeneralNetflowProducer(int queueLength,
     int numExamples,
-    std::vector<std::shared_ptr<AbstractNetflowGenerator>>  
+    std::vector<std::shared_ptr<AbstractVastNetflowGenerator>>  
       const& _generators) :
     BaseProducer(queueLength),
     generators(_generators)
@@ -231,7 +231,7 @@ void GeneralNetflowProducer::run()
     {
       count++; //Remove
       std::string s = generators[j]->generate();
-      Netflow netflow = makeNetflow(j * numExamples + i, s);
+      VastNetflow netflow = makeNetflow(j * numExamples + i, s);
 
       parallelFeed(netflow);
     }  

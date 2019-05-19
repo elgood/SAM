@@ -2,7 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <string>
 #include <fstream>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <sam/ReadCSV.hpp>
 
 using namespace sam;
@@ -11,7 +11,7 @@ using namespace sam;
  * Consumer that tests what it receives from consume is as expected
  * as provided by the array of strings passed to the constructor.
  */
-class TestConsumer : public AbstractConsumer<Netflow>
+class TestConsumer : public AbstractConsumer<VastNetflow>
 {
 private:
   std::string const * const array;
@@ -20,7 +20,7 @@ public:
   TestConsumer(std::string const * const _array) : array(_array)
   {}
   
-  bool consume(Netflow const& netflow) {
+  bool consume(VastNetflow const& netflow) {
     BOOST_CHECK_EQUAL( tupleToString(netflow), array[seen]);
     seen += 1;  
     return true;  

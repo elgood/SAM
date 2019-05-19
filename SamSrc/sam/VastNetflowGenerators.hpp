@@ -1,5 +1,5 @@
-#ifndef NETFLOW_GENERATORS_HPP
-#define NETFLOW_GENERATORS_HPP
+#ifndef SAM_VAST_NETFLOW_GENERATORS_HPP
+#define SAM_VAST_NETFLOW_GENERATORS_HPP
 
 #include <boost/lexical_cast.hpp>
 #include <cstdlib>
@@ -49,10 +49,10 @@ std::string secondsSinceEpoch()
 /** 
  * The abstract netflow generator.
  */
-class AbstractNetflowGenerator {
+class AbstractVastNetflowGenerator {
 public:
-  AbstractNetflowGenerator() {}
-  virtual ~AbstractNetflowGenerator() {}
+  AbstractVastNetflowGenerator() {}
+  virtual ~AbstractVastNetflowGenerator() {}
 
   /**
    * Generates a netflow formatted as a string.
@@ -69,7 +69,7 @@ public:
 };
 
 inline  
-std::string AbstractNetflowGenerator::generate()
+std::string AbstractVastNetflowGenerator::generate()
 {
   double epochTime = boost::lexical_cast<double>(secondsSinceEpoch());
   return generate(epochTime);
@@ -83,7 +83,7 @@ std::string AbstractNetflowGenerator::generate()
  * target machine is selected (the first IP), and it communicates with
  * the controller a specified number of times at the end of the simulation.
  */
-class WateringHoleGenerator : public AbstractNetflowGenerator
+class WateringHoleGenerator : public AbstractVastNetflowGenerator
 {
 private:
   size_t numClients; ///> How many client ip's.
@@ -102,7 +102,7 @@ public:
   WateringHoleGenerator(size_t numClients, size_t numServers);
   
 
-  std::string generate() { return AbstractNetflowGenerator::generate(); }
+  std::string generate() { return AbstractVastNetflowGenerator::generate(); }
     
 
   /**
@@ -219,7 +219,7 @@ std::string WateringHoleGenerator::generateControlMessage(double epochTime)
  * The strings generated are in VAST csv form.  There is no SamGenerateId
  * and no label.  The source ports are from randomly generated Ips.
  */
-class UniformDestPort : public AbstractNetflowGenerator
+class UniformDestPort : public AbstractVastNetflowGenerator
 {
 private:
   std::string destIp; ///> The single destination 
@@ -229,7 +229,7 @@ private:
 
 public:
   UniformDestPort(std::string destIp, int numPorts) : 
-    AbstractNetflowGenerator()
+    AbstractVastNetflowGenerator()
   {
     this->destIp = destIp;
     this->numPorts = numPorts;  
@@ -242,7 +242,7 @@ public:
   }
 
   std::string generate() {
-    return AbstractNetflowGenerator::generate();
+    return AbstractVastNetflowGenerator::generate();
   }
 
   std::string generate(double epochTime) 
@@ -275,7 +275,7 @@ private:
 /**
  * Creates completely random source and destination ip addresses
  */
-class RandomGenerator : public AbstractNetflowGenerator
+class RandomGenerator : public AbstractVastNetflowGenerator
 {
 private:
 
@@ -291,7 +291,7 @@ public:
   ~RandomGenerator() {}
 
   std::string generate() {
-    return AbstractNetflowGenerator::generate();
+    return AbstractVastNetflowGenerator::generate();
   }
 
   std::string generate(double epochTime) {
@@ -321,7 +321,7 @@ public:
  * n-1.  Right now the class allows edges that have target and destination
  * as the same.
  */
-class RandomPoolGenerator : public AbstractNetflowGenerator
+class RandomPoolGenerator : public AbstractVastNetflowGenerator
 {
 private:
   /// The number of vertices.
@@ -353,11 +353,11 @@ public:
   }
 
   /**
-   * Uses AbstractNetflowGenerator::generate, which calls generate(epochTime)
+   * Uses AbstractVastNetflowGenerator::generate, which calls generate(epochTime)
    * with the current clock time.
    */
   std::string generate() {
-    return AbstractNetflowGenerator::generate();
+    return AbstractVastNetflowGenerator::generate();
   }
 
   std::string generate(double epochTime) {
@@ -402,7 +402,7 @@ public:
  * You can specify mean and deviation for a normal distribution for the
  * payload size for both the client and the server.
  */
-class OnePairSizeDist : public AbstractNetflowGenerator
+class OnePairSizeDist : public AbstractVastNetflowGenerator
 {
 private:
   std::random_device rd;
@@ -455,7 +455,7 @@ public:
   }
 
   std::string generate() {
-    return AbstractNetflowGenerator::generate();
+    return AbstractVastNetflowGenerator::generate();
   }
 
 

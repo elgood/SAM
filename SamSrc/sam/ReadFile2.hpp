@@ -17,7 +17,7 @@
 #include <fcntl.h>
 
 #include <sam/BaseProducer.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/AbstractDataSource.hpp>
 
 #define BUFFER_SIZE 256

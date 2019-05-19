@@ -14,20 +14,8 @@
 
 #include <boost/program_options.hpp>
 
-#include <sam/ReadSocket.hpp>
-#include <sam/ReadCSV.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/TopK.hpp>
-#include <sam/Expression.hpp>
-#include <sam/TupleExpression.hpp>
-#include <sam/Filter.hpp>
-#include <sam/ExponentialHistogramSum.hpp>
-#include <sam/ExponentialHistogramVariance.hpp>
-#include <sam/Netflow.hpp>
-#include <sam/TransformProducer.hpp>
-#include <sam/Project.hpp>
-#include <sam/CollapsedConsumer.hpp>
-#include <sam/Identity.hpp>
+#include <sam/sam.hpp>
+#include <sam/VastNetflow.hpp>
 
 //#define DEBUG 1
 
@@ -41,9 +29,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 //zmq::context_t context(1);
@@ -88,13 +76,13 @@ void createPipeline(
   string identifier = "label";
 
   // Doesn't really need a key, but provide one anyway to the template.
-  auto label = std::make_shared<Identity<Netflow, SamLabel, DestIp>>
+  auto label = std::make_shared<Identity<VastNetflow, SamLabel, DestIp>>
                 (nodeId, featureMap, identifier);
   consumer->registerConsumer(label);
   label->registerSubscriber(subscriber, identifier); 
 
   identifier = "top2";
-  auto topk = std::make_shared<TopK< Netflow, DestPort, DestIp>>
+  auto topk = std::make_shared<TopK< VastNetflow, DestPort, DestIp>>
                               (N, b, k, nodeId, featureMap, identifier);
                                
   consumer->registerConsumer(topk); 
@@ -114,12 +102,12 @@ void createPipeline(
     //std::cout << "index1 " << index1 << std::endl;
     return topKFeature->getFrequencies()[index1];    
   };
-  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, 
+  auto funcToken1 = std::make_shared<FuncToken<VastNetflow>>(featureMap, 
                                                         function1,
                                                         identifier);
 
   // Addition token
-  auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
+  auto addOper = std::make_shared<AddOperator<VastNetflow>>(featureMap);
 
   // Second function token
   auto function2 = [](Feature const * feature)->double {
@@ -127,28 +115,28 @@ void createPipeline(
     auto topKFeature = static_cast<TopKFeature const *>(feature);
     return topKFeature->getFrequencies()[index2];    
   };
-  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, 
+  auto funcToken2 = std::make_shared<FuncToken<VastNetflow>>(featureMap, 
                                                          function2,
                                                          identifier);
 
   // Lessthan token
-  auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(
+  auto lessThanToken = std::make_shared<LessThanOperator<VastNetflow>>(
                         featureMap);
   
   // Number token
-  auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 
+  auto numberToken = std::make_shared<NumberToken<VastNetflow>>(featureMap, 
                                                             0.9);
 
-  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
+  std::list<std::shared_ptr<ExpressionToken<VastNetflow>>> infixList;
   infixList.push_back(funcToken1);
   infixList.push_back(addOper);
   infixList.push_back(funcToken2);
   infixList.push_back(lessThanToken);
   infixList.push_back(numberToken);
 
-  auto filterExpression = std::make_shared<Expression<Netflow>>(infixList);
+  auto filterExpression = std::make_shared<Expression<VastNetflow>>(infixList);
     
-  auto filter = std::make_shared<Filter<Netflow, DestIp>>(
+  auto filter = std::make_shared<Filter<VastNetflow, DestIp>>(
     filterExpression, nodeId, featureMap, "servers", queueLength);
 
   consumer->registerConsumer(filter);
@@ -156,7 +144,7 @@ void createPipeline(
   std::cout << "filter created and registiered " << std::endl;
 
   identifier = "serverSumIncomingFlowSize";
-  auto sumIncoming = std::make_shared<ExponentialHistogramSum<size_t, Netflow,
+  auto sumIncoming = std::make_shared<ExponentialHistogramSum<size_t, VastNetflow,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -164,7 +152,7 @@ void createPipeline(
   sumIncoming->registerSubscriber(subscriber, identifier);
   
   identifier = "serverSumOutgoingFlowSize";
-  auto sumOutgoing = std::make_shared<ExponentialHistogramSum<size_t, Netflow,
+  auto sumOutgoing = std::make_shared<ExponentialHistogramSum<size_t, VastNetflow,
                                                   DestTotalBytes,
                                                   DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -173,14 +161,14 @@ void createPipeline(
      
   identifier = "serverVarianceIncomingFlowSize";
   auto varianceIncoming = std::make_shared<ExponentialHistogramVariance<
-                               double, Netflow, SrcTotalBytes, DestIp>>
+                               double, VastNetflow, SrcTotalBytes, DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(varianceIncoming); 
   varianceIncoming->registerSubscriber(subscriber, identifier);
   
   identifier = "serverVarianceOutgoingFlowSize";
   auto varianceOutgoing = std::make_shared<ExponentialHistogramVariance<
-                            double, Netflow, DestTotalBytes, DestIp>>
+                            double, VastNetflow, DestTotalBytes, DestIp>>
                               (N, 2, nodeId, featureMap, identifier);
   filter->registerConsumer(varianceOutgoing);
   varianceOutgoing->registerSubscriber(subscriber, identifier);
@@ -192,7 +180,7 @@ void createPipeline(
   typedef std::tuple<std::size_t, std::string, std::string, double> 
           TimeLapseSeries;
  
-  std::vector<std::shared_ptr<Expression<Netflow>>> expressions;
+  std::vector<std::shared_ptr<Expression<VastNetflow>>> expressions;
   std::vector<std::string> names;
   std::string name = "TimeLapseSeries_TimeDiff";
   names.push_back(name);
@@ -200,28 +188,28 @@ void createPipeline(
   // Expression TimeSeconds - Prev.TimeSeconds
   // 
   // TimeSeconds field token 
-  std::shared_ptr<ExpressionToken<Netflow>> fieldToken = std::make_shared<
-    FieldToken<TimeSeconds, Netflow>>(featureMap);
+  std::shared_ptr<ExpressionToken<VastNetflow>> fieldToken = std::make_shared<
+    FieldToken<TimeSeconds, VastNetflow>>(featureMap);
   // Sub operator token
-  std::shared_ptr<ExpressionToken<Netflow>> subToken = std::make_shared<
-    SubOperator<Netflow>>(featureMap);
+  std::shared_ptr<ExpressionToken<VastNetflow>> subToken = std::make_shared<
+    SubOperator<VastNetflow>>(featureMap);
   // Prev.TimeSeconds
-  std::shared_ptr<ExpressionToken<Netflow>> prevToken = std::make_shared<
-    PrevToken<TimeSeconds, Netflow>>(featureMap);
+  std::shared_ptr<ExpressionToken<VastNetflow>> prevToken = std::make_shared<
+    PrevToken<TimeSeconds, VastNetflow>>(featureMap);
     
-  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList2;
+  std::list<std::shared_ptr<ExpressionToken<VastNetflow>>> infixList2;
   infixList2.push_back(fieldToken);
   infixList2.push_back(subToken);
   infixList2.push_back(prevToken);
     
-  auto expression = std::make_shared<Expression<Netflow>>(infixList2);
+  auto expression = std::make_shared<Expression<VastNetflow>>(infixList2);
   expressions.push_back(expression); 
    
-  auto tupleExpression =std::make_shared<TupleExpression<Netflow>>(expressions);
+  auto tupleExpression =std::make_shared<TupleExpression<VastNetflow>>(expressions);
   identifier = "destsrc_timelapseseries";
 
   auto timeLapseSeries = std::make_shared<TransformProducer<
-                     Netflow, TimeLapseSeries, DestIp, SourceIp>>
+                     VastNetflow, TimeLapseSeries, DestIp, SourceIp>>
                              (tupleExpression,
                               nodeId,
                               featureMap,
@@ -264,7 +252,7 @@ void createPipeline(
   };
 
   auto destTimeDiffVar = 
-    std::make_shared<CollapsedConsumer<Netflow, DestIp>>(
+    std::make_shared<CollapsedConsumer<VastNetflow, DestIp>>(
                                                aveFunction,
                                                "destSourceTimeDiffVariance",
                                                nodeId, 

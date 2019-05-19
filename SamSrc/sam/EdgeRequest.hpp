@@ -2,7 +2,7 @@
 #define SAM_EDGE_REQUEST
 
 #include "proto/NetflowEdgeRequest.pb.h"
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/Null.hpp>
 #include <sam/Util.hpp>
 #include <sam/ZeroMQUtil.hpp>
@@ -52,11 +52,11 @@ public:
  * source and target, repsectively.  It uses the generated google protobuf. 
  */
 template <>
-class EdgeRequest<Netflow, SourceIp, DestIp>
+class EdgeRequest<VastNetflow, SourceIp, DestIp>
 {
 public:
-  typedef typename std::tuple_element<SourceIp, Netflow>::type SourceType;
-  typedef typename std::tuple_element<DestIp, Netflow>::type TargetType;
+  typedef typename std::tuple_element<SourceIp, VastNetflow>::type SourceType;
+  typedef typename std::tuple_element<DestIp, VastNetflow>::type TargetType;
   
 private:
   NetflowEdgeRequest request;

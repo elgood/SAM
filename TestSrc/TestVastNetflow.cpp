@@ -1,11 +1,11 @@
-#define BOOST_TEST_MAIN TestNetflow
+#define BOOST_TEST_MAIN TestVastNetflow
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 
 using namespace sam;
 
-void checkCommon(Netflow const& netflow) 
+void checkCommon(VastNetflow const& netflow) 
 {
   BOOST_CHECK_EQUAL(1365582756.384094, std::get<TimeSeconds>(netflow));
   BOOST_CHECK_EQUAL("2013-04-10 08:32:36", std::get<ParseDate>(netflow));
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflow )
                          "239.255.255.250,29986,1900,0,0,16,184,73140,"
                          "2588,76064,40,54,0";
 
-  Netflow netflow = makeNetflow(s);
+  VastNetflow netflow = makeNetflow(s);
   BOOST_CHECK_EQUAL(45, std::get<SamGeneratedId>(netflow));
   BOOST_CHECK_EQUAL(1, std::get<SamLabel>(netflow));
   checkCommon(netflow);
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflowWithoutLabel )
                          "2588,76064,40,54,0";
 
   int generatedId = 25;
-  Netflow netflow = makeNetflowWithoutLabel(generatedId, DEFAULT_LABEL, s);
+  VastNetflow netflow = makeNetflowWithoutLabel(generatedId, DEFAULT_LABEL, s);
  
   BOOST_CHECK_EQUAL(generatedId, std::get<SamGeneratedId>(netflow));
   BOOST_CHECK_EQUAL(DEFAULT_LABEL, std::get<SamLabel>(netflow));
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflowWithLabel )
                          "2588,76064,40,54,0";
 
   int generatedId = 25;
-  Netflow netflow = makeNetflowWithLabel(generatedId, s);
+  VastNetflow netflow = makeNetflowWithLabel(generatedId, s);
   
   BOOST_CHECK_EQUAL(1, std::get<SamLabel>(netflow)); 
   BOOST_CHECK_EQUAL(generatedId, std::get<SamGeneratedId>(netflow));
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflow_noLabel )
                          "2588,76064,40,54,0";
 
   int generatedId = 25;
-  Netflow netflow = makeNetflow(generatedId, s);
+  VastNetflow netflow = makeNetflow(generatedId, s);
  
    
   BOOST_CHECK_EQUAL(DEFAULT_LABEL, std::get<SamLabel>(netflow)); 
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE( test_makeNetflow_withLabel )
                          "2588,76064,40,54,0";
 
   int generatedId = 25;
-  Netflow netflow = makeNetflow(generatedId, s);
+  VastNetflow netflow = makeNetflow(generatedId, s);
  
    
   BOOST_CHECK_EQUAL(1, std::get<SamLabel>(netflow)); 

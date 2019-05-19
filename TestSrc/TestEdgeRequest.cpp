@@ -1,12 +1,12 @@
 #define BOOST_TEST_MAIN TestEdgeRequest
 #include <boost/test/unit_test.hpp>
 #include <sam/EdgeRequest.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/Null.hpp>
 
 using namespace sam;
 
-typedef EdgeRequest<Netflow, SourceIp, DestIp> EdgeRequestType;
+typedef EdgeRequest<VastNetflow, SourceIp, DestIp> EdgeRequestType;
 
 struct F
 {

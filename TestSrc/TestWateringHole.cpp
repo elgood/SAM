@@ -5,7 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <chrono>
 #include <sam/GraphStore.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <sam/ZeroMQPushPull.hpp>
 #include <sam/TopK.hpp>
 
@@ -13,7 +13,7 @@
 using namespace sam;
 using namespace std::chrono;
 
-typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
+typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -22,9 +22,9 @@ typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
 typedef GraphStoreType::QueryType SubgraphQueryType;
 typedef GraphStoreType::ResultType ResultType;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   size_t k = numServers; ///> The number of elements to keep track of
   std::string topkId = "topk";
   auto topk = std::make_shared<
-    TopK<Netflow, DestIp>>(N, b, k, nodeId0, featureMap, topkId);
+    TopK<VastNetflow, DestIp>>(N, b, k, nodeId0, featureMap, topkId);
 
   pushPull->registerConsumer(topk);
 

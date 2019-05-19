@@ -1,5 +1,11 @@
-#ifndef NETFLOW_HPP
-#define NETFLOW_HPP
+/**
+ * This file provides the definition of a netflow according to the definition 
+ * used by the VAST 2013 Mini-challenge 3 dataset.  For more details on the 
+ * format see http://vacommunity.org/VAST+Challenge+2013%3A+Mini-Challenge+3.
+ */
+
+#ifndef SAM_VASTNETFLOW_HPP
+#define SAM_VASTNETFLOW_HPP
 
 #define SamGeneratedId                0 
 #define SamLabel                      1 
@@ -42,12 +48,12 @@ namespace sam {
 
 /**
  * We catch exceptions generated from this file and wrap them with a 
- * NetflowException to make them easier to track.
+ * VastNetflowException to make them easier to track.
  */
-class NetflowException : public std::runtime_error {
+class VastNetflowException : public std::runtime_error {
 public:
-  NetflowException(char const * message) : std::runtime_error(message) { } 
-  NetflowException(std::string  message) : std::runtime_error(message) { } 
+  VastNetflowException(char const * message) : std::runtime_error(message) { } 
+  VastNetflowException(std::string  message) : std::runtime_error(message) { } 
 };
 
 /**
@@ -93,7 +99,7 @@ typedef std::tuple<std::size_t,  //SamGeneratedId
                    long,          //FIRST_SEEN_DEST_PACKET_COUNT
                    int          //RECORD_FORCE_OUT
                    >
-                   Netflow;
+                   VastNetflow;
 
 
 std::vector<std::string> mytokenize(std::string s)
@@ -125,7 +131,8 @@ std::vector<std::string> mytokenize(std::string s)
  * have to be provided.
  */
 inline
-Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s) 
+VastNetflow makeNetflowWithoutLabel(int samGeneratedId, 
+                                    int label, std::string s) 
 {
   //std::cout << "MakeNetflowWithoutLabel " << s << std::endl;
 
@@ -319,7 +326,7 @@ Netflow makeNetflowWithoutLabel(int samGeneratedId, int label, std::string s)
 
 // This version assumes the string s has the label at the beginning.
 inline 
-Netflow makeNetflowWithLabel(int samGeneratedId, std::string s)
+VastNetflow makeNetflowWithLabel(int samGeneratedId, std::string s)
 {
   //std::cout << "MakeNetflowWithLabel " << s << std::endl;
   // Grab the label
@@ -328,7 +335,7 @@ Netflow makeNetflowWithLabel(int samGeneratedId, std::string s)
     label = boost::lexical_cast<int>(getFirstElement(s));
   } catch (std::exception e) {
     std::cout << "Error in makeNetflowWithLabel " << e.what() << std::endl;
-    throw NetflowException(e.what());
+    throw VastNetflowException(e.what());
   }
   std::string withoutLabel = removeFirstElement(s);
   return makeNetflowWithoutLabel(samGeneratedId, label, withoutLabel);
@@ -338,7 +345,7 @@ Netflow makeNetflowWithLabel(int samGeneratedId, std::string s)
  * Expects a netflow string without the generated id but may have a label.
  */
 inline
-Netflow makeNetflow(int samGeneratedId, std::string s)
+VastNetflow makeNetflow(int samGeneratedId, std::string s)
 {
   //std::cout << "samGeneratedId " << samGeneratedId << " s " << s << std::endl;
   // Determine the number of elements in the csv string to know which method
@@ -367,7 +374,7 @@ Netflow makeNetflow(int samGeneratedId, std::string s)
  * SamGeneratedId and Label.
  */
 inline
-Netflow makeNetflow(std::string s)
+VastNetflow makeNetflow(std::string s)
 {
 
   boost::char_separator<char> sep(",");
@@ -388,16 +395,16 @@ Netflow makeNetflow(std::string s)
     id = boost::lexical_cast<int>(getFirstElement(s));
   } catch (std::exception e) {
     std::cout << "Error in makeNetflow " << e.what() << std::endl;
-    throw NetflowException(e.what());
+    throw VastNetflowException(e.what());
   }
   std::string withoutId = removeFirstElement(s);
   return makeNetflow(id, withoutId);
 }
 
-class NetflowTuplizer
+class VastNetflowTuplizer
 {
 public:
-  Netflow operator()(size_t id, std::string s) {
+  VastNetflow operator()(size_t id, std::string s) {
     return makeNetflow(id, s);
   }
 

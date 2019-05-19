@@ -8,28 +8,28 @@
 
 using namespace sam;
 
-typedef SubgraphQuery<Netflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
+typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
   QueryType;
 
 struct F {
   std::string netflowString1 = "1,1,156.0,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
                            "bait,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
-  Netflow netflow1 = makeNetflow(netflowString1);
+  VastNetflow netflow1 = makeNetflow(netflowString1);
 
   std::string netflowString2 = "1,1,166.0,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
                            "controller,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
 
-  Netflow netflow2 = makeNetflow(netflowString2);
+  VastNetflow netflow2 = makeNetflow(netflowString2);
 
   std::string netflowString3 = "1,1,267.01,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
                            "controller,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
 
-  Netflow netflow3 = makeNetflow(netflowString3);
+  VastNetflow netflow3 = makeNetflow(netflowString3);
 
-  typedef SubgraphQueryResult<Netflow, SourceIp, DestIp, 
+  typedef SubgraphQueryResult<VastNetflow, SourceIp, DestIp, 
                               TimeSeconds, DurationSeconds> ResultType;
 
   std::shared_ptr<TimeEdgeExpression> startTimeExpressionE1;

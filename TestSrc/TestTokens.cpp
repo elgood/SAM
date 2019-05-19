@@ -4,13 +4,13 @@
 #include <stack>
 #include <tuple>
 #include <sam/Tokens.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/FeatureMap.hpp>
 
 using namespace sam;
 
 struct F {
-  Netflow netflow;
+  VastNetflow netflow;
   std::shared_ptr<FeatureMap> featureMap = std::make_shared<FeatureMap>();
   std::stack<double> mystack;
   std::string key;
@@ -30,7 +30,7 @@ struct F {
 
 BOOST_FIXTURE_TEST_CASE( test_number_token, F )
 {
-  NumberToken<Netflow> number(featureMap, DestIp);
+  NumberToken<VastNetflow> number(featureMap, DestIp);
 
   bool b = number.evaluate(mystack, key, netflow);
   BOOST_CHECK_EQUAL(b, true);
@@ -43,7 +43,7 @@ BOOST_FIXTURE_TEST_CASE( test_add_token, F )
   mystack.push(1.6);
   mystack.push(3.5);
 
-  AddOperator<Netflow> addOper(featureMap);
+  AddOperator<VastNetflow> addOper(featureMap);
 
   bool b = addOper.evaluate(mystack, key, netflow);
   BOOST_CHECK_EQUAL(b, true);
@@ -59,7 +59,7 @@ BOOST_FIXTURE_TEST_CASE( test_sub_token, F )
   mystack.push(1.6);
   mystack.push(3.5);
 
-  SubOperator<Netflow> subOper(featureMap);
+  SubOperator<VastNetflow> subOper(featureMap);
 
   bool b = subOper.evaluate(mystack, key, netflow);
   BOOST_CHECK_EQUAL(b, true);
@@ -75,7 +75,7 @@ BOOST_FIXTURE_TEST_CASE( test_mult_token, F )
   mystack.push(3);
   mystack.push(2);
 
-  MultOperator<Netflow> multOper(featureMap);
+  MultOperator<VastNetflow> multOper(featureMap);
 
   bool b = multOper.evaluate(mystack, key, netflow);
   BOOST_CHECK_EQUAL(b, true);
@@ -89,7 +89,7 @@ BOOST_FIXTURE_TEST_CASE( test_mult_token, F )
 BOOST_FIXTURE_TEST_CASE( test_field_token, F )
 {
 
-  FieldToken<TimeSeconds, Netflow> fieldToken(featureMap);
+  FieldToken<TimeSeconds, VastNetflow> fieldToken(featureMap);
 
   bool b = fieldToken.evaluate(mystack, key, netflow);
   BOOST_CHECK_EQUAL(b, true);
@@ -121,7 +121,7 @@ BOOST_FIXTURE_TEST_CASE( test_func_token, F )
 
 
 
-  FuncToken<Netflow> funcToken(featureMap,
+  FuncToken<VastNetflow> funcToken(featureMap,
                                func,
                                identifier);
 
@@ -148,8 +148,8 @@ BOOST_FIXTURE_TEST_CASE( test_func_token, F )
 
 BOOST_FIXTURE_TEST_CASE( test_prev_token, F )
 {
-  PrevToken<TimeSeconds, Netflow> prevToken1(featureMap);
-  PrevToken<TimeSeconds, Netflow> prevToken2(featureMap);
+  PrevToken<TimeSeconds, VastNetflow> prevToken1(featureMap);
+  PrevToken<TimeSeconds, VastNetflow> prevToken2(featureMap);
 
   // We don't want the identifiers to be the same or that could cause problems.
   BOOST_CHECK(prevToken1.getIdentifier() != prevToken2.getIdentifier());

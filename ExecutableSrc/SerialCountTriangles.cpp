@@ -9,7 +9,7 @@
 #include <fstream>
 #include <boost/program_options.hpp>
 #include <sam/Util.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 
 
 namespace po = boost::program_options;
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  std::vector<Netflow> netflows;
+  std::vector<VastNetflow> netflows;
 
   std::ifstream netflowFile;
   netflowFile.open(infile);
@@ -51,12 +51,12 @@ int main(int argc, char** argv) {
   size_t i = 0;
   while (std::getline(netflowFile, line))
   {
-    Netflow netflow = makeNetflow(i, line);
+    VastNetflow netflow = makeNetflow(i, line);
     netflows.push_back(netflow);
     i++;
   }
 
-  size_t numTri = sam::numTriangles<Netflow, SourceIp, DestIp,
+  size_t numTri = sam::numTriangles<VastNetflow, SourceIp, DestIp,
                     TimeSeconds, DurationSeconds>(netflows, queryTimeWindow);
 
   std::cout << "Number of triangles " << numTri << std::endl;

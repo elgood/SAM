@@ -12,24 +12,8 @@
 #include <chrono>
 
 #include <boost/program_options.hpp>
-
-#include <sam/ReadSocket.hpp>
-#include <sam/ReadFile.hpp>
-#include <sam/ReadCSV.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/TopK.hpp>
-#include <sam/Expression.hpp>
-#include <sam/TupleExpression.hpp>
-#include <sam/Filter.hpp>
-#include <sam/ExponentialHistogramSum.hpp>
-#include <sam/ExponentialHistogramVariance.hpp>
-#include <sam/Netflow.hpp>
-#include <sam/TransformProducer.hpp>
-#include <sam/Project.hpp>
-#include <sam/CollapsedConsumer.hpp>
-#include <sam/Identity.hpp>
-#include <sam/AbstractDataSource.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/sam.hpp>
+#include <sam/VastNetflow.hpp>
 
 using std::string;
 using std::vector;
@@ -41,9 +25,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 //zmq::context_t context(1);
@@ -68,7 +52,7 @@ void createPipeline(
   string identifier = "label";
 
   // Doesn't really need a key, but provide one anyway to the template.
-  auto label = std::make_shared<Identity<Netflow, SamLabel, DestIp>>
+  auto label = std::make_shared<Identity<VastNetflow, SamLabel, DestIp>>
                 (nodeId, featureMap, identifier);
   if (readCSV != NULL) {
     readCSV->registerConsumer(label);
@@ -104,7 +88,7 @@ void createPipeline(
   // Original Feature from SimpleFeatures.cpp: 1 
   identifier = "varSrcTotalBytes";
   auto varSrcTotalBytes = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -122,7 +106,7 @@ void createPipeline(
   // Original Feature from SimpleFeatures.cpp: 2 
   identifier = "averageDestTotalBytes";
   auto averageDestTotalBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  DestTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -189,7 +173,7 @@ void createPipeline(
   // Original Feature from SimpleFeatures.cpp: 6 
   identifier = "averageSrcPayloadBytes";
   auto averageSrcPayloadBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  SrcPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -222,7 +206,7 @@ void createPipeline(
   // Original Feature from SimpleFeatures.cpp: 8 
   identifier = "averageDestPayloadBytes";
   auto averageDestPayloadBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  DestPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -238,7 +222,7 @@ void createPipeline(
   // Original Feature from SimpleFeatures.cpp: 9 
   identifier = "varDestPayloadBytes";
   auto varDestPayloadBytes = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  DestPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -255,7 +239,7 @@ void createPipeline(
   // Original Feature from SimpleFeatures.cpp: 10 
   identifier = "averageSrcPacketCount";
   auto averageSrcPacketCount = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  FirstSeenSrcPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -288,7 +272,7 @@ void createPipeline(
   // Original Feature from SimpleFeatures.cpp: 12
   identifier = "averageDestPacketCount";
   auto averageDestPacketCount = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  FirstSeenDestPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -304,7 +288,7 @@ void createPipeline(
   // Original Feature from SimpleFeatures.cpp: 13
   identifier = "varDestPacketCount";
   auto varDestPacketCount = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  FirstSeenDestPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);

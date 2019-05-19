@@ -6,7 +6,7 @@
 #include <sam/EdgeDescription.hpp>
 #include <sam/SubgraphQuery.hpp>
 #include <sam/ZeroMQPushPull.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <boost/program_options.hpp>
 #include <string>
 #include <vector>
@@ -19,7 +19,7 @@ using std::string;
 using std::vector;
 using namespace std::chrono;
 
-typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
+typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -29,9 +29,9 @@ typedef GraphStoreType::QueryType SubgraphQueryType;
 
 typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 typedef GraphStoreType::ResultType ResultType;  

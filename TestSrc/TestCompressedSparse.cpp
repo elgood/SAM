@@ -7,14 +7,14 @@
 #include <thread>
 #include <atomic>
 #include <sam/Edge.hpp>
-#include <sam/Netflow.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflow.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <sam/CompressedSparse.hpp>
 #include <sam/Util.hpp>
 
 using namespace sam;
 
-typedef CompressedSparse<Netflow, 
+typedef CompressedSparse<VastNetflow, 
    DestIp, SourceIp, TimeSeconds, DurationSeconds, 
    StringHashFunction, StringEqualityFunction> GraphType;
 
@@ -42,7 +42,8 @@ BOOST_AUTO_TEST_CASE( test_compressed_sparse_one_vertex )
       //  boost::lexical_cast<std::string>(i), 1);
 
       for (int j =0; j < numExamples; j++) {
-        Netflow netflow = makeNetflow(id->fetch_add(1), generator.generate());
+        VastNetflow netflow = makeNetflow(id->fetch_add(1), 
+                                          generator.generate());
         graph->addEdge(netflow);
       }
     }));
@@ -80,7 +81,8 @@ BOOST_AUTO_TEST_CASE( test_compressed_sparse_many_vertices )
       //  boost::lexical_cast<std::string>(i), 1);
 
       for (int j =0; j < numExamples; j++) {
-        Netflow netflow = makeNetflow(id->fetch_add(1), generator.generate());
+        VastNetflow netflow = makeNetflow(id->fetch_add(1), 
+                                          generator.generate());
         graph->addEdge(netflow);
       }
        
@@ -121,7 +123,8 @@ BOOST_AUTO_TEST_CASE( test_compressed_sparse_small_capacity )
         boost::lexical_cast<std::string>(i), 1);
 
       for (int j =0; j < numExamples; j++) {
-        Netflow netflow = makeNetflow(id->fetch_add(1), generator.generate());
+        VastNetflow netflow = makeNetflow(id->fetch_add(1), 
+                                          generator.generate());
         graph->addEdge(netflow);
       }
        
@@ -147,7 +150,7 @@ BOOST_AUTO_TEST_CASE( test_work )
 
   UniformDestPort generator("192.168.0." + 
     boost::lexical_cast<std::string>(1), 1);
-  Netflow netflow = makeNetflow(0, generator.generate());
+  VastNetflow netflow = makeNetflow(0, generator.generate());
   
   size_t work = graph->addEdge(netflow);
   BOOST_CHECK_EQUAL(work, 1);
@@ -178,7 +181,8 @@ BOOST_AUTO_TEST_CASE( test_cleanup )
         boost::lexical_cast<std::string>(i), 1);
 
       for (int j =0; j < numExamples; j++) {
-        Netflow netflow = makeNetflow(id->fetch_add(1), generator.generate());
+        VastNetflow netflow = makeNetflow(id->fetch_add(1), 
+                                          generator.generate());
         work->fetch_add(graph->addEdge(netflow));
       }
        

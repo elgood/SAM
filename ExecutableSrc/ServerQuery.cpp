@@ -21,7 +21,7 @@
 #include <sam/TopK.hpp>
 #include <sam/Expression.hpp>
 #include <sam/Filter.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/Identity.hpp>
 
 #define DEBUG 1
@@ -36,9 +36,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 void createPipeline(
@@ -59,7 +59,7 @@ void createPipeline(
   string identifier = "label";
 
   // Doesn't really need a key, but provide one anyway to the template.
-  auto label = std::make_shared<Identity<Netflow, SamLabel, DestIp>>
+  auto label = std::make_shared<Identity<VastNetflow, SamLabel, DestIp>>
                 (nodeId, featureMap, identifier);
   if (readCSV != NULL) {
     readCSV->registerConsumer(label);
@@ -74,7 +74,7 @@ void createPipeline(
   int k = 2;
   int N = 10000;
   int b = 1000;
-  auto topk = std::make_shared<TopK<Netflow, 
+  auto topk = std::make_shared<TopK<VastNetflow, 
                                DestPort, DestIp>>(
                                N, b, k, nodeId,
                                featureMap, identifier);
@@ -94,11 +94,11 @@ void createPipeline(
     auto topKFeature = static_cast<TopKFeature const *>(feature);
     return topKFeature->getFrequencies()[0];    
   };
-  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, 
+  auto funcToken1 = std::make_shared<FuncToken<VastNetflow>>(featureMap, 
                                                     function1, identifier);
 
   // Addition token
-  auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
+  auto addOper = std::make_shared<AddOperator<VastNetflow>>(featureMap);
 
   // Second function token
   auto function2 = [](Feature const * feature)->double {
@@ -106,26 +106,26 @@ void createPipeline(
     return topKFeature->getFrequencies()[1];    
   };
 
-  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, 
+  auto funcToken2 = std::make_shared<FuncToken<VastNetflow>>(featureMap, 
                                                     function2, identifier);
 
   // Lessthan token
-  auto lessThanToken =std::make_shared<LessThanOperator<Netflow>>(featureMap);
+  auto lessThanToken =std::make_shared<LessThanOperator<VastNetflow>>(featureMap);
   
   // Number token
-  auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 0.9);
+  auto numberToken = std::make_shared<NumberToken<VastNetflow>>(featureMap, 0.9);
 
   auto infixList = std::make_shared<std::list<std::shared_ptr<
-                    ExpressionToken<Netflow>>>>();
+                    ExpressionToken<VastNetflow>>>>();
   infixList->push_back(funcToken1);
   infixList->push_back(addOper);
   infixList->push_back(funcToken2);
   infixList->push_back(lessThanToken);
   infixList->push_back(numberToken);
 
-  auto filterExpression = std::make_shared<Expression<Netflow>>(*infixList);
+  auto filterExpression = std::make_shared<Expression<VastNetflow>>(*infixList);
    
-  auto filter = std::make_shared<Filter<Netflow, DestIp>>(
+  auto filter = std::make_shared<Filter<VastNetflow, DestIp>>(
     filterExpression, nodeId, featureMap, "servers", queueLength);
   if (readCSV != NULL) {
     readCSV->registerConsumer(filter);

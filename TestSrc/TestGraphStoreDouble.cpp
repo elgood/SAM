@@ -8,7 +8,7 @@
 #include <vector>
 #include <zmq.hpp>
 #include <sam/GraphStore.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <sam/FeatureMap.hpp>
 
 
@@ -40,13 +40,13 @@ public:
   }
 };
 
-typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp, 
+typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp, 
                    TimeSeconds, DurationSeconds, 
                    OneTwoThreeFourHashFunction, OneTwoThreeFourHashFunction, 
                    StringEqualityFunction, StringEqualityFunction>
         GraphStoreType;
 
-typedef EdgeDescription<Netflow, TimeSeconds, DurationSeconds>
+typedef EdgeDescription<VastNetflow, TimeSeconds, DurationSeconds>
         EdgeDescriptionType;
 
 typedef GraphStoreType::QueryType QueryType;
@@ -88,8 +88,8 @@ struct DoubleNodeFixture  {
   GraphStoreType* graphStore0; 
   GraphStoreType* graphStore1;
   
-  AbstractNetflowGenerator *generator0;
-  AbstractNetflowGenerator *generator1;
+  AbstractVastNetflowGenerator *generator0;
+  AbstractVastNetflowGenerator *generator1;
    
   DoubleNodeFixture () 
   {
@@ -158,7 +158,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
   int n = 1000;
 
   auto graphFunction = [](GraphStoreType* graphStore, int n,
-                            AbstractNetflowGenerator* generator,
+                            AbstractVastNetflowGenerator* generator,
                             size_t threadId, size_t* expected)
   {
     OneTwoThreeFourHashFunction hash;
@@ -184,7 +184,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 
       std::string str = generator->generate(time);
       time = time + increment;
-      Netflow netflow = makeNetflow(totalNetflows++, str);
+      VastNetflow netflow = makeNetflow(totalNetflows++, str);
 
       // We are simulating the partitioning, so only send netflows
       // that would be sent with partitioning in place.
@@ -230,9 +230,9 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 ///  
 BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
 {
-  AbstractNetflowGenerator *onePairGenerator0 = 
+  AbstractVastNetflowGenerator *onePairGenerator0 = 
       new OnePairSizeDist("192.168.0.1","192.168.0.2", 1.0, 1.0, 1.0, 1.0);
-  AbstractNetflowGenerator *onePairGenerator1 = 
+  AbstractVastNetflowGenerator *onePairGenerator1 = 
       new OnePairSizeDist("192.168.0.3","192.168.0.4",1,1,1,1);
 
   ///// Subgraph query setup ///////
@@ -294,7 +294,7 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   // This function sends the extra netflow to bridge the two data streams. 
   auto graphFunction0 = [&time, increment, numExtra](
     GraphStoreType* graphStore,
-    int n, AbstractNetflowGenerator* generator)
+    int n, AbstractVastNetflowGenerator* generator)
     
   {
     double time = 0.0;
@@ -323,10 +323,10 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
       std::string str = generator->generate(time);
       time = time + increment;
 
-      Netflow n = makeNetflow(totalNetflows++, str);
+      VastNetflow n = makeNetflow(totalNetflows++, str);
       graphStore->consume(n);
       if (i == 0) {
-        Netflow netflow = makeNetflow(totalNetflows++, netflowString);
+        VastNetflow netflow = makeNetflow(totalNetflows++, netflowString);
         graphStore->consume(netflow);
       }
     }
@@ -345,7 +345,7 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
       }
 
       std::string str = randomGenerator.generate();
-      Netflow netflow = makeNetflow(totalNetflows, str);
+      VastNetflow netflow = makeNetflow(totalNetflows, str);
 
       graphStore->consume(netflow);
       totalNetflows++;
@@ -357,7 +357,7 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
 
   auto graphFunction1 = [&time, increment, numExtra](
     GraphStoreType* graphStore,
-    int n, AbstractNetflowGenerator* generator)
+    int n, AbstractVastNetflowGenerator* generator)
     
   {
 
@@ -379,7 +379,7 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
       std::string str = generator->generate(time);
       time += increment;
 
-      Netflow n = makeNetflow(totalNetflows, str);
+      VastNetflow n = makeNetflow(totalNetflows, str);
       totalNetflows++;
       graphStore->consume(n);
     }
@@ -398,7 +398,7 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
       }
 
       std::string str = randomGenerator.generate();
-      Netflow netflow = makeNetflow(totalNetflows, str);
+      VastNetflow netflow = makeNetflow(totalNetflows, str);
 
       graphStore->consume(netflow);
       totalNetflows++;

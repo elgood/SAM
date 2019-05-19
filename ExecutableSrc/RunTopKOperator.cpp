@@ -18,7 +18,7 @@
 #include <sam/ReadSocket.hpp>
 #include <sam/ZeroMQPushPull.hpp>
 #include <sam/TopK.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 
 using std::string;
 using std::vector;
@@ -30,9 +30,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 int main(int argc, char** argv) {
@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     string identifier = "topk" + boost::lexical_cast<string>(i);
-    auto topk = std::make_shared<TopK<Netflow, DestPort, DestIp>>(
+    auto topk = std::make_shared<TopK<VastNetflow, DestPort, DestIp>>(
                                      N, b, k, nodeId, featureMap, identifier);
                                           
     consumer->registerConsumer(topk); 

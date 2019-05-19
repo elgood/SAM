@@ -7,13 +7,13 @@
 #include <string>
 #include <vector>
 #include <sam/GraphStore.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <zmq.hpp>
 
 using namespace sam;
 using namespace std::chrono;
 
-typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp, 
+typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp, 
                    TimeSeconds, DurationSeconds, 
                    StringHashFunction, StringHashFunction, 
                    StringEqualityFunction, StringEqualityFunction>
@@ -61,12 +61,12 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   // One thread runs this.
   auto graph_function0 = [graphStore0, n]()
   {
-    AbstractNetflowGenerator *generator0 = 
+    AbstractVastNetflowGenerator *generator0 = 
       new UniformDestPort("192.168.0.0", 1);
     
     for (int i = 0; i < n; i++) {
       std::string str = generator0->generate();
-      Netflow n = makeNetflow(0, str);
+      VastNetflow n = makeNetflow(0, str);
       graphStore0->consume(n);
     }
     graphStore0->terminate();
@@ -87,12 +87,12 @@ BOOST_AUTO_TEST_CASE( test_graph_store )
   auto graph_function1 = [graphStore1, n]()
                           
   {
-    AbstractNetflowGenerator *generator1 = 
+    AbstractVastNetflowGenerator *generator1 = 
       new UniformDestPort("192.168.0.1", 1);
     
     for (int i = 0; i < n; i++) {
       std::string str = generator1->generate();
-      Netflow n = makeNetflow(0, str);
+      VastNetflow n = makeNetflow(0, str);
       graphStore1->consume(n);
     }
     graphStore1->terminate();
@@ -150,7 +150,7 @@ struct SingleNodeFixture  {
   TimeEdgeExpression* startY2Xboth;
   TimeEdgeExpression* startZ2Xbeg;
 
-  AbstractNetflowGenerator* generator;
+  AbstractVastNetflowGenerator* generator;
 
   GraphStoreType* graphStore0;
   std::shared_ptr<FeatureMap> featureMap;
@@ -209,7 +209,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, SingleNodeFixture )
   for(size_t i = 0; i < n; i++) 
   {
     std::string str = generator->generate();
-    Netflow netflow = makeNetflow(i, str);
+    VastNetflow netflow = makeNetflow(i, str);
     graphStore0->consume(netflow);
   }
 
@@ -251,7 +251,7 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, SingleNodeFixture )
   for(size_t i = 0; i < n; i++) 
   {
     std::string str = generator->generate();
-    Netflow netflow = makeNetflow(i, str);
+    VastNetflow netflow = makeNetflow(i, str);
     graphStore0->consume(netflow);
   }
 
@@ -301,7 +301,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
     } 
 
     std::string str = generator->generate(time);
-    Netflow netflow = makeNetflow(totalNetflows, str);
+    VastNetflow netflow = makeNetflow(totalNetflows, str);
     graphStore0->consume(netflow);
     time += increment;
     totalNetflows++;
@@ -322,7 +322,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, SingleNodeFixture )
     }
 
     std::string str = randomGenerator.generate();
-    Netflow netflow = makeNetflow(totalNetflows, str);
+    VastNetflow netflow = makeNetflow(totalNetflows, str);
      
 
    graphStore0->consume(netflow);
@@ -413,12 +413,12 @@ BOOST_FIXTURE_TEST_CASE( test_triangle_same_time, SingleNodeFixture )
     "ipLayerProtocolCode,node6,node4,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
 
-  Netflow n1 = makeNetflow(0, s1);
-  Netflow n2 = makeNetflow(1, s2);
-  Netflow n3 = makeNetflow(2, s3);
-  Netflow n4 = makeNetflow(0, s4);
-  Netflow n5 = makeNetflow(1, s5);
-  Netflow n6 = makeNetflow(2, s6);
+  VastNetflow n1 = makeNetflow(0, s1);
+  VastNetflow n2 = makeNetflow(1, s2);
+  VastNetflow n3 = makeNetflow(2, s3);
+  VastNetflow n4 = makeNetflow(0, s4);
+  VastNetflow n5 = makeNetflow(1, s5);
+  VastNetflow n6 = makeNetflow(2, s6);
   graphStore0->consume(n1);
   graphStore0->consume(n2);
   graphStore0->consume(n3);

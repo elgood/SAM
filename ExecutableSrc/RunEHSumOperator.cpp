@@ -13,9 +13,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         
         PartitionType;
 
@@ -134,7 +134,7 @@ int main(int argc, char** argv)
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     std::string identifier = "ehsum" + boost::lexical_cast<std::string>(i);
-    auto op = std::make_shared<ExponentialHistogramSum<size_t, Netflow, 
+    auto op = std::make_shared<ExponentialHistogramSum<size_t, VastNetflow, 
                                       DestPort, DestIp>>(
                                          N, k, nodeId, featureMap, identifier);
                                                 

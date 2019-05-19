@@ -26,20 +26,8 @@
 
 #include <boost/program_options.hpp>
 
-#include <sam/ReadSocket.hpp>
-#include <sam/ReadCSV.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/TopK.hpp>
-#include <sam/Expression.hpp>
-#include <sam/TupleExpression.hpp>
-#include <sam/Filter.hpp>
-#include <sam/ExponentialHistogramSum.hpp>
-#include <sam/ExponentialHistogramVariance.hpp>
-#include <sam/Netflow.hpp>
-#include <sam/TransformProducer.hpp>
-#include <sam/Project.hpp>
-#include <sam/CollapsedConsumer.hpp>
-#include <sam/Identity.hpp>
+#include <sam/VastNetflow.hpp>
+#include <sam/sam.hpp>
 
 using std::string;
 using std::vector;
@@ -51,9 +39,9 @@ namespace po = boost::program_options;
 using namespace sam;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 //zmq::context_t context(1);
@@ -78,7 +66,7 @@ void createPipeline(
   string identifier = "label";
 
   // Doesn't really need a key, but provide one anyway to the template.
-  auto label = std::make_shared<Identity<Netflow, SamLabel, DestIp>>
+  auto label = std::make_shared<Identity<VastNetflow, SamLabel, DestIp>>
                 (nodeId, featureMap, identifier);
   if (readCSV != NULL) {
     readCSV->registerConsumer(label);
@@ -93,7 +81,7 @@ void createPipeline(
   /** Dest Ip as key **/
   identifier = "averageSrcTotalBytes";
   auto averageSrcTotalBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -109,7 +97,7 @@ void createPipeline(
 
   identifier = "varSrcTotalBytes";
   auto varSrcTotalBytes = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -124,7 +112,7 @@ void createPipeline(
 
   identifier = "averageDestTotalBytes";
   auto averageDestTotalBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  DestTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -139,7 +127,7 @@ void createPipeline(
 
   identifier = "varDestTotalBytes";
   auto varDestTotalBytes = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  DestTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -154,7 +142,7 @@ void createPipeline(
 
   identifier = "averageDuration";
   auto averageDuration = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  DurationSeconds,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -169,7 +157,7 @@ void createPipeline(
 
   identifier = "varDuration";
   auto varDuration = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  DurationSeconds,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -184,7 +172,7 @@ void createPipeline(
 
   identifier = "averageSrcPayloadBytes";
   auto averageSrcPayloadBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  SrcPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -199,7 +187,7 @@ void createPipeline(
 
   identifier = "varSrcPayloadBytes";
   auto varSrcPayloadBytes = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  SrcPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -214,7 +202,7 @@ void createPipeline(
 
   identifier = "averageDestPayloadBytes";
   auto averageDestPayloadBytes = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  DestPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -229,7 +217,7 @@ void createPipeline(
 
   identifier = "varDestPayloadBytes";
   auto varDestPayloadBytes = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  DestPayloadBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -244,7 +232,7 @@ void createPipeline(
 
   identifier = "averageSrcPacketCount";
   auto averageSrcPacketCount = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  FirstSeenSrcPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -259,7 +247,7 @@ void createPipeline(
 
   identifier = "varSrcPacketCount";
   auto varSrcPacketCount = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  FirstSeenSrcPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -274,7 +262,7 @@ void createPipeline(
 
   identifier = "averageDestPacketCount";
   auto averageDestPacketCount = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  FirstSeenDestPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -289,7 +277,7 @@ void createPipeline(
 
   identifier = "varDestPacketCount";
   auto varDestPacketCount = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  FirstSeenDestPacketCount,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -305,7 +293,7 @@ void createPipeline(
   /** SourceIp as key **/
   identifier = "averageSrcTotalBytesSourceIp";
   auto averageSrcTotalBytesSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  SrcTotalBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -320,7 +308,7 @@ void createPipeline(
 
   identifier = "varSrcTotalBytesSourceIp";
   auto varSrcTotalBytesSourceIp = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  SrcTotalBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -335,7 +323,7 @@ void createPipeline(
 
   identifier = "averageDestTotalBytesSourceIp";
   auto averageDestTotalBytesSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  DestTotalBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -350,7 +338,7 @@ void createPipeline(
 
   identifier = "varDestTotalBytesSourceIp";
   auto varDestTotalBytesSourceIp = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  DestTotalBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -365,7 +353,7 @@ void createPipeline(
 
   identifier = "averageDurationSourceIp";
   auto averageDurationSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  DurationSeconds,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -380,7 +368,7 @@ void createPipeline(
 
   identifier = "varDurationSourceIp";
   auto varDurationSourceIp = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  DurationSeconds,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -395,7 +383,7 @@ void createPipeline(
 
   identifier = "averageSrcPayloadBytesSourceIp";
   auto averageSrcPayloadBytesSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  SrcPayloadBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -410,7 +398,7 @@ void createPipeline(
 
   identifier = "varSrcPayloadBytesSourceIp";
   auto varSrcPayloadBytesSourceIp = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  SrcPayloadBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -425,7 +413,7 @@ void createPipeline(
 
   identifier = "averageDestPayloadBytesSourceIp";
   auto averageDestPayloadBytesSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  DestPayloadBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -440,7 +428,7 @@ void createPipeline(
 
   identifier = "varDestPayloadBytesSourceIp";
   auto varDestPayloadBytesSourceIp = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  DestPayloadBytes,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -455,7 +443,7 @@ void createPipeline(
 
   identifier = "averageSrcPacketCountSourceIp";
   auto averageSrcPacketCountSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  FirstSeenSrcPacketCount,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -470,7 +458,7 @@ void createPipeline(
 
   identifier = "varSrcPacketCountSourceIp";
   auto varSrcPacketCountSourceIp = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  FirstSeenSrcPacketCount,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -485,7 +473,7 @@ void createPipeline(
 
   identifier = "averageDestPacketCountSourceIp";
   auto averageDestPacketCountSourceIp = std::make_shared<
-                      ExponentialHistogramAve<double, Netflow,
+                      ExponentialHistogramAve<double, VastNetflow,
                                                  FirstSeenDestPacketCount,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -500,7 +488,7 @@ void createPipeline(
 
   identifier = "varDestPacketCountSourceIp";
   auto varDestPacketCountSourceIp = std::make_shared<
-                      ExponentialHistogramVariance<double, Netflow,
+                      ExponentialHistogramVariance<double, VastNetflow,
                                                  FirstSeenDestPacketCount,
                                                  SourceIp>>
                           (N, 2, nodeId, featureMap, identifier);

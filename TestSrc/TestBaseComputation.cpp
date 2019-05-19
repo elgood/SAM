@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <sam/BaseComputation.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/Util.hpp>
 
 using namespace sam;
@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE( test_generate_key )
   std::string id = "blah";
   BaseComputation computation(nodeId, featureMap, id);
                                                                
-  Netflow netflow = makeNetflow(netflowString1);
+  VastNetflow netflow = makeNetflow(netflowString1);
   std::string key = generateKey<SourceIp>(netflow);
 
   BOOST_CHECK_EQUAL(key.compare("172.20.2.18"), 0);

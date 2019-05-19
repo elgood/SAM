@@ -6,7 +6,7 @@
 #include <sam/TopK.hpp>
 #include <sam/Filter.hpp>
 #include <sam/Expression.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 
 using namespace sam;
 
@@ -34,7 +34,7 @@ BOOST_FIXTURE_TEST_CASE( test_topk_no_key, F )
   PopularSites producer(queueLength, numExamples, numPopular,
                         probabilityPop);
 
-  auto topk = std::make_shared<TopK<Netflow, DestIp>>
+  auto topk = std::make_shared<TopK<VastNetflow, DestIp>>
     (N, b, k, 0, featureMap, identifier);
 
   producer.registerConsumer(topk);
@@ -72,7 +72,7 @@ BOOST_FIXTURE_TEST_CASE( test_topk_server, F )
  
   // Creating the topk computation and registering it as a consumer
   // of the data source: producer.
-  auto topk = std::make_shared<TopK<Netflow, DestPort, DestIp>>
+  auto topk = std::make_shared<TopK<VastNetflow, DestPort, DestIp>>
     (N, b, k, 0, featureMap, identifier);
   producer.registerConsumer(topk);
 
@@ -89,35 +89,35 @@ BOOST_FIXTURE_TEST_CASE( test_topk_server, F )
     auto topKFeature = static_cast<TopKFeature const *>(feature);
     return topKFeature->getFrequencies()[0];  
   };
-  auto funcToken1 = std::make_shared<FuncToken<Netflow>>(featureMap, function1,
+  auto funcToken1 = std::make_shared<FuncToken<VastNetflow>>(featureMap, function1,
                                                          identifier);
 
   // Addition token
-  auto addOper = std::make_shared<AddOperator<Netflow>>(featureMap);
+  auto addOper = std::make_shared<AddOperator<VastNetflow>>(featureMap);
 
   // Second function token
   auto function2 = [](Feature const * feature)->double {
     auto topKFeature = static_cast<TopKFeature const *>(feature);
     return topKFeature->getFrequencies()[1];
   };
-  auto funcToken2 = std::make_shared<FuncToken<Netflow>>(featureMap, function2,
+  auto funcToken2 = std::make_shared<FuncToken<VastNetflow>>(featureMap, function2,
                                                          identifier);
 
   // Lessthan token
-  auto lessThanToken = std::make_shared<LessThanOperator<Netflow>>(featureMap);
+  auto lessThanToken = std::make_shared<LessThanOperator<VastNetflow>>(featureMap);
   
   // Number token
-  auto numberToken = std::make_shared<NumberToken<Netflow>>(featureMap, 0.9);
+  auto numberToken = std::make_shared<NumberToken<VastNetflow>>(featureMap, 0.9);
 
-  std::list<std::shared_ptr<ExpressionToken<Netflow>>> infixList;
+  std::list<std::shared_ptr<ExpressionToken<VastNetflow>>> infixList;
   infixList.push_back(funcToken1);
   infixList.push_back(addOper);
   infixList.push_back(funcToken2);
   infixList.push_back(lessThanToken);
   infixList.push_back(numberToken);
 
-  auto filterExpression = std::make_shared<Expression<Netflow>>(infixList);
-  auto filter = std::make_shared<Filter<Netflow, DestIp>>(
+  auto filterExpression = std::make_shared<Expression<VastNetflow>>(infixList);
+  auto filter = std::make_shared<Filter<VastNetflow, DestIp>>(
     filterExpression, 0, featureMap, "servers", queueLength);
 
   producer.registerConsumer(filter);

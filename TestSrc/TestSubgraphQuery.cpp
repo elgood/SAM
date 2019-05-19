@@ -4,14 +4,14 @@
 #include <string>
 #include <vector>
 #include <sam/SubgraphQuery.hpp>
-#include <sam/Netflow.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/FeatureMap.hpp>
 
 using namespace sam;
 
-typedef EdgeDescription<Netflow, TimeSeconds, DurationSeconds> 
+typedef EdgeDescription<VastNetflow, TimeSeconds, DurationSeconds> 
   EdgeDescriptionType;
-typedef SubgraphQuery<Netflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
+typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
   QueryType;
 
 struct F {
@@ -91,7 +91,7 @@ BOOST_FIXTURE_TEST_CASE( test_bad_finalize_no_source_target, F )
   // Checking that the edge are in temporal order
   double prev = std::numeric_limits<double>::lowest();
   int i = 0;
-  for (EdgeDescription<Netflow, TimeSeconds, DurationSeconds> edge : query) {
+  for (EdgeDescription<VastNetflow, TimeSeconds, DurationSeconds> edge : query) {
     switch (i)
     {
       case(0): BOOST_CHECK_EQUAL(e1, edge.edgeId); break;
@@ -193,9 +193,9 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
   query.addExpression(endtimeExpressionE2);
   query.finalize();
 
-  EdgeDescription<Netflow, TimeSeconds, DurationSeconds> const& edge0 = 
+  EdgeDescription<VastNetflow, TimeSeconds, DurationSeconds> const& edge0 = 
     query.getEdgeDescription(0);
-  EdgeDescription<Netflow, TimeSeconds, DurationSeconds> const& edge1 = 
+  EdgeDescription<VastNetflow, TimeSeconds, DurationSeconds> const& edge1 = 
     query.getEdgeDescription(1);
 
   BOOST_CHECK_EQUAL(edge0.startTimeRange.first, endtime_e1_value-maxOffset);

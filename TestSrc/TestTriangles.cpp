@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 #include <sam/ZeroMQPushPull.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 #include <sam/GraphStore.hpp>
 #include <sam/EdgeDescription.hpp>
 #include <sam/SubgraphQuery.hpp>
@@ -21,7 +21,7 @@ using namespace std::chrono;
 
 //zmq::context_t context(1);
 
-typedef GraphStore<Netflow, NetflowTuplizer, SourceIp, DestIp,
+typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -32,9 +32,9 @@ typedef GraphStoreType::ResultType ResultType;
 
 typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 
-typedef TupleStringHashFunction<Netflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<Netflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<Netflow, NetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
+typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
+typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
 
 /*
@@ -52,8 +52,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   auto featureMap = std::make_shared<FeatureMap>(1000);
 
   // Setting up random generators
-  AbstractNetflowGenerator *generator0 = new RandomGenerator();
-  AbstractNetflowGenerator *generator1 = new RandomGenerator();
+  AbstractVastNetflowGenerator *generator0 = new RandomGenerator();
+  AbstractVastNetflowGenerator *generator1 = new RandomGenerator();
 
   // Setting up ZeroMQPushPull objects
   size_t queueLength = 1;
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
   auto generateFunction = [numTuples, numTriangles, modValue, numExtra,
                            &time, increment](
                              PartitionType* pushPull,
-                             AbstractNetflowGenerator* generator,
+                             AbstractVastNetflowGenerator* generator,
                              size_t nodeId)
   {
 
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
           boost::lexical_cast<std::string>(triangleCounter) +
           "_" + boost::lexical_cast<std::string>(nodeId);
 
-        Netflow netflow0 = makeNetflow(0, str);
+        VastNetflow netflow0 = makeNetflow(0, str);
         std::get<SourceIp>(netflow0) = nodex; 
         std::get<DestIp>(netflow0) = nodey;
 
@@ -216,8 +216,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_exact )
         time += increment;
         std::string str2 = generator->generate(time);
         time += increment;
-        Netflow netflow1 = makeNetflow(0, str1);
-        Netflow netflow2 = makeNetflow(0, str2);
+        VastNetflow netflow1 = makeNetflow(0, str1);
+        VastNetflow netflow2 = makeNetflow(0, str2);
         std::get<SourceIp>(netflow1) = nodey;
         std::get<DestIp>(netflow1) = nodez;
         std::get<SourceIp>(netflow2) = nodez;
@@ -330,8 +330,8 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 
   // Setting up random generators
   size_t numVertices = 500;
-  AbstractNetflowGenerator *generator0 = new RandomPoolGenerator(numVertices);
-  AbstractNetflowGenerator *generator1 = new RandomPoolGenerator(numVertices);
+  AbstractVastNetflowGenerator *generator0 = new RandomPoolGenerator(numVertices);
+  AbstractVastNetflowGenerator *generator1 = new RandomPoolGenerator(numVertices);
     
 
   // Setting up ZeroMQPushPull objects
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   double time = 0.0;
   double increment = 0.01;
 
-  std::vector<Netflow> netflowList;
+  std::vector<VastNetflow> netflowList;
   std::mutex lock;
 
   //pushPull0->acceptData();
@@ -486,13 +486,13 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                            &netflowList, &lock]
                            (
                              PartitionType* pushPull,
-                             AbstractNetflowGenerator* generator,
+                             AbstractVastNetflowGenerator* generator,
                              std::shared_ptr<GraphStoreType> graphStore,
                              size_t nodeId)
   {
 
     auto starttime = std::chrono::high_resolution_clock::now();
-    AbstractNetflowGenerator *otherGenerator = 
+    AbstractVastNetflowGenerator *otherGenerator = 
       new RandomGenerator();
     for(size_t i = 0; i < numTuples; i++) {
       DEBUG_PRINT("NodeId %lu i %lu\n", nodeId, i);
@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
       std::string str = generator->generate(time);
       time += increment;
       pushPull->consume(str);
-      Netflow netflow = makeNetflow(i, str);
+      VastNetflow netflow = makeNetflow(i, str);
       lock.lock();
       netflowList.push_back(netflow);
       lock.unlock();
@@ -587,9 +587,9 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   for(size_t i = 0; i < numGetResults0; i++) {
     ResultType result = graphStore0->getResult(i);
     BOOST_CHECK(result.complete());
-    Netflow n0 = result.getResultTuple(0); 
-    Netflow n1 = result.getResultTuple(1); 
-    Netflow n2 = result.getResultTuple(2); 
+    VastNetflow n0 = result.getResultTuple(0); 
+    VastNetflow n1 = result.getResultTuple(1); 
+    VastNetflow n2 = result.getResultTuple(2); 
     double starttime0 = std::get<TimeSeconds>(n0);
     double starttime1 = std::get<TimeSeconds>(n1);
     double starttime2 = std::get<TimeSeconds>(n2);
@@ -601,9 +601,9 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   for(size_t i = 0; i < numGetResults1; i++) {
     ResultType result = graphStore1->getResult(i);
     BOOST_CHECK(result.complete());
-    Netflow n0 = result.getResultTuple(0); 
-    Netflow n1 = result.getResultTuple(1); 
-    Netflow n2 = result.getResultTuple(2); 
+    VastNetflow n0 = result.getResultTuple(0); 
+    VastNetflow n1 = result.getResultTuple(1); 
+    VastNetflow n2 = result.getResultTuple(2); 
     double starttime0 = std::get<TimeSeconds>(n0);
     double starttime1 = std::get<TimeSeconds>(n1);
     double starttime2 = std::get<TimeSeconds>(n2);
@@ -613,7 +613,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   }
 
   size_t calculatedNumTriangles = 
-    sam::numTriangles<Netflow, SourceIp, DestIp, TimeSeconds,
+    sam::numTriangles<VastNetflow, SourceIp, DestIp, TimeSeconds,
                       DurationSeconds>(netflowList, queryTimeWindow);
 
   BOOST_CHECK_EQUAL(calculatedNumTriangles, totalResults);

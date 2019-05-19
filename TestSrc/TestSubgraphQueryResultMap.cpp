@@ -7,18 +7,18 @@
 #include <sam/SubgraphQuery.hpp>
 #include <sam/SubgraphQueryResult.hpp>
 #include <sam/SubgraphQueryResultMap.hpp>
-#include <sam/Netflow.hpp>
-#include <sam/NetflowGenerators.hpp>
+#include <sam/VastNetflow.hpp>
+#include <sam/VastNetflowGenerators.hpp>
 
 
 using namespace sam;
 using namespace std::chrono;
 
-typedef SubgraphQueryResultMap<Netflow, SourceIp, DestIp,
+typedef SubgraphQueryResultMap<VastNetflow, SourceIp, DestIp,
   TimeSeconds, DurationSeconds, StringHashFunction, StringHashFunction,
   StringEqualityFunction, StringEqualityFunction> MapType;
 
-typedef SubgraphQuery<Netflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
+typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
   QueryType;
 
 typedef MapType::QueryResultType QueryResultType;
@@ -44,7 +44,7 @@ struct F {
   std::shared_ptr<TimeEdgeExpression> startY2Xboth;
   std::shared_ptr<TimeEdgeExpression> startZ2Xbeg;
 
-  std::shared_ptr<AbstractNetflowGenerator> generator;
+  std::shared_ptr<AbstractVastNetflowGenerator> generator;
 
   size_t capacity = 1000;
   double window = 100;
@@ -98,8 +98,8 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   for(size_t i = 0; i < n; i++) 
   {
     std::string str = generator->generate();
-    Netflow netflow = makeNetflow(0, str);
-    SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
+    VastNetflow netflow = makeNetflow(0, str);
+    SubgraphQueryResult<VastNetflow, SourceIp, DestIp, TimeSeconds,
                         DurationSeconds> result(query, netflow);
     map.add(result, edgeRequests);
   }
@@ -139,10 +139,10 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
   for(size_t i = 0; i < n; i++) 
   {
     std::string str = generator->generate();
-    Netflow netflow = makeNetflow(0, str);
+    VastNetflow netflow = makeNetflow(0, str);
     double startTime = std::get<TimeSeconds>(netflow);
     if (query->satisfiesConstraints(0, netflow, startTime)) { 
-      SubgraphQueryResult<Netflow, SourceIp, DestIp, TimeSeconds,
+      SubgraphQueryResult<VastNetflow, SourceIp, DestIp, TimeSeconds,
                           DurationSeconds> result(query, netflow);
       map.add(result, edgeRequests);
     }
@@ -199,7 +199,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
 
     std::string str = generator->generate(time);
     time += increment;
-    Netflow netflow = makeNetflow(i, str);
+    VastNetflow netflow = makeNetflow(i, str);
     QueryResultType result(query, netflow);
                          
     map.add(result, edgeRequests);
@@ -225,9 +225,9 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   std::string str2 = generator->generate(0.1);
   std::string str3 = generator->generate(0.2);
 
-  Netflow netflow1 = makeNetflow(1, str1);
-  Netflow netflow2 = makeNetflow(2, str2);
-  Netflow netflow3 = makeNetflow(3, str3);
+  VastNetflow netflow1 = makeNetflow(1, str1);
+  VastNetflow netflow2 = makeNetflow(2, str2);
+  VastNetflow netflow3 = makeNetflow(3, str3);
 
   std::get<SourceIp>(netflow1) = nodeA; 
   std::get<DestIp>(netflow1) = nodeB; 
