@@ -37,7 +37,6 @@ typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
 //zmq::context_t context(1);
 
 void createPipeline(
-                 std::shared_ptr<ReadCSV> readCSV,
                  std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
                  std::shared_ptr<PartitionType> pushpull,
