@@ -125,23 +125,15 @@ int main(int argc, char** argv)
   // concatenation of prefix with integer id of the node.
   vector<string> hostnames(numNodes);
 
-  // The port numbers assigned to each node for zeromq push/pull
-  // communication.  We start at startingPort and increase by one for each
-  // node.
-  vector<size_t> ports(numNodes);
 
   if (numNodes == 1) { // Case when we are operating on one node
     hostnames[0] = "127.0.0.1";
-    ports[0] = startingPort;
   } else {
     for (int i = 0; i < numNodes; i++) {
       // Assumes all the host names can be composed by adding prefix with
       // [0,numNodes).
       hostnames[i] = prefix + boost::lexical_cast<string>(i);
 
-      // Assigns ports starting at startingPort and increments.  These ports
-      // are used for zeromq push/pull sockets.
-      ports[i] = (startingPort + i);
     }
   }
 
