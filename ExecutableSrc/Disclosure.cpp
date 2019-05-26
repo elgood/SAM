@@ -33,6 +33,7 @@ typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
 typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
 typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
+typedef ReadCSV<VastNetflow, VastNetflowTuplizer> ReadCSVType; 
 
 //zmq::context_t context(1);
 
@@ -384,7 +385,7 @@ int main(int argc, char** argv) {
 
     // We read the netflow data from a file.  It assumes each netflow 
     // has a label at the beginning.
-    auto receiver = std::make_shared<ReadCSV>(inputfile);
+    auto receiver = std::make_shared<ReadCSVType>(inputfile);
 
     // subscriber collects the features for each netflow
     auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);

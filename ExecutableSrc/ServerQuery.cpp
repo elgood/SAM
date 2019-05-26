@@ -40,9 +40,10 @@ typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
 typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
 typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
+typedef ReadCSV<VastNetflow, VastNetflowTuplizer> ReadCSVType; 
 
 void createPipeline(
-                 std::shared_ptr<ReadCSV> readCSV,
+                 std::shared_ptr<ReadCSVType> readCSV,
                  std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
                  std::shared_ptr<PartitionType> pushpull,
@@ -249,7 +250,7 @@ int main(int argc, char** argv) {
 
     // We read the netflow data from a file.  It assumes each netflow 
     // has a label at the beginning.
-    auto receiver = std::make_shared<ReadCSV>(inputfile);
+    auto receiver = std::make_shared<ReadCSVType>(inputfile);
 
     // subscriber collects the features for each netflow
     auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);

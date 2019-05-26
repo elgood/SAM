@@ -1,0 +1,8 @@
+HighWaterMark = 10001;
+QueueLength   = 1001;
+Edges = VastStream("localhost", 9999);
+PARTITION Edges By SourceIp, DestIp;
+HASH SourceIp WITH IpHashFunction;
+HASH DestIp With IpHashFunction;
+VerticesBySrc = STREAM Edges BY SourceIp;
+feature0 = FOREACH VerticesBySrc GENERATE ave(SrcTotalBytes,10000,2);

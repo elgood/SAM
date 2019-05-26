@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE( test_readcsv )
   }
   myfile.close();
 
-  ReadCSV receiver(testfilename);
+  ReadCSV<VastNetflow, VastNetflowTuplizer> receiver(testfilename);
 
   auto consumer = std::make_shared<TestConsumer>(stringArray);
   receiver.registerConsumer(consumer);

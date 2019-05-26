@@ -1,0 +1,21 @@
+Netflows = VastStream("localhost", 9999);
+PARTITION Netflows By SourceIp, DestIp;
+HASH SourceIp WITH IpHashFunction;
+HASH DestIp With IpHashFunction;
+VertsByDest = STREAM Netflows BY DestIp;
+Top2 = FOREACH VertsByDest GENERATE topk(DestPort,10000,1000,2);
+Servers = FILTER VertsByDest By Top2.value(0) + Top2.value(1) > 0.9;
+DomainInfo = VertexInfo("domainurl", 5000);
+
+SUBGRAPH ON Netflows WITH source ( SourceIp ) AND target ( DestIp )
+{
+client e1 frequent;
+client e2 malicious;
+frequent in Servers;
+client not in Server;
+DomainInfo(frequent).domain != DomainInfo(malicious).domain
+start(e2) − start(e1) <= 10;
+start(e1) < start(e2);
+e1.ApplicationProtocol == "http"
+e2.ApplicationProtocol == "http"
+}

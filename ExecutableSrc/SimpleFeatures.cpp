@@ -43,11 +43,12 @@ typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
 typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
 typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
+typedef ReadCSV<VastNetflow, VastNetflowTuplizer> ReadCSVType;
 
 //zmq::context_t context(1);
 
 void createPipeline(
-                 std::shared_ptr<ReadCSV> readCSV,
+                 std::shared_ptr<ReadCSVType> readCSV,
                  std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
                  std::shared_ptr<PartitionType> pushpull,
@@ -55,7 +56,6 @@ void createPipeline(
                  std::size_t numNodes,
                  std::size_t nodeId,
                  std::vector<std::string> const& hostnames,
-                 std::vector<std::size_t> const& ports,
                  std::size_t hwm,
                  std::size_t N,
                  std::size_t b,
@@ -586,20 +586,15 @@ int main(int argc, char** argv) {
   }
 
   vector<string> hostnames(numNodes); // A vector of hosts in the cluster
-  vector<std::size_t> ports(numNodes); // Vector of ports to use in the cluster
 
   if (numNodes == 1) { // Case when we are operating on one node
     hostnames[0] = "127.0.0.1";
-    ports[0] = startingPort;
   } else {
     for (int i = 0; i < numNodes; i++) {
       // Assumes all the host names can be composed by adding prefix with
       // [0,numNodes).
       hostnames[i] = prefix + boost::lexical_cast<string>(i);
 
-      // Assigns ports starting at startingPort and increments.  These ports
-      // are used for zeromq push/pull sockets.
-      ports[i] = (startingPort + i);  
     }
   }
 
@@ -625,7 +620,7 @@ int main(int argc, char** argv) {
     
     // We read the netflow data from a file.  It assumes each netflow 
     // has a label at the beginning.
-    auto receiver = std::make_shared<ReadCSV>(inputfile);
+    auto receiver = std::make_shared<ReadCSVType>(inputfile);
 
     // subscriber collects the features for each netflow
     auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
@@ -638,7 +633,6 @@ int main(int argc, char** argv) {
                    numNodes,
                    nodeId,
                    hostnames,
-                   ports,
                    hwm,
                    N, b, k);
    
@@ -731,7 +725,6 @@ int main(int argc, char** argv) {
                                    numNodes, 
                                    nodeId, 
                                    hostnames, 
-                                   //ports, 
                                    startingPort, timeout, false,
                                    hwm);
 
@@ -742,7 +735,6 @@ int main(int argc, char** argv) {
                    numNodes,
                    nodeId,
                    hostnames,
-                   ports,
                    hwm,
                    N, b, k);
  

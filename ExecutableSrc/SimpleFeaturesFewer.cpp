@@ -29,11 +29,14 @@ typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
 typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
 typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
         PartitionType;
+typedef ReadCSV<VastNetflow, VastNetflowTuplizer> ReadCSVType; 
+typedef BaseProducer<VastNetflow> ProducerType;
 
 //zmq::context_t context(1);
 
 void createPipeline(
-                 std::shared_ptr<ReadCSV> readCSV,
+                 std::shared_ptr<ProducerType> producer,
+                 std::shared_ptr<ReadCSVType> readCSV,
                  std::shared_ptr<FeatureMap> featureMap,
                  std::shared_ptr<FeatureSubscriber> subscriber,
                  std::shared_ptr<PartitionType> pushpull,
@@ -54,14 +57,15 @@ void createPipeline(
   // Doesn't really need a key, but provide one anyway to the template.
   auto label = std::make_shared<Identity<VastNetflow, SamLabel, DestIp>>
                 (nodeId, featureMap, identifier);
-  if (readCSV != NULL) {
+  producer->registerConsumer(label);
+  /*if (readCSV != NULL) {
     readCSV->registerConsumer(label);
   } else {
     pushpull->registerConsumer(label);
   }
   if (subscriber != NULL) {
     label->registerSubscriber(subscriber, identifier); 
-  }
+  }*/
 
 
   // Original Feature from SimpleFeatures.cpp: 0
@@ -654,7 +658,7 @@ int main(int argc, char** argv) {
     
     // We read the netflow data from a file.  It assumes each netflow 
     // has a label at the beginning.
-    auto receiver = std::make_shared<ReadCSV>(inputfile);
+    auto receiver = std::make_shared<ReadCSVType>(inputfile);
 
     // subscriber collects the features for each netflow
     auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
@@ -662,7 +666,9 @@ int main(int argc, char** argv) {
     std::cout << "Creating Pipeline " << std::endl;
     // createPipeline creates all the operators and ties them together.  It 
     // also notifies the designated feature producers of the subscriber.
-    createPipeline(receiver, featureMap, subscriber, NULL, 
+    std::shared_ptr<ProducerType> producer;
+
+    createPipeline(producer, receiver, featureMap, subscriber, NULL, 
                    queueLength,
                    numNodes,
                    nodeId,
@@ -767,7 +773,9 @@ int main(int argc, char** argv) {
 
     receiver->registerConsumer(pushpull);
 
-    createPipeline(NULL, featureMap, NULL, pushpull,
+    std::shared_ptr<ProducerType> producer =
+      std::static_pointer_cast<ProducerType>(pushpull);
+    createPipeline(producer, NULL, featureMap, NULL, pushpull,
                    queueLength,
                    numNodes,
                    nodeId,

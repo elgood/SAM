@@ -1,0 +1,13 @@
+Netflows = VastStream("localhost", 9999);
+PARTITION Netflows By SourceIp, DestIp;
+HASH SourceIp WITH IpHashFunction;
+HASH DestIp With IpHashFunction;
+SUBGRAPH ON Netflows WITH source ( SourceIp ) AND target ( DestIp )
+{
+x1 e1 x2; 
+x2 e2 x3; 
+x3 e3 x1; 
+start(e3) − start(e1) <= 10;
+start(e1) < start(e2);
+start(e2) < start(e3);
+}

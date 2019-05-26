@@ -1,0 +1,26 @@
+Netflows = VastStream("localhost", 9999);
+PARTITION Netflows By SourceIp, DestIp;
+HASH SourceIp WITH IpHashFunction;
+HASH DestIp With IpHashFunction;
+VertsByDest = STREAM Netflows BY DestIp;
+Top1 = FOREACH VertsByDest GENERATE topk(DestPort,10000,1000,1);
+Servers = FILTER VertsByDest BY Top1.value(0) > 0.6;
+Servers = FILTER Servers BY Top1.key == 80;
+DestSrc = STREAM Servers BY DestIp, SourceIp;
+TimeLapseSeries = FOREACH DestSrc TRANSFORM (TimeSeconds − TimeSeconds.prev(1)) : TimeDiff;
+TimeDiffVar = FOREACH TimeLapseSeries GENERATE var(TimeDiff);
+TimeDiffMed = FOREACH TimeLapseSeries GENERATE median(TimeDiff);
+TimeDiffAve = FOREACH TimeLapseSeries GENERATE ave(TimeDiff);
+
+
+FlowsizeSumIncoming = FOREACH Servers GENERATE ave(SrcTotalBytes);
+FlowsizeSumOutcoming = FOREACH Servers GENERATE ave(DestTotalBytes);
+FlowsizeVarIncoming = FOREACH Servers GENERATE ave(SrcTotalBytes);
+FlowsizeVarOutcoming = FOREACH Servers GENERATE ave(DestTotalBytes);
+UniqueIncoming = FOREACH Servers GENERATE countdistinct(SrcTotalBytes);
+UniqueOutgoing = FOREACH Servers GENERATE countdistinct(DestTotalBytes);
+TimeDiffVar = FOREACH TimeLapseSeries GENERATE var(TimeDiff);
+TimeDiffMed = FOREACH TimeLapseSeries GENERATE median(TimeDiff);
+DestOnly = COLLAPSE TimeLapseSeries BY DestIp FOR TimeDiffVar , TimeDiffMed;
+AveTimeDiffVar = FOREACH DestOnly GENERATE ave(TimeDiffVar);
+VarTimeDiffVar = FOREACH DestOnly GENERATE var(TimeDiffVar);

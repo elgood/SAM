@@ -1,0 +1,20 @@
+
+
+VertsBySrc = STREAM Netflows BY SourceIp;
+FlowsizeAve = FOREACH VertsBySrc GENERATE ave(SrcPayloadBytes);
+SmallMessages = FILTER VertsBySrc By FlowsizeAve < 10;
+SUBGRAPH ON Netflows WITH source ( SourceIp ) AND target ( DestIp )
+{
+controller e1 node1; 
+controller e2 node2; 
+controller e3 node3; 
+controller e4 node4;
+start(e1) < start(e2);
+start(e2) < start(e3);
+start(e3) < start(e4);
+start(e4) - start(e1) < 10;
+node1 in SmallMessages;
+node2 in SmallMessages;
+node3 in SmallMessages;
+node4 in SmallMessages;
+}

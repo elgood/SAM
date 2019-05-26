@@ -56,7 +56,8 @@ BOOST_AUTO_TEST_CASE( test_sample )
     auto featureMap = std::make_shared<FeatureMap>(capacity);
     std::string outputfile = "TestCTUOutputFile.txt";
     auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
-    auto receiver = std::make_shared<ReadCSV>(dataFile);
+    auto receiver = std::make_shared<ReadCSV<VastNetflow, 
+                                     VastNetflowTuplizer>>(dataFile);
     std::size_t numNodes = 1; ///> The number of nodes in the cluster
     std::size_t nodeId = 0; ///> The node id of this node
     
