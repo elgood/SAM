@@ -2,10 +2,10 @@ package sal.parsing.sam.statements
 
 import scala.collection.mutable.HashMap
 import sal.parsing.sam.BaseParsing
-import sal.parsing.sam.Operator
-import sal.parsing.sam.OperatorExp
 import sal.parsing.sam.Constants
 import sal.parsing.sam.Flatten
+import sal.parsing.sam.operators.Operator
+import sal.parsing.sam.operators.OperatorExp
 
 trait ForEach extends BaseParsing with Operator
 {
