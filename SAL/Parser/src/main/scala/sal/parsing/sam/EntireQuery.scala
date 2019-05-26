@@ -20,6 +20,8 @@ case class EntireQuery(preambleStatements : PreambleStatements,
 {
   override def toString = {
 
+    var rString = opening + "\n"
+
     // We have to run this before some of the other toString methods
     // becuase it sets the input tuple type in the memory hashmap that
     // is used by other toString methods.
@@ -27,12 +29,8 @@ case class EntireQuery(preambleStatements : PreambleStatements,
 
     // We run the hash statements before the partitionStatement because
     // the partitionStatement needs the hash functions for its template.
-    var hashesString = ""
-    hashesString = flatten(hashStatements.productIterator.toList).
-                         foldLeft(hashesString)((agg,e) => agg + e.toString)
+    rString += hashDecl
 
-    var rString = opening
-    rString += hashesString
     rString += partitionStatement.toString
     rString += createPipelineDecl
     val queryStatementList = flatten(queryStatements.productIterator.toList)
@@ -62,6 +60,19 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "using namespace sam;\n" 
   }
 
+  private def hashDecl =
+  {
+    var hashesString = ""
+    hashesString = flatten(hashStatements.productIterator.toList).
+                         foldLeft(hashesString)((agg,e) => agg + e.toString)
+
+    "// Hash function(s) used to physically partition the tuples\n" +
+    "// across the cluster\n" +
+    hashesString +
+    "\n"
+
+  }
+
   private def createPipelineDecl =
   {
     val inputType = memory(Constants.ConnectionInputType)
@@ -69,16 +80,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "void createPipeline(std::shared_ptr<ProducerType> producer,\n" +
     "            std::shared_ptr<FeatureMap> featureMap,\n" +
     "            std::shared_ptr<FeatureSubscriber> subscriber,\n"+
-    "            size_t queueLength,\n"+
-    "            size_t numNodes,\n"+
-    "            size_t nodeId,\n"+
-    "            vector<std::string> const& hostnames,\n"+
-    "            size_t startingPort,\n"+
-    "            size_t timeout,\n" +
-    "            size_t hwm,\n"+
-    "            size_t N,\n"+
-    "            size_t b,\n"+
-    "            size_t k)\n"+
+    "            size_t nodeId)\n"+
     "{\n"+
     "  std::string identifier = \"\";\n"
     
@@ -176,23 +178,23 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "  // and write the results to the outputfile.\n" +
     "  string inputfile;\n" +
     "  string outputfile;\n" +
-    "\n" +
-    "  // N is the total number of elements in a sliding window.  The\n" +
-    "  // sliding window is not based on time.  Time-based windows are\n" +
-    "  // future work.  This is the default value (set through the \n" +
-    "  // commandline interface), but can be set for each operator.\n" +
-    "  size_t N;\n" +
-    "\n" +
-    "  // b is the basic window size in terms elements to process.\n" +
-    "  // A basic window is subdivision of the sliding window used\n" +
-    "  // by some operators.  This is the default value (set through the\n" +
-    "  // commandline interface), but can be set for each operator.\n" +
-    "  size_t b;\n" +
-    "\n" +
-    "  // k is a parameter for topk, the number of top items to keep\n" +
-    "  // track of.  This is the default value (set through the\n" +
-    "  // commandline interface), but can be set for each operator.\n" +
-    "  size_t k;\n" +
+    //"\n" +
+    //"  // N is the total number of elements in a sliding window.  The\n" +
+    //"  // sliding window is not based on time.  Time-based windows are\n" +
+    //"  // future work.  This is the default value (set through the \n" +
+    //"  // commandline interface), but can be set for each operator.\n" +
+    //"  size_t N;\n" +
+    //"\n" +
+    //"  // b is the basic window size in terms elements to process.\n" +
+    //"  // A basic window is subdivision of the sliding window used\n" +
+    //"  // by some operators.  This is the default value (set through the\n" +
+    //"  // commandline interface), but can be set for each operator.\n" +
+    //"  size_t b;\n" +
+    //"\n" +
+    //"  // k is a parameter for topk, the number of top items to keep\n" +
+    //"  // track of.  This is the default value (set through the\n" +
+    //"  // commandline interface), but can be set for each operator.\n" +
+    //"  size_t k;\n" +
     "\n"
   }
 
@@ -284,15 +286,15 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "      po::value<string>(&outputfile),\n" +
     "      \"If --create_features is specified, the produced file will\"\n" +
     "      \" be a csv file of features.\")\n" + 
-    "    (\"N\",\n" +
-    "      po::value<std::size_t>(&N)->default_value(" + N + "),\n" +
-    "      \"The total number of elements in a sliding window\")\n" +
-    "    (\"b\",\n" +
-    "      po::value<std::size_t>(&b)->default_value(" + b + "),\n" +
-    "      \"The number of elements per block (active or dynamic window)\")\n" +
-    "    (\"k\",\n" +
-    "      po::value<std::size_t>(&k)->default_value(" + k + "),\n" +
-    "      \"The k in topk\")\n" +
+    //"    (\"N\",\n" +
+    //"      po::value<std::size_t>(&N)->default_value(" + N + "),\n" +
+    //"      \"The total number of elements in a sliding window\")\n" +
+    //"    (\"b\",\n" +
+    //"      po::value<std::size_t>(&b)->default_value(" + b + "),\n" +
+    //"      \"The number of elements per block (active or dynamic window)\")\n" +
+    //"    (\"k\",\n" +
+    //"      po::value<std::size_t>(&k)->default_value(" + k + "),\n" +
+    //"      \"The k in topk\")\n" +
     "  ;\n" +
     "\n" +
     "  po::variables_map vm;\n" +
@@ -372,13 +374,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "    createPipeline(producer,\n" +
     "              featureMap,\n" +
     "              subscriber,\n" +
-    "              queueLength,\n" +
-    "              numNodes,\n" +
-    "              nodeId,\n" +
-    "              hostnames,\n" +
-    "              startingPort,\n" +
-    "              timeout, hwm,\n" +
-    "              N, b, k);\n" +
+    "              nodeId);\n" +
     "\n" +
     "    subscriber->init();\n" +
     "    if (!receiver->connect()) {\n" +
@@ -426,13 +422,8 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "    createPipeline(producer,\n"+
     "                   featureMap,\n"+
     "                   NULL,\n" +
-    "                   queueLength,\n" +
-    "                   numNodes,\n" +
-    "                   nodeId,\n" +
-    "                   hostnames,\n" +
-    "                   startingPort,\n" +
-    "                   timeout, hwm,\n" +
-    "                   N, b, k);\n" +
+    "                   nodeId);\n" +
+    "\n" +
     "    if (!receiver->connect()) {\n" +
     "      std::cout << \"Couldn't connected to \" << ncIp << \":\" << ncPort << std::endl;\n" +
     "      return -1;\n" +

@@ -32,7 +32,7 @@ case class ForEachStatement(lstream: String,
   extends Statement with Flatten
 {
   override def toString = {
-    println("blah blah blah\n") 
+
     var rString = ""
     var count = 0
     

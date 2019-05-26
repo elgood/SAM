@@ -4,6 +4,7 @@ The Streaming Analytics Language (SAL) and the Streaming Analytics Machine
 Contents
 
 * ExecutableSrc - This contains the source for executables that utilize
+* SAL - The SAL parser that converts SAL code into c++ code (SAM).
 SAM.
 * SamSrc - The source code for the SAM library.
 * TestSrc - Unit tests.

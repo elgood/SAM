@@ -4,7 +4,13 @@ import scala.collection.mutable.HashMap
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
 
-
+/**
+ * Parsing trait to handle HashWith statements, e.g.
+ *
+ * HASH SourceIp WITH IpHashFunction;
+ *
+ * 
+ */
 trait HashWith extends BaseParsing
 {
   def hashStatement =
@@ -22,6 +28,14 @@ case class HashWithStatement(identifier: String,
                                 memory: HashMap[String, String])
 extends Statement
 {
+  /**
+   * When a match is made to method hashStatement, this target
+   * is executed.  It creates a typedef c++ statement to create
+   * a short name for the hash type that can be used as a template
+   * parameter.  We start off with the name Hash0.  If there is more 
+   * than one hash function, we just increment the counter,
+   * e.g. Hash1. 
+   */
   override def toString = {
 
     val myHashFunction : String = hashFunction match {

@@ -35,9 +35,9 @@ trait Operator extends BaseParsing {
   def aveOperator : Parser[EHAveExp] =
     aveKeyWord ~ "(" ~ identifier ~ ")" ^^
     {case ehave ~ lpar ~ id ~ rpar =>
-
-
-      EHAveExp(id, 10000, 2, memory)} |
+      val windowSize =  memory.getOrElse(Constants.WindowSize, "10000").toInt;
+      val ehk = memory.getOrElse(Constants.EHK, "2").toInt; 
+      EHAveExp(id, windowSize, ehk, memory)} |
     aveKeyWord ~ "(" ~ identifier ~ "," ~ posInt ~ "," ~ posInt ~ ")" ^^
     {case ehave ~ lpar ~ id ~ c1 ~ n ~ c2 ~ k ~ rpar =>
       EHAveExp(id, n, k, memory)}
