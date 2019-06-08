@@ -46,11 +46,12 @@ case class TopKExp(field: String, N: Int, b: Int, k: Int,
     
     // We need the input type later, too
     memory += lstream + Constants.InputType -> tupleType
+    //println(memory)
     
     var rString = "  auto "  + lstream + 
                   " = new " + typeString + "(" +
                   N.toString + "," + b.toString + "," + k.toString + "," +
-                  "nodeId, featureMap, \"" + lstream + "\");\n"
+                  "nodeId, featureMap, \"" + lstream + "\");\n\n"
 
     rString
   }

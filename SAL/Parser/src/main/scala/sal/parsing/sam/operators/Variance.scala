@@ -8,14 +8,33 @@ trait Variance extends BaseParsing
 {
 
   def ehVarOperator : Parser[EHVarExp] =
+
+    // When the parameters are not specified
+    ehVarKeyWord ~ "(" ~ identifier ~ ")" ^^
+    {case ehave ~ lpar ~ id ~ rpar =>
+      val windowSize =  memory.getOrElse(Constants.WindowSize, 
+        Constants.DefaultWindowSize).toInt;
+      val ehk = memory.getOrElse(Constants.EHK, 
+        Constants.DefaultEHK).toInt; 
+      EHVarExp(id, windowSize, ehk, memory)} |
+    // When the parameters are specified.
     ehVarKeyWord ~ "(" ~ identifier ~ "," ~ posInt ~ "," ~ posInt ~ ")" ^^
     {case ehvar ~ lpar ~ id ~ c1 ~ n ~ c2 ~ k ~ rpar =>
       EHVarExp(id, n, k, memory)}
 
   def varOperator : Parser[EHVarExp] =
+    // When the parameters are not specified.
     varKeyWord ~ "(" ~ identifier ~ ")" ^^
-    {case ehvar ~ lpar ~ id ~ rpar =>
-      EHVarExp(id, 10000, 2, memory)}
+    {case ehave ~ lpar ~ id ~ rpar =>
+      val windowSize =  memory.getOrElse(Constants.WindowSize, 
+        Constants.DefaultWindowSize).toInt;
+      val ehk = memory.getOrElse(Constants.EHK,
+        Constants.DefaultEHK).toInt; 
+      EHVarExp(id, windowSize, ehk, memory)} |
+    // When the parameters are specified.
+    varKeyWord ~ "(" ~ identifier ~ "," ~ posInt ~ "," ~ posInt ~ ")" ^^
+    {case ehave ~ lpar ~ id ~ c1 ~ n ~ c2 ~ k ~ rpar =>
+      EHVarExp(id, n, k, memory)}
 
 }
 
@@ -54,7 +73,8 @@ case class EHVarExp(field: String, N: Int, k: Int,
     keysString = keysString.dropRight(2)
     
     var rString = "  identifier = \"" + lstream + "\";\n"
-    rString = "  auto " + lstream + " = std::make_shard<ExponenialHistogramVariance<\n" +
+    rString = "  auto " + lstream + 
+      " = std::make_shared<ExponentialHistogramVariance<\n" +
       "    double, " + tupleType + ", " + field + ", " + keysString + ">>(" +
       N.toString + ", " + k.toString + ", nodeId, featureMap, identifier);\n"
     rString += addRegisterStatements(lstream)

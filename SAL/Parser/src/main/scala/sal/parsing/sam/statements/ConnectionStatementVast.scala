@@ -2,6 +2,8 @@ package sal.parsing.sam.statements
 
 import scala.collection.mutable.HashMap
 
+import com.typesafe.scalalogging.LazyLogging
+
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.TupleTypes
 import sal.parsing.sam.Constants
@@ -32,9 +34,11 @@ case class ConnectionStatementVast(lstream: String,
                                    ip: String,
                                    port: Int,
                                    memory: HashMap[String, String])
-extends ConnectionStatement
+extends ConnectionStatement with LazyLogging
 {
   override def toString = {
+
+    logger.info("ConnectionStatement.toString")
 
     // Record in the memory hashmap that we are expecting Vast netflow tuples
     // as the initial stream of data coming from the AbstractDataSource.

@@ -1,6 +1,9 @@
 package sal.parsing.sam.statements
 
 import scala.collection.mutable.HashMap
+
+import com.typesafe.scalalogging.LazyLogging
+
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
 
@@ -32,9 +35,10 @@ trait Partition extends BaseParsing
 case class PartitionStatement(stream: String, 
                               fields: List[String],
                               memory: HashMap[String, String])
-extends Statement
+extends Statement with LazyLogging
 {
   override def toString = {
+    logger.info("PartitionStatement.toString")
     var output  = "typedef ZeroMQPushPull<" + 
                   memory(Constants.ConnectionInputType) + ", " +
                   memory(Constants.ConnectionTuplizerType) + ", "

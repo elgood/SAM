@@ -5,13 +5,12 @@ import sal.parsing.sam.Constants
 
 import scala.collection.mutable.HashMap
 
-trait Preamble extends BaseParsing
+import com.typesafe.scalalogging.LazyLogging
+
+trait Preamble extends BaseParsing with LazyLogging
 {
   // This parses the preamble statements and stores the values in a hashmap.
-  def preamble = preambleStatements ^^ { x => PreambleStatements(memory) }
 
-
-  def preambleStatements = preambleStatement*
   def preambleStatement = queueLengthStatement | highWaterMarkStatement |
     ehKStatement | basicWindowSizeStatement | windowSizeStatement |
     topKKStatement
@@ -25,6 +24,7 @@ trait Preamble extends BaseParsing
   def highWaterMarkStatement =
     highWaterMarkKeyWord ~ "=" ~ posInt ~ ";" ^^
     {case kw ~ eq ~ hwm ~ semi =>
+      logger.info("Preamble.highWaterMarkStatement")
       memory += Constants.HighWaterMark -> hwm.toString}
  
   def ehKStatement =
@@ -46,8 +46,6 @@ trait Preamble extends BaseParsing
     topKKKeyWord ~ "=" ~ posInt ~ ";" ^^
     {case tkkkw ~ eq ~ size ~ semi =>
       memory += Constants.TopKK -> size.toString}
-
-
 }
 
 

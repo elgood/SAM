@@ -2,23 +2,25 @@ package sal.parsing.sam
 
 import scala.collection.mutable.HashMap
 
+import com.typesafe.scalalogging.LazyLogging
+
 import sal.parsing.sam.preamble.Preamble
-import sal.parsing.sam.preamble.PreambleStatements
 import sal.parsing.sam.statements.ConnectionStatement
 import sal.parsing.sam.statements.PartitionStatement
+import sal.parsing.sam.statements.Statement
+import sal.parsing.sam.statements.HashWithStatement
 
 
-
-
-case class EntireQuery(preambleStatements : PreambleStatements,
-                          connectionStatement : ConnectionStatement,
-                          partitionStatement : PartitionStatement,
-                          hashStatements : Product,
-                          queryStatements: Product,
-                          memory: HashMap[String, String])
-  extends Flatten
+case class EntireQuery(connectionStatement : ConnectionStatement,
+                       partitionStatement : PartitionStatement,
+                       hashStatements : List[HashWithStatement],
+                       queryStatements: List[Statement],
+                       memory: HashMap[String, String])
+  extends Flatten with LazyLogging
 {
   override def toString = {
+    
+    logger.info("EntireQuery.toString")
 
     var rString = opening + "\n"
 
@@ -44,6 +46,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
   
   private def opening = 
   {
+    logger.info("EntireQuery.opening")
     "#include <string>\n" +
     "#include <vector>\n" +
     "#include <stdlib.h>\n" +
@@ -62,6 +65,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
 
   private def hashDecl =
   {
+    logger.info("EntireQuery.hashDecl")
     var hashesString = ""
     hashesString = flatten(hashStatements.productIterator.toList).
                          foldLeft(hashesString)((agg,e) => agg + e.toString)
@@ -75,6 +79,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
 
   private def createPipelineDecl =
   {
+    logger.info("EntireQuery.createPipelineDecl")
     val inputType = memory(Constants.ConnectionInputType)
      
     "void createPipeline(std::shared_ptr<ProducerType> producer,\n" +
@@ -93,6 +98,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
    */
   private def mainVariables = 
   {
+    logger.info("EntireQuery.mainVariables")
 
     "  /******************* Variables ******************************/\n" +
     "\n" +
@@ -178,23 +184,6 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "  // and write the results to the outputfile.\n" +
     "  string inputfile;\n" +
     "  string outputfile;\n" +
-    //"\n" +
-    //"  // N is the total number of elements in a sliding window.  The\n" +
-    //"  // sliding window is not based on time.  Time-based windows are\n" +
-    //"  // future work.  This is the default value (set through the \n" +
-    //"  // commandline interface), but can be set for each operator.\n" +
-    //"  size_t N;\n" +
-    //"\n" +
-    //"  // b is the basic window size in terms elements to process.\n" +
-    //"  // A basic window is subdivision of the sliding window used\n" +
-    //"  // by some operators.  This is the default value (set through the\n" +
-    //"  // commandline interface), but can be set for each operator.\n" +
-    //"  size_t b;\n" +
-    //"\n" +
-    //"  // k is a parameter for topk, the number of top items to keep\n" +
-    //"  // track of.  This is the default value (set through the\n" +
-    //"  // commandline interface), but can be set for each operator.\n" +
-    //"  size_t k;\n" +
     "\n"
   }
 
@@ -202,6 +191,8 @@ case class EntireQuery(preambleStatements : PreambleStatements,
    * Covers the generation of command line argument processing code.
    */
   private def commandLineProcessing = {
+
+    logger.info("EntireQuery.commandLineProcessing")
 
     val hwm = memory.getOrElse(Constants.HighWaterMark, 10000); 
     val ql  = memory.getOrElse(Constants.QueueLength, 1000);
@@ -286,15 +277,6 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "      po::value<string>(&outputfile),\n" +
     "      \"If --create_features is specified, the produced file will\"\n" +
     "      \" be a csv file of features.\")\n" + 
-    //"    (\"N\",\n" +
-    //"      po::value<std::size_t>(&N)->default_value(" + N + "),\n" +
-    //"      \"The total number of elements in a sliding window\")\n" +
-    //"    (\"b\",\n" +
-    //"      po::value<std::size_t>(&b)->default_value(" + b + "),\n" +
-    //"      \"The number of elements per block (active or dynamic window)\")\n" +
-    //"    (\"k\",\n" +
-    //"      po::value<std::size_t>(&k)->default_value(" + k + "),\n" +
-    //"      \"The k in topk\")\n" +
     "  ;\n" +
     "\n" +
     "  po::variables_map vm;\n" +
@@ -313,6 +295,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
    */
   private def setHostnamesAndPorts =
   {
+    logger.info("EntireQuery.setHostnamesAndPorts")
     "  vector<string> hostnames(numNodes);\n" +
     "\n" +
     "  // When we are operating on one nodes, we set the hostname to be\n" +
@@ -333,19 +316,16 @@ case class EntireQuery(preambleStatements : PreambleStatements,
 
   private def featureMap =
   {
+    logger.info("EntireQuery.featureMap")
     "  // The FeatureMap keeps track of all generated features produced\n" +
     "  // by the specified pipeline.\n" +
     "  auto featureMap = std::make_shared<FeatureMap>(featureCapacity);\n" +
     "\n"
   }
 
-  private def operators =
-  {
-
-  }
-
   private def createFeatures =
   {
+    logger.info("EntireQuery.createFeatures")
     "  /***************** Creating Features ***********************/\n" + 
     "\n" +
     "  if(vm.count(\"create_features\"))\n" +
@@ -398,6 +378,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
 
   private def runPipeline = 
   {
+    logger.info("EntireQuery.runPipeline")
     "  else\n" +
     "  {\n" +
     "    auto receiver = std::make_shared<ReadSocket>(ncIp, ncPort);\n" +
@@ -438,11 +419,11 @@ case class EntireQuery(preambleStatements : PreambleStatements,
     "    std::cout << \"Seconds for Node\" << nodeId << \": \"\n" +
     "      << static_cast<double>(ms2.count() - ms1.count()) / 1000 << std::endl;\n" +
     "  }\n"; 
-
   }
 
   private def main =   
-  {  
+  {
+    logger.info("EntireQuery.main")  
     val rString = "int main(int argc, char** argv) {\n" +
       "\n" +
       mainVariables +
@@ -456,6 +437,7 @@ case class EntireQuery(preambleStatements : PreambleStatements,
   }
   
   private def closing = {
+    logger.info("EntireQuery.closing")
     var rString = "\n}"
     rString
   }

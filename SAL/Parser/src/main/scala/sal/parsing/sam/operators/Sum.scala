@@ -8,14 +8,33 @@ trait Sum extends BaseParsing
 {
 
   def ehSumOperator : Parser[EHSumExp] =
+    // When the parameters are not specified
+    ehSumKeyWord ~ "(" ~ identifier ~ ")" ^^
+    {case ehsum ~ lpar ~ id ~ rpar =>
+      val windowSize =  memory.getOrElse(Constants.WindowSize, 
+        Constants.DefaultWindowSize).toInt;
+      val ehk = memory.getOrElse(Constants.EHK, 
+        Constants.DefaultEHK).toInt; 
+      EHSumExp(id, windowSize, ehk, memory)} |
+    // When the parameters are specified.
     ehSumKeyWord ~ "(" ~ identifier ~ "," ~ posInt ~ "," ~ posInt ~ ")" ^^
     {case ehsum ~ lpar ~ id ~ c1 ~ n ~ c2 ~ k ~ rpar =>
       EHSumExp(id, n, k, memory)}
 
   def sumOperator : Parser[EHSumExp] =
+    // When the parameters are not specified.
     sumKeyWord ~ "(" ~ identifier ~ ")" ^^
-    {case ehsum ~ lpar ~ id  ~ rpar =>
-      EHSumExp(id, 10000, 2, memory)}
+    {case ehsum ~ lpar ~ id ~ rpar =>
+      val windowSize =  memory.getOrElse(Constants.WindowSize, 
+        Constants.DefaultWindowSize).toInt;
+      val ehk = memory.getOrElse(Constants.EHK,
+        Constants.DefaultEHK).toInt; 
+      EHSumExp(id, windowSize, ehk, memory)} |
+    // When the parameters are specified.
+    sumKeyWord ~ "(" ~ identifier ~ "," ~ posInt ~ "," ~ posInt ~ ")" ^^
+    {case ehsum ~ lpar ~ id ~ c1 ~ n ~ c2 ~ k ~ rpar =>
+      EHSumExp(id, n, k, memory)}
+
 
   def simpleSumOperator : Parser[SimpleSumExp] =
     simpleSumKeyWord ~ "(" ~ identifier ~ ","  ~ posInt ~ ")" ^^
@@ -57,7 +76,8 @@ case class EHSumExp(field: String, N: Int, k: Int,
     keysString = keysString.dropRight(2)
     
     var rString = "  identifier = \"" + lstream + "\";\n"
-    rString += "  auto " + lstream + " = std::make_shared<ExponenialHistogramSum<\n" +
+    rString += "  auto " + lstream + 
+      " = std::make_shared<ExponentialHistogramSum<\n" +
       "    double, " + tupleType + ", " + field + ", " + keysString + ">>(" +
       N.toString + ", " + k.toString + ", nodeId, featureMap, identifier);\n"
     rString += addRegisterStatements(lstream)

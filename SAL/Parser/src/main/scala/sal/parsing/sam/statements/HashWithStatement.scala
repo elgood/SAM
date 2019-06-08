@@ -1,6 +1,7 @@
 package sal.parsing.sam.statements
 
 import scala.collection.mutable.HashMap
+import com.typesafe.scalalogging.LazyLogging
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
 
@@ -26,7 +27,7 @@ trait HashWith extends BaseParsing
 case class HashWithStatement(identifier: String, 
                                 hashFunction: String,
                                 memory: HashMap[String, String])
-extends Statement
+extends Statement with LazyLogging
 {
   /**
    * When a match is made to method hashStatement, this target
@@ -37,6 +38,8 @@ extends Statement
    * e.g. Hash1. 
    */
   override def toString = {
+
+    logger.info("HashWithStatement.toString")
 
     val myHashFunction : String = hashFunction match {
       case "IpHashFunction" => "TupleStringHashFunction"

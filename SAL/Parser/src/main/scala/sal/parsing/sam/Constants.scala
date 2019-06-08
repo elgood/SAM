@@ -8,6 +8,7 @@ package sal.parsing.sam
 object Constants {
   
   /*********** memory keys **************************************/
+
   // The following are the keys used to store values in the 
   // memory hash structure.
   val QueueLength           = "QueueLengthVarKey" 
@@ -15,10 +16,18 @@ object Constants {
 
   // Exponential histograms have a parameter k, that determines
   // the tradeoff between space and approximation error.
-  // 
   val EHK                   = "EHKVarKey"
+  val DefaultEHK            = "2"
+
+  // Some algorithms use a "basic window", which is basically a 
+  // smaller window within the larger sliding window.
   val BasicWindowSize       = "BasicWindowSizeVarKey"
+  val DefaultBasicWindowSize = "1000"
+
+  // The size of the sliding window.
   val WindowSize            = "WindowSizeVarKey"
+  val DefaultWindowSize     = "10000"
+
   val TopKK                 = "TopKKVarKey"
   
   val TopKKey               = "TopKKey"

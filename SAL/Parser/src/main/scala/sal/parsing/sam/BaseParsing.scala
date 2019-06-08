@@ -6,13 +6,14 @@ import scala.collection.mutable.HashMap
 /**
  * @author elgood
  */
-trait BaseParsing extends RegexParsers with uuid {
+trait BaseParsing extends RegexParsers {
 
   // This keeps track of things specified in the preamble that
   // have to be used later.  It also keeps track of variables 
   // (e.g. vector of key fields) that have been associated with
   // variables specified in the script.
   protected var memory = new HashMap[String, String]
+
  
 
   def posInt        = """[1-9][0-9]*""".r ^^ {_.toInt}

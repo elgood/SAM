@@ -1,6 +1,9 @@
 package sal.parsing.sam.statements
 
 import scala.collection.mutable.HashMap
+
+import com.typesafe.scalalogging.LazyLogging
+
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
 import sal.parsing.sam.TupleTypes
@@ -30,7 +33,7 @@ case class StreamByStatement(lstream: String,
                              rstream: String,
                              features: List[String],
                              memory: HashMap[String, String])
-  extends Statement
+  extends Statement with LazyLogging
 {
   /**
    * The ForEach statement doesn't produce any code by itself, but instead
@@ -39,7 +42,7 @@ case class StreamByStatement(lstream: String,
    * operators.
    */
   override def toString = {
-
+    logger.info("StreamByStatement.toString")
     // Get the tuple type of rstream
     val tupleType = memory.getOrElse(rstream + Constants.TupleTypeStr, 
                                      TupleTypes.Undefined)

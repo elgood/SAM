@@ -12,11 +12,15 @@ Running with sbt, the build tool for scala:
 
    This may take a while if running for the first time because it will download the dependencies. At the end you should be presented with a prompt: SAL-Parser.
 
-3. run input [output]
+3. test
+
+  This runs the tests that have been defined. 
+
+4. run input [output]
 
    This will run the sal parser and create the c++ code.  *input* is a path to the SAL program.  *output*, which is optional, is where the generated code will go.  If not specified, the generated code will print to standard out. 
 
-4. exit
+5. exit
 
    When done type exit.
 

@@ -4,21 +4,38 @@ import scala.collection.mutable.HashMap
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
 
+/**
+ * Parser for the ave operator.  There are different forms of how average
+ * can be expressed in SAL, but they all use the same implementation,
+ * an exponential histogram calculation.
+ */
 trait Average extends BaseParsing
 {
 
-
   def ehAveOperator : Parser[EHAveExp] =
+    // When the parameters are not specified
+    ehAveKeyWord ~ "(" ~ identifier ~ ")" ^^
+    {case ehave ~ lpar ~ id ~ rpar =>
+      val windowSize =  memory.getOrElse(Constants.WindowSize, 
+        Constants.DefaultWindowSize).toInt;
+      val ehk = memory.getOrElse(Constants.EHK, 
+        Constants.DefaultEHK).toInt; 
+      EHAveExp(id, windowSize, ehk, memory)} |
+    // When the parameters are specified.
     ehAveKeyWord ~ "(" ~ identifier ~ "," ~ posInt ~ "," ~ posInt ~ ")" ^^
     {case ehave ~ lpar ~ id ~ c1 ~ n ~ c2 ~ k ~ rpar =>
-      EHAveExp(id, n, k, memory)}
+      EHAveExp(id, n, k, memory)} 
 
   def aveOperator : Parser[EHAveExp] =
+    // When the parameters are not specified.
     aveKeyWord ~ "(" ~ identifier ~ ")" ^^
     {case ehave ~ lpar ~ id ~ rpar =>
-      val windowSize =  memory.getOrElse(Constants.WindowSize, "10000").toInt;
-      val ehk = memory.getOrElse(Constants.EHK, "2").toInt; 
+      val windowSize =  memory.getOrElse(Constants.WindowSize, 
+        Constants.DefaultWindowSize).toInt;
+      val ehk = memory.getOrElse(Constants.EHK,
+        Constants.DefaultEHK).toInt; 
       EHAveExp(id, windowSize, ehk, memory)} |
+    // When the parameters are specified.
     aveKeyWord ~ "(" ~ identifier ~ "," ~ posInt ~ "," ~ posInt ~ ")" ^^
     {case ehave ~ lpar ~ id ~ c1 ~ n ~ c2 ~ k ~ rpar =>
       EHAveExp(id, n, k, memory)}
@@ -40,6 +57,9 @@ case class EHAveExp(field: String, N: Int, k: Int,
   
   override def createOpString() = 
   {
+    // The characteristics of rstream has already been transferred 
+    // to the lstream, so we can get what need from the features
+    // indexed on the lstream in memory.
     val lstream = memory.get(Constants.CurrentLStream).get
     
     // Creating an entry for the operator type of lstream so we can
