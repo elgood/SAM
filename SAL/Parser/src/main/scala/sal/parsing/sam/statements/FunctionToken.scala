@@ -5,7 +5,6 @@ import com.typesafe.scalalogging.LazyLogging
 import sal.parsing.sam.Constants
 
 
-
 object FunctionToken { 
   var functionCount = 0 
   var tokenCount = 0  
@@ -56,7 +55,7 @@ extends LazyLogging
             // associated tuple type should have been placed in memory.  
             // We need the tuple type for a template parameter of the SAM class.
             val lstream = memory( Constants.CurrentLStream )
-            val tupleType = memory( lstream + Constants.TupleTypeStr )
+            val tupleType = memory( lstream + Constants.TupleType )
 
             
             // Create unique variable names for both the lambda function
@@ -72,7 +71,7 @@ extends LazyLogging
               "    int index  = " + index + ";\n" + 
               "    auto topKFeature = " +
               "static_cast<TopKFeature const *>(feature);\n"+
-              "    return topKFeature->getFrequences()[index];\n" +
+              "    return topKFeature->getFrequencies()[index];\n" +
               "  };\n\n" +
               "  auto " + tokenVar + 
               " = std::make_shared<FuncToken<" + tupleType +

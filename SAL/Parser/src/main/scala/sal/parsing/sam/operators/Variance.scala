@@ -3,6 +3,7 @@ package sal.parsing.sam.operators
 import scala.collection.mutable.HashMap
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
+import sal.parsing.sam.Util
 
 trait Variance extends BaseParsing
 {
@@ -49,12 +50,13 @@ trait Variance extends BaseParsing
  */
 case class EHVarExp(field: String, N: Int, k: Int,
                        memory: HashMap[String, String])
-  extends OperatorExp(field, memory)
+  extends OperatorExp(field, memory) with Util
 {
   
   override def createOpString() = 
   {
     val lstream = memory.get(Constants.CurrentLStream).get
+    val rstream = memory.get(Constants.CurrentRStream).get
     
     // Creating an entry for the operator type of lstream so we can
     // look it up later.  For example, if we define blah to be a topk
@@ -63,8 +65,8 @@ case class EHVarExp(field: String, N: Int, k: Int,
     memory += lstream + Constants.OperatorType -> Constants.EHVarKey
     
     // Getting fields that are arguments of the template
-    val tupleType = memory.get(lstream + Constants.TupleTypeStr).get
-    val numKeys = memory.get(lstream + Constants.NumKeysStr).get
+    val tupleType = memory.get(lstream + Constants.TupleType).get
+    val numKeys = memory.get(lstream + Constants.NumKeys).get
     var keysString = ""
     for (i <- 0 until numKeys.toInt ) {
       keysString = keysString + 
@@ -77,7 +79,7 @@ case class EHVarExp(field: String, N: Int, k: Int,
       " = std::make_shared<ExponentialHistogramVariance<\n" +
       "    double, " + tupleType + ", " + field + ", " + keysString + ">>(" +
       N.toString + ", " + k.toString + ", nodeId, featureMap, identifier);\n"
-    rString += addRegisterStatements(lstream)
+    rString += addRegisterStatements(lstream, rstream, memory)
     rString
   }
   

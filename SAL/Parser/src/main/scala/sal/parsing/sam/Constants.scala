@@ -38,38 +38,28 @@ object Constants {
 
   /************* end memory keys ********************/
   
-  // These are the names of variables used
-  //val PortVar          = "port"
-  //val IpVar            = "ip"
-  //val ReadSocketVar    = "receiver"
-  val QueueLengthVar   = "queueLength"
-  //val HighWaterMarkVar = "hwm"
-  
-  // These are types used 
-  val ReadSocketType = "ReadSocket"
-
-  // Used to index into subfields of variables in memory
-  val TupleTypeStr   = "TupleType"
-  val NumKeysStr     = "NumKeys"
+  // Used to index into subfields of keys in memory
+  val TupleType      = "TupleType"
+  val TuplizerType   = "TuplizerType"
+  val VarName        = "VarName"
+  val NumKeys        = "NumKeys"
   val KeyStr         = "Key"
+  val Subgraph       = "Subgraph"
 
   // Keeps track of the what the current lstream var is
   val CurrentLStream = "CurrentLStream"
   
+  // Keeps track of the what the current rstream var is
+  val CurrentRStream = "CurrentRStream"
+  
   // Combined with lstream to form key so we can look up what
   // an operator type is for the given lstream.
   val OperatorType   = "OperatorType"
-  
-  // Combined with lstream to form a key so we can look up what
-  // the input type for an operator is.
-  val InputType      = "InputType"
-  
-  val CurrentInputType = "CurrentInputType"
-  
-  // The keys in the memory map to record the types of input tuples and
-  // associated tuplizer from the connection statement.
+ 
+  // TODO: Make sure we need this 
+  // The keys in the memory map to record the types of input tuples
+  // from the connection statement.
   val ConnectionInputType = "ConnectionInputType"
-  val ConnectionTuplizerType = "ConnectionTuplizerType"
 
   // Used to name the Hash types in HASH WITH statements
   val HashPrefix = "Hash"
@@ -77,4 +67,18 @@ object Constants {
   // HASH WITH statements.
   val NumHashFunctions = "NumHashFunctionsKey"
 
+  // Keeps track of the current infix variable name (for filter statements)
+  val CurrentInfixVariable = "CurrentInfixVariable"
+
+  // The variable name of the connection statement producer
+  val Producer = "producer"
+
+  // These are used to store template parameters for graphstore objects
+  // for a particular stream
+  val TimeField     = "TimeField"
+  val DurationField = "DurationField"
+  val SourceHash    = "SourceHash"
+  val TargetHash    = "TargetHash"
+  val SourceEq      = "SourceEq"
+  val TargetEq      = "TargetEq"
 }

@@ -3,6 +3,7 @@ package sal.parsing.sam.operators
 import scala.collection.mutable.HashMap
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
+import sal.parsing.sam.Util
 
 trait TopK extends BaseParsing
 {
@@ -23,20 +24,22 @@ trait TopK extends BaseParsing
  */
 case class TopKExp(field: String, N: Int, b: Int, k: Int,
                       memory: HashMap[String, String]) 
-  extends OperatorExp(field, memory)
+  extends OperatorExp(field, memory) with Util
 {
   
   //TODO Needs to be fixed
   override def createOpString() = 
   {
     
-    val keyFieldTemplateParameters = createKeyFieldsTemplateParameters
+    val keyFieldTemplateParameters = createKeyFieldsTemplateParameters(memory)
     
     val tupleType = getTupleType  
       
-    val typeString = "TopK<size_t, " + tupleType + "," + field + "," +
+    val typeString = "TopK<" + tupleType + ", " + field + ", " +
                   keyFieldTemplateParameters + ">"
-    val lstream = memory.get(Constants.CurrentLStream).get
+
+    val lstream = memory(Constants.CurrentLStream)
+    val rstream = memory(Constants.CurrentRStream)
     
     // Creating an entry for the operator type of lstream so we can
     // look it up later.  For example, if we define blah to be a topk
@@ -45,14 +48,15 @@ case class TopKExp(field: String, N: Int, b: Int, k: Int,
     memory += lstream + Constants.OperatorType -> Constants.TopKKey
     
     // We need the input type later, too
-    memory += lstream + Constants.InputType -> tupleType
+    memory += lstream + Constants.TupleType -> tupleType
     //println(memory)
     
-    var rString = "  auto "  + lstream + 
-                  " = new " + typeString + "(" +
-                  N.toString + "," + b.toString + "," + k.toString + "," +
-                  "nodeId, featureMap, \"" + lstream + "\");\n\n"
-
-    rString
+    "  identifier = \"" + lstream + "\";\n" +
+    "  auto "  + lstream + 
+    " = std::make_shared<" + typeString + ">(\n" +
+    "                   " +
+    N.toString + "," + b.toString + "," + k.toString + ",\n" +
+    "                   nodeId, featureMap, identifier);\n\n" + 
+    addRegisterStatements(lstream, rstream, memory)
   }
 } 

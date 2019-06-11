@@ -30,7 +30,7 @@ trait ConnectionVast extends BaseParsing
  * produce any code, just stores values in memory to be used at other
  * times in the code generation. 
  */
-case class ConnectionStatementVast(lstream: String,
+case class ConnectionStatementVast(stream: String,
                                    ip: String,
                                    port: Int,
                                    memory: HashMap[String, String])
@@ -40,15 +40,29 @@ extends ConnectionStatement with LazyLogging
 
     logger.info("ConnectionStatement.toString")
 
-    // Record in the memory hashmap that we are expecting Vast netflow tuples
-    // as the initial stream of data coming from the AbstractDataSource.
+    // HashWith statements don't reference the stream name; it is assumed
+    // to be the stream defined by the connection statement.  As such
+    // we use the following memory mapping to keep track of that.
     memory += Constants.ConnectionInputType -> TupleTypes.VastNetflow
-    memory += Constants.ConnectionTuplizerType -> TupleTypes.VastNetflowTuplizer
 
     // Also record the tuple type indexed by the name of the stream.
     // We'll need this later for any operators that are defined using this
     // stream.
-    memory += lstream + Constants.TupleTypeStr -> TupleTypes.VastNetflow
+    memory += stream + Constants.TupleType -> TupleTypes.VastNetflow
+
+    // In addition the partition type needs the tuplizer, so record that
+    // also.
+    memory += stream + Constants.TuplizerType -> TupleTypes.VastNetflowTuplizer
+
+    memory += stream + Constants.VarName -> Constants.Producer
+
+    // These are fields needed by the GraphStore object
+    memory += stream + Constants.TimeField     -> "TimeSeconds"
+    memory += stream + Constants.DurationField -> "DurationSeconds"
+    memory += stream + Constants.SourceHash    -> "StringHashFunction"
+    memory += stream + Constants.TargetHash    -> "StringHashFunction"
+    memory += stream + Constants.SourceEq      -> "StringEqualityFunction"
+    memory += stream + Constants.TargetEq      -> "StringEqualityFunction"
 
     ""
   }  

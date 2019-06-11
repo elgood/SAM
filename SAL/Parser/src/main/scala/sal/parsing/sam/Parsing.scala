@@ -5,21 +5,25 @@ import scala.collection.mutable.HashMap
 import com.typesafe.scalalogging.LazyLogging
 
 import sal.parsing.sam.statements.Statements
+import sal.parsing.sam.subgraph.Subgraph
 import sal.parsing.sam.preamble.Preamble
 
 /**
  * @author elgood
  */
-trait Parsing  extends Statements with Preamble with LazyLogging {
+trait Parsing  extends Statements with Preamble with Subgraph with LazyLogging {
 
- 
+
+  // TODO: I think this is too regimented.  Seems like there could be mulitiple
+  // subgraphs defined and intermixing of query statements and subgraph definition. 
   def document = rep(preambleStatement) ~ connectionStatement ~ 
-                 partitionStatement ~ hashStatements ~ rep(queryStatement) ^^
+                 partitionStatement ~ hashStatements ~ rep(queryStatement) ~
+                 rep(subgraph)  ^^
                 {case preamble ~ connection ~ partition ~ hashStatements ~ 
-                      query =>
+                      query ~ subgraphs =>
                   logger.info("Parsing.document")
                   EntireQuery(connection, partition, hashStatements, 
-                              query, memory)
+                              query, subgraphs, memory)
                 }
  
   def queryStatement = streamByStatement | forEachStatement | filterStatement

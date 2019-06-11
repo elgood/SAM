@@ -9,14 +9,16 @@ import sal.parsing.sam.statements.ConnectionStatement
 import sal.parsing.sam.statements.PartitionStatement
 import sal.parsing.sam.statements.Statement
 import sal.parsing.sam.statements.HashWithStatement
+import sal.parsing.sam.subgraph.SubgraphQuery
 
 
 case class EntireQuery(connectionStatement : ConnectionStatement,
                        partitionStatement : PartitionStatement,
                        hashStatements : List[HashWithStatement],
                        queryStatements: List[Statement],
+                       subgraphs: List[SubgraphQuery],
                        memory: HashMap[String, String])
-  extends Flatten with LazyLogging
+  extends Util with LazyLogging
 {
   override def toString = {
     
@@ -35,8 +37,8 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
 
     rString += partitionStatement.toString
     rString += createPipelineDecl
-    val queryStatementList = flatten(queryStatements.productIterator.toList)
-    rString = queryStatementList.foldLeft(rString)((agg,e) => agg + e.toString)
+    rString = queryStatements.foldLeft(rString)((agg,e) => agg + e.toString)
+    rString = subgraphs.foldLeft(rString)((agg,e) => agg + e.toString)
     rString += "}\n\n"
     rString += main
     rString += connectionString 
@@ -85,9 +87,22 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "void createPipeline(std::shared_ptr<ProducerType> producer,\n" +
     "            std::shared_ptr<FeatureMap> featureMap,\n" +
     "            std::shared_ptr<FeatureSubscriber> subscriber,\n"+
-    "            size_t nodeId)\n"+
+    "            size_t numNodes,\n" +
+    "            size_t nodeId,\n" +
+    "            std::vector<std::string> hostnames,\n" +
+    "            size_t startingPort,\n" +
+    "            size_t hwm,\n" +
+    "            size_t graphCapacity,\n" + 
+    "            size_t tableCapacity,\n" +
+    "            size_t resultsCapacity,\n" +
+    "            size_t numSockets,\n" +
+    "            size_t numPullThreads,\n" +
+    "            size_t timeout,\n" +
+    "            double timeWindow,\n" +
+    "            size_t queueLength)\n"+
     "{\n"+
-    "  std::string identifier = \"\";\n"
+    "  std::string identifier = \"\";\n" +
+    "\n"
     
   }
 
@@ -131,6 +146,11 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "  // for a node.\n" +
     "  size_t numSockets;\n" +
     "  size_t numPullThreads;\n" +
+    "\n" +
+    "  // The timeWindow (s) controls how long intermediate subgraph results\n" +
+    "  // are kept.  It should be a little longer than the longest\n" +
+    "  // subgraph query\n"+
+    "  double timeWindow;\n" +
     "  \n" +
     "  // A small set zeromq communications take forever.  The timeout\n" +
     "  // sets a hard limit on how long for push sockets to wait.\n" +
@@ -244,6 +264,9 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "      po::value<size_t>(&numSockets)->default_value(1),\n" +
     "      \"Number of push sockets a node creates to talk to another\"\n" +
     "      \"node (default 1)\")\n" +
+    "    (\"timeWindow\",\n" +
+    "      po::value<double>(&timeWindow)->default_value(10),\n" +
+    "      \"How long in seconds to keep intermediate results around\")\n"+ 
     "    (\"timeout\",\n" +
     "      po::value<size_t>(&timeout)->default_value(1000),\n" +
     "      \"How long in milliseconds to wait before giving up on push\"\n"+
@@ -300,6 +323,7 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "\n" +
     "  // When we are operating on one nodes, we set the hostname to be\n" +
     "  // local host or 127.0.0.1\n" +
+    // TODO: Need to add local logic to command line.
     "  bool local = false;\n" +
     "  if (numNodes == 1) { \n" +
     "    hostnames[0] = \"127.0.0.1\";\n" +
@@ -351,10 +375,18 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "    // createPipeline\n" +
     "    auto producer = std::static_pointer_cast<ProducerType>(receiver);\n"+
     "\n" +
+    "    size_t resultsCapacity = 1000;\n" +
     "    createPipeline(producer,\n" +
     "              featureMap,\n" +
     "              subscriber,\n" +
-    "              nodeId);\n" +
+    "              numNodes,\n" +
+    "              nodeId,\n" +
+    "              hostnames,\n" +
+    "              startingPort,\n" +
+    "              hwm,\n" +
+    "              graphCapacity, tableCapacity, resultsCapacity,\n" +
+    "              numSockets, numPullThreads, timeout, timeWindow,\n" +
+    "              queueLength);\n" +
     "\n" +
     "    subscriber->init();\n" +
     "    if (!receiver->connect()) {\n" +
@@ -400,10 +432,18 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "    // in createPipeline.\n"+
     "    auto producer =std::static_pointer_cast<ProducerType>(partitioner);\n"+
     "\n" +
+    "    size_t resultsCapacity = 1000;\n" +
     "    createPipeline(producer,\n"+
-    "                   featureMap,\n"+
-    "                   NULL,\n" +
-    "                   nodeId);\n" +
+    "              featureMap,\n"+
+    "              NULL,\n" +
+    "              numNodes,\n" +
+    "              nodeId,\n" +
+    "              hostnames,\n" +
+    "              startingPort,\n" +
+    "              hwm,\n" +
+    "              graphCapacity, tableCapacity, resultsCapacity,\n" +
+    "              numSockets, numPullThreads, timeout, timeWindow,\n" +
+    "              queueLength);\n" +
     "\n" +
     "    if (!receiver->connect()) {\n" +
     "      std::cout << \"Couldn't connected to \" << ncIp << \":\" << ncPort << std::endl;\n" +

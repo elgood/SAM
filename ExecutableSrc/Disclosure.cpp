@@ -120,7 +120,7 @@ void createPipeline(
                                                          identifier);
 
   // Lessthan token
-  auto lessThanToken = std::make_shared<LessThanOperator<VastNetflow>>(
+  auto greaterThanToken = std::make_shared<GreaterThanOperator<VastNetflow>>(
                         featureMap);
   
   // Number token
@@ -131,7 +131,7 @@ void createPipeline(
   infixList.push_back(funcToken1);
   infixList.push_back(addOper);
   infixList.push_back(funcToken2);
-  infixList.push_back(lessThanToken);
+  infixList.push_back(greaterThanToken);
   infixList.push_back(numberToken);
 
   auto filterExpression = std::make_shared<Expression<VastNetflow>>(infixList);

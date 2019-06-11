@@ -260,13 +260,46 @@ public:
                 std::string const& key,
                 std::tuple<Ts...> const& input)
   {
-    //std::cout << "LessThanOperator evalute " <<std::endl;
     if (mystack.size() >= 2) {
       double o2 = mystack.top();
       mystack.pop();
       double o1 = mystack.top();
       mystack.pop();
       double result = o1 < o2;
+      mystack.push(result);
+      return true;
+    }
+    return false;
+  }
+
+};
+
+template <typename... Ts>
+class GreaterThanOperator : public OperatorToken<Ts...>
+{};
+
+template <typename... Ts>
+class GreaterThanOperator<std::tuple<Ts...>> :
+  public OperatorToken<std::tuple<Ts...>>
+{
+public:
+  GreaterThanOperator(std::shared_ptr<FeatureMap> featureMap) : 
+    OperatorToken<std::tuple<Ts...>>(featureMap, 1, this->LEFT_ASSOCIATIVE) {}
+
+  std::string toString() const {
+    return "GreaterThanOperator";
+  }
+
+  bool evaluate(std::stack<double> & mystack,
+                std::string const& key,
+                std::tuple<Ts...> const& input)
+  {
+    if (mystack.size() >= 2) {
+      double o2 = mystack.top();
+      mystack.pop();
+      double o1 = mystack.top();
+      mystack.pop();
+      double result = o1 > o2;
       mystack.push(result);
       return true;
     }

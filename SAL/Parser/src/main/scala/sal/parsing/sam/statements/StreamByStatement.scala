@@ -18,6 +18,8 @@ trait StreamBy extends BaseParsing
   }
 }
 
+object StreamByStatement { var counter = 0 }
+
 /** 
  *  This looks for statements of the form
  *  lstream = STREAM rstream BY feature1, feature2, ...
@@ -44,14 +46,14 @@ case class StreamByStatement(lstream: String,
   override def toString = {
     logger.info("StreamByStatement.toString")
     // Get the tuple type of rstream
-    val tupleType = memory.getOrElse(rstream + Constants.TupleTypeStr, 
+    val tupleType = memory.getOrElse(rstream + Constants.TupleType, 
                                      TupleTypes.Undefined)
                                      
     // Adding the tuple type for lstream to memory
-    memory += lstream + Constants.TupleTypeStr -> tupleType
+    memory += lstream + Constants.TupleType -> tupleType
     
     // Adding the number of keys for lstream to memory
-    memory += lstream + Constants.NumKeysStr -> features.length.toString()
+    memory += lstream + Constants.NumKeys -> features.length.toString()
     
     // Adding the keys for lstream to memory
     var i = 0
@@ -59,9 +61,23 @@ case class StreamByStatement(lstream: String,
       memory += lstream + Constants.KeyStr + i.toString ->
                 feature
       i = i + 1
-      
     } 
-  
+ 
+    // TODO: I don't really like this logic.  Probably a better way to do this.
+    // How the code is generated currently, the first StreamByStatement has 
+    // the variable name producer and afterwards we use the actual lstream name
+    // assigned in SAL.  
+    // We need to record the identifier associated with this stream.
+    // It is just the identifier assigned in SAL.
+    if (StreamByStatement.counter == 0) {
+      memory += lstream + Constants.VarName -> Constants.Producer
+    } else {
+      memory += lstream + Constants.VarName -> lstream
+    }
+
+    // Keep track of how many StreamByStatements we have seen.
+    StreamByStatement.counter += 1
+
     // Doesn't return anything, just sets values in memory. 
     "" 
   }

@@ -25,14 +25,19 @@ trait BaseParsing extends RegexParsers {
   def identifiers   = repsep(identifier , ",")
   
   // Keywords
-  def filterKeyWord = "(?i)filter".r
-  def streamKeyWord = "(?i)stream".r 
-  def byKeyWord     = "(?i)by".r 
-  def forEachKeyWord = "(?i)foreach".r 
-  def generateKeyWord = "(?i)generate".r
-  def hashKeyWord = "(?i)hash".r
-  def withKeyWord = "(?i)with".r
+  def filterKeyWord    = "(?i)filter".r
+  def streamKeyWord    = "(?i)stream".r 
+  def byKeyWord        = "(?i)by".r 
+  def forEachKeyWord   = "(?i)foreach".r 
+  def generateKeyWord  = "(?i)generate".r
+  def hashKeyWord      = "(?i)hash".r
+  def withKeyWord      = "(?i)with".r
   def partitionKeyWord = "(?i)partition".r
+  def subgraphKeyWord  = "(?i)subgraph".r
+  def onKeyWord        = "(?i)on".r
+  def sourceKeyWord    = "(?i)source".r
+  def targetKeyWord    = "(?i)target".r
+  def andKeyWord       = "(?i)and".r
   
   // Preamble related key words for operator default values
   def windowSizeKeyWord = "(?i)windowsize".r

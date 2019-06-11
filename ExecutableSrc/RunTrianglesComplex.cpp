@@ -42,8 +42,6 @@ typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
 
 typedef GraphStoreType::QueryType SubgraphQueryType;
 
-typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
-
 typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
 typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
 typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>

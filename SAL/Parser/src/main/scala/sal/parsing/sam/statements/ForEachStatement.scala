@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
-import sal.parsing.sam.Flatten
+import sal.parsing.sam.Util
 import sal.parsing.sam.operators.Operator
 import sal.parsing.sam.operators.OperatorExp
 
@@ -37,7 +37,7 @@ case class ForEachStatement(lstream: String,
                             rstream: String,
                             operator: OperatorExp,
                             memory: HashMap[String, String])
-  extends Statement with Flatten with LazyLogging
+  extends Statement with Util with LazyLogging
 {
   override def toString = {
 
@@ -46,10 +46,15 @@ case class ForEachStatement(lstream: String,
     var count = 0
     
     memory += Constants.CurrentLStream -> lstream
+    memory += Constants.CurrentRStream -> rstream
     
     // This gets the key/values from rstream and add them to lstream
     transferKeyFields(lstream, rstream, memory) 
     
+    // We need to record the identifier associated with this stream.
+    // It is just the identifier assigned in SAL.
+    memory += lstream + Constants.VarName -> lstream
+
     rString += operator.toString
     
     rString  

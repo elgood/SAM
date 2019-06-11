@@ -23,6 +23,7 @@
 #include <sam/Project.hpp>
 #include <sam/CollapsedConsumer.hpp>
 #include <sam/Identity.hpp>
+#include <sam/GraphStore.hpp>
 
 
 #endif

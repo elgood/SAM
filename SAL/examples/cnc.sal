@@ -1,5 +1,7 @@
-
-
+Netflows = VastStream("localhost", 9999);
+PARTITION Netflows By SourceIp, DestIp;
+HASH SourceIp WITH IpHashFunction;
+HASH DestIp With IpHashFunction;
 VertsBySrc = STREAM Netflows BY SourceIp;
 FlowsizeAve = FOREACH VertsBySrc GENERATE ave(SrcPayloadBytes);
 SmallMessages = FILTER VertsBySrc By FlowsizeAve < 10;

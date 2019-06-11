@@ -1,7 +1,6 @@
 ThisBuild / scalaVersion := "2.12.7"
 ThisBuild / organization := "gov.sandia"
 Compile/mainClass := Some("sal.parsing.sam.Sal")
-//Compile/mainClass := Some("Test")
 
 lazy val parser = (project in file("."))
   .settings(

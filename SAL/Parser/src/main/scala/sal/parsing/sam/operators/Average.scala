@@ -3,6 +3,7 @@ package sal.parsing.sam.operators
 import scala.collection.mutable.HashMap
 import sal.parsing.sam.BaseParsing
 import sal.parsing.sam.Constants
+import sal.parsing.sam.Util
 
 /**
  * Parser for the ave operator.  There are different forms of how average
@@ -52,7 +53,7 @@ trait Average extends BaseParsing
  */
 case class EHAveExp(field: String, N: Int, k: Int,
                        memory: HashMap[String, String])
-  extends OperatorExp(field, memory)
+  extends OperatorExp(field, memory) with Util
 {
   
   override def createOpString() = 
@@ -61,6 +62,7 @@ case class EHAveExp(field: String, N: Int, k: Int,
     // to the lstream, so we can get what need from the features
     // indexed on the lstream in memory.
     val lstream = memory.get(Constants.CurrentLStream).get
+    val rstream = memory.get(Constants.CurrentRStream).get
     
     // Creating an entry for the operator type of lstream so we can
     // look it up later.  For example, if we define blah to be a topk
@@ -68,8 +70,8 @@ case class EHAveExp(field: String, N: Int, k: Int,
     // filter expression.
     memory += lstream + Constants.OperatorType -> Constants.EHSumKey
     
-    val tupleType = memory.get(lstream + Constants.TupleTypeStr).get
-    val numKeys = memory.get(lstream + Constants.NumKeysStr).get
+    val tupleType = memory.get(lstream + Constants.TupleType).get
+    val numKeys = memory.get(lstream + Constants.NumKeys).get
     var keysString = ""
     for (i <- 0 until numKeys.toInt ) {
       keysString = keysString + 
@@ -83,7 +85,7 @@ case class EHAveExp(field: String, N: Int, k: Int,
       "    double, " + tupleType + ", " + field + ", " + keysString + ">>(\n" +
       "    " + N.toString + ", " + k.toString + 
       ", nodeId, featureMap, identifier);\n"
-    rString += addRegisterStatements(lstream)
+    rString += addRegisterStatements(lstream, rstream, memory)
     rString
   }
   
