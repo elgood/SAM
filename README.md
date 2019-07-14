@@ -17,6 +17,7 @@ SAM.
 * Boost
 * protobuf
 * cmake
+* zmq
 
 # Building
 
