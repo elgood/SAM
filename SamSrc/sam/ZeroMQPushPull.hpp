@@ -12,6 +12,7 @@
 #include <vector>
 #include <atomic>
 #include <thread>
+#include <set>
 #include <sys/socket.h>
 #include <zmq.hpp>
 

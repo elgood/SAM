@@ -83,7 +83,7 @@ file (GLOB TEST_SRCS TestSrc/*.cpp)
 foreach(testSrc ${TEST_SRCS})
   get_filename_component(testName ${testSrc} NAME_WE)
 
-  #add_definitions(-DBOOST_TEST_DYN_LINK)
+  add_definitions(-DBOOST_TEST_DYN_LINK)
   add_executable(${testName} ${testSrc})
 
   target_link_libraries(${testName} SamLib)
