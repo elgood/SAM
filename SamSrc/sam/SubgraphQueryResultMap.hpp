@@ -3,6 +3,7 @@
 
 #include <sam/SubgraphQueryResult.hpp>
 #include <sam/CompressedSparse.hpp>
+#include <sam/AbstractSubgraphPrinter.hpp>
 #include <limits>
 
 namespace sam {
@@ -13,6 +14,14 @@ public:
   SubgraphQueryResultMapException(std::string str) : std::runtime_error(str) {}
 };
 
+/**
+ * A hashmap that holds the results of subgraph query results.
+ * The most import methods are 
+ * 1) process(tuple, edgeRequests) which checks to see if the tuple
+ *    can be added to any existing intermediate results.
+ * 2) add(result, edgeRequests) which adds a new intermediate result
+ *    to the hash map.
+ */
 template <typename TupleType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
@@ -36,7 +45,10 @@ private:
   SourceEF sourceEquals;
   TargetEF targetEquals;
 
+  /// Reference to the compressed sparse row data structure
   CsrType const& csr;
+
+  /// Reference to the compressed sparse column data structure
   CscType const& csc;
 
   /// The size of the hash table storing intermediate query results.
@@ -135,6 +147,11 @@ public:
     numQueryResults = 0;
   }
 
+  /**
+   * Returns the number of intermediate results in the table.
+   * Does not block other threads, so the number of intermediate
+   * results may change during computation.
+   */
   size_t getNumIntermediateResults() const {
     size_t total = 0;
     for(size_t i = 0; i < tableCapacity; i++) {
@@ -152,6 +169,12 @@ public:
   }
 
   #ifdef DETAIL_TIMING
+  // A number of methods that are only defined if we are collecting 
+  // detailed timing information.
+
+  /**
+   * The total amount of time spent in processAgainstGraph.
+   */
   double getTotalTimeProcessAgainstGraph() const {
     return totalTimeProcessAgainstGraph;
   }
@@ -368,7 +391,7 @@ add(QueryResultType const& result,
         localQueryResult.toString().c_str());
       size_t index = numQueryResults.fetch_add(1);
       index = index % resultCapacity;
-      queryResults[index] = localQueryResult;     
+      queryResults[index] = localQueryResult;
     }
   }
   DEBUG_PRINT("Node %lu exiting SubgraphQueryResultMap::add(result, csr, csc, "

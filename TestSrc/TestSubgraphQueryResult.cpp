@@ -8,8 +8,8 @@
 
 using namespace sam;
 
-typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
-  QueryType;
+typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, 
+          DurationSeconds> QueryType;
 
 struct F {
   std::string netflowString1 = "1,1,156.0,2013-04-10 08:32:36,"
