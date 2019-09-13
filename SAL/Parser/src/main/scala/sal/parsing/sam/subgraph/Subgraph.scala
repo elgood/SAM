@@ -46,15 +46,20 @@ case class SubgraphQuery(stream: String,
       " = std::make_shared<SubgraphQueryType" + SubgraphQuery.counter + 
       ">(featureMap);\n\n"
 
+    
     rString += "  auto " + graphStoreVar + " = " +
       "std::make_shared<GraphStoreType" + SubgraphQuery.counter + ">(\n" +
       "    numNodes, nodeId,\n" +
       "    hostnames, startingPort + numNodes,\n" +
       "    hwm, graphCapacity,\n" +
-      "    tableCapacity, resultsCapacity,\n" + 
+      "    tableCapacity, resultsCapacity,\n" +
       "    numSockets, numPullThreads, timeout,\n" +
-      "    timeWindow, featureMap);\n\n"
-
+      "    timeWindow, featureMap);\n\n" +
+      "  if (printerLocation != \"\") {\n" + 
+      "    std::shared_ptr<AbstractPrinterType> printer = \n" +
+      "      std::make_shared<PrinterType>(printerLocation);\n"  +
+      "    graphStore" + SubgraphQuery.counter + "->setPrinter(printer);\n" +
+      "  }\n"
 
     val producer = memory(stream + Constants.VarName)
     rString += "  " + producer + "->registerConsumer(" + graphStoreVar +");\n\n"
@@ -89,7 +94,13 @@ case class SubgraphQuery(stream: String,
     "    " + time + ", " + duration + ",\n" +
     "    " + sourceHash + ", " + targetHash + ",\n" +
     "    " + sourceEq + ", " + targetEq + "> GraphStoreType" + 
-    SubgraphQuery.counter + ";\n\n" 
+    SubgraphQuery.counter + ";\n\n" +
+    "  typedef AbstractSubgraphPrinter<" + tupleType + ", " + source + ",\n" +
+    "    " + target + ", " + time + ", " + duration + ">\n" +
+    "    AbstractPrinterType;\n" +
+    "  typedef SubgraphDiskPrinter<" + tupleType + ", " + source + ",\n" +
+    "    " + target + ", " + time + ", " + duration + ">\n" +
+    "    PrinterType;\n"
 
   }
 

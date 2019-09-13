@@ -18,6 +18,7 @@
 #include <sam/EdgeRequestMap.hpp>
 #include <sam/ZeroMQUtil.hpp>
 #include <sam/FeatureMap.hpp>
+#include <sam/AbstractSubgraphPrinter.hpp>
 #include <zmq.hpp>
 #include <thread>
 #include <cstdlib>
@@ -52,8 +53,11 @@ template <typename TupleType, typename Tuplizer,
 class GraphStore : public AbstractConsumer<TupleType>
 {
 public:
+
   typedef SubgraphQueryResultMap<TupleType, source, target, time, duration,
     SourceHF, TargetHF, SourceEF, TargetEF> ResultMapType;
+  
+  typedef typename ResultMapType::PrinterType PrinterType;
 
   typedef SubgraphQuery<TupleType, source, target, time, duration> QueryType;
 
@@ -284,6 +288,13 @@ public:
 
   ResultType getResult(size_t index) const {
     return resultMap->getResult(index);
+  }
+
+  /**
+   * Sets the printer that prints results.
+   */
+  void setPrinter(std::shared_ptr<PrinterType> printer) {
+    resultMap->setPrinter(printer);
   }
 
 

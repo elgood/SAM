@@ -6,12 +6,7 @@
  * Author: elgood
  */
 
-#include <sam/GraphStore.hpp>
-#include <sam/EdgeDescription.hpp>
-#include <sam/SubgraphQuery.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/ReadSocket.hpp>
-#include <sam/TopK.hpp>
+#include <sam/sam.hpp>
 #include <boost/program_options.hpp>
 #include <string>
 #include <vector>
@@ -28,6 +23,11 @@ typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
         GraphStoreType;
+
+typedef AbstractSubgraphPrinter<VastNetflow, SourceIp, DestIp,
+          TimeSeconds, DurationSeconds> AbstractPrinterType;
+typedef SubgraphDiskPrinter<VastNetflow, SourceIp, DestIp,
+          TimeSeconds, DurationSeconds> PrinterType;
 
 typedef GraphStoreType::QueryType SubgraphQueryType;
 
@@ -58,6 +58,7 @@ int main(int argc, char** argv)
   size_t tableCapacity; ///> For SubgraphQueryResultMap intermediate results
   size_t resultsCapacity; ///> For final results
   double timeWindow; ///> For graphStore
+  string printerLocation; ///> Where subgraphs results go.
 
   po::options_description desc("This looks for watering hole attacks"
     " in netflow data");
@@ -109,6 +110,9 @@ int main(int argc, char** argv)
       po::value<double>(&timeWindow)->default_value(100),
       "How big of a time window before intermediate results expire "
       "(default: 100).")
+    ("printerLocation",
+      po::value<std::string>(&printerLocation)->default_value(""),
+      "Where subgraph results are written.")
   ;
 
   // Parse the command line variables
@@ -164,6 +168,12 @@ int main(int argc, char** argv)
      tableCapacity, resultsCapacity,
      numPushSockets, numPullThreads, timeout,
      timeWindow, featureMap);
+
+  if (printerLocation != "") {
+    std::shared_ptr<AbstractPrinterType> printer =
+      std::make_shared<PrinterType>(printerLocation);
+    graphStore->setPrinter(printer);
+  }
 
   // Set up GraphStore object to get input from ZeroMQPushPull objects
   pushPull->registerConsumer(graphStore);

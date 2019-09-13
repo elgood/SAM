@@ -38,6 +38,8 @@ public:
             SourceHF, SourceEF> CsrType;
   typedef CompressedSparse<TupleType, target, source, time, duration,
             TargetHF, TargetEF> CscType;
+  typedef AbstractSubgraphPrinter<TupleType, source, target,
+            time, duration> PrinterType;
 
 private:
   SourceHF sourceHash;
@@ -74,6 +76,8 @@ private:
 
   size_t numNodes;
   size_t nodeId;
+
+  std::shared_ptr<PrinterType> printer;
 
   #ifdef DETAIL_TIMING
   double totalTimeProcessAgainstGraph = 0;
@@ -166,6 +170,13 @@ public:
 
   QueryResultType getResult(size_t index) const {
     return queryResults[index];
+  }
+
+  /**
+   * Sets the printer that prints results.
+   */
+  void setPrinter(std::shared_ptr<PrinterType> printer) {
+    this->printer = printer;
   }
 
   #ifdef DETAIL_TIMING
@@ -301,8 +312,8 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
   this->nodeId = nodeId;
   this->tableCapacity = tableCapacity;
   this->resultCapacity = resultCapacity;
-
   queryResults.resize(resultCapacity);
+  
   numQueryResults = 0;
 
   mutexes = new std::mutex[tableCapacity];
@@ -392,6 +403,9 @@ add(QueryResultType const& result,
       size_t index = numQueryResults.fetch_add(1);
       index = index % resultCapacity;
       queryResults[index] = localQueryResult;
+      if (printer) {
+        printer->print(localQueryResult);
+      }
     }
   }
   DEBUG_PRINT("Node %lu exiting SubgraphQueryResultMap::add(result, csr, csc, "
@@ -454,7 +468,10 @@ add_nocheck(QueryResultType const& result,
       result.toString().c_str());
     size_t index = numQueryResults.fetch_add(1);
     index = index % resultCapacity;
-    queryResults[index] = result;     
+    queryResults[index] = result;
+    if (printer) {
+      printer->print(result);
+    }
   }
 
   return 1;

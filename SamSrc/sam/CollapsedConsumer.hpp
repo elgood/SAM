@@ -3,6 +3,9 @@
 
 #include <sam/Util.hpp>
 #include <sam/Features.hpp>
+#include <sam/BaseComputation.hpp>
+#include <sam/AbstractConsumer.hpp>
+#include <sam/FeatureProducer.hpp>
 
 namespace sam {
 

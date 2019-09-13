@@ -7,6 +7,8 @@
 
 using namespace sam;
 
+typedef AbstractSubgraphPrinter<VastNetflow, SourceIp, DestIp,
+          TimeSeconds, DurationSeconds> AbstractPrinterType;
 typedef SubgraphDiskPrinter<VastNetflow, SourceIp, DestIp, 
           TimeSeconds, DurationSeconds> PrinterType;
 typedef PrinterType::ResultType ResultType;
@@ -16,7 +18,7 @@ typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds,
 struct SetUp {
 
   std::string loc = "./subgraphoutput.txt";
-  std::shared_ptr<PrinterType> printer;
+  std::shared_ptr<AbstractPrinterType> printer;
 
   // A netflow to use to create a subgraph query result.
   std::string netflowString1 = "1,1,156.0,2013-04-10 08:32:36,"
@@ -51,9 +53,8 @@ struct SetUp {
 
   ~SetUp() 
   {
-    //std::remove(loc.c_str());
+    std::remove(loc.c_str());
   }
-
 };
 
 

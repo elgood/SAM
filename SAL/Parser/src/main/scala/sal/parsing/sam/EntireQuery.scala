@@ -99,7 +99,8 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "            size_t numPullThreads,\n" +
     "            size_t timeout,\n" +
     "            double timeWindow,\n" +
-    "            size_t queueLength)\n"+
+    "            size_t queueLength,\n" + 
+    "            std::string printerLocation)\n"+
     "{\n"+
     "  std::string identifier = \"\";\n" +
     "\n"
@@ -204,6 +205,9 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "  // and write the results to the outputfile.\n" +
     "  string inputfile;\n" +
     "  string outputfile;\n" +
+    "\n" +
+    "  // Where subgraph results are written\n" +
+    "  string printerLocation;\n" +
     "\n"
   }
 
@@ -300,6 +304,9 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "      po::value<string>(&outputfile),\n" +
     "      \"If --create_features is specified, the produced file will\"\n" +
     "      \" be a csv file of features.\")\n" + 
+    "    (\"printerLocation\",\n" +
+    "      po::value<std::string>(&printerLocation)->default_value(\"\"),\n"+
+    "      \"Where subgraph results are written.\")\n" +
     "  ;\n" +
     "\n" +
     "  po::variables_map vm;\n" +
@@ -386,7 +393,7 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "              hwm,\n" +
     "              graphCapacity, tableCapacity, resultsCapacity,\n" +
     "              numSockets, numPullThreads, timeout, timeWindow,\n" +
-    "              queueLength);\n" +
+    "              queueLength, printerLocation);\n" +
     "\n" +
     "    subscriber->init();\n" +
     "    if (!receiver->connect()) {\n" +
@@ -443,7 +450,7 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "              hwm,\n" +
     "              graphCapacity, tableCapacity, resultsCapacity,\n" +
     "              numSockets, numPullThreads, timeout, timeWindow,\n" +
-    "              queueLength);\n" +
+    "              queueLength, printerLocation);\n" +
     "\n" +
     "    if (!receiver->connect()) {\n" +
     "      std::cout << \"Couldn't connected to \" << ncIp << \":\" << ncPort << std::endl;\n" +

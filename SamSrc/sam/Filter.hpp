@@ -3,6 +3,9 @@
 
 #include <string>
 #include <sam/Expression.hpp>
+#include <sam/AbstractConsumer.hpp>
+#include <sam/BaseComputation.hpp>
+#include <sam/BaseProducer.hpp>
 
 using std::string;
 
