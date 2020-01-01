@@ -7,7 +7,6 @@
 
 namespace sam {
 
-
 /**
  * These are the operators that can be used when describing a condition on an
  * node.
@@ -124,6 +123,12 @@ public:
 
 };
 
+/**
+ * Used to express temporal constraints on edges with a zero-based 
+ * scheme.  By zero-based, one edge's starttime or endtime is declared
+ * to be the zero time.  All times are expressed relative to this zero 
+ * time.
+ */
 class TimeEdgeExpression : public BaseExpression 
 {
 public:
