@@ -25,25 +25,29 @@
 
 namespace sam {
 
+/**
+ * Execption class for ZeroMQPushPull errors.
+ */
 class ZeroMQPushPullException : public std::runtime_error {
 public:
   ZeroMQPushPullException(char const * message) : std::runtime_error(message) {}
   ZeroMQPushPullException(std::string message) : std::runtime_error(message) {}
 };
 
-//template <typename TupleType, size_t source, size_t target, 
-//          typename Tuplizer, typename HF>
+/**
+ * Class for partitioning tuples across the cluster.
+ * @tparam TupleType The type of tuple.
+ * @tparam Tuplizer Object that takes a string and spits out a std::tuple.
+ * @tparam HF A list of hash functions that are used to partition the data.
+ */
 template <typename TupleType, typename Tuplizer, typename... HF>
 class ZeroMQPushPull : public AbstractConsumer<std::string>, 
                        public BaseProducer<TupleType>
 {
 public:
-  //typedef typename std::tuple_element<source, TupleType>::type SourceType;
-  //typedef typename std::tuple_element<target, TupleType>::type TargetType;
   typedef typename PushPull::FunctionType FunctionType;
 
 private:
-  //HF hash; ///> Hashes
   Tuplizer tuplizer; ///> Converts from string to tuple
   SimpleIdGenerator idGenerator; ///> Generates unique id for each tuple
   size_t numNodes; ///> How many total nodes there are
@@ -103,8 +107,6 @@ public:
   void terminate();
 
   size_t getConsumeCount() const { return consumeCount; }
-
-
 
 private:
   bool acceptingData = false;
