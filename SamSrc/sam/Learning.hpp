@@ -4,6 +4,8 @@
 #include <mlpack/core.hpp>
 #include <mlpack/methods/naive_bayes/naive_bayes_classifier.hpp>
 
+// This is currently not in use.  Learning/inference is done external to the 
+// library. 
 // A struct for saving the model with mappings.
 struct NBCModel
 {
