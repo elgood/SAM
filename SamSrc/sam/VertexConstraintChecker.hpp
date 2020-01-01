@@ -15,7 +15,25 @@ public:
     std::runtime_error(message) { }
 };
 
-
+/**
+ * A class that has the logic to check vertex constraints.
+ * Vertex constraints are defined within subgraph queries and form
+ * constraints on individual vertices.  The currently supported
+ * constraints are 
+ *
+ * in - The vertex is a key in the feature map for a particular feature.
+ *  Example: 
+ *  bait in Top100
+ *  This means that the vertex variable bait has a binding that is found
+ *  as a key in the featureMap under feature Top100.
+ * 
+ * notIn - Similar to "in", but this time the vertex should not be found
+ *  in the feature map for the specified feature.
+ *
+ * TODO: other vertex constraints to be defined.  The class seems somewhat
+ * specific to "in" and "notIn", so may be hard to generalize to other
+ * types of vertex constaints.
+ */
 template <typename SubgraphQueryType>
 class VertexConstraintChecker
 {
@@ -23,6 +41,17 @@ private:
   std::shared_ptr<const FeatureMap> featureMap;  
   SubgraphQueryType const* subgraphQuery;
 public:
+  
+  /**
+   * The constructor for the VertexConstraintChecker class.  You provide
+   * 1) featureMap - This is used for the "in" and "notIn" vertex 
+   *   constraints.  We use the featureMap to see if a vertex is found
+   *   in the featureMap for a given feature.
+   * 2) The subgraph query itself.  The only thing we use the subgraph
+   *   query for is to get the list of vertex constraints.  
+   *   TODO: Might be nice to get rid of the reference to the subgraph
+   *   query.
+   */
   VertexConstraintChecker(std::shared_ptr<const FeatureMap> featureMap,
                           SubgraphQueryType const* subgraphQuery)
   {
@@ -34,6 +63,8 @@ public:
   {
     DEBUG_PRINT("VertexConstraintChecker checking variable %s vertex %s\n",
       variable.c_str(), vertex.c_str());
+
+    // lambda function that checks that the 
     auto existsVertex = [vertex](Feature const * feature)->bool {
       auto topKFeature = static_cast<TopKFeature const *>(feature);
       auto keys = topKFeature->getKeys();
