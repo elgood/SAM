@@ -15,8 +15,8 @@ using namespace sam;
 using namespace std::chrono;
 using namespace sam::numTrianglesDetails;
 
-typedef PartialTriangle<VastNetflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
-    PartialTriangleType;
+typedef PartialTriangle<VastNetflow, SourceIp, DestIp, TimeSeconds, 
+          DurationSeconds> PartialTriangleType;
 
 
 BOOST_AUTO_TEST_CASE( test_partial_triangle )

@@ -14,6 +14,11 @@ using namespace sam;
 
 BOOST_AUTO_TEST_CASE( number_test )
 {
+  FeatureMap featureMap;
+  auto numberToken = std::make_shared<NumberToken<VastNetflow>>(
+    featureMap, 1.0);
+  auto addOper = std::make_shared<AddOperator<VastNetflow>>(featureMap);
+
 /*  string str = "1.0 + 2.5";
   Expression<FilterGrammar<std::string::const_iterator>> expression(str);
   FeatureMap featureMap;
