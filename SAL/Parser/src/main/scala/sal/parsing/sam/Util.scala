@@ -47,7 +47,10 @@ trait Util
                              memory: HashMap[String, String]) : String = 
   {
     val producer = memory(rstream + Constants.VarName)
-    "  " + producer + "->registerConsumer(" + lstream + ");\n" +
+    //TODO: Below line breaks ml.sal example.  But the replacement line
+    //probably breaks other sal examples.
+    //"  " + producer + "->registerConsumer(" + lstream + ");\n" +
+    "  producer->registerConsumer(" + lstream + ");\n" +
     "  if (subscriber != NULL) {\n" +
     "    " + lstream + "->registerSubscriber(subscriber," +
     " identifier);\n" +
