@@ -56,7 +56,8 @@ public:
   typedef std::vector<EdgeDesc> EdgeList; 
   typedef typename EdgeList::iterator iterator;
   typedef typename EdgeList::const_iterator const_iterator;
-  typedef SubgraphQuery<TupleType, source, target, time, duration> SubgraphQueryType;
+  typedef SubgraphQuery<TupleType, source, target, time, duration> 
+    SubgraphQueryType;
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<source, TupleType>::type TargetType;
   typedef typename std::tuple_element<source, TupleType>::type NodeType;
