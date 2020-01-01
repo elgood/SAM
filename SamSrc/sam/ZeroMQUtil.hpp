@@ -509,7 +509,7 @@ void PushPull::initializePullThreads()
       for (size_t i = 0; i < numVisiblePushSockets; i++) {
         if (pollItems[i].revents & ZMQ_POLLIN) {
 
-          sockets[i]->recv(&message);
+          sockets[i]->recv(message);
           if (isTerminateMessage(message)) {
 
             DEBUG_PRINT("Node %lu PushPull pullThread received terminate "
