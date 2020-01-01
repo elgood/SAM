@@ -514,7 +514,8 @@ checkSubgraphQueries(TupleType const& tuple,
 
   size_t totalWork = 0;
 
-  for (std::shared_ptr<const QueryType> query : queries) {
+  for (std::shared_ptr<const QueryType> query : queries) 
+  {
     totalWork++;
 
     //TODO: Don't really like this.  I think SubgraphQueryResult should
