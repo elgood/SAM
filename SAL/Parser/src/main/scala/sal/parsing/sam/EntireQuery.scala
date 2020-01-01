@@ -103,6 +103,15 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "            std::string printerLocation)\n"+
     "{\n"+
     "  std::string identifier = \"\";\n" +
+    "\n" +
+    "  // Doesn't need a key, but provide one anyway to the template. " +
+    "  identifier = \"label\";\n" +
+    "  auto label = std::make_shared<Identity<" + inputType + ",SamLabel, DestIp>>\n" +
+    "                 (nodeId, featureMap, identifier);\n" +
+    "  producer->registerConsumer(label);\n" +
+    "  if (subscriber != NULL) {\n" +
+    "    label->registerSubscriber(subscriber, identifier);\n" +
+    "  }\n" + 
     "\n"
     
   }
