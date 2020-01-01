@@ -389,9 +389,6 @@ createPushSockets(
         throw UtilException(message);
       }
 
-      //printf("createpushsockets url %s nodeId %lu %d set socket option\n", 
-      //    url.c_str(), nodeId, i);
-      //pusher->connect(url);
       try {
         #ifdef DEBUG
         printf("Node %lu createPushSockets binding to %s\n", nodeId, 
@@ -677,10 +674,10 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
 
   size_t numThreads = std::thread::hardware_concurrency();
   //size_t numThreads = 1;
-  printf("numTriangles numThreads %lu\n", numThreads); 
+  DEBUG_PRINT("numTriangles numThreads %lu\n", numThreads); 
 
   size_t tableSize = 10000;
-  printf("numTriangles table_size %lu\n", tableSize);
+  DEBUG_PRINT("numTriangles table_size %lu\n", tableSize);
   std::mutex* mutexes = new std::mutex[tableSize];
   std::list<PartialTriangleType>* alr = 
     new std::list<PartialTriangleType>[tableSize];
@@ -722,7 +719,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     //DEBUG_PRINT("num partialTriangles %lu\n", countPartials(alr, tableSize));
 
     if (numProcessed % 10000 == 0) {
-      printf("Processed %lu out of %lu\n", numProcessed, l.size());
+      DEBUG_PRINT("Processed %lu out of %lu\n", numProcessed, l.size());
     }
     numProcessed++;
 
@@ -766,9 +763,9 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
           PartialTriangleType partial = newPartials[i];
           size_t index;
           if (partial.numEdges == 1) {
-            index = hashTarget(partial.netflow1);
+            index = hashTarget(partial.netflow1) % tableSize;
           } else {
-            index = hashTarget(partial.netflow2);
+            index = hashTarget(partial.netflow2) % tableSize;
           }
           DEBUG_PRINT("Hashing partial %s based on target %s index %lu\n",
             partial.toString().c_str(), std::get<target>(tuple).c_str(), index);
