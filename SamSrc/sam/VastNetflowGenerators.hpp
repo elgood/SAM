@@ -217,7 +217,7 @@ std::string WateringHoleGenerator::generateControlMessage(double epochTime)
 /**
  * Evenly spreads out the traffic to one IP along n destination ports.
  * The strings generated are in VAST csv form.  There is no SamGenerateId
- * and no label.  The source ports are from randomly generated Ips.
+ * and no label.  The source ips are from randomly generated Ips.
  */
 class UniformDestPort : public AbstractVastNetflowGenerator
 {
