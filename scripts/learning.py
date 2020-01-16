@@ -14,6 +14,9 @@ import math
 import operator
 
 def find_optimal_cutoff_closest_to_perfect(fpr, tpr, threshold):
+  """ Tries to find the best threshold to select on ROC.
+
+  """
   distance = float("inf")
   threshold_index = -1
   for i in range(len(fpr)):
@@ -98,6 +101,7 @@ def analysis(figurenum,
 
 def main():
 
+  # Process command line arguments
   parser = argparse.ArgumentParser()
   parser.add_argument('--inputfile', type=str, required=True,
                       help="The file with the features and labels.")
@@ -110,6 +114,7 @@ def main():
                       
   FLAGS = parser.parse_args()
 
+  # Open a file with the extracted features
   with open(FLAGS.inputfile, "r") as infile:
     data = np.loadtxt(infile, delimiter=",")
 
