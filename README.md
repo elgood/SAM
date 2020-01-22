@@ -1,5 +1,4 @@
-# The Streaming Analytics Language (SAL) and the Streaming Analytics Machine
-(SAM). 
+# The Streaming Analytics Language (SAL) and the Streaming Analytics Machine (SAM). 
 
 # Contents
 
