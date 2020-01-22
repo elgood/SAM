@@ -52,10 +52,10 @@ Also, other approaches that are not necessarily polylog can also be added.  For 
 To add a new operator, several interfaces need to be inherited, namely:
 
 * `AbstractConsumer`
-* BaseComputation
-* FeatureProducer
+* `BaseComputation`
+* `FeatureProducer`
 
-The AbstractConsumer has one template argument, the TupleType, which is the type of tuple it is expected to consume.  There are three virtual methods in AbstractConsumer that must be implemented:
+The `AbstractConsumer` has one template argument, the `TupleType`, which is the type of tuple it is expected to consume.  There are three virtual methods in `AbstractConsumer` that must be implemented:
 
 * `consume(TupleType const& item)` - The main method to implement.  This will have the logic for processing the item, updating associated data structures, and calculating the current value.  This method must also update the featuremap, a data structure provided by the BaseCompuation class. It must also notify any subscribers to this feature, which is provided by the FeatureProducer class.
 * The destructor - Destructors have to be virtual in C++ or else bad things happen during object destruction.
