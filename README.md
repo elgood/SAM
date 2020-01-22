@@ -60,3 +60,21 @@ The `AbstractConsumer` has one template argument, the `TupleType`, which is the 
 * The destructor - Destructors have to be virtual in C++ or else bad things happen during object destruction.
 * terminate - Usually does nothing.
 
+In the `consume` method, you'll need to create a unique key to identify the item.  In most cases, you can use `generateKey` method found in Util.hpp.  For example:
+
+```c++
+std::string key = generateKey<keyFields...>(input);
+```
+
+Here `keyFields...` is a parameter pack of the fields in the tuple that form the unique key.
+
+You then use this key to update the data structure of the operator and the feature map.  For `ExponentialHistogramSum`, the local data structure is a `std::map`, mapping from the generated key to the associated sliding window.  For the feature map, you first create a `Feature` and add that to the feature map, e.g.
+
+```c++
+T currentSum = allWindows[key]->getTotal();
+SingleFeature feature(currentSum);
+this->featureMap->updateInsert(key, this->identifier, feature);
+```
+
+In this example from `ExponentialHistogramSum`, we get the updated value, which in this case is the sum of the sliding window.  We then create a `SingleFeature`, which is the most common type of feature, a singleton value.  The newly created feature is then added to the feature map using the `key` and the `identifier` of the operator to properly index the fature.
+
