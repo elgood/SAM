@@ -2,7 +2,8 @@
 #define EXPONENTIAL_HISTOGRAM_SUM_HPP
 
 /**
- * This is based on Mayur Datar's work with exponential histograms.
+ * Calculates the sum over a sliding window using Mayur Datar's work on 
+ * exponential histograms.
  */
 
 #include <iostream>
@@ -33,6 +34,7 @@ private:
   // The size of the sliding window
   size_t N; 
 
+  // A mapping from keyFields to the associated exponential histogram.
   std::map<std::string, std::shared_ptr<ExponentialHistogram<T>>> allWindows;
 
 public:
@@ -58,8 +60,13 @@ public:
     this->k = k;
   }
 
+  /**
+   * Main method of an operator.  Processes the tuple.
+   * \param input The tuple to process.
+   */
   bool consume(InputType const& input) {
     this->feedCount++;
+
     if (this->feedCount % this->metricInterval == 0) {
       std::cout << "NodeId " << this->nodeId << " number of keys " 
                 << allWindows.size() << " feedCount " << this->feedCount
@@ -76,14 +83,18 @@ public:
       allWindows[key] = eh;
     }
 
+    // Update the data structure
     T value = std::get<valueField>(input);
-
     allWindows[key]->add(value);
 
-    // Getting the current sum and providing that to the imux data structure.
+    // Getting the current sum and providing that to the feature map.
     T currentSum = allWindows[key]->getTotal();
     SingleFeature feature(currentSum);
 
+    // Update the freature map with the new feature.  The feature map
+    // takes as input the key for this item, the identifier for this operator,
+    // and the feature itself.  The key and the identifier together uniquely
+    // identify the feature.
     this->featureMap->updateInsert(key, this->identifier, feature);
 
     // This assumes the identifier of the tuple is the first element
@@ -156,7 +167,7 @@ public:
 
     allWindows[key]->add(value);
 
-    // Getting the current sum and providing that to the imux data structure.
+    // Getting the current sum and providing that to the featuremap data structure.
     T currentSum = allWindows[key]->getTotal();
     SingleFeature feature(currentSum/ allWindows[key]->getNumItems());
     this->featureMap->updateInsert(key, this->identifier, feature);
@@ -165,6 +176,8 @@ public:
     //std::cout << "currentSum for " << key << ": " << currentSum  
     //          << " getNumItems " << allWindows[key]->getNumItems() << std::endl;
     //printf("exphistave id %u\n", id);
+
+    // Notify any subscribers of the new value, which is a frequency.
     this->notifySubscribers(id, currentSum / allWindows[key]->getNumItems());
 
     return true;

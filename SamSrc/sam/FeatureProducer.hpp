@@ -32,7 +32,6 @@ public:
     for (int i = 0; i < subscribers.size(); i++) {
       subscribers[i]->update(id, names[i], value);
     }
-    //std::cout << "Exiting notfiy" <<std::endl;
   }
    
 };
