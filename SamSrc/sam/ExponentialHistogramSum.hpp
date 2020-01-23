@@ -173,9 +173,6 @@ public:
     this->featureMap->updateInsert(key, this->identifier, feature);
   
     std::size_t id = std::get<0>(input);
-    //std::cout << "currentSum for " << key << ": " << currentSum  
-    //          << " getNumItems " << allWindows[key]->getNumItems() << std::endl;
-    //printf("exphistave id %u\n", id);
 
     // Notify any subscribers of the new value, which is a frequency.
     this->notifySubscribers(id, currentSum / allWindows[key]->getNumItems());
