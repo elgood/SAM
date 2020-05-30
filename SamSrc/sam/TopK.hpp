@@ -87,7 +87,8 @@ bool TopK<TupleType, valueField, keyFields...>::consume(
   // Creating a hopefully unique key from the key fields
   std::string key = generateKey<keyFields...>(tuple);
   //std::cout << "Key from generateKey " << key << std::endl;
-  
+ 
+  // Create a new sliding window if we haven't seen this key before 
   if (allWindows.count(key) == 0) {
     auto sw = std::shared_ptr<SlidingWindow<ValueType>>(
                 new SlidingWindow<ValueType>(N,b,k));
@@ -105,22 +106,14 @@ bool TopK<TupleType, valueField, keyFields...>::consume(
   std::vector<double> frequencies = sw->getFrequencies();
   
   if (keys.size() > 0 && frequencies.size() > 0) {
-    //std::cout << "keys.size() " << keys.size() << " frequencies.size() " 
-    //          << frequencies.size() << std::endl;
     TopKFeature feature(keys, frequencies);
     DEBUG_PRINT("Node %lu TopK::consume keys.size() %lu\n",
       nodeId, keys.size());
-    //std::cout << "Createad feature " << std::endl;
-    //std::cout << "key " << key << " identifier " << this->identifier << std::endl;
     this->featureMap->updateInsert(key, this->identifier, feature);
-    //std::cout << "update insert " << std::endl;
 
     std::size_t id = std::get<0>(tuple);
     // notifySubscribers only takes doubles right now
-    //std::cout << "notifying subscribers frequencies" << frequencies[0] 
-    //          << " id " << id << "key " << key << std::endl;
     notifySubscribers(id, frequencies[0]);
-    //std::cout << "Notifified subscribers " <<std::endl;
 
   }
 
