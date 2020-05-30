@@ -78,8 +78,7 @@ public:
    * \param local Specifies that we aren't actually talking to any other nodes.
    * \param hwm The high water mark.
    */
-  ZeroMQPushPull(//zmq::context_t& context,
-                 size_t queueLength,
+  ZeroMQPushPull(size_t queueLength,
                  size_t numNodes, 
                  size_t nodeId, 
                  std::vector<std::string> hostnames, 
@@ -141,7 +140,6 @@ private:
 
 template <typename TupleType, typename Tuplizer, typename... HF>
 ZeroMQPushPull<TupleType, Tuplizer, HF...>::ZeroMQPushPull(
-                 //zmq::context_t& _context,
                  size_t queueLength,
                  size_t numNodes, 
                  size_t nodeId, 
@@ -187,7 +185,7 @@ ZeroMQPushPull<TupleType, Tuplizer, HF...>::ZeroMQPushPull(
 template <typename TupleType, typename Tuplizer, typename ...HF>
 void ZeroMQPushPull<TupleType, Tuplizer, HF...>::terminate() 
 {
-  printf("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
+  DEBUG_PRINT("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
   if (!terminated) {
 
     terminated = true;
@@ -273,51 +271,6 @@ consume(std::string const& s)
   // dimensions.
   sendTuple<TupleType, HF...>(tuple, s, seenNodes);  
 
-  /*SourceType src = std::get<source>(tuple);
-  SourceType trg = std::get<target>(tuple);
-
-  size_t node1 = hash(src) % numNodes;
-  size_t node2 = hash(trg) % numNodes;
-
-  DEBUG_PRINT("Node %lu ZeroMQPushPull %s hash(%s) %llu hash(%s) %llu "
-    "numNodes %lu node1 %lu node2 %lu\n", nodeId, s.c_str(), src.c_str(),
-    hash(src), trg.c_str(), hash(trg), numNodes, node1, node2);
-
-  if (node1 != this->nodeId) { // Don't send data to ourselves.
-    //zmq::message_t message = fillZmqMessage(s);
-    DEBUG_PRINT("Node %lu ZeroMQPushPull::consume because of source "
-           "sending to %lu %s\n",
-           nodeId, node1, s.c_str());
-
-    //pushers[node1]->send(message);
-    communicator->send(s, node1);
-  } else {
-    DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel "
-      "feed %s\n", nodeId, s.c_str());
-
-    uint32_t id = idGenerator.generate();
-    TupleType tuple = tuplizer(0, s);
-    this->parallelFeed(tuple);
-  }
-
-  // Don't send message twice
-  if (node1 != node2) {
-    if (node2 != this->nodeId) {  
-      //zmq::message_t message = fillZmqMessage(s);
-
-      DEBUG_PRINT("Node %lu ZeroMQPushPull::consume because of target "
-        "sending to %lu %s\n", nodeId, node2, s.c_str());
-      
-      //pushers[node2]->send(message);
-      communicator->send(s, node2);
-    } else {
-      DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel"
-        " feed %s\n", nodeId, s.c_str());
-      uint32_t id = idGenerator.generate();
-      TupleType tuple = tuplizer(id, s);
-      this->parallelFeed(tuple);
-    }
-  }*/
   return true;
 }
 
