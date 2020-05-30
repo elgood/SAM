@@ -788,6 +788,27 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
   return numTriangles;
 }
   
+/**
+ * Removes the first element of a csv string. 
+ */
+inline std::string removeFirstElement(std::string s) 
+{
+  int pos = s.find(",") + 1;
+  std::string withoutLabel = s.substr(pos, s.size() - pos);
+  return withoutLabel; 
+}
+
+/**
+ * Gets the first element in a csv string.
+ */
+inline std::string getFirstElement(std::string s)
+{
+  int pos = s.find(",") + 1;
+  std::string firstElement = s.substr(0, pos -1);
+  return firstElement;
+}
+
+
 
 
 }
