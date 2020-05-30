@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <sam/VastNetflowGenerators.hpp>
+#include <sam/VastNetflow.hpp>
 #include <sam/ReadCSV.hpp>
 
 using namespace sam;
