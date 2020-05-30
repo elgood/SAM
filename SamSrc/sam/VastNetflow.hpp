@@ -56,26 +56,6 @@ public:
   VastNetflowException(std::string  message) : std::runtime_error(message) { } 
 };
 
-/**
- * Removes the first element of a csv string. 
- */
-inline std::string removeFirstElement(std::string s) 
-{
-  int pos = s.find(",") + 1;
-  std::string withoutLabel = s.substr(pos, s.size() - pos);
-  return withoutLabel; 
-}
-
-/**
- * Gets the first element in a csv string.
- */
-inline std::string getFirstElement(std::string s)
-{
-  int pos = s.find(",") + 1;
-  std::string firstElement = s.substr(0, pos -1);
-  return firstElement;
-}
-
 
 typedef std::tuple<std::size_t,  //SamGeneratedId
                    int,          //Label
@@ -102,62 +82,40 @@ typedef std::tuple<std::size_t,  //SamGeneratedId
                    VastNetflow;
 
 
-std::vector<std::string> mytokenize(std::string s)
-{
-  std::vector<std::string> v;
-  typedef std::string::const_iterator iter;
-  std::string::const_iterator beg;
-  bool in_token = false;
-  for ( iter it = s.begin(); it != s.end(); ++it)
-  {
-    if ( *it == ',') {
-      if ( in_token ) {
-        v.push_back(std::string(beg, it)); 
-      }
-    } else if ( !in_token) 
-    { 
-      beg = it;
-      in_token = true;
-    }
-  }
-  if ( in_token ) {
-    v.push_back(std::string(beg, s.cend()));
-  }
-  return v;
-}
 
 /**
  * This version is the original VAST format.  The generatedId and the label
  * have to be provided.
  */
 inline
-VastNetflow makeNetflowWithoutLabel(int samGeneratedId, 
-                                    int label, std::string s) 
+VastNetflow makeNetflowWithoutLabel(std::size_t samGeneratedId, 
+                                    std::size_t label, std::string s) 
 {
-  //std::cout << "MakeNetflowWithoutLabel " << s << std::endl;
 
-  //boost::trim(s);
   /*
-  double timeSeconds;
-  std::string parsedDate; 
-  std::string dateTimeStr;
-  std::string ipLayerProtocol;
-  std::string ipLayerProtocolCode;
-  std::string sourceIP; 
-  std::string destIP;
-  int sourcePort;
-  int destPort;
-  std::string moreFragments;
-  int countFragments;
-  int durationSeconds;
-  int firstSeenSrcPayloadBytes;
-  int firstSeenDestPayloadBytes;
-  int firstSeenSrcTotalBytes;
-  int firstSeenDestTotalBytes;
-  int firstSeenSrcPacketCount;
-  int firstSeenDestPacketCount;
-  int recordForceOut; 
+  std::size_t,  //SamGeneratedId
+  int,          //Label
+  double,       //TimeSeconds
+  std::string,  //PARSE_DATE_FIELD
+  std::string,  //DATE_TIME_STR_FIELD
+  std::string,  //IP_LAYER_PROTOCOL_FIELD
+  std::string,  //IP_LAYER_PROTOCOL_CODE_FIELD
+  std::string,  //SourceIp
+  std::string,  //DestIp
+  int,          //SourcePort
+  int,          //DestPort
+  std::string,  //MORE_FRAGMENTS
+  int,          //COUNT_FRAGMENTS
+  double,          //DURATION_SECONDS
+  long,          //SRC_PAYLOAD_BYTES
+  long,          //DEST_PAYLOAD_BYTES
+  long,          //SOURCE_TOTAL_BYTES
+  long,          //DEST_TOTAL_BYTES
+  long,          //FIRST_SEEN_SRC_PACKET_COUNT
+  long,          //FIRST_SEEN_DEST_PACKET_COUNT
+  int          //RECORD_FORCE_OUT
   */
+
   double timeSeconds = 1;
   std::string parsedDate = "blah"; 
   std::string dateTimeStr = "blah";
@@ -178,8 +136,6 @@ VastNetflow makeNetflowWithoutLabel(int samGeneratedId,
   int firstSeenDestPacketCount = 1;
   int recordForceOut = 0; 
 
-  //std::vector<std::string> v = mytokenize(s);
-  
   std::stringstream ss(s);
   std::string item;
   std::getline(ss, item, ',');
@@ -204,99 +160,6 @@ VastNetflow makeNetflowWithoutLabel(int samGeneratedId,
   recordForceOut = boost::lexical_cast<int>(item); std::getline(ss, item, ',');
   
 
-  //boost::char_separator<char> sep(",");
-  //boost::tokenizer<boost::char_separator<char>> tok(s, sep);
-
-  // The first two items, samGeneratedId and label, are not provided in the
-  // string, so we start at 2.
-  //int i = 2; 
-/*
-  auto beg = tok.begin();
-  //std::cout << "blah1" << std::endl;
-  //std::cout << "blah2" << std::endl;
-  timeSeconds = boost::lexical_cast<double>(*beg); ++beg; 
-  //std::cout << "blah3 " << timeSeconds << std::endl;
-  parsedDate = *beg; ++beg;
-  //std::cout << "blah4" << std::endl;
-  dateTimeStr = *beg; ++beg;
-  //std::cout << "blah5" << std::endl;
-  ipLayerProtocol = *beg; ++beg;
-  //std::cout << "blah6" << std::endl;
-  ipLayerProtocolCode = *beg; ++beg;
-  //std::cout << "blah7" << std::endl;
-  sourceIP = *beg; ++beg;                                          
-  //std::cout << "blah8" << std::endl;
-  destIP = *beg; ++beg;
-  //std::cout << "blah9" << std::endl;
-  sourcePort = boost::lexical_cast<int>(*beg); ++beg;
-  //std::cout << "blah10" << std::endl;
-  destPort = boost::lexical_cast<int>(*beg); ++beg;
-  //std::cout << "blah11" << std::endl;
-  moreFragments = *beg; ++beg;
-  //std::cout << "blah12" << std::endl;
-  countFragments = boost::lexical_cast<int>(*beg); ++beg;
-  //std::cout << "blah13" << std::endl;
-  durationSeconds = boost::lexical_cast<double>(*beg); ++beg;
-  //std::cout << "blah14" << std::endl;
-  firstSeenSrcPayloadBytes = boost::lexical_cast<long>(*beg); ++beg;
-  //std::cout << "blah15" << std::endl;
-  firstSeenDestPayloadBytes = boost::lexical_cast<long>(*beg); ++beg;
-  //std::cout << "blah16" << std::endl;
-  firstSeenSrcTotalBytes = boost::lexical_cast<long>(*beg); ++beg;
-  //std::cout << "blah17" << std::endl;
-  firstSeenDestTotalBytes = boost::lexical_cast<long>(*beg); ++beg;
-  //std::cout << "blah18" << std::endl;
-  firstSeenSrcPacketCount = boost::lexical_cast<long>(*beg); ++beg;
-  //std::cout << "blah19" << firstSeenSrcPacketCount << std::endl;
-  firstSeenDestPacketCount = boost::lexical_cast<long>(*beg); ++beg;
-  //std::cout << "blah20" << std::endl;
-  recordForceOut = boost::lexical_cast<int>(*beg); ++beg;
-  //std::cout << "blah21" << std::endl;
-*/
-/* 
-  BOOST_FOREACH(std::string const &t, tok) {
-    //std::cout << "i " << i << " t " << t << std::endl; ++beg;
-
-    try {
-      switch (i) {
-      case TimeSeconds: timeSeconds = boost::lexical_cast<double>(t);       break;
-      case ParseDate: parsedDate = t;                                       break;
-      case DateTime: dateTimeStr = t;                                       break;
-      case IpLayerProtocol: ipLayerProtocol = t;                            break;
-      case IpLayerProtocolCode: ipLayerProtocolCode = t;                    break;
-      case SourceIp: sourceIP = t;                                          break;
-      case DestIp: destIP = t;                                              break;
-      case SourcePort: sourcePort = boost::lexical_cast<int>(t);            break; 
-      case DestPort: destPort = boost::lexical_cast<int>(t);                break;
-      case MoreFragments: moreFragments = t;                                break;
-      case CountFragments: countFragments = boost::lexical_cast<int>(t);    break;
-      case DurationSeconds: durationSeconds = boost::lexical_cast<double>(t);break;
-      case SrcPayloadBytes: 
-        firstSeenSrcPayloadBytes = boost::lexical_cast<long>(t);             break;
-      case DestPayloadBytes: 
-        firstSeenDestPayloadBytes = boost::lexical_cast<long>(t);            break;
-      case SrcTotalBytes: 
-        firstSeenSrcTotalBytes = boost::lexical_cast<long>(t);               break;
-      case DestTotalBytes: 
-        firstSeenDestTotalBytes = boost::lexical_cast<long>(t);              break;
-      case FirstSeenSrcPacketCount: 
-        firstSeenSrcPacketCount = boost::lexical_cast<long>(t);              break;
-      case FirstSeenDestPacketCount: 
-        firstSeenDestPacketCount = boost::lexical_cast<long>(t);             break;
-      case RecordForceOut: recordForceOut = boost::lexical_cast<int>(t);    break;
-      }
-    } catch (std::exception e) {
-      std::cout << "Error in makeNetflowWithoutLabel " << e.what() << std::endl;
-      throw NetflowException("Netflow exception when processing item " + 
-        boost::lexical_cast<std::string>(i) + " with token " + t + 
-        " for netflow: " + s);
-    }
-    
-    i++;
-  }
-  */
-  
-  //std::cout << " blah " << std::endl;
   return std::make_tuple(  samGeneratedId,
                            label,
                            timeSeconds,
