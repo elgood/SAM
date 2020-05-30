@@ -2,7 +2,6 @@
 #define SAM_READCSV_HPP
 
 #include <sam/BaseProducer.hpp>
-#include <sam/VastNetflow.hpp>
 #include <sam/AbstractDataSource.hpp>
 #include <fstream>
 
@@ -11,8 +10,10 @@ namespace sam {
 template <typename TupleType, typename Tuplizer>
 class ReadCSV : public BaseProducer<TupleType>, public AbstractDataSource
 {
+private:
   std::string filename;
   std::ifstream file;
+  Tuplizer tuplizer;
 public:
   /**
    * \param filename The location of a CSV file.
@@ -35,18 +36,14 @@ public:
     int i = 0;
     std::string line;
     while(std::getline(file, line)) {
-      //std::cout << "ReadCSV::receive got line " << line << std::endl;
+      
       // We will use the order they come in as the SamGeneratedId.
       // This assumes that there is a label in each line.
-      TupleType tuple = makeNetflow(i, line);
-      //std::cout << "blah" << std::endl;
+      TupleType tuple = tuplizer(i, line); 
       for (auto consumer: this->consumers) {
         consumer->consume(tuple);
       }
-      //i++;
-      //std::cout << "ReadCSV i " << i << std::endl;
     }
-    //consumer->consume(EMPTY_NETFLOW);
   }
 
 };
