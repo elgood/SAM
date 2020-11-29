@@ -7,18 +7,23 @@
 #include <string>
 #include <vector>
 #include <sam/ZeroMQPushPull.hpp>
-#include <sam/VastNetflowGenerators.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
+#include <sam/tuples/VastNetflow.hpp>
+#include <sam/tuples/Tuplizer.hpp>
 #include <sam/Util.hpp>
 #include <zmq.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
-        PartitionType;
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, 
+          TargetHash> PartitionType;
 
 zmq::context_t context(1);
 
@@ -62,20 +67,25 @@ BOOST_AUTO_TEST_CASE( test_zeromqpushpull )
                                     hostnames, startingPort, 
                                     timeout, true, hwm);
 
+  Tuplizer tuplizer;
+
 
   auto function = [n](AbstractVastNetflowGenerator *generator,
-                      PartitionType* pushPull)
+                      PartitionType* pushPull,
+                      Tuplizer tuplizer)
   {
     for(size_t i = 0; i < n; i++) {
       DEBUG_PRINT("Generating %luth netflow\n", i);
       std::string str = generator->generate();
-      pushPull->consume(str);
+      EdgeType edge = tuplizer(i, str);
+
+      pushPull->consume(edge);
     }
     pushPull->terminate();
   };
 
-  std::thread thread0(function, generator0, pushPull0);
-  std::thread thread1(function, generator1, pushPull1);
+  std::thread thread0(function, generator0, pushPull0, tuplizer);
+  std::thread thread1(function, generator1, pushPull1, tuplizer);
 
   thread0.join();
   thread1.join();

@@ -38,12 +38,13 @@ extends ConnectionStatement with LazyLogging
 {
   override def toString = {
 
-    logger.info("ConnectionStatement.toString")
+    logger.info("ConnectionStatementVast.toString")
 
     // HashWith statements don't reference the stream name; it is assumed
     // to be the stream defined by the connection statement.  As such
     // we use the following memory mapping to keep track of that.
     memory += Constants.ConnectionInputType -> TupleTypes.VastNetflow
+    memory += Constants.ConnectionInputTypeNamespace -> TupleTypes.VastNetflowNamespace
 
     // Also record the tuple type indexed by the name of the stream.
     // We'll need this later for any operators that are defined using this
@@ -53,6 +54,9 @@ extends ConnectionStatement with LazyLogging
     // In addition the partition type needs the tuplizer, so record that
     // also.
     memory += stream + Constants.TuplizerType -> TupleTypes.VastNetflowTuplizer
+    
+    // We need the Tuplizer type when we don't know what the stream is.
+    memory += Constants.ConnectionTuplizerType -> TupleTypes.VastNetflowTuplizer
 
     memory += stream + Constants.VarName -> Constants.Producer
 

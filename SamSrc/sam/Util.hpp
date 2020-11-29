@@ -82,8 +82,10 @@ namespace sam {
 
 #ifdef DEBUG
   #define DEBUG_PRINT(message, ...) printf(message, __VA_ARGS__);
+  #define DEBUG_PRINT_SIMPLE(message) printf(message);
 #else
   #define DEBUG_PRINT(message, ...) 
+  #define DEBUG_PRINT_SIMPLE(message) 
 #endif
 
 
@@ -193,6 +195,7 @@ class TupleStringHashFunction
 public:
   inline
   uint64_t operator()(TupleType const& tuple) const {
+    std::string remove = std::get<Index>(tuple);
     return std::hash<std::string>{}(std::get<Index>(tuple));
   }
 };
@@ -396,7 +399,7 @@ createPushSockets(
         #endif
         pusher->bind(url);
       } catch (std::exception e) {
-        std::string message = "Node " +
+        std::string message = "CreatePushSocket Node " +
           boost::lexical_cast<std::string>(nodeId) +
           " couldn't bind to url " + url + ": " + e.what();
         throw UtilException(message);
@@ -416,8 +419,10 @@ template<typename TupleType, size_t source, size_t target, size_t time,
          size_t duration>
 struct PartialTriangle {
   size_t numEdges = 0;
-  TupleType netflow1;
-  TupleType netflow2;
+  TupleType netflow1; ///> First tuple in triangle
+  size_t id1; ///> Id of first tuple in triangle
+  TupleType netflow2; ///> Second tuple in triangle
+  size_t id2; ///> Id of second tuple in triangle
 
   std::string toString() const {
     std::string rString = "numEdges " + 
@@ -510,6 +515,7 @@ void processSingleEdgePartial(
   std::vector<PartialTriangle<TupleType, source, target, time, 
              duration>> & newPartials,
   TupleType tuple,
+  size_t id,
   double queryTime)
 {
   typedef PartialTriangle<TupleType, source, target, time, duration>
@@ -517,8 +523,8 @@ void processSingleEdgePartial(
   DEBUG_PRINT("processSingleEdgePartial: processing tuple %s\n", 
     toString(tuple).c_str());
 
-  auto id1 = std::get<0>(partial.netflow1);
-  auto id2 = std::get<0>(tuple);
+  auto id1 = partial.id1;
+  auto id2 = id;
   if (id1 != id2) {
     DEBUG_PRINT("processSingleEdgePartial: id1 %lu != id2 %lu\n", id1, id2);
 
@@ -564,14 +570,15 @@ void processTwoEdgePartial(
   PartialTriangle<TupleType, source, target, time, duration> partial, 
   std::atomic<size_t>& numTriangles,
   TupleType tuple,
+  size_t id, 
   double queryTime )
 {
   typedef PartialTriangle<TupleType, source, target, time, duration>
     PartialTriangleType;
 
-  auto id1 = std::get<0>(partial.netflow1);
-  auto id2 = std::get<0>(partial.netflow2);
-  auto id3 = std::get<0>(tuple);
+  auto id1 = partial.id1;
+  auto id2 = partial.id2;
+  auto id3 = id;
 
   DEBUG_PRINT("processTwoEdgePartial: partial has 2 edges, ids of partial "
     "id1 %lu id2 %lu id3 %lu, tuple under consideration %s\n", 
@@ -606,15 +613,15 @@ void processTwoEdgePartial(
         DEBUG_PRINT("found triangle edge1 %lu %f %s "
           "%s, edge2 %lu %f %s %s, "
           "edge3 %lu %f %s %s\n", 
-          std::get<0>(partial.netflow1),
+          partial.id1,
           std::get<time>(partial.netflow1),
           std::get<source>(partial.netflow1).c_str(),
           std::get<target>(partial.netflow1).c_str(),
-          std::get<0>(partial.netflow2),
+          partial.id2,
           std::get<time>(partial.netflow2),
           std::get<source>(partial.netflow2).c_str(),
           std::get<target>(partial.netflow2).c_str(),
-          std::get<0>(tuple),
+          id3,
           std::get<time>(tuple),
           std::get<source>(tuple).c_str(),
           std::get<target>(tuple).c_str());
@@ -663,10 +670,6 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
   printf("numTriangles time to sort %f\n", totalTimeSort);
   #endif
 
-  // Set the id to be the sort order.
-  for (size_t i = 0; i < l.size(); i++) {
-    std::get<0>(l[i]) = i;
-  }
 
   //std::vector<PartialTriangleType> partialTriangles;
 
@@ -686,6 +689,7 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
 
   size_t numProcessed = 0;
 
+  int i = 0;
   for (auto tuple : l) 
   {
     // New partial triangles that arise from processing this tuple
@@ -698,6 +702,9 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
     DEBUG_PRINT("Beginning processing Tuple %s\n", 
       sam::toString(tuple).c_str());
     PartialTriangleType p;
+    p.id1 = i;
+    // Set the id to be the sort order.
+    i++;
     p.numEdges = 1;
     p.netflow1 = tuple;
     // A single edge is a partial triangle 
@@ -730,12 +737,12 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
       if (!partial->isExpired(currentTime, queryTime))
       {
         if (partial->numEdges == 1) {
-          processSingleEdgePartial(*partial, newPartials, tuple,
+          processSingleEdgePartial(*partial, newPartials, tuple, i, 
                                    queryTime);
         }
         else if (partial->numEdges == 2) 
         {
-          processTwoEdgePartial(*partial, numTriangles, tuple, queryTime);
+          processTwoEdgePartial(*partial, numTriangles, tuple, i, queryTime);
         } 
         ++partial;
       } else 
@@ -787,7 +794,8 @@ size_t numTriangles(std::vector<TupleType> l, double queryTime)
 
   return numTriangles;
 }
-  
+ 
+/// TODO: Not sure we need this. 
 /**
  * Removes the first element of a csv string. 
  */
@@ -798,6 +806,7 @@ inline std::string removeFirstElement(std::string s)
   return withoutLabel; 
 }
 
+/// TODO: Not sure we need this. 
 /**
  * Gets the first element in a csv string.
  */

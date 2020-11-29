@@ -11,7 +11,7 @@ using namespace sam;
 BOOST_AUTO_TEST_CASE( test_simple_id_generator )
 {
 
-  SimpleIdGenerator idGenerator;
+  SimpleIdGenerator* idGenerator = idGenerator->getInstance();
 
   int numThreads = 10000;
   int numTimes = 10000; // How many times each thread requests an id
@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE( test_simple_id_generator )
   for(int i = 0; i < numThreads; i++) {
     threads.push_back(std::thread([&idGenerator, &sum, numTimes]() {
       for (int i = 0; i < numTimes; i++) {
-        sum.fetch_add(idGenerator.generate());   
+        sum.fetch_add(idGenerator->generate());   
       }
     }));
   }

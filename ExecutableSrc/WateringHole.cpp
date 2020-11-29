@@ -13,29 +13,36 @@
 #include <chrono>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 namespace po = boost::program_options;
 using namespace std::chrono;
 using std::string;
 using std::vector;
 
-typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer; 
+typedef GraphStore<EdgeType, Tuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
         GraphStoreType;
 
-typedef AbstractSubgraphPrinter<VastNetflow, SourceIp, DestIp,
+typedef AbstractSubgraphPrinter<EdgeType, SourceIp, DestIp,
           TimeSeconds, DurationSeconds> AbstractPrinterType;
-typedef SubgraphDiskPrinter<VastNetflow, SourceIp, DestIp,
+typedef SubgraphDiskPrinter<EdgeType, SourceIp, DestIp,
           TimeSeconds, DurationSeconds> PrinterType;
 
 typedef GraphStoreType::QueryType SubgraphQueryType;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
 
+typedef ReadSocket<EdgeType, Tuplizer> ReadSocketType; 
+      
 int main(int argc, char** argv)
 {
 
@@ -143,7 +150,7 @@ int main(int argc, char** argv)
 
   auto featureMap = std::make_shared<FeatureMap>(capacity);
 
-  auto receiver = std::make_shared<ReadSocket>(ip, ncPort);
+  auto receiver = std::make_shared<ReadSocketType>(nodeId, ip, ncPort);
   size_t timeout = 1000;
 
   // Setting up the ZeroMQPushPull object
@@ -157,7 +164,7 @@ int main(int argc, char** argv)
 
   std::string topkId = "topk";
   auto topk = std::make_shared<
-    TopK<VastNetflow, DestIp>>(N, b, k, nodeId, featureMap, topkId);
+    TopK<EdgeType, DestIp>>(N, b, k, nodeId, featureMap, topkId);
     
   pushPull->registerConsumer(topk);
 

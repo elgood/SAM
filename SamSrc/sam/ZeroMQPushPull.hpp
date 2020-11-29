@@ -18,12 +18,14 @@
 
 #include <sam/AbstractConsumer.hpp>
 #include <sam/BaseProducer.hpp>
-#include <sam/IdGenerator.hpp>
 #include <sam/Util.hpp>
 #include <sam/ZeroMQUtil.hpp>
+#include <sam/tuples/Edge.hpp>
 
 
 namespace sam {
+
+class PlaceHolderClass {};
 
 /**
  * Execption class for ZeroMQPushPull errors.
@@ -35,21 +37,24 @@ public:
 };
 
 /**
- * Class for partitioning tuples across the cluster.
+ * Class for partitioning tuples across the cluster.  The consumer takes
+ * as input strings (both tuple and label.  The producer creates 
+ * TupleType and LabelType objects.
  * @tparam TupleType The type of tuple.
+ * @tparam LabelType The label type that can appear with the rest of the 
+ *                   tuple.
  * @tparam Tuplizer Object that takes a string and spits out a std::tuple.
  * @tparam HF A list of hash functions that are used to partition the data.
  */
-template <typename TupleType, typename Tuplizer, typename... HF>
-class ZeroMQPushPull : public AbstractConsumer<std::string>, 
-                       public BaseProducer<TupleType>
+template <typename EdgeType, typename Tuplizer, typename... HF>
+class ZeroMQPushPull : public AbstractConsumer<EdgeType>, 
+                       public BaseProducer<EdgeType>
 {
 public:
   typedef typename PushPull::FunctionType FunctionType;
 
 private:
   Tuplizer tuplizer; ///> Converts from string to tuple
-  SimpleIdGenerator idGenerator; ///> Generates unique id for each tuple
   size_t numNodes; ///> How many total nodes there are
   size_t nodeId; ///> The node id of this node
   std::vector<std::string> hostnames; ///> The hostnames of all the nodes
@@ -60,6 +65,10 @@ private:
 
   size_t consumeCount = 0; ///> How many items this node has seen through feed()
   size_t metricInterval = 100000; ///> How many seen before spitting metrics out
+
+  // Generates unique id for each tuple
+  SimpleIdGenerator* idGenerator = idGenerator->getInstance(); 
+    
 
 public:
 
@@ -94,7 +103,8 @@ public:
     DEBUG_PRINT("Node %lu end of ~ZeroMQPushPull\n", nodeId);
   }
   
-  virtual bool consume(std::string const& netflow);
+  virtual bool consume(EdgeType const& edge);
+                       
 
   /** 
    * This is called by the producer that feeds this class when the producer
@@ -113,33 +123,45 @@ private:
 
   /**
    * Compile-time base function of recursion for sending tuples along all
-   * partition dimensions.
+   * partition dimensions.  There is a tuple version to send locally and a
+   * string version to send via zeromq.
    *
-   * \param tuple The tuple to send.
-   * \param s The tuple in string form.
+   * \param edge The edge to send.
+   * \param s The tuple, label in string form (inside TupleLabelCombined
+   *          object).
    * \param seenNodes Keeps track of which nodes have seen the tuple already.
+   *
+   * \tparam PlaceHolder - Just helps us determine that we are calling the base
+   *   function of the recurrsion.
    */
-  template<typename TupleType2>
-  void sendTuple(TupleType2 const& tuple,
-                 std::string const& s,
+  template<typename PlaceHolder>
+  void sendTuple(EdgeType const& edge,
+                 std::string const& s, 
                  std::set<int> seenNodes);
+
   /**
    * Compile-time recursive function of for sending tuples along all
-   * partition dimensions.
+   * partition dimensions.  There can be several hash functions defined
+   * which govern how the tuples are sent across the cluster.  The recursive
+   * nature of this compile-time function allows each to be called.  
    *
    * \param tuple The tuple to send.
    * \param s The tuple in string form.
    * \param seenNodes Keeps track of which nodes have seen the tuple already.
+   * 
+   * \tparam PlaceHolder - Just helps us disambiguate base instance from recurssive call.
+   * \tparam First - The hash functon we are going to use in this invocation.
+   * \tparam Rest - The rest of the hash functions used for partitioning.
    */
-  template<typename TupleType2, typename First, typename... Rest>
-  void sendTuple(TupleType2 const& tuple,
+  template<typename PlaceHolder, typename First, typename... Rest>
+  void sendTuple(EdgeType const& edge,
                  std::string const& s,
                  std::set<int> seenNodes);
 
 };
 
-template <typename TupleType, typename Tuplizer, typename... HF>
-ZeroMQPushPull<TupleType, Tuplizer, HF...>::ZeroMQPushPull(
+template <typename EdgeType, typename Tuplizer, typename... HF>
+ZeroMQPushPull<EdgeType, Tuplizer, HF...>::ZeroMQPushPull(
                  size_t queueLength,
                  size_t numNodes, 
                  size_t nodeId, 
@@ -149,7 +171,7 @@ ZeroMQPushPull<TupleType, Tuplizer, HF...>::ZeroMQPushPull(
                  bool local,
                  size_t hwm)
   : 
-  BaseProducer<TupleType>(queueLength)
+  BaseProducer<EdgeType>(nodeId, queueLength)
 {
   this->numNodes  = numNodes;
   this->nodeId    = nodeId;
@@ -161,13 +183,15 @@ ZeroMQPushPull<TupleType, Tuplizer, HF...>::ZeroMQPushPull(
 
   auto callbackFunction = [this](std::string str)
   {
-    size_t id = idGenerator.generate();
-    TupleType tuple = tuplizer(id, str);
-  
+
     DEBUG_PRINT("Node %lu ZeroMQPushPull pullThread received tuple "
-    "%s\n", this->nodeId, sam::toString(tuple).c_str());
-            
-    this->parallelFeed(tuple);
+      "%s\n", this->nodeId, str.c_str());
+   
+    // Since we are receiving this from another node, we need to assign an
+    // id to the edge. 
+    size_t id = idGenerator->generate(); 
+    EdgeType edge = tuplizer(id, str);
+    this->parallelFeed(edge);
   };
 
   // TODO make parameters of constructor
@@ -182,8 +206,8 @@ ZeroMQPushPull<TupleType, Tuplizer, HF...>::ZeroMQPushPull(
                               startingPort, timeout, local); 
 }
 
-template <typename TupleType, typename Tuplizer, typename ...HF>
-void ZeroMQPushPull<TupleType, Tuplizer, HF...>::terminate() 
+template <typename EdgeType, typename Tuplizer, typename ...HF>
+void ZeroMQPushPull<EdgeType, Tuplizer, HF...>::terminate() 
 {
   DEBUG_PRINT("Node %lu entering ZeroMQPushPull::terminate\n", nodeId);
   if (!terminated) {
@@ -199,62 +223,61 @@ void ZeroMQPushPull<TupleType, Tuplizer, HF...>::terminate()
   DEBUG_PRINT("Node %lu exiting ZeroMQPushPull::terminate\n", nodeId);
 }
 
-template <typename TupleType, typename Tuplizer, typename ...HF>
-template<typename TupleType2>
-void ZeroMQPushPull<TupleType, Tuplizer, HF...>::sendTuple(
-  TupleType2 const& tuple,
+template <typename EdgeType, typename Tuplizer, typename ...HF>
+template<typename PlaceHolder>
+void ZeroMQPushPull<EdgeType, Tuplizer, HF...>::sendTuple(
+  EdgeType const& edge,
   std::string const& s,
   std::set<int> seenNodes)
-{}
+{
+}
 
-template <typename TupleType, typename Tuplizer, typename ...HF>
-template<typename TupleType2, typename First, typename... Rest>
-void ZeroMQPushPull<TupleType, Tuplizer, HF...>::sendTuple(
-  TupleType2 const& tuple,
+template <typename EdgeType, typename Tuplizer, typename ...HF>
+template<typename PlaceHolder, typename First, typename... Rest>
+void ZeroMQPushPull<EdgeType, Tuplizer, HF...>::sendTuple(
+  EdgeType const& edge,
   std::string const& s,
   std::set<int> seenNodes)
 {
   First first;
-  size_t node1 = first(tuple) % numNodes;
+  size_t node1 = first(edge.tuple) % numNodes;
 
   if (node1 != this->nodeId) { // Don't send data to ourselves.
            
     if (seenNodes.count(node1) == 0) {
+      
       DEBUG_PRINT("Node %lu ZeroMQPushPull::consume because of source "
              "sending to %lu %s\n", nodeId, node1, s.c_str());
+
+      seenNodes.insert(node1);
       communicator->send(s, node1);
+
     }
   } else {
-    DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel "
-      "feed %s\n", nodeId, s.c_str());
 
-    uint32_t id = idGenerator.generate();
-    TupleType tuple = tuplizer(id, s);
-    this->parallelFeed(tuple);
+    if (seenNodes.count(this->nodeId) == 0) {
+
+      DEBUG_PRINT("Node %lu ZeroMQPushPull::consume sending to parallel "
+        "feed %s\n", nodeId, s.c_str());
+
+      seenNodes.insert(this->nodeId);
+      this->parallelFeed(edge);
+    }
   }
 
-  sendTuple<TupleType, Rest...>(tuple, s, seenNodes);
+  sendTuple<PlaceHolderClass, Rest...>(edge, s, seenNodes);
 }
 
 
-template <typename TupleType, typename Tuplizer, typename ...HF>
-bool ZeroMQPushPull<TupleType, Tuplizer, HF...>::
-consume(std::string const& s)
+template <typename EdgeType, typename Tuplizer, typename ...HF>
+bool ZeroMQPushPull<EdgeType, Tuplizer, HF...>::
+consume(EdgeType const& edge)
 {
-  //if (!acceptingData) {
-  //  throw ZeroMQPushPullException("ZeroMQPushPull::consume tried to consume"
-  //    " an item but not accepting data yet.");
-  //}
 
-  TupleType tuple = tuplizer(0, s);
+  std::string s = edge.toStringNoId();
 
-  #ifdef CHECK
-  // ZeroMQPushPull::consum should only get a string without an id.
-  printf("define check here\n");
-  #endif
-
-  DEBUG_PRINT("Node %lu ZeroMQPushPull::consume string %s "
-   " tuple %s\n", nodeId, s.c_str(), sam::toString(tuple).c_str());
+  DEBUG_PRINT("Node %lu ZeroMQPushPull::consume string %s\n",
+   nodeId, s.c_str());
 
   // Keep track how many netflows have come through this method.
   consumeCount++;
@@ -269,7 +292,7 @@ consume(std::string const& s)
   
   // Compile time recursive call to send the tuple along all partition
   // dimensions.
-  sendTuple<TupleType, HF...>(tuple, s, seenNodes);  
+  sendTuple<PlaceHolderClass, HF...>(edge, s, seenNodes);  
 
   return true;
 }

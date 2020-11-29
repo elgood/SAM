@@ -6,19 +6,20 @@
 #include <string>
 #include <random>
 #include <sam/Util.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
 
 BOOST_AUTO_TEST_CASE( test_subtuple )
 {
 
-  std::string netflowString1 = "1,1,1365582756.384094,2013-04-10 08:32:36," 
+  std::string netflowString1 = "1365582756.384094,2013-04-10 08:32:36," 
                          "20130410083236.384094,17,UDP,172.20.2.18," 
                          "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
 
-  VastNetflow netflow = makeNetflow(netflowString1);
+  VastNetflow netflow = makeVastNetflow(netflowString1);
 
   typedef std::tuple<std::string, int> OutputType;
   OutputType outTuple;
@@ -36,11 +37,11 @@ BOOST_AUTO_TEST_CASE( test_subtuple )
 
 BOOST_AUTO_TEST_CASE( test_generate_key )
 {
-  std::string netflowString1 = "1,1,1365582756.384094,2013-04-10 08:32:36," 
+  std::string netflowString1 = "1365582756.384094,2013-04-10 08:32:36," 
                          "20130410083236.384094,17,UDP,172.20.2.18," 
                          "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
 
-  VastNetflow netflow = makeNetflow(netflowString1);
+  VastNetflow netflow = makeVastNetflow(netflowString1);
 
   std::string key = generateKey<ParseDate, TimeSeconds>(netflow);
   BOOST_CHECK_EQUAL(key, "2013-04-10 08:32:361365582756.384094"); 
@@ -100,11 +101,11 @@ BOOST_AUTO_TEST_CASE( test_toString_tuple ) {
 
 BOOST_AUTO_TEST_CASE( test_makeTuple_to_toString)
 {
-  std::string netflowString = "1,1,1365663544.4683361,2013-04-11" 
+  std::string netflowString = "1365663544.4683361,2013-04-11" 
     " 06:59:04,20130411065904.468336,6,TCP,172.20.1.93,10.0.0.10,10582" 
     ",80,0,0,16,184,73140,2588,76064,40,54,0";
 
-  VastNetflow netflow = makeNetflow(netflowString);
+  VastNetflow netflow = makeVastNetflow(netflowString);
   
   std::string stringAgain = toString(netflow);
   BOOST_CHECK_EQUAL(netflowString, stringAgain); 
@@ -125,4 +126,33 @@ BOOST_AUTO_TEST_CASE( test_last_octet_hash_function )
   BOOST_CHECK_EQUAL(hash("192.168.0.255"), 255);
 
 }
+
+/// TODO: Not sure we need removeFirstElement
+BOOST_AUTO_TEST_CASE( test_removeFirstElement )
+{
+
+  std::string before = "45,1,1365582756.384094,2013-04-10 08:32:36," 
+                         "20130410083236.384094,17,UDP,172.20.2.18," 
+                         "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
+  std::string expectedAfter = "1,1365582756.384094,2013-04-10 08:32:36," 
+                         "20130410083236.384094,17,UDP,172.20.2.18," 
+                         "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
+
+  std::string after = removeFirstElement(before);
+  BOOST_CHECK_EQUAL(after, expectedAfter);  
+
+}
+
+/// TODO: Not sure we need getFirstElement
+BOOST_AUTO_TEST_CASE( test_getFirstElement )
+{
+
+  std::string s = "45,1,1365582756.384094,2013-04-10 08:32:36," 
+                         "20130410083236.384094,17,UDP,172.20.2.18," 
+                         "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
+
+  std::string element = getFirstElement(s);
+  BOOST_CHECK_EQUAL(element, "45");  
+}
+
 

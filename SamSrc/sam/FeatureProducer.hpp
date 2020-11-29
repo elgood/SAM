@@ -16,7 +16,7 @@ protected:
 public:
   /**
    * \param subscriber A shared pointer to the feature subscriber
-   * \param
+   * \param name A name given to the feature.
    */
   void registerSubscriber(std::shared_ptr<FeatureSubscriber> subscriber,
                           std::string name);
@@ -27,8 +27,6 @@ public:
    * called.
    */
   void notifySubscribers(std::size_t id, double value) {
-    //std::cout << " Notifying subscriber of value " << value << std::endl;
-    //std::cout << "Number of subscribers " << subscribers.size() << std::endl;
     for (int i = 0; i < subscribers.size(); i++) {
       subscribers[i]->update(id, names[i], value);
     }

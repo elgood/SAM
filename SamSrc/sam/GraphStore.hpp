@@ -45,23 +45,26 @@ public:
  * field in TupleType (every tuple must have a time field).
  *
  */
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
-class GraphStore : public AbstractConsumer<TupleType>
+class GraphStore : public AbstractConsumer<EdgeType>
 {
 public:
 
-  typedef SubgraphQueryResultMap<TupleType, source, target, time, duration,
+  typedef typename EdgeType::LocalTupleType TupleType;
+  typedef typename EdgeType::LocalLabelType LabelType;
+
+  typedef SubgraphQueryResultMap<EdgeType, source, target, time, duration,
     SourceHF, TargetHF, SourceEF, TargetEF> ResultMapType;
   
   typedef typename ResultMapType::PrinterType PrinterType;
 
   typedef SubgraphQuery<TupleType, source, target, time, duration> QueryType;
 
-  typedef SubgraphQueryResult<TupleType, source, target, time, duration>
+  typedef SubgraphQueryResult<EdgeType, source, target, time, duration>
           ResultType;
 
   typedef EdgeRequest<TupleType, source, target> EdgeRequestType;
@@ -73,12 +76,13 @@ public:
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
 
-  typedef CompressedSparse<TupleType, source, target, time, duration, 
+  typedef CompressedSparse<EdgeType, source, target, time, duration, 
                           SourceHF, SourceEF> csrType;
-  typedef CompressedSparse<TupleType, target, source, time, duration,
+  typedef CompressedSparse<EdgeType, target, source, time, duration,
                           TargetHF, TargetEF> cscType;
 
   typedef EdgeDescription<TupleType, time, duration> EdgeDescriptionType;
+
  
 private:
 
@@ -125,8 +129,8 @@ private:
   /// This stores all the edge requests we receive. 
   std::shared_ptr<RequestMapType> edgeRequestMap;
 
-  /// Creates id for each tuple we get from other nodes
-  SimpleIdGenerator idGenerator;
+  // Generates unique id for each tuple
+  SimpleIdGenerator* idGenerator = idGenerator->getInstance(); 
 
   PushPull* edgeCommunicator;
   PushPull* requestCommunicator;
@@ -240,13 +244,15 @@ public:
 
   /**
    * Adds the tuple to the graph store.
+   * \param id The SAM generated id.
+   * \param tuple The tuple.
    * \return Returns a number representing (roughly) the amount of work it 
    *   took to add the edge.
    */
-  size_t addEdge(TupleType n);
+  size_t addEdge(EdgeType edge);
 
-  bool consume(TupleType const& tuple);
-  bool consumeDoesTheWork(TupleType const& tuple);
+  bool consume(EdgeType const& edge);
+  bool consumeDoesTheWork(EdgeType const& edge);
 
   /**
    * Called by producer to indicate that no more data is coming and that this
@@ -265,7 +271,7 @@ public:
     queries.push_back(query);
   }
 
-  size_t checkSubgraphQueries(TupleType const& tuple,
+  size_t checkSubgraphQueries(EdgeType const& edge,
                             std::list<EdgeRequestType>& edgeRequests);
 
   /**
@@ -476,41 +482,41 @@ public:
 
 };
 
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
 size_t 
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-addEdge(TupleType tuple) 
+addEdge(EdgeType edge) 
 {
   DEBUG_PRINT("Node %lu entering GraphStore::addEdge tuple %s\n", nodeId, 
-    sam::toString(tuple).c_str());
+    edge.toString().c_str());
   //std::lock_guard<std::mutex> lock(generalLock);
-  size_t workCsc = csc->addEdge(tuple);
-  size_t workCsr = csr->addEdge(tuple);
+  size_t workCsc = csc->addEdge(edge);
+  size_t workCsr = csr->addEdge(edge);
   DEBUG_PRINT("Node %lu exiting GraphStore::addEdge tuple %s\n", nodeId, 
-    sam::toString(tuple).c_str());
+    edge.toString().c_str());
   return workCsc + workCsr;
 }
 
 
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
 size_t 
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-checkSubgraphQueries(TupleType const& tuple,
+checkSubgraphQueries(EdgeType const& edge,
                      std::list<EdgeRequestType>& edgeRequests) 
 {
   DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries tuple %s "
     " numQueries %lu\n",
-    nodeId, sam::toString(tuple).c_str(), queries.size()); 
+    nodeId, sam::toString(edge.tuple).c_str(), queries.size()); 
 
   size_t totalWork = 0;
 
@@ -523,17 +529,17 @@ checkSubgraphQueries(TupleType const& tuple,
     // call addEdgeInPlace.  Then we wouldn't need this logic in this class.
     double queryStart;
     if (query->zeroTimeRelativeToStart()) {
-      queryStart = std::get<time>(tuple);
+      queryStart = std::get<time>(edge.tuple);
     } else {
-      queryStart = std::get<time>(tuple) + std::get<duration>(tuple);
+      queryStart = std::get<time>(edge.tuple) + std::get<duration>(edge.tuple);
     }
 
-    if (query->satisfiesConstraints(0, tuple, queryStart)) 
+    if (query->satisfiesConstraints(0, edge.tuple, queryStart)) 
     {
 
       // We only want one node to own the query result, so we make sure
       // that this node owns the source
-      SourceType src = std::get<source>(tuple);
+      SourceType src = std::get<source>(edge.tuple);
       
       DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries src %s "
         "soruceHash(src) %llu numNodes %lu sourceHash(src) mod numNodes %llu\n",
@@ -541,35 +547,37 @@ checkSubgraphQueries(TupleType const& tuple,
         sourceHash(src) % numNodes);
 
       if (sourceHash(src) % numNodes == nodeId) {
-        ResultType queryResult(query, tuple);
+        ResultType queryResult(query, edge);
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries adding"
           " queryResult %s from tuple %s\n", this->nodeId, 
-          queryResult.toString().c_str(), toString(tuple).c_str());
+          queryResult.toString().c_str(), toString(edge.tuple).c_str());
 
         resultMap->add(queryResult, edgeRequests);  
         
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries added"
           " queryResult %s for tuple %s.  EdgeRequests.size() %lu\n", 
           this->nodeId, 
-          queryResult.toString().c_str(), toString(tuple).c_str(), 
+          queryResult.toString().c_str(), toString(edge.tuple).c_str(), 
           edgeRequests.size());
       } else {
 
         DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries this node "
           "didn't own source in %s\n", this->nodeId, 
-          sam::toString(tuple).c_str());
+          sam::toString(edge.tuple).c_str());
       }
     } else {
       DEBUG_PRINT("Node %lu GraphStore::checkSubgraphQueries tuple %s"
         " didn't satisfy query %s\n", this->nodeId, 
-        sam::toString(tuple).c_str(), query->toString().c_str());
+        sam::toString(edge.tuple).c_str(),
+        query->toString().c_str());
     }
   }
   #ifdef DEBUG
   std::string message = "Node " + boost::lexical_cast<std::string>(nodeId) + 
     " GraphStore::checkSubgraphQueries edgeRequests from tuple " +
-    sam::toString(tuple) + ": ";
+    sam::toString(edge.tuple).c_str() + ": ";
+    
   for(auto edgeRequest : edgeRequests) {
     message += edgeRequest.toString() + "    ";
   }
@@ -582,13 +590,13 @@ checkSubgraphQueries(TupleType const& tuple,
  * Goes through the given edge requests that this node needs 
  * and sends the requests out to the appropriate node.
  */
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
 size_t
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
 {
@@ -650,13 +658,13 @@ processEdgeRequests(std::list<EdgeRequestType> const& edgeRequests)
   return edgeRequests.size();
 }
 
-template <typename TupleType, typename Tuplizer,
+template <typename EdgeType, typename Tuplizer,
           size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 void
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 sendEdgeRequest(EdgeRequestType const& edgeRequest,
   std::function<size_t(EdgeRequestType const&)> addressFunction)
@@ -674,55 +682,62 @@ sendEdgeRequest(EdgeRequestType const& edgeRequest,
 }
 
 
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
 bool
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-consume(TupleType const& tuple)
+consume(EdgeType const& edge)
 {
   DEBUG_PRINT("Node %lu GraphStore::consume processing tuple %s\n",
-    nodeId, sam::toString(tuple).c_str());
+    nodeId, edge.toString().c_str());
 
   DEBUG_PRINT("Node %lu GraphStore::consume about to launch async (total"
     " asnyc threads right now %lu) for tuple %s\n",
-    nodeId, consumeThreadsActive.load(), toString(tuple).c_str());
-  if (cycled) {
-    futures[currentFuture].get();
-  }
+    nodeId, consumeThreadsActive.load(), edge.toString().c_str());
+  
+  // TODO threading isn't working
+  //if (cycled) {
+  //  printf("currentFuture %lu\n", currentFuture);
+  //  futures[currentFuture].get();
+  //}
 
-  futures[currentFuture] = std::async(std::launch::async, [this, &tuple]() {
-    return this->consumeDoesTheWork(tuple);
-  });
-  currentFuture++;
+
+  //TODO async isn't working now.
+  //futures[currentFuture] = std::async(std::launch::async, [this, &myEdge]() {
+  //  return this->consumeDoesTheWork(myEdge);
+  //});
+  this->consumeDoesTheWork(edge);
+  // TODO currentFuture++;
   //auto _ = std::async(std::launch::async, [this, &tuple]() {
   // return this->consumeDoesTheWork(tuple);
-  //});
-  if (currentFuture >= maxFutures) {
-    cycled = true;
-    currentFuture = 0;
-  }
+  //});a
 
+  // TODO
+  //if (currentFuture >= maxFutures) {
+  //  printf("currentFuture %lu maxFutures %lu\n", currentFuture, maxFutures);
+  //  cycled = true;
+  //  currentFuture = 0;
+  //}
 
   consumeCount++;
-  
 
   return true;
 }
 
 
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
 bool 
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
-consumeDoesTheWork(TupleType const& tuple)
+consumeDoesTheWork(EdgeType const& edge)
 {
   size_t previousCount = consumeThreadsActive.fetch_add(1);
   size_t warningLimit = 32;
@@ -737,17 +752,14 @@ consumeDoesTheWork(TupleType const& tuple)
   auto timestamp_consume1 = std::chrono::high_resolution_clock::now();
   #endif
 
-  TupleType myTuple = tuple;
-  // Give the tuple a new id
-  std::get<0>(myTuple) = idGenerator.generate();
 
   DEBUG_PRINT("Node %lu GraphStore::consumeDoesTheWork tuple %s\n", nodeId, 
-    sam::toString(myTuple).c_str());
+    edge.toString().c_str());
 
 
   // Adds the edge to the graph
   DETAIL_TIMING_BEG1
-  size_t workAddEdge = addEdge(myTuple);
+  size_t workAddEdge = addEdge(edge);
   DETAIL_TIMING_END_TOL1(nodeId, totalTimeConsumeAddEdge, TOLERANCE, 
                      "GraphStore::consumeDoesTheWork addEdge")
 
@@ -758,31 +770,25 @@ consumeDoesTheWork(TupleType const& tuple)
   std::list<EdgeRequestType> edgeRequests;
   //resultMapLock.lock();
   size_t workResultMapProcess = 
-    resultMap->process(myTuple, edgeRequests);
+    resultMap->process(edge, edgeRequests);
   //resultMapLock.unlock();
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeResultMapProcess,  TOLERANCE,
                      "GraphStore::consumeDoesTheWork resultMap->process")
 
   // See if anybody needs this tuple and send it out to them.
   DETAIL_TIMING_BEG2
-  size_t workEdgeRequestMap = edgeRequestMap->process(myTuple);
+  size_t workEdgeRequestMap = edgeRequestMap->process(edge.tuple);
   DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeEdgeRequestMapProcess, 
     TOLERANCE, "GraphStore::consumeDoesTheWork edgeRequestMap->process")
 
   // Check against all registered queries
   
   size_t workCheckSubgraphQueries = 0;
-#ifdef DROP_QUERIES
-  if (dist(myRand) < keepQueries) {
-#endif
 
-    DETAIL_TIMING_BEG2
-    workCheckSubgraphQueries = checkSubgraphQueries(myTuple, edgeRequests);
-    DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 
-      TOLERANCE, "GraphStore::consumeDoesTheWork checkSubgraphQueries")
-#ifdef DROP_QUERIES
-  }
-#endif
+  DETAIL_TIMING_BEG2
+  workCheckSubgraphQueries = checkSubgraphQueries(edge, edgeRequests);
+  DETAIL_TIMING_END_TOL2(nodeId, totalTimeConsumeCheckSubgraphQueries, 
+    TOLERANCE, "GraphStore::consumeDoesTheWork checkSubgraphQueries")
 
   // Send out the edge requests to the other nodes.
   DETAIL_TIMING_BEG2
@@ -824,13 +830,13 @@ consumeDoesTheWork(TupleType const& tuple)
   return true;
 }
 
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
 void 
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 terminate() 
 {
@@ -890,12 +896,12 @@ terminate()
 /**
  * Constructor
  */
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 GraphStore(  
              std::size_t numNodes,
@@ -924,6 +930,7 @@ GraphStore(
       boost::lexical_cast<std::string>(MAX_NUM_FUTURES);
     throw GraphStoreException(msg);
   }
+  this->maxFutures = maxFutures;
 
   sourceAddressFunction = [this](EdgeRequestType const& edgeRequest) {
     SourceType src = edgeRequest.getSource();
@@ -958,33 +965,33 @@ GraphStore(
   auto edgeCallback = [this](std::string str) 
   {
     // We give the edge a new id that is unique to this node.
-    size_t id = idGenerator.generate();
+    size_t id = idGenerator->generate();
 
     // Change the string into the expected tuple type.
-    TupleType tuple = tuplizer(id, str);
+    EdgeType edge = tuplizer(id, str);
 
     DEBUG_PRINT("Node %lu GraphStore::edgeCallback received a"
-      " tuple %s\n", this->nodeId, sam::toString(tuple).c_str());
+      " tuple %s\n", this->nodeId, sam::toString(edge.tuple).c_str());
 
     // Do we need to do this?
     // Add the edge to the graph
     //addEdge(tuple);
 
     DEBUG_PRINT("Node %lu GraphStore::edgeCallback added edge %s\n",
-      this->nodeId, sam::toString(tuple).c_str());
+      this->nodeId, sam::toString(edge.tuple).c_str());
 
     DETAIL_TIMING_BEG1
     // Process the new edge over results and see if it satifies
     // queries.  If it does, there may be new edge requests.
     std::list<EdgeRequestType> edgeRequests;
     //resultMapLock.lock();
-    resultMap->process(tuple, edgeRequests);
+    resultMap->process(edge, edgeRequests);
     //resultMapLock.unlock();
     DETAIL_TIMING_END_TOL1(this->nodeId, totalTimeEdgeCallbackResultMapProcess, 
       TOLERANCE, "GraphStore::edgeCallback resultMap->process")
 
     DEBUG_PRINT("Node %lu GraphStore::edgeCallback processed"
-      " edge %s\n", this->nodeId, sam::toString(tuple).c_str());
+      " edge %s\n", this->nodeId, sam::toString(edge.tuple).c_str());
 
     // Send out the edge requests to the other nodes.
     DETAIL_TIMING_BEG2
@@ -1068,12 +1075,12 @@ GraphStore(
   dist = std::uniform_real_distribution<>(0.0, 1.0);
 }
 
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 ~GraphStore()
 {
@@ -1085,13 +1092,13 @@ GraphStore<TupleType, Tuplizer, source, target, time, duration,
   DEBUG_PRINT("Node %lu end of ~GraphStore\n", nodeId);
 }
 
-template <typename TupleType, typename Tuplizer, 
+template <typename EdgeType, typename Tuplizer, 
           size_t source, size_t target, 
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF, 
           typename SourceEF, typename TargetEF> 
 void
-GraphStore<TupleType, Tuplizer, source, target, time, duration,
+GraphStore<EdgeType, Tuplizer, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
 {
@@ -1112,7 +1119,7 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
   }
   SourceType src = edgeRequest.getSource();
   TargetType trg = edgeRequest.getTarget();
-  std::list<TupleType> foundEdges;
+  std::list<EdgeType> foundEdges;
   if (!isNull(src) && isNull(trg)) {
     // The source is not null, so we look up the edges in the compressed
     // sparse row graph
@@ -1152,15 +1159,15 @@ processRequestAgainstGraph(EdgeRequestType const& edgeRequest)
     " %lu edges\n", nodeId, foundEdges.size());
 
   for (auto edge : foundEdges) {
-    SourceType src = std::get<source>(edge);
-    TargetType trg = std::get<target>(edge);
+    SourceType src = std::get<source>(edge.tuple);
+    TargetType trg = std::get<target>(edge.tuple);
     size_t srcHash = sourceHash(src) % numNodes;
     size_t trgHash = targetHash(trg) % numNodes;
 
     // Only send the message of the node won't get the message anyway.
     if (srcHash != node && trgHash != node) {
 
-      std::string message = toString(edge);
+      std::string message = sam::toString(edge.tuple);
       //zmq::message_t message = tupleToZmq(edge);
 
       double placeholder = 0;

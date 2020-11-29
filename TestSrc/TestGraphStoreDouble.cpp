@@ -8,11 +8,14 @@
 #include <vector>
 #include <zmq.hpp>
 #include <sam/GraphStore.hpp>
-#include <sam/VastNetflowGenerators.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
+#include <sam/tuples/Tuplizer.hpp>
+#include <sam/tuples/Edge.hpp>
 #include <sam/FeatureMap.hpp>
 
 
 using namespace sam;
+using namespace sam::vast_netflow;
 using namespace std::chrono;
 
 
@@ -40,13 +43,18 @@ public:
   }
 };
 
-typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp, 
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef GraphStore<EdgeType, Tuplizer, 
+                   SourceIp, DestIp, 
                    TimeSeconds, DurationSeconds, 
                    OneTwoThreeFourHashFunction, OneTwoThreeFourHashFunction, 
                    StringEqualityFunction, StringEqualityFunction>
         GraphStoreType;
 
-typedef EdgeDescription<VastNetflow, TimeSeconds, DurationSeconds>
+typedef EdgeDescription<TupleType, TimeSeconds, DurationSeconds>
         EdgeDescriptionType;
 
 typedef GraphStoreType::QueryType QueryType;
@@ -169,6 +177,9 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
     double increment = 0.01;
 
     size_t totalNetflows = 0;
+
+    Tuplizer tuplizer;
+
     for (int i = 0; i < n; i++) {
       auto currenttime = std::chrono::high_resolution_clock::now();
       duration<double> diff = duration_cast<duration<double>>(
@@ -184,17 +195,17 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match_two_nodes, DoubleNodeFixture )
 
       std::string str = generator->generate(time);
       time = time + increment;
-      VastNetflow netflow = makeNetflow(totalNetflows++, str);
+      EdgeType edge = tuplizer(totalNetflows++, str);
 
       // We are simulating the partitioning, so only send netflows
       // that would be sent with partitioning in place.
-      std::string source = std::get<SourceIp>(netflow);
-      std::string target = std::get<DestIp>(netflow);
+      std::string source = std::get<SourceIp>(edge.tuple);
+      std::string target = std::get<DestIp>(edge.tuple);
       size_t sourceHash = hash(source) % 2;
       size_t targetHash = hash(target) % 2;
   
       if (sourceHash == threadId || targetHash == threadId) {
-        graphStore->consume(netflow);
+        graphStore->consume(edge);
       }
       if (sourceHash == threadId) {
         (*expected)++;
@@ -304,6 +315,7 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
     std::string netflowString = "1,1,0.5,2013-04-10 08:32:36,"
                              "20130410083236.384094,17,UDP,192.168.0.2,"
                              "192.168.0.3,29986,1900,0,0,0,133,0,1,0,1,0,0";    
+    Tuplizer tuplizer;
 
     size_t totalNetflows = 0;
     for (int i = 0; i < n; i++) {
@@ -323,11 +335,10 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
       std::string str = generator->generate(time);
       time = time + increment;
 
-      VastNetflow n = makeNetflow(totalNetflows++, str);
-      graphStore->consume(n);
+      EdgeType edge = tuplizer(totalNetflows++, str);
+      graphStore->consume(edge);
       if (i == 0) {
-        VastNetflow netflow = makeNetflow(totalNetflows++, netflowString);
-        graphStore->consume(netflow);
+        graphStore->consume(edge);
       }
     }
 
@@ -335,7 +346,8 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
     for(size_t i = 0; i < numExtra; i++) 
     {
       auto currenttime = std::chrono::high_resolution_clock::now();
-      duration<double> diff = duration_cast<duration<double>>(currenttime - t1);
+      duration<double> diff = 
+        duration_cast<duration<double>>(currenttime - t1);
       if (diff.count() < totalNetflows * increment)
       {
         size_t numMilliseconds =
@@ -345,10 +357,8 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
       }
 
       std::string str = randomGenerator.generate();
-      VastNetflow netflow = makeNetflow(totalNetflows, str);
-
-      graphStore->consume(netflow);
-      totalNetflows++;
+      EdgeType edge = tuplizer(totalNetflows++, str);
+      graphStore->consume(edge);
     }
 
     graphStore->terminate();
@@ -362,6 +372,8 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
   {
 
     auto t1 = std::chrono::high_resolution_clock::now();
+
+    Tuplizer tuplizer;
 
     size_t totalNetflows = 0;
     for (int i = 0; i < n; i++) {
@@ -379,9 +391,8 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
       std::string str = generator->generate(time);
       time += increment;
 
-      VastNetflow n = makeNetflow(totalNetflows, str);
-      totalNetflows++;
-      graphStore->consume(n);
+      EdgeType edge = tuplizer(totalNetflows++, str);
+      graphStore->consume(edge);
     }
 
     RandomGenerator randomGenerator;
@@ -398,10 +409,8 @@ BOOST_FIXTURE_TEST_CASE( test_match_across_nodes, DoubleNodeFixture )
       }
 
       std::string str = randomGenerator.generate();
-      VastNetflow netflow = makeNetflow(totalNetflows, str);
-
-      graphStore->consume(netflow);
-      totalNetflows++;
+      EdgeType edge = tuplizer(totalNetflows++, str);
+      graphStore->consume(edge);
     }
 
     graphStore->terminate();

@@ -12,23 +12,24 @@
 
 //#define DEBUG
 
-#include <sam/GraphStore.hpp>
-#include <sam/EdgeDescription.hpp>
-#include <sam/SubgraphQuery.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/VastNetflowGenerators.hpp>
 #include <boost/program_options.hpp>
 #include <string>
 #include <vector>
 #include <chrono>
+#include <sam/sam.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 namespace po = boost::program_options;
 using std::string;
 using std::vector;
 using namespace std::chrono;
 
-typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer; 
+typedef GraphStore<EdgeType, Tuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -36,14 +37,12 @@ typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
 
 typedef GraphStoreType::QueryType SubgraphQueryType;
 
-typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
-
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
+
+typedef GraphStoreType::ResultType ResultType;  
 
 int main(int argc, char** argv) {
 
@@ -207,6 +206,7 @@ int main(int argc, char** argv) {
 
   auto t1 = std::chrono::high_resolution_clock::now();
 
+  Tuplizer tuplizer;
   for(size_t i = 0; i < numNetflows; i++)
   {
     if (i % 1000 == 0) {
@@ -226,39 +226,31 @@ int main(int argc, char** argv) {
         boost::lexical_cast<std::string>(triangleCounter) +
         "_" + boost::lexical_cast<std::string>(nodeId);
 
-      VastNetflow netflow0 = makeNetflow(0, str);
-      std::get<SourceIp>(netflow0) = nodex;
-      std::get<DestIp>(netflow0) = nodey;
+      EdgeType edge0 = tuplizer(i*3,str);
+      std::get<SourceIp>(edge0.tuple) = nodex;
+      std::get<DestIp>(edge0.tuple) = nodey;
 
       // We create a triangle by adding two more edges.
       std::string str1 = generator->generate(time);
       time += increment;
       std::string str2 = generator->generate(time);
       time += increment;
-      VastNetflow netflow1 = makeNetflow(0, str1);
-      VastNetflow netflow2 = makeNetflow(0, str2);
-      std::get<SourceIp>(netflow1) = nodey;
-      std::get<DestIp>(netflow1) = nodez;
-      std::get<SourceIp>(netflow2) = nodez;
-      std::get<DestIp>(netflow2) = nodex;
+      EdgeType edge1 = tuplizer(i*3+1,str1);
+      EdgeType edge2 = tuplizer(i*3+2,str2);
+      std::get<SourceIp>(edge1.tuple) = nodey;
+      std::get<DestIp>(edge1.tuple) = nodez;
+      std::get<SourceIp>(edge2.tuple) = nodez;
+      std::get<DestIp>(edge2.tuple) = nodex;
 
-      std::string str0 = sam::toString(netflow0);
-      str1 = sam::toString(netflow1);
-      str2 = sam::toString(netflow2);
-
-      // Remove the id at the begining
-      str0 = str0.substr(2);
-      str1 = str1.substr(2);
-      str2 = str2.substr(2);
-
-      pushPull->consume(str0);
-      pushPull->consume(str1);
-      pushPull->consume(str2);
+      pushPull->consume(edge0);
+      pushPull->consume(edge1);
+      pushPull->consume(edge2);
 
       triangleCounter++;
 
     } else {
-      pushPull->consume(str);
+      EdgeType edge = tuplizer(i,str);
+      pushPull->consume( edge);
     }
   }
   auto t2 = std::chrono::high_resolution_clock::now();

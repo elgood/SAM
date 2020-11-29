@@ -7,11 +7,13 @@ using namespace sam;
 
 BOOST_AUTO_TEST_CASE( test_topkproducer )
 {
+  size_t nodeId = 0;
   int queueLength = 1000;
   int numExamples = 100000;
   int numServers = 2;
   int numNonservers = 2;
-  TopKProducer producer(queueLength, numExamples, numServers, numNonservers);
+  TopKProducer producer(nodeId, queueLength, numExamples, numServers, 
+                        numNonservers);
 
   producer.run();
 

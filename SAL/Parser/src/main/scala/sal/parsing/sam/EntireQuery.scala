@@ -24,18 +24,13 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     
     logger.info("EntireQuery.toString")
 
-    var rString = opening + "\n"
-
     // We have to run this before some of the other toString methods
     // becuase it sets the input tuple type in the memory hashmap that
     // is used by other toString methods.
     val connectionString = connectionStatement.toString
 
-    // We run the hash statements before the partitionStatement because
-    // the partitionStatement needs the hash functions for its template.
-    rString += hashDecl
+    var rString = opening + "\n"
 
-    rString += partitionStatement.toString
     rString += createPipelineDecl
     rString = queryStatements.foldLeft(rString)((agg,e) => agg + e.toString)
     rString = subgraphs.foldLeft(rString)((agg,e) => agg + e.toString)
@@ -62,7 +57,8 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "using std::endl;\n" +
     "namespace po = boost::program_options;\n" +
     "using namespace std::chrono;\n" +
-    "using namespace sam;\n" 
+    "using namespace sam;\n" +
+    "using namespace " + memory(Constants.ConnectionInputTypeNamespace) + ";\n"; 
   }
 
   private def hashDecl =
@@ -70,10 +66,11 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     logger.info("EntireQuery.hashDecl")
     var hashesString = ""
     hashesString = flatten(hashStatements.productIterator.toList).
-                         foldLeft(hashesString)((agg,e) => agg + e.toString)
+                         foldLeft(hashesString)((agg,e) => agg + "    " + 
+                         e.toString)
 
-    "// Hash function(s) used to physically partition the tuples\n" +
-    "// across the cluster\n" +
+    "    // Hash function(s) used to physically partition the tuples\n" +
+    "    // across the cluster\n" +
     hashesString +
     "\n"
 
@@ -83,7 +80,9 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
   {
     logger.info("EntireQuery.createPipelineDecl")
     val inputType = memory(Constants.ConnectionInputType)
-     
+    
+    "template <typename EdgeType, typename Tuplizer,\n" +
+    "          typename PartitionType, typename ProducerType>\n" + 
     "void createPipeline(std::shared_ptr<ProducerType> producer,\n" +
     "            std::shared_ptr<FeatureMap> featureMap,\n" +
     "            std::shared_ptr<FeatureSubscriber> subscriber,\n"+
@@ -103,15 +102,6 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "            std::string printerLocation)\n"+
     "{\n"+
     "  std::string identifier = \"\";\n" +
-    "\n" +
-    "  // Doesn't need a key, but provide one anyway to the template. " +
-    "  identifier = \"label\";\n" +
-    "  auto label = std::make_shared<Identity<" + inputType + ",SamLabel, DestIp>>\n" +
-    "                 (nodeId, featureMap, identifier);\n" +
-    "  producer->registerConsumer(label);\n" +
-    "  if (subscriber != NULL) {\n" +
-    "    label->registerSubscriber(subscriber, identifier);\n" +
-    "  }\n" + 
     "\n"
     
   }
@@ -365,6 +355,7 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
 
   private def createFeatures =
   {
+
     logger.info("EntireQuery.createFeatures")
     "  /***************** Creating Features ***********************/\n" + 
     "\n" +
@@ -382,9 +373,19 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "      return -1;\n" +
     "    }\n" +
     "\n" +
-    "    auto receiver = std::make_shared<ReadCSVType>(inputfile);\n" +
+    "    typedef " + memory(Constants.ConnectionInputType)  + " TupleType;\n" +
+    "    typedef SingleBoolLabel LabelType;\n" +
+    "    typedef Edge<size_t, LabelType, TupleType> EdgeType;\n" +
+    "    typedef TuplizerFunction<EdgeType, " + 
+      memory(Constants.ConnectionTuplizerType) + "> Tuplizer;\n" +
+    hashDecl +
+    partitionStatement.toString +
+    "\n" +
+    "    auto receiver = std::make_shared<ReadCSVType>(nodeId, inputfile);\n" +
     "    auto subscriber = std::make_shared<FeatureSubscriber>(outputfile,\n" +
     "                                                      featureCapacity);\n"+
+    "\n" +
+    "    receiver->registerSubscriber(subscriber, \"label\");\n" +
     "\n" +
     "    // We create a pointer to a parent class of ReadCSV so that we can\n" +
     "    // use the same logic for both ReadCSV and partitioner in\n" +
@@ -392,7 +393,8 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "    auto producer = std::static_pointer_cast<ProducerType>(receiver);\n"+
     "\n" +
     "    size_t resultsCapacity = 1000;\n" +
-    "    createPipeline(producer,\n" +
+    "    createPipeline<EdgeType, Tuplizer, PartitionType, ProducerType>(\n" +
+    "              producer,\n" +
     "              featureMap,\n" +
     "              subscriber,\n" +
     "              numNodes,\n" +
@@ -429,7 +431,15 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     logger.info("EntireQuery.runPipeline")
     "  else\n" +
     "  {\n" +
-    "    auto receiver = std::make_shared<ReadSocket>(ncIp, ncPort);\n" +
+    "    typedef " + memory(Constants.ConnectionInputType)  + " TupleType;\n" +
+    "    typedef EmptyLabel LabelType;\n" +
+    "    typedef Edge<size_t, LabelType, TupleType> EdgeType;\n" +
+    "    typedef TuplizerFunction<EdgeType, " + 
+      memory(Constants.ConnectionTuplizerType) + "> Tuplizer;\n" +
+    hashDecl +
+    partitionStatement.toString +
+    "\n" +
+    "    auto receiver = std::make_shared<ReadSocketType>(nodeId, ncIp, ncPort);\n" +
     "\n" +
     "    auto partitioner = std::make_shared<PartitionType>(\n" +
     "                                           queueLength,\n" +
@@ -449,7 +459,8 @@ case class EntireQuery(connectionStatement : ConnectionStatement,
     "    auto producer =std::static_pointer_cast<ProducerType>(partitioner);\n"+
     "\n" +
     "    size_t resultsCapacity = 1000;\n" +
-    "    createPipeline(producer,\n"+
+    "    createPipeline<EdgeType, Tuplizer, PartitionType, ProducerType>(\n"+
+    "              producer,\n"+
     "              featureMap,\n"+
     "              NULL,\n" +
     "              numNodes,\n" +

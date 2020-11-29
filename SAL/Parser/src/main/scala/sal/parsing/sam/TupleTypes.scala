@@ -14,10 +14,14 @@ object TupleTypes {
 
   // Vast Tuple Type, Tuplizer, and connection key word
   val VastNetflow         = "VastNetflow"
-  val VastNetflowTuplizer = "VastNetflowTuplizer"
+  val VastNetflowTuplizer = "MakeVastNetflow"
   val VastConnect         = "VastStream"
+  val VastNetflowNamespace = "sam::vast_netflow"
 
-
+  val NetflowV5           = "NetflowV5"
+  val NetflowV5Tuplizer   = "MakeNetflowV5"
+  val NetflowV5Connect    = "NetflowV5Stream"
+  val NetflowV5Namespace  = "sam::netflowv5"
 
   val Undefined           = "Undefined"
 }

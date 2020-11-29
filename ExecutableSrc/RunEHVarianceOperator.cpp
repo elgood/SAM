@@ -2,21 +2,26 @@
 
 //#define DEBUG 1
 
-#include <sam/ReadSocket.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/ExponentialHistogramVariance.hpp>
+#include <sam/sam.hpp>
 
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 
 using namespace sam;
+using namespace sam::vast_netflow;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
+typedef ReadSocket<EdgeType, Tuplizer> ReadSocketType; 
+  
 
 int main(int argc, char** argv)
 {
@@ -73,7 +78,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  ReadSocket receiver(ip, ncPort);
+  ReadSocketType receiver(nodeId, ip, ncPort);
 
   std::vector<std::string> hostnames(numNodes);
   std::vector<std::size_t> ports(numNodes);
@@ -110,9 +115,8 @@ int main(int argc, char** argv)
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     std::string identifier = "ehvar" + boost::lexical_cast<std::string>(i);
-    auto op = std::make_shared<ExponentialHistogramVariance<size_t, VastNetflow,
-                                               DestPort, 
-                                               DestIp>>(N, k,  
+    auto op = std::make_shared<ExponentialHistogramVariance<size_t, EdgeType,
+                                               DestPort, DestIp>>(N, k,  
                                                 nodeId,featureMap, identifier);
                                                   
                                                   

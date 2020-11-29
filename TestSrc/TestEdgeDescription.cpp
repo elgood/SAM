@@ -1,9 +1,10 @@
 #define BOOST_TEST_MAIN TestEdgeDescription
 #include <boost/test/unit_test.hpp>
 #include <sam/EdgeDescription.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
 BOOST_AUTO_TEST_CASE( test_edge_unspecified )
 {

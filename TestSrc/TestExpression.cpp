@@ -3,12 +3,13 @@
 #include <vector>
 #include <boost/test/unit_test.hpp>
 #include <sam/Expression.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
 
 using std::string;
 using std::vector;
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
 //TODO Redo these tests because it seems to be failing in ServerQuery.  However,
 //I think there is an example in TestTopk that is working.

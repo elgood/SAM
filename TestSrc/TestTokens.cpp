@@ -4,10 +4,11 @@
 #include <stack>
 #include <tuple>
 #include <sam/Tokens.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
 #include <sam/FeatureMap.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
 struct F {
   VastNetflow netflow;
@@ -16,10 +17,10 @@ struct F {
   std::string key;
 
   F() {
-    std::string s = "1,1,1365582756.384094,2013-04-10 08:32:36,"
+    std::string s = "1365582756.384094,2013-04-10 08:32:36,"
                     "20130410083236.384094,17,UDP,172.20.2.18,"
                     "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
-    netflow = makeNetflow(s);
+    netflow = makeVastNetflow(s);
     key = "key";
   }
 

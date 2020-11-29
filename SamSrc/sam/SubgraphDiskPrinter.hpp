@@ -10,13 +10,13 @@ namespace sam {
 /**
  * A class that prints subgraph query results to disk.
  */
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration>
 class SubgraphDiskPrinter : 
-  public AbstractSubgraphPrinter<TupleType, source, target, time, duration>
+  public AbstractSubgraphPrinter<EdgeType, source, target, time, duration>
 {
 public:
-  typedef typename AbstractSubgraphPrinter<TupleType, source, target, time, 
+  typedef typename AbstractSubgraphPrinter<EdgeType, source, target, time, 
     duration>::ResultType ResultType;
 
   SubgraphDiskPrinter(std::string fileLocation)
@@ -49,16 +49,16 @@ private:
   std::mutex lock;
 };
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration>
-void SubgraphDiskPrinter<TupleType, source, target, time, duration>::
+void SubgraphDiskPrinter<EdgeType, source, target, time, duration>::
   print(ResultType const& result)
 {
   lock.lock(); // Only allow one thread to write at a time.
   try {
     ofile << result.toString() << std::endl;
   } catch (std::exception e) {
-    DEBUG_PRINT("Troubles writing subgraph result to disk\n");
+    DEBUG_PRINT_SIMPLE("Troubles writing subgraph result to disk\n");
   }
   lock.unlock();
 }

@@ -10,15 +10,23 @@
 #include <stdio.h>
 #include <deque>
 
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
+#include <sam/tuples/Edge.hpp>
+#include <sam/tuples/Tuplizer.hpp>
 #include <sam/FeatureSubscriber.hpp>
 #include <sam/ReadCSV.hpp>
-#include <sam/Identity.hpp>
+#include <sam/LabelProducer.hpp>
 #include <sam/ExponentialHistogramSum.hpp>
 #include <sam/ExponentialHistogramVariance.hpp>
 #include <sam/ZeroMQPushPull.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
+
+typedef VastNetflow TupleType;
+typedef SingleBoolLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
 
 BOOST_AUTO_TEST_CASE( test_sample )
 {
@@ -26,6 +34,8 @@ BOOST_AUTO_TEST_CASE( test_sample )
   // make more robust to different locations of build directory 
   //std::string dataFile = "../TestSrc/Data/CTU1SampleAsVast.csv";
   std::string dataFile = "../../TestSrc/Data/147.32.84.229.csv";
+ 
+  Tuplizer tuplizer;
   
   // Calculating some stats
   std::ifstream infile;
@@ -34,17 +44,19 @@ BOOST_AUTO_TEST_CASE( test_sample )
   {
     int numPos = 0;
     int numNeg = 0;
+    int total = 0;
     
     std::string line;
     while (std::getline(infile, line))
     {
-      std::vector<std::string> v = convertToTokens(line);   
-      int label = boost::lexical_cast<int>(v[0]); 
+      auto edge = tuplizer(total, line);
+      int label = boost::lexical_cast<int>(std::get<0>(edge.label)); 
       if (label == 0) {
         numNeg++;
       } else {
         numPos++;
       }
+      total++;
     }
 
     std::cout << "Num Negative " <<  numNeg 
@@ -52,19 +64,22 @@ BOOST_AUTO_TEST_CASE( test_sample )
 
     infile.close();
 
+    std::size_t nodeId = 0; ///> The node id of this node
     int capacity = 100000;
     auto featureMap = std::make_shared<FeatureMap>(capacity);
     std::string outputfile = "TestCTUOutputFile.txt";
-    auto subscriber = std::make_shared<FeatureSubscriber>(outputfile, capacity);
-    auto receiver = std::make_shared<ReadCSV<VastNetflow, 
-                                     VastNetflowTuplizer>>(dataFile);
+    auto subscriber = 
+      std::make_shared<FeatureSubscriber>(outputfile, capacity);
+    auto receiver = 
+      std::make_shared<ReadCSV<EdgeType, Tuplizer>>(nodeId, dataFile);
     std::size_t numNodes = 1; ///> The number of nodes in the cluster
-    std::size_t nodeId = 0; ///> The node id of this node
     
     // Get the label
     // Doesn't really need a key, but provide one anyway to the template.
-    std::string identifier = "identity";
-    auto label = std::make_shared<Identity<VastNetflow, SamLabel, DestIp>>
+    //TODO Label
+    std::string identifier = "label";
+
+    auto label = std::make_shared<LabelProducer<EdgeType, DestIp>>
                 (nodeId, featureMap, identifier);
     receiver->registerConsumer(label);
     label->registerSubscriber(subscriber, identifier);
@@ -72,7 +87,7 @@ BOOST_AUTO_TEST_CASE( test_sample )
     identifier = "averageSrcTotalBytes";
     int N = 189;
     auto averageSrcTotalBytes = std::make_shared<
-                      ExponentialHistogramAve<double, VastNetflow,
+                      ExponentialHistogramAve<double, EdgeType,
                                                  SrcTotalBytes,
                                                  DestIp>>
                           (N, 2, nodeId, featureMap, identifier);
@@ -80,10 +95,9 @@ BOOST_AUTO_TEST_CASE( test_sample )
     averageSrcTotalBytes->registerSubscriber(subscriber, identifier);
 
     identifier = "varSrcTotalBytes";
-    auto varSrcTotalBytes = std::make_shared<
-                               ExponentialHistogramVariance<double, VastNetflow,
-                                                             SrcTotalBytes,
-                                                             DestIp>>
+    auto varSrcTotalBytes = 
+      std::make_shared<ExponentialHistogramVariance<
+        double, EdgeType, SrcTotalBytes, DestIp>>
                                (N, 2, nodeId, featureMap, identifier);
     receiver->registerConsumer(varSrcTotalBytes);
     varSrcTotalBytes->registerSubscriber(subscriber, identifier);
@@ -121,22 +135,23 @@ BOOST_AUTO_TEST_CASE( test_sample )
       // Get a line from the original data file
       std::string orig;
       std::string result;
-      std::cout << "blah " << std::endl;
       while (std::getline(origfile, orig) && std::getline(resultfile, result))
       {
       
         // Tokenize the line from the original data file
-        std::vector<std::string> lineVector = convertToTokens(orig);
-
+        //std::vector<std::string> lineVector = convertToTokens(orig);
+        auto edge = tuplizer(numLines, orig);
+        auto tuple = edge.tuple;
         // Get the destIp, which is the key for imux operation
-        std::string destIp = lineVector[DestIp - 1];
+        std::string destIp = std::get<DestIp>(tuple);
+        std::cout << "destIP " << destIp << std::endl;
 
         // Calculate the exact value of the features from the original 
         // data file. 
 
         // Exact average SrcTotalBytes over last N netflows with same DestIp
-        long srcTotalBytes = boost::lexical_cast<long>(
-          lineVector[SrcTotalBytes - 1]);        
+        long srcTotalBytes = boost::lexical_cast<long>(std::get<SrcTotalBytes>(tuple));
+        std::cout << "srcTotalBytes" << srcTotalBytes << std::endl;      
         if (valuesSrcTotalBytes.count(destIp) == 0) {//Create deque if not there
           valuesSrcTotalBytes[destIp] = std::deque<long>( );
         } 
@@ -158,17 +173,18 @@ BOOST_AUTO_TEST_CASE( test_sample )
         if (tokenVector[0] == "0") numNegFound++;
         if (tokenVector[0] == "1") numPosFound++;
 
+        std::cout << "result " << result << std::endl;
         double predMeanSrcTotalBytes = boost::lexical_cast<double>(
                                           tokenVector[1]);
         double predVarSrcTotalBytes = boost::lexical_cast<double>(
                                           tokenVector[2]);
-        /*std::cout <<"destIp " << destIp << " srcTotalBytes " << srcTotalBytes 
+        std::cout <<"destIp " << destIp << " srcTotalBytes " << srcTotalBytes 
                   << " expMeanSrcTotalBytes " << expMeanSrcTotalBytes 
                   << " predMeanSrcTotalBytes " << predMeanSrcTotalBytes 
                   << " expVarSrcTotalBytes " << expVarSrcTotalBytes 
                   << " predVarSrcTotalBytes " << predVarSrcTotalBytes 
                   << " size "<< valuesSrcTotalBytes[destIp].size() << std::endl;
-        */
+        
         //std::cout << "totalDiffVarSrcTotalBytes " << totalDiffVarSrcTotalBytes
         //          << std::endl;
         if (expMeanSrcTotalBytes < predMeanSrcTotalBytes) {
@@ -187,8 +203,8 @@ BOOST_AUTO_TEST_CASE( test_sample )
               std::sqrt(expVarSrcTotalBytes) / std::sqrt(predVarSrcTotalBytes);
           }
         }
-        //std::cout << "totalDiffVarSrcTotalBytes " << totalDiffVarSrcTotalBytes
-        //          << std::endl;
+        std::cout << "totalDiffVarSrcTotalBytes " << totalDiffVarSrcTotalBytes
+                  << std::endl;
 
         numLines++;
         // Comparing predicated and expected SrcTotalBytes

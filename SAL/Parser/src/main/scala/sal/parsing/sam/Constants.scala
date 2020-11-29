@@ -60,7 +60,9 @@ object Constants {
   // The keys in the memory map to record the types of input tuples
   // from the connection statement.
   val ConnectionInputType = "ConnectionInputType"
-
+  val ConnectionTuplizerType = "ConnectionTuplizerType"
+  val ConnectionInputTypeNamespace = "ConnectionInputTypeNamespace"
+  
   // Used to name the Hash types in HASH WITH statements
   val HashPrefix = "Hash"
   // Used to keep track of how many hash functions have been defined with

@@ -5,6 +5,7 @@
 #include <sam/BaseComputation.hpp>
 #include <sam/FeatureMap.hpp>
 #include <sam/Util.hpp>
+#include <sam/tuples/Edge.hpp>
 
 namespace sam {
 
@@ -12,9 +13,10 @@ namespace sam {
  * Projects out one field out of a two-field key.  I haven't figured
  * out how to generalize this.
  */
-template <typename InputType, size_t keepField, size_t projectField, 
+template <typename EdgeType,
+          size_t keepField, size_t projectField, 
           size_t... keyFields>
-class Project : public AbstractConsumer<InputType>,
+class Project : public AbstractConsumer<EdgeType>,
                 public BaseComputation
 {
 private:
@@ -30,12 +32,12 @@ public:
           BaseComputation(nodeId, featureMap, identifier)
   {} 
 
-  bool consume(InputType const& input)
+  bool consume(EdgeType const& edge)
   {
     //std::cout << "in project" << std::endl;
-    std::string origKey = generateKey<keyFields...>(input); 
-    std::string newKey = generateKey<keepField>(input);
-    std::string projectKey = generateKey<projectField>(input);
+    std::string origKey = generateKey<keyFields...>(edge.tuple); 
+    std::string newKey = generateKey<keepField>(edge.tuple);
+    std::string projectKey = generateKey<projectField>(edge.tuple);
 
     // For all of the identifiers specified we create a MapFeature.  A
     // MapFeature holds the mapping from the projected key to original
@@ -52,8 +54,9 @@ public:
     // time a DestIp talks to a SrcIp, that stays around forever, no matter
     // how long ago it took place.  
     for (auto id : identifiers) {
-      if (featureMap->exists(origKey, id)) {
-        std::shared_ptr<const Feature> origFeature = featureMap->at(origKey, id);
+      if (featureMap->exists(origKey, edge.id)) {
+        std::shared_ptr<const Feature> origFeature = 
+          featureMap->at(origKey, id);
         std::map<std::string, std::shared_ptr<Feature>> localFeatureMap;
         localFeatureMap[projectKey] = origFeature->createCopy();
         MapFeature mapFeature(localFeatureMap);

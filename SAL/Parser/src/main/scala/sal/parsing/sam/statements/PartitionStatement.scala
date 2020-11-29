@@ -39,24 +39,25 @@ extends Statement with LazyLogging
 {
   override def toString = {
     logger.info("PartitionStatement.toString")
-    var output  = "typedef ZeroMQPushPull<" + 
-                  memory(stream + Constants.TupleType) + ", " +
-                  memory(stream + Constants.TuplizerType) + ", "
+    var output  = "    typedef ZeroMQPushPull<EdgeType, Tuplizer, " 
 
-    //Figure out how many hash functions have been defined
+    // Figure out how many hash functions have been defined
     val numHashFunctions = memory(Constants.NumHashFunctions).toInt
     for (i <- 0 to numHashFunctions - 2) {
       output += Constants.HashPrefix + i.toString + ", "
     }
     output += Constants.HashPrefix + (numHashFunctions - 1).toString + "> "
     output += "PartitionType" + ";\n"
-    output += "typedef BaseProducer<" +
-              memory(Constants.ConnectionInputType) + "> ProducerType;\n"
+    output += "    typedef BaseProducer<EdgeType> ProducerType;\n" 
+    output += "\n" 
+    output += "    typedef ReadCSV<EdgeType, Tuplizer> ReadCSVType;\n" 
+    output += "    typedef ReadSocket<EdgeType, Tuplizer> ReadSocketType;\n"
     output += "\n"
-    output += "typedef ReadCSV<" +
-              memory(stream + Constants.TupleType) + ", " +
-              memory(stream + Constants.TuplizerType) +"> ReadCSVType;\n"
-    output += "\n"
+
+    val hashId = memory.getOrElseUpdate(Constants.NumHashFunctions, "0")
+    // Reseting the number hash functions
+    memory(Constants.NumHashFunctions) = "0"
+
     output
   }
 }

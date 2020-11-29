@@ -70,7 +70,7 @@ case class EHAveExp(field: String, N: Int, k: Int,
     // filter expression.
     memory += lstream + Constants.OperatorType -> Constants.EHSumKey
     
-    val tupleType = memory.get(lstream + Constants.TupleType).get
+    // val tupleType = memory.get(lstream + Constants.TupleType).get
     val numKeys = memory.get(lstream + Constants.NumKeys).get
     var keysString = ""
     for (i <- 0 until numKeys.toInt ) {
@@ -82,7 +82,7 @@ case class EHAveExp(field: String, N: Int, k: Int,
     var rString = "  identifier = \"" + lstream + "\";\n"
     rString += "  auto " + lstream + 
       " = std::make_shared<ExponentialHistogramAve<\n" +
-      "    double, " + tupleType + ", " + field + ", " + keysString + ">>(\n" +
+      "    double, EdgeType, " + field + ", " + keysString + ">>(\n" +
       "    " + N.toString + ", " + k.toString + 
       ", nodeId, featureMap, identifier);\n"
     rString += addRegisterStatements(lstream, rstream, memory)

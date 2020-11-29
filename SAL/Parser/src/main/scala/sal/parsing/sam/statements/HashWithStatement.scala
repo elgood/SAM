@@ -52,8 +52,7 @@ extends Statement with LazyLogging
     memory(Constants.NumHashFunctions) =
       (memory(Constants.NumHashFunctions).toInt + 1).toString
 
-    var output = "typedef " + myHashFunction + "<"
-    output += memory(Constants.ConnectionInputType) + ","
+    var output = "typedef " + myHashFunction + "<TupleType, "
     output += identifier + "> " + hashName + ";\n"
     output 
   }

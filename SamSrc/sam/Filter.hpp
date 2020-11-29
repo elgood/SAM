@@ -11,11 +11,13 @@ using std::string;
 
 namespace sam {
 
-template <typename TupleType, size_t... keyFields>
-class Filter: public AbstractConsumer<TupleType>, 
+template <typename EdgeType, size_t... keyFields>
+class Filter: public AbstractConsumer<EdgeType>, 
               public BaseComputation,
-              public BaseProducer<TupleType>
+              public BaseProducer<EdgeType>
 {
+public:
+  typedef typename EdgeType::LocalTupleType TupleType;
 private:
   std::shared_ptr<const Expression<TupleType>> expression;
 public:
@@ -25,42 +27,41 @@ public:
          string identifier,
          size_t queueLength) :
          BaseComputation(nodeId, featureMap, identifier), 
-         BaseProducer<TupleType>(queueLength),
+         BaseProducer<EdgeType>(nodeId, queueLength),
          expression(_exp)
   {}
 
-  bool consume(TupleType const& t);
+  bool consume(EdgeType const& edge);
 
   void terminate();
 
 };
 
-template <typename TupleType, size_t... keyFields>
-bool Filter<TupleType, keyFields...>::consume(TupleType const& t) 
+template <typename EdgeType, size_t... keyFields>
+bool Filter<EdgeType, keyFields...>::consume(EdgeType const& edge) 
+                                              
 {
-  string key = generateKey<keyFields...>(t);
-  //std::cout << "key " << key << std::endl;
+  string key = generateKey<keyFields...>(edge.tuple);
   double result = 0;
-  bool b = expression->evaluate(key, t, result); 
-  //std::cout << "result " << result << std::endl;
+  bool b = expression->evaluate(key, edge.tuple, result); 
   if (b) {
     BooleanFeature feature(result);
     this->featureMap->updateInsert(key, this->identifier, feature); 
     if ( result ) {
-      this->parallelFeed(t);
+      this->parallelFeed(edge);
     } else {
       BooleanFeature feature(0);
       this->featureMap->updateInsert(key, this->identifier, feature);  
     }
   }
 
-  this->parallelFeed(t);
+  this->parallelFeed(edge);
 
   return true;
 }
 
-template <typename TupleType, size_t... keyFields>
-void Filter<TupleType, keyFields...>::terminate()
+template <typename EdgeType, size_t... keyFields>
+void Filter<EdgeType, keyFields...>::terminate()
 {
   for (auto consumer : this->consumers) {
     consumer->terminate();

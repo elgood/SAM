@@ -17,24 +17,25 @@
 //#define NOBLOCK_WHILE
 //#define DETAIL_METRICS2
 
-#include <sam/GraphStore.hpp>
-#include <sam/EdgeDescription.hpp>
-#include <sam/SubgraphQuery.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/VastNetflowGenerators.hpp>
 #include <boost/program_options.hpp>
 #include <string>
 #include <vector>
 #include <chrono>
 #include <fstream>
+#include <sam/sam.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 namespace po = boost::program_options;
 using std::string;
 using std::vector;
 using namespace std::chrono;
 
-typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer; 
+typedef GraphStore<EdgeType, Tuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -42,12 +43,13 @@ typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
 
 typedef GraphStoreType::QueryType SubgraphQueryType;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
 
 typedef GraphStoreType::ResultType ResultType;  
+
 
 void printStuff(std::shared_ptr<GraphStoreType> graphStore, size_t nodeId) {
   #ifdef TIMING
@@ -397,6 +399,8 @@ int main(int argc, char** argv) {
 
   size_t numDropped = 0;
 
+  Tuplizer tuplizer;
+
   for(size_t i = 0; i < numNetflows; i++)
   {
     bool drop = false;
@@ -443,7 +447,8 @@ int main(int argc, char** argv) {
 
       try {
         auto consumeTime1 = std::chrono::high_resolution_clock::now();
-        pushPull->consume(str);
+        EdgeType edge = tuplizer(i, str);
+        pushPull->consume(edge);
         auto consumeTime2 = std::chrono::high_resolution_clock::now();
         double consumeTime = duration_cast<duration<double>>(
           consumeTime2 - consumeTime1).count();
@@ -465,7 +470,8 @@ int main(int argc, char** argv) {
     std::string str = otherGenerator->generate(time);
     ofile << str << std::endl;
     time += increment;
-    pushPull->consume(str);
+    EdgeType edge = tuplizer(i, str);
+    pushPull->consume(edge);
   }
   ofile.close();
 
@@ -497,9 +503,9 @@ int main(int argc, char** argv) {
     {
       ResultType result = graphStore->getResult(i);
       //printf("%s\n", result.toString().c_str());
-      VastNetflow n0 = result.getResultTuple(0);
-      VastNetflow n1 = result.getResultTuple(1);
-      VastNetflow n2 = result.getResultTuple(2);
+      TupleType n0 = result.getResultTuple(0).tuple;
+      TupleType n1 = result.getResultTuple(1).tuple;
+      TupleType n2 = result.getResultTuple(2).tuple;
       double starttime0 = std::get<TimeSeconds>(n0);
       double starttime1 = std::get<TimeSeconds>(n1);
       double starttime2 = std::get<TimeSeconds>(n2);

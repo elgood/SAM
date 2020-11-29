@@ -1,0 +1,18 @@
+Edges = NetflowV5Stream("localhost", 9999);
+PARTITION Edges By SourceIp, DestIp;
+HASH SourceIp WITH IpHashFunction;
+HASH DestIp With IpHashFunction;
+VerticesByDest = STREAM Edges BY DestIp;
+VerticesBySrc = STREAM Edges BY SourceIp; 
+avgSrcBytes = FOREACH VerticesBySrc GENERATE ave ( doctets , 10000 , 2 ) ;
+varSrcBytes = FOREACH VerticesBySrc GENERATE var ( doctets , 10000 , 2 ) ;
+avgSrcDuration = FOREACH VerticesBySrc GENERATE ave ( last −first , 10000 , 2 ) ;
+varSrcDuration = FOREACH VerticesBySrc GENERATE var ( last −first , 10000 , 2 ) ;
+avgSrcPackets = FOREACH VerticesBySrc GENERATE ave ( dpkts , 10000 , 2 ) ;
+varSrcPackets = FOREACH VerticesBySrc GENERATE var ( dpkts , 10000 , 2 ) ;
+avgDestBytes = FOREACH VerticesByDest GENERATE ave ( doctets , 10000 , 2 ) ;
+varDestBytes = FOREACH VerticesByDest GENERATE var ( doctets , 10000 , 2 ) ;
+avgDestDuration = FOREACH VerticesByDest GENERATE ave ( last −first , 10000 , 2 ) ;
+varDestDuration = FOREACH VerticesByDest GENERATE var ( last −first , 10000 , 2 ) ;
+avgDestPackets = FOREACH VerticesByDest GENERATE ave ( dpkts , 10000 , 2 ) ;
+varDestPackets = FOREACH VerticesByDest GENERATE var ( dpkts , 10000 , 2 ) ;

@@ -1,25 +1,30 @@
 #define BOOST_TEST_MAIN TestSubgraphQueryResultMap
 
-//#define DEBUG
-
 #include <boost/test/unit_test.hpp>
 #include <sam/Util.hpp>
 #include <sam/SubgraphQuery.hpp>
 #include <sam/SubgraphQueryResult.hpp>
 #include <sam/SubgraphQueryResultMap.hpp>
-#include <sam/VastNetflow.hpp>
-#include <sam/VastNetflowGenerators.hpp>
+#include <sam/tuples/Edge.hpp>
+#include <sam/tuples/Tuplizer.hpp>
+#include <sam/tuples/VastNetflow.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
 
 
 using namespace sam;
+using namespace sam::vast_netflow;
 using namespace std::chrono;
 
-typedef SubgraphQueryResultMap<VastNetflow, SourceIp, DestIp,
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef SubgraphQueryResultMap<EdgeType, SourceIp, DestIp,
   TimeSeconds, DurationSeconds, StringHashFunction, StringHashFunction,
   StringEqualityFunction, StringEqualityFunction> MapType;
-
-typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
-  QueryType;
+typedef SubgraphQuery<TupleType, SourceIp, DestIp, 
+  TimeSeconds, DurationSeconds> QueryType;
+  
 
 typedef MapType::QueryResultType QueryResultType;
 
@@ -73,7 +78,6 @@ struct F {
 
 };
 
-
 ///
 /// In this test the query is simply an edge such that every edge
 /// matches.
@@ -92,15 +96,14 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   query->addExpression(*y2x);
   query->finalize();
 
-
+  Tuplizer tuplizer;
   std::list<EdgeRequestType> edgeRequests;
   size_t n = 10000;
   for(size_t i = 0; i < n; i++) 
   {
     std::string str = generator->generate();
-    VastNetflow netflow = makeNetflow(0, str);
-    SubgraphQueryResult<VastNetflow, SourceIp, DestIp, TimeSeconds,
-                        DurationSeconds> result(query, netflow);
+    EdgeType edge = tuplizer(i, str);
+    QueryResultType result(query, edge);
     map.add(result, edgeRequests);
   }
 
@@ -108,7 +111,6 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_match, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), n);
  
 }
-
 
 ///
 /// In this test the query is simply an edge such but the time constraints
@@ -135,15 +137,17 @@ BOOST_FIXTURE_TEST_CASE( test_single_edge_no_match, F )
   query->finalize();
 
   std::list<EdgeRequestType> edgeRequests;
+
+  Tuplizer tuplizer;
   size_t n = 10000;
   for(size_t i = 0; i < n; i++) 
   {
     std::string str = generator->generate();
-    VastNetflow netflow = makeNetflow(0, str);
-    double startTime = std::get<TimeSeconds>(netflow);
-    if (query->satisfiesConstraints(0, netflow, startTime)) { 
-      SubgraphQueryResult<VastNetflow, SourceIp, DestIp, TimeSeconds,
-                          DurationSeconds> result(query, netflow);
+    EdgeType edge = tuplizer(i, str);
+    double startTime = std::get<TimeSeconds>(edge.tuple);
+    if (query->satisfiesConstraints(0, edge.tuple, startTime))
+    {
+      QueryResultType result(query, edge);
       map.add(result, edgeRequests);
     }
   }
@@ -186,6 +190,7 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
 
   auto t1 = std::chrono::high_resolution_clock::now();
 
+  Tuplizer tuplizer;
   for(size_t i = 0; i < n; i++) 
   {
     auto currenttime = std::chrono::high_resolution_clock::now();
@@ -198,12 +203,12 @@ BOOST_FIXTURE_TEST_CASE( test_double_edge_match, F )
 
 
     std::string str = generator->generate(time);
+    EdgeType edge = tuplizer(i, str);
     time += increment;
-    VastNetflow netflow = makeNetflow(i, str);
-    QueryResultType result(query, netflow);
+    QueryResultType result(query, edge);
                          
     map.add(result, edgeRequests);
-    map.process(netflow, edgeRequests);
+    map.process(edge, edgeRequests);
   }
   BOOST_CHECK_EQUAL(edgeRequests.size(), 0);
   BOOST_CHECK_EQUAL(map.getNumResults(), (n-1)*(n)/2);
@@ -225,16 +230,17 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   std::string str2 = generator->generate(0.1);
   std::string str3 = generator->generate(0.2);
 
-  VastNetflow netflow1 = makeNetflow(1, str1);
-  VastNetflow netflow2 = makeNetflow(2, str2);
-  VastNetflow netflow3 = makeNetflow(3, str3);
+  Tuplizer tuplizer;
+  EdgeType netflow1 = tuplizer(1, str1);
+  EdgeType netflow2 = tuplizer(2, str2);
+  EdgeType netflow3 = tuplizer(3, str3);
 
-  std::get<SourceIp>(netflow1) = nodeA; 
-  std::get<DestIp>(netflow1) = nodeB; 
-  std::get<SourceIp>(netflow2) = nodeB; 
-  std::get<DestIp>(netflow2) = nodeC; 
-  std::get<SourceIp>(netflow3) = nodeC; 
-  std::get<DestIp>(netflow3) = nodeD; 
+  std::get<SourceIp>(netflow1.tuple) = nodeA; 
+  std::get<DestIp>(netflow1.tuple) = nodeB; 
+  std::get<SourceIp>(netflow2.tuple) = nodeB; 
+  std::get<DestIp>(netflow2.tuple) = nodeC; 
+  std::get<SourceIp>(netflow3.tuple) = nodeC; 
+  std::get<DestIp>(netflow3.tuple) = nodeD; 
 
   csr->addEdge(netflow2);
   csr->addEdge(netflow3);
@@ -262,6 +268,7 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   query->addExpression(startTimeExpressionC2D);
   query->finalize();
 
+  size_t id = 0;
   QueryResultType result(query, netflow1);
 
   std::list<EdgeRequestType> edgeRequests;
@@ -278,5 +285,4 @@ BOOST_FIXTURE_TEST_CASE( test_process_against_graph, F )
   BOOST_CHECK_EQUAL(map.getNumResults(), 1);
 
 }
-
 

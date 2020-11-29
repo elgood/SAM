@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestLabel
 #include <boost/test/unit_test.hpp>
-#include <sam/Label.hpp>
+#include <sam/tuples/Edge.hpp>
 
 using namespace sam;
 

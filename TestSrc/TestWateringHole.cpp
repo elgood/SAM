@@ -5,15 +5,23 @@
 #include <boost/test/unit_test.hpp>
 #include <chrono>
 #include <sam/GraphStore.hpp>
-#include <sam/VastNetflowGenerators.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
+#include <sam/tuples/Edge.hpp>
+#include <sam/tuples/Tuplizer.hpp>
 #include <sam/ZeroMQPushPull.hpp>
 #include <sam/TopK.hpp>
 
 
 using namespace sam;
+using namespace sam::vast_netflow;
 using namespace std::chrono;
 
-typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
+
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, EmptyLabel, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef GraphStore<EdgeType, Tuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -22,9 +30,9 @@ typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
 typedef GraphStoreType::QueryType SubgraphQueryType;
 typedef GraphStoreType::ResultType ResultType;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
 
 
@@ -61,7 +69,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   size_t k = numServers; ///> The number of elements to keep track of
   std::string topkId = "topk";
   auto topk = std::make_shared<
-    TopK<VastNetflow, DestIp>>(N, b, k, nodeId0, featureMap, topkId);
+    TopK<EdgeType, DestIp>>(N, b, k, nodeId0, featureMap, topkId);
 
   pushPull->registerConsumer(topk);
 
@@ -132,6 +140,7 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
   size_t totalNumMessages = 0;
  
   auto starttime = std::chrono::high_resolution_clock::now();
+  Tuplizer tuplizer;
   // Sending benign message
   for (size_t i = 0; i < numNetflows; i++) 
   {
@@ -146,17 +155,17 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     }
 
     std::string str = generator.generate(time);
+    EdgeType edge = tuplizer(totalNumMessages++, str);
     printf("Netflow %s\n", str.c_str()); 
     time += increment;
-    pushPull->consume(str);
-    totalNumMessages++;
+    pushPull->consume(edge);
   }
 
   // Create the infection message.
   std::string str = generator.generateInfection(time);
+  EdgeType edge = tuplizer(totalNumMessages++, str);
   time += increment;
-  pushPull->consume(str);
-  totalNumMessages++;
+  pushPull->consume(edge);
 
   // Sending some benign messages so that the infection message completes
   // (the pattern is that the malicious messages begin after the end
@@ -177,8 +186,8 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     std::string str = generator.generate(time);
     printf("Netflow %s\n", str.c_str()); 
     time += increment;
-    pushPull->consume(str);
-    totalNumMessages++;
+    EdgeType edge = tuplizer(totalNumMessages++, str);
+    pushPull->consume(edge);
   }
  
   graphStore->clearResults(); 
@@ -199,8 +208,8 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     std::string str = generator.generateControlMessage(time);
     printf("Netflow %s\n", str.c_str()); 
     time += increment;
-    pushPull->consume(str);
-    totalNumMessages++;
+    EdgeType edge = tuplizer(totalNumMessages++, str);
+    pushPull->consume(edge);
   }
 
   // Sending benign message
@@ -220,8 +229,8 @@ BOOST_AUTO_TEST_CASE( test_watering_hole )
     std::string str = generator.generate(time);
     printf("Netflow %s\n", str.c_str()); 
     time += increment;
-    pushPull->consume(str);
-    totalNumMessages++;
+    EdgeType edge = tuplizer(totalNumMessages++, str);
+    pushPull->consume(edge);
   }
  
   pushPull->terminate();

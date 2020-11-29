@@ -15,14 +15,17 @@
 #include <arpa/inet.h>
 
 #include <sam/BaseProducer.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
 #include <sam/AbstractDataSource.hpp>
+#include <sam/tuples/Edge.hpp>
 
 #define READ_SOCKET_BUFFER_SIZE 4096 
 
 namespace sam {
 
-class ReadSocket : public BaseProducer<std::string>, public AbstractDataSource
+template <typename EdgeType, typename Tuplizer>
+class ReadSocket : public BaseProducer<EdgeType>, 
+  public AbstractDataSource
 {
 private:
 	int port;
@@ -36,9 +39,12 @@ private:
 	int readCount;
 	std::string previous = "";
   int metricInterval = 100000;
+  Tuplizer tuplizer;
 
+  // Generates unique id for each tuple
+  SimpleIdGenerator* idGenerator = idGenerator->getInstance(); 
 public:
-	ReadSocket(std::string ip, int port);
+	ReadSocket(size_t nodeId, std::string ip, int port);
 	virtual ~ReadSocket();
 
 	bool connect();
@@ -50,8 +56,12 @@ public:
 	string readline5();*/
 };
 
-ReadSocket::ReadSocket(std::string ip, int port) :
-  BaseProducer(1)
+template <typename EdgeType, typename Tuplizer>
+ReadSocket<EdgeType, Tuplizer>::ReadSocket(size_t nodeId, 
+                                           std::string ip, 
+                                           int port)
+ :
+BaseProducer<EdgeType>(nodeId, 1)
 {
 	this->ip = ip;
 	this->port = port;
@@ -59,10 +69,13 @@ ReadSocket::ReadSocket(std::string ip, int port) :
 	readCount = 0;
 }
 
-ReadSocket::~ReadSocket() {
+template <typename EdgeType, typename Tuplizer>
+ReadSocket<EdgeType, Tuplizer>::~ReadSocket() {
 }
 
-bool ReadSocket::connect()
+template <typename EdgeType, typename Tuplizer>
+bool 
+ReadSocket<EdgeType, Tuplizer>::connect()
 {
 
 	struct sockaddr_in serv_addr;
@@ -211,7 +224,9 @@ string ReadSocket::readline5()
 
 
 */
-std::string ReadSocket::readline()
+template <typename EdgeType, typename Tuplizer>
+std::string 
+ReadSocket<EdgeType, Tuplizer>::readline()
 {
 	readCount++;
 	int numRead;
@@ -259,7 +274,9 @@ std::string ReadSocket::readline()
 	return "";
 }
 
-std::string ReadSocket::readline2()
+template <typename EdgeType, typename Tuplizer>
+std::string 
+ReadSocket<EdgeType, Tuplizer>::readline2()
 {
 	readCount++;
 
@@ -294,11 +311,9 @@ std::string ReadSocket::readline2()
 
 }
 
-
-
-
-
-void ReadSocket::receive()
+template <typename EdgeType, typename Tuplizer>
+void 
+ReadSocket<EdgeType, Tuplizer>::receive()
 {
   int i = 0;
   while(true) {
@@ -312,12 +327,11 @@ void ReadSocket::receive()
     //if (i % metricInterval == 0) {
     //  std::cout << "ReadSocket received " << i << std::endl;
     //}
-    // This will generate a netflow with i as the sam generate id.
-    // This label is thrown away later after the zeromq phase.
-    //Netflow netflow = makeNetflow(i, s);
-    for (auto consumer : consumers) {
-      //consumer->consume(netflow);
-      consumer->consume(s);
+
+    size_t id = idGenerator->generate();
+    EdgeType edge = tuplizer(id, s);
+    for (auto consumer : this->consumers) {
+      consumer->consume(edge);
     }
   }
 }

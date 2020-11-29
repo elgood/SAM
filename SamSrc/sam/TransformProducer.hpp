@@ -9,85 +9,97 @@
 #include <sam/BaseComputation.hpp>
 #include <sam/BaseProducer.hpp>
 #include <sam/Util.hpp>
+#include <sam/tuples/Edge.hpp>
 
 namespace sam {
 
 
-template <typename InputType, typename OutputType, size_t... keyFields>
-class TransformProducer : public AbstractConsumer<InputType>,
+template <typename InputEdgeType, 
+          typename OutputEdgeType, size_t... keyFields>
+class TransformProducer : public AbstractConsumer<InputEdgeType>,
                           public BaseComputation,
-                          public BaseProducer<OutputType>
+                          public BaseProducer<OutputEdgeType>
 {
+public:
+  typedef typename InputEdgeType::LocalTupleType InputTupleType;
+  //typedef typename InputEdgeType::LocalIdType    IdType;
+  //typedef typename InputEdgeType::LocalLabelType LabelType;
+  //typedef typename InputEdgeType::LocalTupleType TupleType;
+  
 private:
-  std::shared_ptr<const TupleExpression<InputType>> transformExpressions;
+  std::shared_ptr<const TupleExpression<InputTupleType>> transformExpressions;
 
 public:
-  TransformProducer(std::shared_ptr<const TupleExpression<InputType>> 
+  TransformProducer(std::shared_ptr<const TupleExpression<InputTupleType>> 
                       _expression,
                       size_t nodeId,
                       std::shared_ptr<FeatureMap> featureMap,
                       std::string identifier,
                       size_t queueLength);
-                      //size_t historyLength);
+
   virtual ~TransformProducer();
 
-  virtual bool consume(InputType const& input);
+  virtual bool consume(InputEdgeType const& edge);
 
   void terminate();
 
 };
 
-template <typename InputType, typename OutputType, size_t... keyFields>
-void TransformProducer<InputType, OutputType, keyFields...>::terminate()
+template <typename InputEdgeType, 
+          typename OutputEdgeType, size_t... keyFields>
+void TransformProducer<InputEdgeType, 
+                       OutputEdgeType, keyFields...>::terminate()
 {
   for (auto consumer : this->consumers) {
     consumer->terminate();
   }
 }
 
-template <typename InputType, typename OutputType, size_t... keyFields>
-TransformProducer<InputType, OutputType, keyFields...>::TransformProducer(
-  std::shared_ptr<const TupleExpression<InputType>> expression,
+template <typename InputEdgeType, 
+          typename OutputEdgeType, size_t... keyFields>
+TransformProducer<InputEdgeType, OutputEdgeType, keyFields...>::
+TransformProducer(
+  std::shared_ptr<const TupleExpression<InputTupleType>> expression,
   size_t nodeId,
   std::shared_ptr<FeatureMap> featureMap,
   std::string identifier,
   size_t queueLength)
   :
   BaseComputation(nodeId, featureMap, identifier),
-  BaseProducer<OutputType>(queueLength),
+  BaseProducer<OutputEdgeType>(nodeId, queueLength),
   transformExpressions(expression) 
 {
 }
 
-template <typename InputType, typename OutputType, size_t... keyFields>
-TransformProducer<InputType, OutputType, keyFields...>::~TransformProducer()
+template <typename InputEdgeType, 
+          typename OutputEdgeType, size_t... keyFields>
+TransformProducer<InputEdgeType, 
+                  OutputEdgeType, keyFields...>::~TransformProducer()
 {
 }
 
-template <typename InputType, typename OutputType, size_t... keyFields>
-bool TransformProducer<InputType, OutputType, keyFields...>::consume(
-  InputType const& input)
+template <typename InputEdgeType,
+          typename OutputEdgeType, size_t... keyFields>
+bool 
+TransformProducer<InputEdgeType, OutputEdgeType, keyFields...>::
+consume(InputEdgeType const& edge)
 {
-  //std::cout << "TransformProducer " << toString(input) << std::endl;
-  std::string key = generateKey<keyFields...>(input);
-  //std::cout << "key " << key << std::endl;
+  std::string key = generateKey<keyFields...>(edge.tuple);
 
   // Generate a subtuple with just the key fields
-  // 0 is included to get the SamGenerated id
-  std::index_sequence<0, keyFields...> sequence;
-  auto outTuple = subtuple(input, sequence);
-  //std::cout << "outTuple " << toString(outTuple) << std::endl;
+  std::index_sequence<keyFields...> sequence;
+  auto outTuple = subtuple(edge.tuple, sequence);
 
   //TODO: This only works if there is only one transform expression
   double result = 0;
   
-  //auto expression = transformExpressions.get(0);
-  bool b = transformExpressions->get(0)->evaluate(key, input, result);
-  //std::cout << "After transformExpression " << std::endl;
+  bool b = transformExpressions->get(0)->evaluate(key, 
+                                                  edge.tuple, result);
   auto finalTuple = std::tuple_cat(outTuple, std::tie(result));
 
-  //std::cout << "Before parallel feed " << std::endl;
-  this->parallelFeed(finalTuple);
+  OutputEdgeType outputEdgeType(edge.id, edge.label, finalTuple);
+
+  this->parallelFeed(outputEdgeType);
 
   return true;
 }

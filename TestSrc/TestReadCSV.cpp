@@ -2,17 +2,22 @@
 #include <boost/test/unit_test.hpp>
 #include <string>
 #include <fstream>
-#include <sam/VastNetflowGenerators.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
+#include <sam/tuples/VastNetflow.hpp>
+#include <sam/tuples/Tuplizer.hpp>
+#include <sam/tuples/Edge.hpp>
 #include <sam/ReadCSV.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
+
+typedef Edge<size_t, SingleBoolLabel, VastNetflow> EdgeType;
 
 /**
  * Consumer that tests what it receives from consume is as expected
  * as provided by the array of strings passed to the constructor.
  */
-class TestConsumer : public AbstractConsumer<VastNetflow>
+class TestConsumer : public AbstractConsumer<EdgeType>
 {
 private:
   std::string const * const array;
@@ -21,8 +26,8 @@ public:
   TestConsumer(std::string const * const _array) : array(_array)
   {}
   
-  bool consume(VastNetflow const& netflow) {
-    BOOST_CHECK_EQUAL( tupleToString(netflow), array[seen]);
+  bool consume(EdgeType const& edge) {
+    BOOST_CHECK_EQUAL( edge.toString(), array[seen]);
     seen += 1;  
     return true;  
   }
@@ -53,7 +58,10 @@ BOOST_AUTO_TEST_CASE( test_readcsv )
   }
   myfile.close();
 
-  ReadCSV<VastNetflow, VastNetflowTuplizer> receiver(testfilename);
+  typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer; 
+                           
+  size_t nodeId = 0;                         
+  ReadCSV<EdgeType, Tuplizer> receiver(nodeId, testfilename);
 
   auto consumer = std::make_shared<TestConsumer>(stringArray);
   receiver.registerConsumer(consumer);

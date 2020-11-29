@@ -6,17 +6,24 @@
 //#define DEBUG
 
 #include <sam/Util.hpp>
-#include <sam/VastNetflowGenerators.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
+#include <sam/tuples/VastNetflow.hpp>
+#include <sam/tuples/Edge.hpp>
+#include <sam/tuples/Tuplizer.hpp>
 #include <boost/test/unit_test.hpp>
 #include <map>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 using namespace std::chrono;
 using namespace sam::numTrianglesDetails;
 
-typedef PartialTriangle<VastNetflow, SourceIp, DestIp, TimeSeconds, 
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef PartialTriangle<TupleType, SourceIp, DestIp, TimeSeconds, 
           DurationSeconds> PartialTriangleType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
 
 
 BOOST_AUTO_TEST_CASE( test_partial_triangle )
@@ -25,11 +32,10 @@ BOOST_AUTO_TEST_CASE( test_partial_triangle )
   std::map<std::string, PartialTriangleType> partialMap;
   PartialTriangleType partial;
   
-
   std::string s1 = "0.47,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node167,node167,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  VastNetflow n1 = makeNetflow(0, s1);
+  VastNetflow n1 = makeVastNetflow( s1);
 
   partial.numEdges = 1;
   partial.netflow1 = n1;
@@ -63,15 +69,15 @@ BOOST_AUTO_TEST_CASE( test_self_edge )
   std::string s9 = "0.58000000000000029,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node167,node167,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  VastNetflow n1 = makeNetflow(0, s1);
-  VastNetflow n2 = makeNetflow(1, s2);
-  VastNetflow n3 = makeNetflow(2, s3);
-  VastNetflow n4 = makeNetflow(3, s4);
-  VastNetflow n5 = makeNetflow(4, s5);
-  VastNetflow n6 = makeNetflow(5, s6);
-  VastNetflow n7 = makeNetflow(6, s7);
-  VastNetflow n8 = makeNetflow(7, s8);
-  VastNetflow n9 = makeNetflow(8, s9);
+  VastNetflow n1 = makeVastNetflow( s1);
+  VastNetflow n2 = makeVastNetflow( s2);
+  VastNetflow n3 = makeVastNetflow( s3);
+  VastNetflow n4 = makeVastNetflow( s4);
+  VastNetflow n5 = makeVastNetflow( s5);
+  VastNetflow n6 = makeVastNetflow( s6);
+  VastNetflow n7 = makeVastNetflow( s7);
+  VastNetflow n8 = makeVastNetflow( s8);
+  VastNetflow n9 = makeVastNetflow( s9);
   std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n2);
@@ -104,9 +110,9 @@ BOOST_AUTO_TEST_CASE( test_edge_same_time )
   std::string s3 = "0.52000000000000024,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node167,node167,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  VastNetflow n1 = makeNetflow(0, s1);
-  VastNetflow n2 = makeNetflow(1, s2);
-  VastNetflow n3 = makeNetflow(2, s3);
+  VastNetflow n1 = makeVastNetflow( s1);
+  VastNetflow n2 = makeVastNetflow( s2);
+  VastNetflow n3 = makeVastNetflow( s3);
   std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n2);
@@ -129,8 +135,8 @@ BOOST_AUTO_TEST_CASE( test_counting )
   std::string s2 = "0.1,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node2,node3,51482,40020,1,1,1,1,1,1,1,1,1,1";
 
-  VastNetflow n1 = makeNetflow(0, s1);
-  VastNetflow n2 = makeNetflow(1, s2);
+  VastNetflow n1 = makeVastNetflow( s1);
+  VastNetflow n2 = makeVastNetflow( s2);
   std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n2);
@@ -153,7 +159,7 @@ BOOST_AUTO_TEST_CASE( test_counting )
       DEBUG_PRINT("Invalid tuple %s\n", s.c_str());
     }
     time += increment; 
-    VastNetflow n = makeNetflow(id, s);
+    VastNetflow n = makeVastNetflow( s);
     id++;
     netflowList.push_back(n);
   }
@@ -177,8 +183,8 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
 
   double queryTime = 10;
   size_t n = 701;
-  VastNetflow n1 = makeNetflow(0, s1);
-  VastNetflow n3 = makeNetflow(n, s3);
+  VastNetflow n1 = makeVastNetflow( s1);
+  VastNetflow n3 = makeVastNetflow( s3);
   double timeThirdEdge = std::get<TimeSeconds>(n3);
   std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
@@ -197,7 +203,7 @@ BOOST_AUTO_TEST_CASE( test_counting_again )
       ",parseDate,dateTimeStr,ipLayerProtocol,"
       "ipLayerProtocolCode,node2,node3,51482,40020,1,1,1,1,1,1,1,1,1,1";
     time += increment; 
-    VastNetflow n = makeNetflow(id, s);
+    VastNetflow n = makeVastNetflow(s);
     id++;
     netflowList.push_back(n);
   }
@@ -220,9 +226,9 @@ BOOST_AUTO_TEST_CASE( test_specific_example )
   std::string s3 = "19.680000000000277,parseDate,dateTimeStr,ipLayerProtocol,"
     "ipLayerProtocolCode,node639,node153,30162,31196,1,1,1,1,1,1,1,1,1,1";
 
-  VastNetflow n1 = makeNetflow(0, s1);
-  VastNetflow n2 = makeNetflow(1, s2);
-  VastNetflow n3 = makeNetflow(2, s3);
+  VastNetflow n1 = makeVastNetflow( s1);
+  VastNetflow n2 = makeVastNetflow( s2);
+  VastNetflow n3 = makeVastNetflow( s3);
   std::vector<VastNetflow> netflowList;
   netflowList.push_back(n1);
   netflowList.push_back(n2);

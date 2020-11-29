@@ -2,11 +2,12 @@
 #define SAM_EDGE_REQUEST
 
 #include "proto/NetflowEdgeRequest.pb.h"
-#include <sam/VastNetflow.hpp>
 #include <sam/Null.hpp>
 #include <sam/Util.hpp>
 #include <sam/ZeroMQUtil.hpp>
 #include <stdexcept>
+#include <sam/tuples/VastNetflow.hpp>
+#include <sam/tuples/NetflowV5.hpp>
 
 namespace sam {
 
@@ -18,46 +19,14 @@ public:
     std::runtime_error(message) {}
 };
 
-/**
- * This class doesn't really function.  The real EdgeRequests are 
- * defined in specializations.
- */
-template <typename TupleType, size_t source, size_t target>
-class EdgeRequest
-{
-public:
-  typedef typename std::tuple_element<source, TupleType>::type SourceType;
-  typedef typename std::tuple_element<target, TupleType>::type TargetType;
-
-  void setTarget(TargetType trg) {}
-
-  void setSource(SourceType src) {}
-
-  double setStartTime(double startTime) { }
-
-  TargetType getTarget() const { return nullValue<TargetType>(); }
-
-  SourceType getSource() const { return nullValue<SourceType>(); }
-
-  double getStartTime() const { return nullValue<double>(); }
-
-  zmq::message_t toZmqMessage() const { return emptyZmqMessage(); }
-
-  bool isExpired(double currentTime) const { return true; }
-};
-
 
 /**
  * EdgeRequest class for Netflows using SourceIp and DestIp as the
  * source and target, repsectively.  It uses the generated google protobuf. 
  */
-template <>
-class EdgeRequest<VastNetflow, SourceIp, DestIp>
+template <typename TupleType, size_t source, size_t target>
+class EdgeRequest
 {
-public:
-  typedef typename std::tuple_element<SourceIp, VastNetflow>::type SourceType;
-  typedef typename std::tuple_element<DestIp, VastNetflow>::type TargetType;
-  
 private:
   NetflowEdgeRequest request;
 
@@ -66,8 +35,8 @@ public:
    * Default constructor.  All fields are set to the null value for each type.
    */
   EdgeRequest() {
-    request.set_sourceip(nullValue<SourceType>());
-    request.set_destip(nullValue<TargetType>());
+    request.set_sourceip(nullValue<std::string>());
+    request.set_destip(nullValue<std::string>());
     request.set_starttimefirst(nullValue<double>());
     request.set_starttimesecond(nullValue<double>());
     request.set_endtimefirst(nullValue<double>());
@@ -80,8 +49,8 @@ public:
   }
 
   /////////// Set methods //////////////////
-  void setTarget(TargetType target) { request.set_destip(target); }
-  void setSource(SourceType source) { request.set_sourceip(source); }
+  void setTarget(std::string t) { request.set_destip(t); }
+  void setSource(std::string s) { request.set_sourceip(s); }
   void setStartTimeFirst(double startTime) { 
     request.set_starttimefirst(startTime); 
   }
@@ -98,8 +67,8 @@ public:
   void setReturn(int id) { request.set_returnnode(id); }
     
   // Get Methods
-  TargetType getTarget() const { return request.destip(); }
-  TargetType getSource() const { return request.sourceip(); }
+  std::string getTarget() const { return request.destip(); }
+  std::string getSource() const { return request.sourceip(); }
   double getStartTimeFirst() const { return request.starttimefirst(); }
   double getStartTimeSecond() const { return request.starttimesecond(); }
   double getEndTimeFirst() const { return request.endtimefirst(); }
@@ -140,7 +109,7 @@ public:
 
   std::string toString() const
   {
-    std::string rString = "Source: " + getSource() + 
+    std::string rstring = "Source: " + getSource() + 
       " Target: " + getTarget() + 
       " Return: " + boost::lexical_cast<std::string>(getReturn()) +
       " Start range: " + 
@@ -148,7 +117,7 @@ public:
       + boost::lexical_cast<std::string>(getStartTimeSecond()) +
       " End range: " + boost::lexical_cast<std::string>(getEndTimeFirst()) + 
       "," + boost::lexical_cast<std::string>(getEndTimeSecond());
-    return rString;
+    return rstring;
   }
 
   bool isExpired(double currentTime) const { 
@@ -159,6 +128,7 @@ public:
   }
 
 };
+
 
 }
 

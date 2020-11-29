@@ -10,10 +10,9 @@
 namespace sam {
 
 
-template  <typename TupleType,
-          size_t... keyFields>
+template  <typename EdgeType, size_t... keyFields>
 class CollapsedConsumer : public BaseComputation, 
-                          public AbstractConsumer<TupleType>,
+                          public AbstractConsumer<EdgeType>,
                           public FeatureProducer
 {
 private:
@@ -47,9 +46,9 @@ public:
     
   }
  
-  bool consume(TupleType const& tuple)
+  bool consume(EdgeType const& edge)
   {
-    std::string key = generateKey<keyFields...>(tuple);
+    std::string key = generateKey<keyFields...>(edge.tuple);
 
     if (featureMap->exists(key, targetId))
     {
@@ -60,8 +59,7 @@ public:
       SingleFeature feature(result);
       this->featureMap->updateInsert(key, this->identifier, feature);
 
-      std::size_t id = std::get<0>(tuple);
-      notifySubscribers(id, result);
+      notifySubscribers(edge.id, result);
   
       return true;   
     }

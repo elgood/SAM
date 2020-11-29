@@ -6,9 +6,15 @@
 #include <sam/TopK.hpp>
 #include <sam/Filter.hpp>
 #include <sam/Expression.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
+#include <sam/tuples/Edge.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
+
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
 
 struct F
 {
@@ -30,11 +36,12 @@ BOOST_FIXTURE_TEST_CASE( test_topk_no_key, F )
   size_t numPopular = 2;
   size_t numExamples = 100000;
   double probabilityPop = 0.5;
+  size_t nodeId = 0;
 
-  PopularSites producer(queueLength, numExamples, numPopular,
+  PopularSites producer(nodeId, queueLength, numExamples, numPopular,
                         probabilityPop);
 
-  auto topk = std::make_shared<TopK<VastNetflow, DestIp>>
+  auto topk = std::make_shared<TopK<EdgeType, DestIp>>
     (N, b, k, 0, featureMap, identifier);
 
   producer.registerConsumer(topk);
@@ -64,15 +71,18 @@ BOOST_FIXTURE_TEST_CASE( test_topk_server, F )
   int numExamples = 100000;
   int numServers = 2;
   int numNonservers = 2;
+  size_t nodeId = 0;
 
   // The TopKProducer creates a situation where there are numServers servers
   // and numNonservers non-servers.  A server is defined as > 90% of traffic
   // to the top two ports.
-  TopKProducer producer(queueLength, numExamples, numServers, numNonservers);
+  TopKProducer producer(nodeId, queueLength, numExamples, numServers, 
+                        numNonservers);
  
   // Creating the topk computation and registering it as a consumer
   // of the data source: producer.
-  auto topk = std::make_shared<TopK<VastNetflow, DestPort, DestIp>>
+  auto topk = std::make_shared<TopK<EdgeType, 
+    DestPort, DestIp>>
     (N, b, k, 0, featureMap, identifier);
   producer.registerConsumer(topk);
 
@@ -117,7 +127,7 @@ BOOST_FIXTURE_TEST_CASE( test_topk_server, F )
   infixList.push_back(numberToken);
 
   auto filterExpression = std::make_shared<Expression<VastNetflow>>(infixList);
-  auto filter = std::make_shared<Filter<VastNetflow, DestIp>>(
+  auto filter = std::make_shared<Filter<EdgeType, DestIp>>(
     filterExpression, 0, featureMap, "servers", queueLength);
 
   producer.registerConsumer(filter);

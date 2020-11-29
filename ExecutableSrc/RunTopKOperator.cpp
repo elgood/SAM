@@ -15,10 +15,7 @@
 
 #include <boost/program_options.hpp>
 
-#include <sam/ReadSocket.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/TopK.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/sam.hpp>
 
 using std::string;
 using std::vector;
@@ -28,12 +25,19 @@ using std::endl;
 namespace po = boost::program_options;
 
 using namespace sam;
+using namespace sam::vast_netflow;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
+typedef ReadSocket<EdgeType, Tuplizer> ReadSocketType; 
+ 
 
 int main(int argc, char** argv) {
 
@@ -124,7 +128,7 @@ int main(int argc, char** argv) {
 #endif
 
 
-	ReadSocket receiver(ip, ncPort);
+	ReadSocketType receiver(nodeId, ip, ncPort);
 #ifdef DEBUG
   cout << "DEBUG: main created receiver " << endl;
 #endif
@@ -165,7 +169,7 @@ int main(int argc, char** argv) {
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     string identifier = "topk" + boost::lexical_cast<string>(i);
-    auto topk = std::make_shared<TopK<VastNetflow, DestPort, DestIp>>(
+    auto topk = std::make_shared<TopK<EdgeType, DestPort, DestIp>>(
                                      N, b, k, nodeId, featureMap, identifier);
                                           
     consumer->registerConsumer(topk); 

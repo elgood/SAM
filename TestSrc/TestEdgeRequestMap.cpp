@@ -5,10 +5,11 @@
 
 #include <boost/test/unit_test.hpp>
 #include <sam/EdgeRequestMap.hpp>
-#include <sam/VastNetflowGenerators.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
 #include <thread>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
 zmq::context_t context(1);
 
@@ -86,7 +87,7 @@ BOOST_AUTO_TEST_CASE( test_edge_request_map )
     size_t i = 0;
     while (i < n) {
       std::string str = generator->generate();
-      VastNetflow netflow = makeNetflow(i, str);
+      VastNetflow netflow = makeVastNetflow(str);
       DEBUG_PRINT("Node %lu processing netflow %s\n", id, 
         toString(netflow).c_str());
         

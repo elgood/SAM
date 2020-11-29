@@ -19,15 +19,17 @@ public:
 
 };
 
-template <typename TupleType, 
+template <typename EdgeType,
           size_t valueField,
           size_t... keyFields>
-class TopK: public AbstractConsumer<TupleType>, 
+class TopK: public AbstractConsumer<EdgeType>, 
             public BaseComputation,
             public FeatureProducer
 {
-private:
+public: 
+  typedef typename EdgeType::LocalTupleType TupleType;
   typedef typename std::tuple_element<valueField, TupleType>::type ValueType;
+private:
 
   size_t N; ///>Total number of elements
   size_t b; ///>Number of elements per window
@@ -51,14 +53,15 @@ public:
        string identifier);
      
 
-  bool consume(TupleType const& tuple);
+  bool consume(EdgeType const& edge);
 
   void terminate() {}
      
 };
 
-template <typename TupleType, size_t valueField, size_t... keyFields>
-TopK<TupleType, valueField, keyFields...>::TopK(
+template <typename EdgeType,
+          size_t valueField, size_t... keyFields>
+TopK<EdgeType, valueField, keyFields...>::TopK(
       size_t N, 
       size_t b, 
       size_t k,
@@ -72,12 +75,13 @@ TopK<TupleType, valueField, keyFields...>::TopK(
   this->k = k;
 }
 
-template <typename TupleType, size_t valueField, size_t... keyFields>
-bool TopK<TupleType, valueField, keyFields...>::consume(
-  TupleType const& tuple) 
+template <typename EdgeType,
+          size_t valueField, size_t... keyFields>
+bool TopK<EdgeType, valueField, keyFields...>::consume(
+  EdgeType const& edge) 
 {
   DEBUG_PRINT("Node %lu TopK::consume %s\n", nodeId, 
-              sam::toString(tuple).c_str());
+              sam::toString(edge.tuple).c_str());
   this->feedCount++;
   if (this->feedCount % this->metricInterval == 0) {
     std::cout << "NodeId " << this->nodeId << " allWindows.size() " 
@@ -85,8 +89,7 @@ bool TopK<TupleType, valueField, keyFields...>::consume(
   }
 
   // Creating a hopefully unique key from the key fields
-  std::string key = generateKey<keyFields...>(tuple);
-  //std::cout << "Key from generateKey " << key << std::endl;
+  std::string key = generateKey<keyFields...>(edge.tuple);
  
   // Create a new sliding window if we haven't seen this key before 
   if (allWindows.count(key) == 0) {
@@ -97,7 +100,7 @@ bool TopK<TupleType, valueField, keyFields...>::consume(
     allWindows[key] = sw;    
   }
   
-  ValueType value = std::get<valueField>(tuple);
+  ValueType value = std::get<valueField>(edge.tuple);
   
   auto sw = allWindows[key];
   sw->add(value);
@@ -111,9 +114,8 @@ bool TopK<TupleType, valueField, keyFields...>::consume(
       nodeId, keys.size());
     this->featureMap->updateInsert(key, this->identifier, feature);
 
-    std::size_t id = std::get<0>(tuple);
     // notifySubscribers only takes doubles right now
-    notifySubscribers(id, frequencies[0]);
+    notifySubscribers(edge.id, frequencies[0]);
 
   }
 

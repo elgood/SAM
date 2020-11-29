@@ -6,9 +6,10 @@
 #include <string>
 #include <random>
 #include <sam/ZeroMQUtil.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
 BOOST_AUTO_TEST_CASE( test_empty_zmq_message)
 {

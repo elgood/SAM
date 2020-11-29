@@ -15,12 +15,13 @@
 #include <sam/Features.hpp>
 #include <sam/Util.hpp>
 #include <sam/FeatureProducer.hpp>
+#include <sam/tuples/Edge.hpp>
 
 namespace sam {
 
-template <typename T, typename InputType,  
+template <typename T, typename EdgeType, 
           size_t valueField, size_t... keyFields>
-class ExponentialHistogramSum: public AbstractConsumer<InputType>, 
+class ExponentialHistogramSum: public AbstractConsumer<EdgeType>, 
                                public BaseComputation,
                                public FeatureProducer
 {
@@ -64,7 +65,8 @@ public:
    * Main method of an operator.  Processes the tuple.
    * \param input The tuple to process.
    */
-  bool consume(InputType const& input) {
+  bool consume(EdgeType const& edge) 
+  {
     this->feedCount++;
 
     if (this->feedCount % this->metricInterval == 0) {
@@ -74,7 +76,7 @@ public:
     }
 
     // Generates unique key from key fields
-    std::string key = generateKey<keyFields...>(input);
+    std::string key = generateKey<keyFields...>(edge.tuple);
 
     // Create an exponential histogram if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {
@@ -84,7 +86,7 @@ public:
     }
 
     // Update the data structure
-    T value = std::get<valueField>(input);
+    T value = std::get<valueField>(edge.tuple);
     allWindows[key]->add(value);
 
     // Getting the current sum and providing that to the feature map.
@@ -97,9 +99,7 @@ public:
     // identify the feature.
     this->featureMap->updateInsert(key, this->identifier, feature);
 
-    // This assumes the identifier of the tuple is the first element
-    std::size_t id = std::get<0>(input);
-    this->notifySubscribers(id, currentSum);
+    this->notifySubscribers(edge.id, currentSum);
 
     return true;
   }
@@ -110,9 +110,9 @@ public:
 
 //TODO Should make the function a template parameter so we don't have to copy
 // the code.
-template <typename T, typename InputType,
+template <typename T, typename EdgeType,
           size_t valueField, size_t... keyFields>
-class ExponentialHistogramAve: public AbstractConsumer<InputType>, 
+class ExponentialHistogramAve: public AbstractConsumer<EdgeType>, 
                                public BaseComputation,
                                public FeatureProducer
 {
@@ -142,7 +142,8 @@ public:
     this->k = k;
   }
 
-  bool consume(InputType const& input) {
+  bool consume(EdgeType const& edge) 
+  {
     this->feedCount++;
     if (this->feedCount % this->metricInterval == 0) {
       std::string message = "ExponentialHistogramAve id " + this->identifier +
@@ -154,7 +155,7 @@ public:
     }
 
     // Generates unique key from key fields
-    std::string key = generateKey<keyFields...>(input);
+    std::string key = generateKey<keyFields...>(edge.tuple);
 
     // Create an exponential histogram if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {
@@ -163,19 +164,19 @@ public:
       allWindows[key] = eh;
     }
 
-    T value = std::get<valueField>(input);
+    T value = std::get<valueField>(edge.tuple);
 
     allWindows[key]->add(value);
 
-    // Getting the current sum and providing that to the featuremap data structure.
+    // Getting the current sum and providing that to the featuremap data
+    // structure.
     T currentSum = allWindows[key]->getTotal();
     SingleFeature feature(currentSum/ allWindows[key]->getNumItems());
     this->featureMap->updateInsert(key, this->identifier, feature);
   
-    std::size_t id = std::get<0>(input);
-
     // Notify any subscribers of the new value, which is a frequency.
-    this->notifySubscribers(id, currentSum / allWindows[key]->getNumItems());
+    this->notifySubscribers(edge.id, 
+                            currentSum / allWindows[key]->getNumItems());
 
     return true;
   }

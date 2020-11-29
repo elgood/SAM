@@ -6,7 +6,9 @@
 #include <sam/EdgeDescription.hpp>
 #include <sam/SubgraphQuery.hpp>
 #include <sam/ZeroMQPushPull.hpp>
-#include <sam/VastNetflowGenerators.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
+#include <sam/tuples/Tuplizer.hpp>
+#include <sam/tuples/Edge.hpp>
 #include <boost/program_options.hpp>
 #include <string>
 #include <vector>
@@ -14,12 +16,19 @@
 #include <fstream>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 namespace po = boost::program_options;
 using std::string;
 using std::vector;
 using namespace std::chrono;
 
-typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+
+typedef GraphStore<EdgeType, Tuplizer, 
+                   SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -29,9 +38,9 @@ typedef GraphStoreType::QueryType SubgraphQueryType;
 
 typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
 
 typedef GraphStoreType::ResultType ResultType;  

@@ -8,9 +8,9 @@ class ForEachSpec extends FlatSpec with Parsing {
   //filtered = FILTER unfiltered BY 
   "A ForEach Statement" should "successfully match the statement" in {
     val tupleType = "VastNetflow"
-    memory += "VerticesBySrc" + Constants.NumKeysStr -> 1.toString
+    memory += "VerticesBySrc" + Constants.NumKeys -> 1.toString
     memory += "VerticesBySrc" + Constants.KeyStr + 0 -> "DestIp"
-    memory += "VerticesBySrc" + Constants.TupleTypeStr -> tupleType
+    memory += "VerticesBySrc" + Constants.TupleType -> tupleType
     parseAll(forEachStatement,
       "feature1 = FOREACH VerticesBySrc GENERATE ave(SrcTotalBytes,10000,2);")
       match

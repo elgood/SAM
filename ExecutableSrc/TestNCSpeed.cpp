@@ -12,12 +12,19 @@
 #include <chrono>
 #include <stdlib.h>
 
-#include <sam/ReadSocket.hpp>
+#include <sam/sam.hpp>
 
 
 namespace po = boost::program_options;
 using std::string;
 using namespace std::chrono;
+using namespace sam;
+using namespace sam::vast_netflow;
+
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer; 
 
 int main(int argc, char* argv[])
 {
@@ -42,7 +49,8 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	sam::ReadSocket socket(ip, port);
+  size_t nodeId = 0;
+	ReadSocket<EdgeType, Tuplizer>  socket(nodeId, ip, port);
 	if (!socket.connect()) {
 		std::cout << "Couldn't connect to " << ip << ":" << port << std::endl;
 		return 1;

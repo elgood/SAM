@@ -7,7 +7,8 @@
 #include <string>
 #include <vector>
 #include <sam/ZeroMQPushPull.hpp>
-#include <sam/VastNetflowGenerators.hpp>
+#include <sam/tuples/VastNetflowGenerators.hpp>
+#include <sam/tuples/Tuplizer.hpp>
 #include <sam/GraphStore.hpp>
 #include <sam/EdgeDescription.hpp>
 #include <sam/SubgraphQuery.hpp>
@@ -18,9 +19,14 @@
 #include <thread>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 using namespace std::chrono;
 
-typedef GraphStore<VastNetflow, VastNetflowTuplizer, SourceIp, DestIp,
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef GraphStore<EdgeType, Tuplizer, SourceIp, DestIp,
                    TimeSeconds, DurationSeconds,
                    StringHashFunction, StringHashFunction,
                    StringEqualityFunction, StringEqualityFunction>
@@ -31,21 +37,15 @@ typedef GraphStoreType::ResultType ResultType;
 
 typedef GraphStoreType::EdgeDescriptionType EdgeDescriptionType;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
 
-
-//zmq::context_t context(1);
 
 BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 {
   printf("Starting test_triangles_random_pool_of_vertices\n");
-
-  // Give time for last zmq threads to terminate from previous test
-  std::this_thread::sleep_for(
-    std::chrono::milliseconds(20000));
 
   /// This differs from the previous test in that when we generate netflows,
   /// we randomly select the source and destination from a small set of 
@@ -55,8 +55,10 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
 
   // Setting up random generators
   size_t numVertices = 500;
-  AbstractVastNetflowGenerator *generator0 = new RandomPoolGenerator(numVertices);
-  AbstractVastNetflowGenerator *generator1 = new RandomPoolGenerator(numVertices);
+  AbstractVastNetflowGenerator *generator0 = 
+    new RandomPoolGenerator(numVertices);
+  AbstractVastNetflowGenerator *generator1 = 
+    new RandomPoolGenerator(numVertices);
     
 
   // Setting up ZeroMQPushPull objects
@@ -64,33 +66,31 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   size_t numNodes = 2;
   size_t nodeId0 = 0;
   size_t nodeId1 = 1;
-  std::vector<std::string> hostnames;
-  //std::vector<size_t> ports;
   size_t hwm = 1000;
-  size_t startingPort = 10000;
-
-  hostnames.push_back("localhost");
-  //ports.push_back(10000);
-  hostnames.push_back("localhost");
-  //ports.push_back(10001);
   
   size_t numTuples = 10000;
-  size_t timeout = 1000;
 
   // Sometimes it doesn't catch the triangles at the end because things 
   // terminate too quickly.  This adds a little buffer at the end where
   // no triangles occur.
   //size_t numExtra = 100;
 
+  size_t startingPort = 10000;
+  size_t timeout = 1000;
+  
+  std::vector<std::string> hostnames;
+  hostnames.push_back("localhost");
+  hostnames.push_back("localhost");
+
   PartitionType* pushPull0 = new PartitionType(queueLength,
                                     numNodes, nodeId0,
-                                    hostnames, //ports,
+                                    hostnames, 
                                     startingPort, timeout, true,
                                     hwm);
 
   PartitionType* pushPull1 = new PartitionType(queueLength,
                                     numNodes, nodeId1,
-                                    hostnames, //ports,
+                                    hostnames, 
                                     startingPort, timeout, true,
                                     hwm);
 
@@ -114,8 +114,6 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                           numPushSockets, numPullThreads, timeout, 
                           timeWindow, featureMap, MAX_NUM_FUTURES, true);
                           
-
-  //startingPort += numPushSockets * (2 - 1) * 2;
   auto graphStore1 = std::make_shared<GraphStoreType>(
                           numNodes, nodeId1,
                           hostnames, startingPort,  
@@ -191,9 +189,6 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   std::vector<VastNetflow> netflowList;
   std::mutex lock;
 
-  //pushPull0->acceptData();
-  //pushPull1->acceptData();
-
   // The lambda function
   auto generateFunction = [numTuples, &time, increment,
                            &netflowList, &lock]
@@ -203,10 +198,11 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
                              std::shared_ptr<GraphStoreType> graphStore,
                              size_t nodeId)
   {
-
+    Tuplizer tuplizer;
     auto starttime = std::chrono::high_resolution_clock::now();
     AbstractVastNetflowGenerator *otherGenerator = 
       new RandomGenerator();
+
     for(size_t i = 0; i < numTuples; i++) {
       DEBUG_PRINT("NodeId %lu i %lu\n", nodeId, i);
 
@@ -220,11 +216,11 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
       }
 
       std::string str = generator->generate(time);
+      EdgeType edge = tuplizer(i, str);
       time += increment;
-      pushPull->consume(str);
-      VastNetflow netflow = makeNetflow(i, str);
+      pushPull->consume(edge);
       lock.lock();
-      netflowList.push_back(netflow);
+      netflowList.push_back(edge.tuple);
       lock.unlock();
     }
 
@@ -244,7 +240,7 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
      
       std::string str = otherGenerator->generate(time);
       time += increment;
-      pushPull->consume(str);
+      pushPull->consume(tuplizer(i, str));
     }
 
     pushPull->terminate();
@@ -300,9 +296,9 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   for(size_t i = 0; i < numGetResults0; i++) {
     ResultType result = graphStore0->getResult(i);
     BOOST_CHECK(result.complete());
-    VastNetflow n0 = result.getResultTuple(0); 
-    VastNetflow n1 = result.getResultTuple(1); 
-    VastNetflow n2 = result.getResultTuple(2); 
+    VastNetflow n0 = result.getResultTuple(0).tuple; 
+    VastNetflow n1 = result.getResultTuple(1).tuple; 
+    VastNetflow n2 = result.getResultTuple(2).tuple; 
     double starttime0 = std::get<TimeSeconds>(n0);
     double starttime1 = std::get<TimeSeconds>(n1);
     double starttime2 = std::get<TimeSeconds>(n2);
@@ -314,9 +310,9 @@ BOOST_AUTO_TEST_CASE( test_triangles_random_pool_of_vertices )
   for(size_t i = 0; i < numGetResults1; i++) {
     ResultType result = graphStore1->getResult(i);
     BOOST_CHECK(result.complete());
-    VastNetflow n0 = result.getResultTuple(0); 
-    VastNetflow n1 = result.getResultTuple(1); 
-    VastNetflow n2 = result.getResultTuple(2); 
+    VastNetflow n0 = result.getResultTuple(0).tuple; 
+    VastNetflow n1 = result.getResultTuple(1).tuple; 
+    VastNetflow n2 = result.getResultTuple(2).tuple; 
     double starttime0 = std::get<TimeSeconds>(n0);
     double starttime1 = std::get<TimeSeconds>(n1);
     double starttime2 = std::get<TimeSeconds>(n2);

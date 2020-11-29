@@ -35,7 +35,7 @@ case class TopKExp(field: String, N: Int, b: Int, k: Int,
     
     val tupleType = getTupleType  
       
-    val typeString = "TopK<" + tupleType + ", " + field + ", " +
+    val typeString = "TopK<EdgeType, " + field + ", " +
                   keyFieldTemplateParameters + ">"
 
     val lstream = memory(Constants.CurrentLStream)

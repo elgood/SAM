@@ -74,9 +74,10 @@ public:
 
   /**
    * Once all the features have been added using the addFeature
-   * method, this function shoudl be called.
+   * method, this function should be called.
    */
-  void init() {
+  void init() 
+  {
     if (numFeatures <= 0) {
       throw std::logic_error("init was called but no features have been "
         "added");
@@ -85,7 +86,8 @@ public:
     values = new double[capacity * numFeatures]();
   }
 
-  ~FeatureSubscriber() {
+  ~FeatureSubscriber() 
+  {
     if (values) {
       delete[] values;  
     }
@@ -102,7 +104,7 @@ public:
   void addFeature(std::string name) {
     if (initCalled) {
       throw std::logic_error("addFeature was called after init was called."
-        "  This is not allowed.");
+        " This is not allowed.");
     }
     names.push_back(name);
     featureIndices[names[names.size() - 1]] = names.size() - 1;
@@ -141,9 +143,6 @@ bool FeatureSubscriber::update(std::size_t key,
                                double value)
 {
   //std::lock_guard<std::mutex> lock(mu);
-  //printf("FeatureSubscriber::update key %lu featureName %s\n",
-  //        key, featureName.c_str());
-  //std::cout << "update " << key << std::endl;
   if (initCalled) {
     int index = key % capacity;
     int featureIndex = featureIndices[featureName];

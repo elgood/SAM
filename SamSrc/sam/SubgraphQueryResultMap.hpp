@@ -22,23 +22,25 @@ public:
  * 2) add(result, edgeRequests) which adds a new intermediate result
  *    to the hash map.
  */
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 class SubgraphQueryResultMap
 {
 public:
+  typedef typename EdgeType::LocalTupleType TupleType;
+  typedef typename EdgeType::LocalLabelType LabelType;
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
-  typedef SubgraphQueryResult<TupleType, source, target, time,
+  typedef SubgraphQueryResult<EdgeType, source, target, time,
                                        duration> QueryResultType;
   typedef EdgeRequest<TupleType, source, target> EdgeRequestType;  
-  typedef CompressedSparse<TupleType, source, target, time, duration,
+  typedef CompressedSparse<EdgeType, source, target, time, duration,
             SourceHF, SourceEF> CsrType;
-  typedef CompressedSparse<TupleType, target, source, time, duration,
+  typedef CompressedSparse<EdgeType, target, source, time, duration,
             TargetHF, TargetEF> CscType;
-  typedef AbstractSubgraphPrinter<TupleType, source, target,
+  typedef AbstractSubgraphPrinter<EdgeType, source, target,
             time, duration> PrinterType;
 
 private:
@@ -123,12 +125,12 @@ public:
    * It is possible that there exists in the graph edges that further the 
    * query.  We look for them in this method.
    *
-   * \param tuple The edge to process.
+   * \param edge The edge to process.
    * \param edgeRequests Any edge requests that result are added here.
    * \return Returns a number representing the amount of work that this call
    *  required.
    */
-  size_t process(TupleType const& tuple, 
+  size_t process(EdgeType const& edge, 
                std::list<EdgeRequestType>& edgeRequests);
 
   /**
@@ -243,7 +245,8 @@ private:
   size_t add_nocheck(QueryResultType const& result, 
            std::list<EdgeRequestType>& edgeRequests);
 
-  size_t process(TupleType const& tuple,
+  size_t process(
+        EdgeType const& edge,
         std::list<EdgeRequestType>& edgeRequests,
         std::function<size_t(TupleType const&)> indexFunction, 
         std::function<bool(QueryResultType const&)> checkFunction );
@@ -252,11 +255,11 @@ private:
 };
 
 /// Constructor
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
-SubgraphQueryResultMap<TupleType, source, target, time, duration,
+SubgraphQueryResultMap<EdgeType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
  SubgraphQueryResultMap( size_t numNodes,
                          size_t nodeId,
@@ -323,11 +326,11 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
 }
 
 /// Destructor
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
-SubgraphQueryResultMap<TupleType, source, target, time, duration,
+SubgraphQueryResultMap<EdgeType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 ~SubgraphQueryResultMap()
 {
@@ -335,12 +338,12 @@ SubgraphQueryResultMap<TupleType, source, target, time, duration,
   delete[] alr;
 }
 
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 void
-SubgraphQueryResultMap<TupleType, source, target, time, duration,
+SubgraphQueryResultMap<EdgeType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 add(QueryResultType const& result, 
     std::list<EdgeRequestType>& edgeRequests)
@@ -415,12 +418,12 @@ add(QueryResultType const& result,
 }
 
 
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 size_t
-SubgraphQueryResultMap<TupleType, source, target, time, duration,
+SubgraphQueryResultMap<EdgeType, source, target, time, duration,
   SourceHF, TargetHF, SourceEF, TargetEF>::
 add_nocheck(QueryResultType const& result, 
     std::list<EdgeRequestType>& edgeRequests)
@@ -479,33 +482,33 @@ add_nocheck(QueryResultType const& result,
 
 
 
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 size_t 
-SubgraphQueryResultMap<TupleType, source, target, time, duration,
+SubgraphQueryResultMap<EdgeType, source, target, time, duration,
                         SourceHF, TargetHF, SourceEF, TargetEF>::
-process(TupleType const& tuple, 
+process(EdgeType const& edge, 
         std::list<EdgeRequestType>& edgeRequests)
 {
 
   DEBUG_PRINT("Node %lu entering SubgraphQueryResultMap::process("
-   "tuple, csr, csc, edgeRequests) tuple %s\n", nodeId,
-   sam::toString(tuple).c_str())
+   "tuple, edgeRequests) tuple %s\n", nodeId,
+   sam::toString(edge.tuple).c_str())
 
   DETAIL_TIMING_BEG1
-  size_t workProcessSource = process(tuple, edgeRequests, 
+  size_t workProcessSource = process(edge, edgeRequests, 
                                    sourceIndexFunction, sourceCheckFunction);
   DETAIL_TIMING_END1(totalTimeProcessSource)
 
   DETAIL_TIMING_BEG2
-  size_t workProcessTarget = process(tuple, edgeRequests,
+  size_t workProcessTarget = process(edge, edgeRequests,
                                    targetIndexFunction, targetCheckFunction);
   DETAIL_TIMING_END2(totalTimeProcessTarget)
   
   DETAIL_TIMING_BEG2
-  size_t workProcessSourceTarget = process(tuple, edgeRequests, 
+  size_t workProcessSourceTarget = process(edge, edgeRequests, 
                           sourceTargetIndexFunction, sourceTargetCheckFunction);
   DETAIL_TIMING_END2(totalTimeProcessSourceTarget)
 
@@ -515,12 +518,12 @@ process(TupleType const& tuple,
   return workProcessSource + workProcessTarget + workProcessSourceTarget;
 }
 
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 size_t 
-SubgraphQueryResultMap<TupleType, source, target, time, duration,
+SubgraphQueryResultMap<EdgeType, source, target, time, duration,
                        SourceHF, TargetHF, SourceEF, TargetEF>::
 processAgainstGraph(std::list<QueryResultType>& rehash)
 {
@@ -550,7 +553,7 @@ processAgainstGraph(std::list<QueryResultType>& rehash)
         "frontier for loop\n", this->nodeId);
       // Only look at the graph if the result is not complete.
       if (!frontier->complete()) {
-        std::list<TupleType> foundEdges;
+        std::list<EdgeType> foundEdges;
         //try {
           csr.findEdges(frontier->getCurrentSource(),
                       frontier->getCurrentTarget(),
@@ -575,10 +578,11 @@ processAgainstGraph(std::list<QueryResultType>& rehash)
          
           DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph "
             "iter %luconsidering found edge %s for query result %s\n",
-            nodeId, iter, sam::toString(edge).c_str(), 
+            nodeId, iter, sam::toString(edge.tuple).c_str(), 
             frontier->toString().c_str());
           
           std::pair<bool, QueryResultType> p = frontier->addEdge(edge);
+
           if (p.first) {
             DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph "
               "iter %lu Created a new QueryResult: %s\n", nodeId, iter,
@@ -614,7 +618,7 @@ processAgainstGraph(std::list<QueryResultType>& rehash)
          
           DEBUG_PRINT("Node %lu SubgraphQueryResultMap::processAgainstGraph "
             "iter %luconsidering found edge %s for query result %s\n",
-            nodeId, iter, sam::toString(edge).c_str(), 
+            nodeId, iter, sam::toString(edge.tuple).c_str(), 
             frontier->toString().c_str());
           
           std::pair<bool, QueryResultType> p = frontier->addEdge(edge);
@@ -659,43 +663,45 @@ processAgainstGraph(std::list<QueryResultType>& rehash)
 
 }
 
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename SourceHF, typename TargetHF,
           typename SourceEF, typename TargetEF>
 size_t 
-SubgraphQueryResultMap<TupleType, source, target, time, duration,
+SubgraphQueryResultMap<EdgeType, source, target, time, duration,
                        SourceHF, TargetHF, SourceEF, TargetEF>::
 
-process(TupleType const& tuple,
+process(EdgeType const& edge,
         std::list<EdgeRequestType>& edgeRequests,
         std::function<size_t(TupleType const&)> indexFunction,
         std::function<bool(QueryResultType const&)> checkFunction )
 {
   DETAIL_TIMING_BEG1
 
-  size_t index = indexFunction(tuple);
+  size_t index = indexFunction(edge.tuple);
 
   std::list<QueryResultType> rehash;
   
   // We need the time to see if the intermediate result has expired (assumes
   // monotonically increasing time)
-  double currentTime = std::get<time>(tuple);
-
-  size_t samId = std::get<0>(tuple);
+  double currentTime = std::get<time>(edge.tuple);
 
   size_t totalWork = 0;
 
   mutexes[index].lock();
   DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process(tuple, "
     "edgeRequests, indexFunction, checkFunction) alr[%lu].size() %lu "
-    "tuple %s\n", nodeId, index, alr[index].size(), toString(tuple).c_str());
+    "tuple %s\n", nodeId, index, alr[index].size(), 
+    toString(edge.tuple).c_str());
     
   for(auto l = this->alr[index].begin();
         l != this->alr[index].end(); ) 
   {
     totalWork++;
     if (l->isExpired(currentTime)) {
+      DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process(tuple, "
+      "edgeRequests, indexFunction, checkFunction) tuple %s deleting "
+      "result %s", nodeId, toString(edge.tuple).c_str(), l->toString().c_str());
       l = this->alr[index].erase(l);
       METRICS_INCREMENT(this->totalResultsDeleted)
     } else {
@@ -704,21 +710,21 @@ process(TupleType const& tuple,
          "considering %s\n", nodeId, l->toString().c_str());
 
         // Make sure none of the edges has the same samId as the current tuple
-        if (l->noSamId(samId)) {
+        if (l->noSamId(edge.id)) {
           // The following call tries to add the tuple to the existing 
           // intermediate result, l.  If succesful, l remains the same
           // but a new intermediate result is created.
 
           DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process about to try"
-           " and add tuple %s to result %s\n", nodeId, toString(tuple).c_str(), 
-           l->toString().c_str());
+           " and add tuple %s to result %s\n", nodeId, 
+           toString(edge.tuple).c_str(), l->toString().c_str());
           
-          std::pair<bool, QueryResultType> p = l->addEdge(tuple);
+          std::pair<bool, QueryResultType> p = l->addEdge(edge);
           if (p.first) {
 
             DEBUG_PRINT("Node %lu SubgraphQueryResultMap::process added "
-              "tuple %s to result %s\n", nodeId, toString(tuple).c_str(),
-              l->toString().c_str());
+              "tuple %s to result %s\n", nodeId, 
+              toString(edge.tuple).c_str(), l->toString().c_str());
 
             rehash.push_back(p.second);
           }

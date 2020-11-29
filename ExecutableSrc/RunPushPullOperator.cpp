@@ -14,8 +14,7 @@
 
 #include <boost/program_options.hpp>
 
-#include <sam/ReadSocket.hpp>
-#include <sam/ZeroMQPushPull.hpp>
+#include <sam/sam.hpp>
 
 using std::string;
 using std::vector;
@@ -24,11 +23,19 @@ using std::endl;
 
 namespace po = boost::program_options;
 using namespace sam;
+using namespace sam::vast_netflow;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
+typedef ReadSocket<EdgeType, Tuplizer> ReadSocketType; 
+ 
+      
 
 int main(int argc, char** argv) {
 
@@ -101,7 +108,7 @@ int main(int argc, char** argv) {
 #endif
 
 
-  sam::ReadSocket receiver(ip, ncPort);
+  ReadSocketType receiver(nodeId, ip, ncPort);
 #ifdef DEBUG
   cout << "DEBUG: main created receiver " << endl;
 #endif

@@ -11,11 +11,13 @@ import sal.parsing.sam.preamble.Preamble
 /**
  * @author elgood
  */
-trait Parsing  extends Statements with Preamble with Subgraph with LazyLogging {
+trait Parsing extends Statements with Preamble with Subgraph with LazyLogging 
+{
 
 
   // TODO: I think this is too regimented.  Seems like there could be mulitiple
-  // subgraphs defined and intermixing of query statements and subgraph definition. 
+  // subgraphs defined and intermixing of query statements and subgraph 
+  // definition. 
   def document = rep(preambleStatement) ~ connectionStatement ~ 
                  partitionStatement ~ hashStatements ~ rep(queryStatement) ~
                  rep(subgraph)  ^^
@@ -26,7 +28,8 @@ trait Parsing  extends Statements with Preamble with Subgraph with LazyLogging {
                               query, subgraphs, memory)
                 }
  
-  def queryStatement = streamByStatement | forEachStatement | filterStatement
+  def queryStatement = streamByStatement | forEachStatement | 
+   filterStatement // | transformStatement 
   
 }
 

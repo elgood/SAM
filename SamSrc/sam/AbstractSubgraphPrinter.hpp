@@ -5,12 +5,12 @@
 
 namespace sam {
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration>
 class AbstractSubgraphPrinter
 {
 public:
-  typedef SubgraphQueryResult<TupleType, source, target, time,
+  typedef SubgraphQueryResult<EdgeType, source, target, time,
                               duration> ResultType;
 
   /**

@@ -122,7 +122,7 @@ case class SimpleSumExp(field: String, N: Int,
     
     var rString = "  identifier = \"" + lstream + "\";\n"
     rString = "  auto " + lstream + " = std::make_shared<SimpleSum<\n" +
-      "    double, " + tupleType + ", " + field + ", " + keysString + ">>(" +
+      "    double, EdgeType, " + field + ", " + keysString + ">>(" +
       N.toString + "," + ", nodeId, featureMap, identifier);\n"
     rString += addRegisterStatements(lstream, rstream, memory)
     rString

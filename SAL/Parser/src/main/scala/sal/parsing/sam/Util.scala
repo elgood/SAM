@@ -46,7 +46,7 @@ trait Util
                              rstream: String,
                              memory: HashMap[String, String]) : String = 
   {
-    val producer = memory(rstream + Constants.VarName)
+    //val producer = memory(rstream + Constants.VarName)
     //TODO: Below line breaks ml.sal example.  But the replacement line
     //probably breaks other sal examples.
     //"  " + producer + "->registerConsumer(" + lstream + ");\n" +

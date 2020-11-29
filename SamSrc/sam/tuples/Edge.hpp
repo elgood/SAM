@@ -1,7 +1,8 @@
-#ifndef SAM_LABEL_HPP
-#define SAM_LABEL_HPP
+#ifndef SAM_EDGE_HPP
+#define SAM_EDGE_HPP
 
 #include <boost/lexical_cast.hpp>
+#include <sam/Util.hpp>
 
 namespace sam {
 
@@ -14,8 +15,61 @@ public:
   LabelException(std::string message) : std::runtime_error(message) {}
 };
 
+template <typename IdType, typename LabelType, typename TupleType>
+class Edge
+{
+public:
+  typedef IdType LocalIdType;
+  typedef LabelType LocalLabelType;
+  typedef TupleType LocalTupleType;
+
+  IdType id;
+  LabelType label;
+  TupleType tuple;
+
+  Edge(IdType id, LabelType label, TupleType tuple)
+  {
+    this->id = id;
+    this->label = label;
+    this->tuple = tuple;
+  }
+
+  Edge() {}
+
+  /**
+   * Combines the label and the tuple part together into a string.
+   */
+  std::string toString() const
+  {
+    std::string labelPart = tupleToString(this->label);
+    std::string tuplePart = tupleToString(this->tuple);
+    if (labelPart != "")
+      return boost::lexical_cast<std::string>(id) + 
+             "," + labelPart + "," + tuplePart;
+    else
+      return boost::lexical_cast<std::string>(id) + "," + tuplePart;
+  }
+
+  /**
+   * Combines the label and the tuple part together into a string.
+   */
+  std::string toStringNoId() const
+  {
+    std::string labelPart = tupleToString(this->label);
+    std::string tuplePart = tupleToString(this->tuple);
+    if (labelPart != "")
+      return labelPart + "," + tuplePart;
+    else
+      return tuplePart;
+  }
+
+
+};
+
 /**
- * A class to extract 
+ * A class to extract labels.
+ * \tparam LabelType The label type.  Usual an std::tuple.
+ * \tparam N How many fields in the label.
  */
 template <typename LabelType, int N>
 class ExtractLabel
@@ -96,6 +150,10 @@ LabelResult<LabelType> extractLabel(std::string s)
 
   return result;
 }
+
+typedef std::tuple<bool> SingleBoolLabel; 
+typedef std::tuple<int> SingleIntLabel; 
+typedef std::tuple<> EmptyLabel;
 
 
 }

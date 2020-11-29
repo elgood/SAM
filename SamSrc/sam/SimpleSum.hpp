@@ -14,6 +14,7 @@
 #include <sam/Features.hpp>
 #include <sam/Util.hpp>
 #include <sam/FeatureProducer.hpp>
+#include <sam/tuples/Edge.hpp>
 
 namespace sam 
 {
@@ -62,12 +63,14 @@ public:
 }
 
 
-template <typename T, typename TupleType, size_t valueField, 
-          size_t... keyFields>
-class SimpleSum: public AbstractConsumer<TupleType>, 
+template <typename T, typename EdgeType,
+          size_t valueField, size_t... keyFields>
+class SimpleSum: public AbstractConsumer<EdgeType>, 
                  public BaseComputation,
                  public FeatureProducer
 {
+public:
+  typedef typename EdgeType::LocalTupleType TupleType;
 private:
   size_t N; ///> Size of sliding window
   typedef SimpleSumDetails::SimpleSumDataStructure<T> value_t;
@@ -95,7 +98,10 @@ public:
     }
   }
 
-  bool consume(TupleType const& tuple) {
+  bool consume(EdgeType const& edge) 
+  {
+    TupleType tuple = edge.tuple;
+
     this->feedCount++;
     if (this->feedCount % this->metricInterval == 0) {
       std::cout << "SimpleSum: NodeId " << this->nodeId << " feedCount " 
@@ -128,8 +134,7 @@ public:
     SingleFeature feature(currentSum);
     this->featureMap->updateInsert(key, this->identifier, feature);
 
-    std::size_t id = std::get<0>(tuple);
-    notifySubscribers(id, currentSum);
+    notifySubscribers(edge.id, currentSum);
 
     return true;
   }

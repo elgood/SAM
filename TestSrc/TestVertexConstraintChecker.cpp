@@ -8,12 +8,14 @@
 #include <sam/EdgeDescription.hpp>
 
 using namespace sam;
-using namespace sam;
+using namespace sam::vast_netflow;
 
-typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, 
+typedef SubgraphQuery<VastNetflow, SourceIp, 
+                      DestIp, TimeSeconds, 
                       DurationSeconds> SubgraphQueryType;
-typedef SubgraphQueryResult<VastNetflow, SourceIp, DestIp, TimeSeconds, 
-                            DurationSeconds> SubgraphQueryResultType;
+typedef SubgraphQueryResult<VastNetflow, SourceIp, 
+                      DestIp, TimeSeconds, 
+                      DurationSeconds> SubgraphQueryResultType;
 typedef VertexConstraintChecker<SubgraphQueryType> CheckerType;
         
 

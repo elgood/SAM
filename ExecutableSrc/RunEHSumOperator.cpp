@@ -2,21 +2,22 @@
 
 //#define DEBUG 1
 
-#include <sam/ReadSocket.hpp>
-#include <sam/ZeroMQPushPull.hpp>
-#include <sam/ExponentialHistogramSum.hpp>
-
+#include <sam/sam.hpp>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 
 using namespace sam;
+using namespace sam::vast_netflow;
 using namespace std::chrono;
 
-typedef TupleStringHashFunction<VastNetflow, SourceIp> SourceHash;
-typedef TupleStringHashFunction<VastNetflow, DestIp> TargetHash;
-typedef ZeroMQPushPull<VastNetflow, VastNetflowTuplizer, SourceHash, TargetHash>
-        
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TupleStringHashFunction<TupleType, SourceIp> SourceHash;
+typedef TupleStringHashFunction<TupleType, DestIp> TargetHash;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef ZeroMQPushPull<EdgeType, Tuplizer, SourceHash, TargetHash>
         PartitionType;
 
 int main(int argc, char** argv)
@@ -95,7 +96,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  ReadSocket receiver(ip, ncPort);
+  ReadSocket<EdgeType, Tuplizer> receiver(nodeId, ip, ncPort);
 #ifdef DEBUG
   cout << "DEBUG: main created receiver " << endl;
 #endif
@@ -134,7 +135,8 @@ int main(int argc, char** argv)
   int valueField = 8;
   for (int i = 0; i < nop; i++) {
     std::string identifier = "ehsum" + boost::lexical_cast<std::string>(i);
-    auto op = std::make_shared<ExponentialHistogramSum<size_t, VastNetflow, 
+    auto op = std::make_shared<ExponentialHistogramSum<size_t, 
+                                      EdgeType,
                                       DestPort, DestIp>>(
                                          N, k, nodeId, featureMap, identifier);
                                                 

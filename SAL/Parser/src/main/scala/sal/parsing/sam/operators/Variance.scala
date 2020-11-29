@@ -75,9 +75,9 @@ case class EHVarExp(field: String, N: Int, k: Int,
     keysString = keysString.dropRight(2)
     
     var rString = "  identifier = \"" + lstream + "\";\n"
-    rString = "  auto " + lstream + 
+    rString += "  auto " + lstream + 
       " = std::make_shared<ExponentialHistogramVariance<\n" +
-      "    double, " + tupleType + ", " + field + ", " + keysString + ">>(" +
+      "    double, EdgeType, " + field + ", " + keysString + ">>(" +
       N.toString + ", " + k.toString + ", nodeId, featureMap, identifier);\n"
     rString += addRegisterStatements(lstream, rstream, memory)
     rString

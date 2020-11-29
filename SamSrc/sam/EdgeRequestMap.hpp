@@ -318,6 +318,9 @@ addRequest(EdgeRequestType request)
   }
 
   mutexes[index].lock();
+
+  DEBUG_PRINT("Node %lu EdgeRequestMap::addRequest ale[%lu] Adding request "
+    "%s\n", nodeId, index, request.toString().c_str())
   ale[index].push_back(request);
   mutexes[index].unlock();
 
@@ -355,7 +358,6 @@ process(TupleType const& tuple,
           checkFunction)
 {
   size_t index = indexFunction(tuple);
-  size_t edgeId = std::get<0>(tuple);
 
   double currentTime = std::get<time>(tuple);
 
@@ -424,7 +426,6 @@ process(TupleType const& tuple,
             
             sentEdges[node] = true;
             double edgeTime = std::get<time>(tuple);
-            //seenEdges[node]->insert(edgeId, edgeTime);
 
             if (!sent) {
               DEBUG_PRINT("Node %lu->%lu EdgeRequestMap::process error sending"

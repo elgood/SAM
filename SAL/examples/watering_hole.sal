@@ -1,0 +1,5 @@
+Netflows = NetflowV5Stream("localhost", 9999);
+PARTITION Netflows By SourceIp, DestIp;
+HASH SourceIp WITH IpHashFunction;
+HASH DestIp With IpHashFunction;
+VertsByDest = STREAM Netflows BY DestIp;

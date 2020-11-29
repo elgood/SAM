@@ -3,16 +3,23 @@
 #include <cstdio>
 #include <sam/SubgraphDiskPrinter.hpp>
 #include <sam/AbstractSubgraphPrinter.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
+#include <sam/tuples/Edge.hpp>
+#include <sam/tuples/Tuplizer.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
-typedef AbstractSubgraphPrinter<VastNetflow, SourceIp, DestIp,
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef AbstractSubgraphPrinter<EdgeType, SourceIp, DestIp,
           TimeSeconds, DurationSeconds> AbstractPrinterType;
-typedef SubgraphDiskPrinter<VastNetflow, SourceIp, DestIp, 
+typedef SubgraphDiskPrinter<EdgeType, SourceIp, DestIp, 
           TimeSeconds, DurationSeconds> PrinterType;
 typedef PrinterType::ResultType ResultType;
-typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, 
+typedef SubgraphQuery<TupleType, SourceIp, DestIp, TimeSeconds, 
           DurationSeconds> QueryType;
 
 struct SetUp {
@@ -20,11 +27,13 @@ struct SetUp {
   std::string loc = "./subgraphoutput.txt";
   std::shared_ptr<AbstractPrinterType> printer;
 
+  Tuplizer tuplizer;
+
   // A netflow to use to create a subgraph query result.
-  std::string netflowString1 = "1,1,156.0,2013-04-10 08:32:36,"
+  std::string netflowString1 = "156.0,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
                            "bait,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
-  VastNetflow netflow1 = makeNetflow(netflowString1);
+  EdgeType netflow1 = tuplizer(0, netflowString1);
 
   // Expressing a subgraph query
   std::shared_ptr<TimeEdgeExpression> startTimeExpressionE1;

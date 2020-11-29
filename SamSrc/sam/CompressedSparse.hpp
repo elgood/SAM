@@ -1,7 +1,6 @@
 #ifndef COMPRESSED_SPARSE_HPP
 #define COMPRESSED_SPARSE_HPP
 
-#include <sam/Edge.hpp>
 #include <map>
 #include <mutex>
 #include <sam/Util.hpp>
@@ -18,7 +17,7 @@ public:
 
 };
 
-template <typename TupleType, 
+template <typename EdgeType, 
           size_t source, 
           size_t target, 
           size_t time,
@@ -28,6 +27,7 @@ template <typename TupleType,
 class CompressedSparse
 {
 public:
+  typedef typename EdgeType::LocalTupleType TupleType;
   typedef typename std::tuple_element<source, TupleType>::type SourceType;
   typedef typename std::tuple_element<target, TupleType>::type TargetType;
   typedef SourceType NodeType; // SourceType and TargetType should be the same.
@@ -63,7 +63,7 @@ private:
   std::mutex* mutexes;
 
   // array of lists of lists of edges
-  std::list<std::list<TupleType>>* alle;
+  std::list<std::list<EdgeType>>* alle;
 
   /**
    * For the given slot in the hash table (alle), we clear out edges that 
@@ -90,9 +90,11 @@ public:
   
   /**
    * Adds the given tuple to the graph.
+   * \param id The id of the tuple/edge.
+   * \param tuple The edge to be added.
    * \return Returns a number representing the amount of work.
    */
-  size_t addEdge(TupleType tuple);
+  size_t addEdge(EdgeType tuple);
 
   /**
    * Finds all edges that fulfill the given edgeRequest.
@@ -100,7 +102,7 @@ public:
    * \param foundEdges We add an edges found to this list.
    */
   void findEdges(EdgeRequestType const& edgeRequest, 
-                 std::list<TupleType>& foundEdges) const;
+                 std::list<EdgeType>& foundEdges) const;
 
   /**
    * The source and target have been swapped, meaning that we need
@@ -112,7 +114,7 @@ public:
    * \param foundEdges We add an edges found to this list.
    */ 
   void findEdges(ReversedEdgeRequestType const& edgeRequest,
-                 std::list<TupleType>& foundEdges) const;
+                 std::list<EdgeType>& foundEdges) const;
 
 
   /**
@@ -129,7 +131,7 @@ public:
   void findEdges(NodeType const& src, NodeType const& trg, 
                  double startTimeFirst, double startTimeSecond,
                  double endTimeFirst, double endTimeSecond,
-                 std::list<TupleType>& foundEdges) const;
+                 std::list<EdgeType>& foundEdges) const;
 
 
   /** 
@@ -144,10 +146,10 @@ public:
 
 };
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
-CompressedSparse<TupleType, source, target, time, duration, HF, EF>::
+CompressedSparse<EdgeType, source, target, time, duration, HF, EF>::
 CompressedSparse( size_t capacity, double window ) :
   currentTime(0)
 {
@@ -156,27 +158,27 @@ CompressedSparse( size_t capacity, double window ) :
 
   mutexes = new std::mutex[capacity];
 
-  alle = new std::list<std::list<TupleType>>[capacity];
+  alle = new std::list<std::list<EdgeType>>[capacity];
 }
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
-CompressedSparse<TupleType, source, target, time, duration, HF, EF>::
+CompressedSparse<EdgeType, source, target, time, duration, HF, EF>::
 ~CompressedSparse()
 {
   delete[] mutexes;
   delete[] alle;
 }
 
-template <typename TupleType, size_t source, size_t target,
+template <typename EdgeType, size_t source, size_t target,
           size_t time, size_t duration,
           typename HF, typename EF>
 void
-CompressedSparse<TupleType, source, target, time, duration, HF, EF>::
+CompressedSparse<EdgeType, source, target, time, duration, HF, EF>::
 findEdges(
   ReversedEdgeRequestType const& edgeRequest, 
-  std::list<TupleType>& foundEdges)
+  std::list<EdgeType>& foundEdges)
 const
 {
   // If we've been given an edge request that is reversed, that means
@@ -193,14 +195,14 @@ const
             endTimeFirst, endTimeSecond, foundEdges);
 }
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
 void
-CompressedSparse<TupleType, source, target, time, duration, HF, EF>::
+CompressedSparse<EdgeType, source, target, time, duration, HF, EF>::
 findEdges(
   EdgeRequestType const& edgeRequest, 
-  std::list<TupleType>& foundEdges)
+  std::list<EdgeType>& foundEdges)
 const
 {
   NodeType src = edgeRequest.getSource();
@@ -215,11 +217,11 @@ const
             endTimeFirst, endTimeSecond, foundEdges);
 }
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
 void
-CompressedSparse<TupleType, source, target, time, duration, HF, EF>::
+CompressedSparse<EdgeType, source, target, time, duration, HF, EF>::
 findEdges(
   NodeType const& src,
   NodeType const& trg,
@@ -227,7 +229,7 @@ findEdges(
   double startTimeSecond,
   double endTimeFirst,
   double endTimeSecond,
-  std::list<TupleType>& foundEdges)
+  std::list<EdgeType>& foundEdges)
 const
 {
   DEBUG_PRINT("CompressedSparse::findEdges src %s trg %s %f %f %f %f\n",
@@ -252,37 +254,33 @@ const
         // All the tuples in each list should have the same source, so
         // look at the first one and see if it matches what we are looking
         // for.  
-        SourceType s0 = std::get<source>(l.front());  
+        SourceType s0 = std::get<source>(l.front().tuple);  
         if (equal(src, s0)) 
         {
           // If the first one matched on the source, look through
           // all other tuples in the list.
           for(auto it = l.begin(); it != l.end(); )
           {
-
-            #ifdef DEBUG
-            printf("CompressedSparse::findEdges considering graph edge %s\n",
-              sam::toString(*it).c_str());
-            #endif
+            size_t id = it->id;
+            TupleType tuple = it->tuple;
+            DEBUG_PRINT("CompressedSparse::findEdges considering graph "                      "edge %s\n", sam::toString(tuple).c_str());
 
             // Check that the edge hasn't expired.
-            #ifdef DEBUG
-            printf("CompressedSparse::findEdges currentTime %f tupletype"
-              " %f window %f \n", currentTime.load(), std::get<time>(*it), 
+            DEBUG_PRINT("CompressedSparse::findEdges currentTime %f tupletype"
+              " %f window %f \n", currentTime.load(), 
+              std::get<time>(tuple), 
               window);
-            #endif
 
-            if ( currentTime.load() - std::get<time>(*it) < window) 
+            if ( currentTime.load() - std::get<time>(tuple) < window) 
             {
-              #ifdef DEBUG
-              printf("CompressedSparse::findEdges edge hasn't expired\n");
-              #endif
+              DEBUG_PRINT_SIMPLE("CompressedSparse::findEdges edge hasn't"
+                " expired\n");
               
               bool passed = true;
 
               // Check to see if the source matches. It always should, so
               // throw an exception if it doesn't
-              SourceType candSrc = std::get<source>(*it);
+              SourceType candSrc = std::get<source>(tuple);
               if (!equal(src, candSrc))
               {
                 std::string message = "CompressedSpare::findEdges: Found an "
@@ -294,7 +292,7 @@ const
               // Check to see if the target matches if the target is defined
               // in the edge request.
               if (!isNull(trg)) {
-                TargetType candTrg = std::get<target>(*it);
+                TargetType candTrg = std::get<target>(tuple);
                 if (!equal(trg, candTrg))
                 {
                   passed = false;
@@ -304,8 +302,8 @@ const
                 "source/target: %d\n", passed);
 
               if (passed) {
-                double candTime = std::get<time>(*it);
-                double candDuration = std::get<duration>(*it);
+                double candTime = std::get<time>(tuple);
+                double candDuration = std::get<duration>(tuple);
                 // Check that the time is after starttime and 
                 // before stoptime
                 DEBUG_PRINT("CompressedSparse::findEdges candTime %f "
@@ -330,7 +328,7 @@ const
               // The edge has expired, so we get rid of it.
 
               DEBUG_PRINT("CompressedSparse::findEdges the edge has expired"
-                " %s\n", toString(*it).c_str());
+                " %s\n", toString(tuple).c_str());
               
               it = l.erase(it);
               METRICS_INCREMENT(this->totalEdgesDeleted)
@@ -347,43 +345,60 @@ const
 }
 
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
 size_t 
-CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
-  TupleType tuple)
+CompressedSparse<EdgeType, source, target, time, duration, HF, EF>::addEdge(
+  EdgeType edge)
 {
-  #ifdef DEBUG
-  printf("CompressedSparse::addEdge tuple %s\n",  sam::toString(tuple).c_str());
-  #endif
+  DEBUG_PRINT("CompressedSparse::addEdge tuple %s\n",  
+              edge.toString().c_str());
   METRICS_INCREMENT(totalEdgesAdded)
+
+  TupleType tuple = edge.tuple;
 
   // Updating time in a somewhat unsafe manner that should generally work.
   //uint64_t tupleTime = convert(std::get<time>(tuple));
   double tupleTime = std::get<time>(tuple);
+  DEBUG_PRINT("CompressedSparse::addEdge tupleTime %f currentTime %f\n",
+    tupleTime, currentTime.load());
   if (tupleTime > currentTime.load()) {
     currentTime.store(tupleTime);
   }
+  DEBUG_PRINT("CompressedSparse::addEdge tupleTime %f currentTime %f\n",
+    tupleTime, currentTime.load());
 
   SourceType s = std::get<source>(tuple);
   size_t index = hash(s) % capacity;
+
+  DEBUG_PRINT("CompressedSparse::addEdge index %lu for tuple %s\n",  
+    index, sam::toString(tuple).c_str());
 
   std::lock_guard<std::mutex> lock(mutexes[index]);
 
   // If we find a list that has entries where the source is the same
   // as tuple's source, this is set to true.
   bool found = false;
-  std::list<TupleType>* emptyListPtr = 0;
+  std::list<EdgeType>* emptyListPtr = 0;
   size_t work = alle[index].size();
+  DEBUG_PRINT("CompressedSparse::addEdge size of bin %lu: %lu\n",
+    index, alle[index].size());
   for (auto & l : alle[index]) {
     if (l.size() > 0) {
+      DEBUG_PRINT("CompressedSparse::addEdge index %lu l.size %lu\n", 
+        index, l.size());
       try {
-        SourceType s0 = std::get<source>(l.front());  
+        SourceType s0 = std::get<source>(l.front().tuple);  
+        DEBUG_PRINT("CompressedSparse::addEdge s0 %s s %s for tuple %s\n",  
+          s0.c_str(), s.c_str(), sam::toString(tuple).c_str());
+
         if (equal(s, s0)) 
         {
+          DEBUG_PRINT("CompressedSparse::addEdge found list for tuple %s\n",
+            sam::toString(tuple).c_str());
           found = true;
-          l.push_back(tuple);
+          l.push_back(edge);
           break;
         }
       } catch (std::exception e) {
@@ -393,6 +408,7 @@ CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
           
       }
     } else {
+      DEBUG_PRINT_SIMPLE("CompressedSparse::addEdge pointing to emptylist\n");
       emptyListPtr = &l;
     }
   }
@@ -400,15 +416,20 @@ CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
   // If we didn't find a list that has entries with the same source
   // as tuple, then we need to create a new list or use an empty one.
   if (!found) {
-
+    DEBUG_PRINT("CompressedSparse::addEdge didn't find list for tuple %s\n",  
+              sam::toString(tuple).c_str());
     work += 1;
     // If we found an empty list, use that list.
     if (emptyListPtr) {
-      emptyListPtr->push_back(tuple);
+      DEBUG_PRINT("CompressedSparse::addEdge found empty list for tuple %s\n",  
+              sam::toString(tuple).c_str());
+      emptyListPtr->push_back(edge);
     } else {
       // No empty lists, so we need to add another list to this slot
-      alle[index].push_back(std::list<TupleType>());
-      alle[index].back().push_back(tuple);
+      DEBUG_PRINT("CompressedSparse::addEdge creating list for tuple %s\n",  
+              sam::toString(tuple).c_str());
+      alle[index].push_back(std::list<EdgeType>());
+      alle[index].back().push_back(edge);
     }
   } else {
     // If we did find a list, we can clean up edges that have expired.
@@ -417,11 +438,11 @@ CompressedSparse<TupleType, source, target, time, duration, HF, EF>::addEdge(
   return work;
 }
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
 size_t
-CompressedSparse<TupleType, source, target, time, duration, HF, EF>::
+CompressedSparse<EdgeType, source, target, time, duration, HF, EF>::
 cleanupEdges( size_t index )
 {
   // Should only be called by addEdge and (maybe) findEdges, 
@@ -429,8 +450,11 @@ cleanupEdges( size_t index )
   size_t work = 0;
   for( auto & l : alle[index]) {
     while (l.size() > 0 && 
-           currentTime.load() - std::get<time>(l.front()) > window) {
+           currentTime.load() - std::get<time>(l.front().tuple) > window) {
       work++;
+      DEBUG_PRINT("Deleting edge currentTime %f front time %f "
+        "window %f\n", currentTime.load(), std::get<time>(l.front().tuple),
+        window);
       l.pop_front();
       METRICS_INCREMENT(totalEdgesDeleted)
     }
@@ -439,11 +463,11 @@ cleanupEdges( size_t index )
 }
 
 
-template <typename TupleType, size_t source, size_t target, 
+template <typename EdgeType, size_t source, size_t target, 
           size_t time, size_t duration,
           typename HF, typename EF>
 size_t
-CompressedSparse<TupleType, source, target, time, duration, HF, EF>::
+CompressedSparse<EdgeType, source, target, time, duration, HF, EF>::
 countEdges()
 const
 {

@@ -9,8 +9,9 @@ class VarianceSpec extends FlatSpec with Variance {
   " global defaults hvar been specified" in {
     memory.clear
     memory += Constants.CurrentLStream -> "features1"
-    memory += "features1" + Constants.TupleTypeStr -> "VastNetflow"
-    memory += "features1" + Constants.NumKeysStr -> 1.toString
+    memory += Constants.CurrentRStream -> "VerticesBySource"
+    memory += "features1" + Constants.TupleType -> "VastNetflow"
+    memory += "features1" + Constants.NumKeys -> 1.toString
     memory += "features1" + Constants.KeyStr + 0 -> "SourceIp"
     parseAll(ehVarOperator, "ehvar(SrcTotalBytes)")
       match
@@ -32,8 +33,9 @@ class VarianceSpec extends FlatSpec with Variance {
   {
     memory.clear
     memory += Constants.CurrentLStream -> "features1"
-    memory += "features1" + Constants.TupleTypeStr -> "VastNetflow"
-    memory += "features1" + Constants.NumKeysStr -> 1.toString
+    memory += Constants.CurrentRStream -> "VerticesBySource"
+    memory += "features1" + Constants.TupleType -> "VastNetflow"
+    memory += "features1" + Constants.NumKeys -> 1.toString
     memory += "features1" + Constants.KeyStr + 0 -> "SourceIp"
     memory += Constants.WindowSize -> "22"
     memory += Constants.EHK -> "5"
@@ -56,8 +58,9 @@ class VarianceSpec extends FlatSpec with Variance {
   "ExponentialHistogramVar class" in {
     memory.clear
     memory += Constants.CurrentLStream -> "features1"
-    memory += "features1" + Constants.TupleTypeStr -> "VastNetflow"
-    memory += "features1" + Constants.NumKeysStr -> 1.toString
+    memory += Constants.CurrentRStream -> "VerticesBySource"
+    memory += "features1" + Constants.TupleType -> "VastNetflow"
+    memory += "features1" + Constants.NumKeys -> 1.toString
     memory += "features1" + Constants.KeyStr + 0 -> "SourceIp"
     parseAll(varOperator, "var(SrcTotalBytes)")
       match
@@ -80,8 +83,9 @@ class VarianceSpec extends FlatSpec with Variance {
   {
     memory.clear
     memory += Constants.CurrentLStream -> "features1"
-    memory += "features1" + Constants.TupleTypeStr -> "VastNetflow"
-    memory += "features1" + Constants.NumKeysStr -> 1.toString
+    memory += Constants.CurrentRStream -> "VerticesBySource"
+    memory += "features1" + Constants.TupleType -> "VastNetflow"
+    memory += "features1" + Constants.NumKeys -> 1.toString
     memory += "features1" + Constants.KeyStr + 0 -> "SourceIp"
     memory += Constants.WindowSize -> "22"
     memory += Constants.EHK -> "5"

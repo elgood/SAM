@@ -4,15 +4,16 @@
 #include <string>
 #include <vector>
 #include <sam/SubgraphQuery.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
 #include <sam/FeatureMap.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
 typedef EdgeDescription<VastNetflow, TimeSeconds, DurationSeconds> 
   EdgeDescriptionType;
-typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, DurationSeconds>
-  QueryType;
+typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, 
+     DurationSeconds> QueryType;
 
 struct F {
   std::shared_ptr<FeatureMap> featureMap;

@@ -286,8 +286,6 @@ public:
 
   size_t getLastPort() const
   {
-    //printf("PushPull::getLastPort() startingPort %lu numPushSockets %lu last socket %lu\n",
-    //  startingPort, numPushSockets, startingPort + (numNodes - 1) * numPushSockets - 1);
     return startingPort + (numNodes - 1) * numPushSockets - 1;
   }
 
@@ -412,7 +410,7 @@ void PushPull::createPushSockets()
     try {
       pusher->bind(url);
     } catch (std::exception e) {
-      std::string message = "Node " +
+      std::string message = "PushPull: Node " +
         boost::lexical_cast<std::string>(nodeId) +
         " couldn't bind to url " + url + ": " + e.what();
       throw std::runtime_error(message);

@@ -5,32 +5,41 @@
 #include <sam/SubgraphQueryResult.hpp>
 #include <sam/SubgraphQuery.hpp>
 #include <sam/FeatureMap.hpp>
+#include <sam/tuples/Edge.hpp>
+#include <sam/tuples/Tuplizer.hpp>
 
 using namespace sam;
+using namespace sam::vast_netflow;
 
-typedef SubgraphQuery<VastNetflow, SourceIp, DestIp, TimeSeconds, 
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef SubgraphQuery<TupleType, SourceIp, DestIp, TimeSeconds, 
           DurationSeconds> QueryType;
+typedef SubgraphQueryResult<EdgeType, SourceIp, DestIp, 
+                              TimeSeconds, DurationSeconds> ResultType;
 
 struct F {
-  std::string netflowString1 = "1,1,156.0,2013-04-10 08:32:36,"
+  Tuplizer tuplizer; 
+
+  std::string netflowString1 = "156.0,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
                            "bait,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
-  VastNetflow netflow1 = makeNetflow(netflowString1);
+  EdgeType netflow1 = tuplizer(1, netflowString1);
 
-  std::string netflowString2 = "1,1,166.0,2013-04-10 08:32:36,"
+  std::string netflowString2 = "166.0,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
                            "controller,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
 
-  VastNetflow netflow2 = makeNetflow(netflowString2);
+  EdgeType netflow2 = tuplizer(2, netflowString2);
 
-  std::string netflowString3 = "1,1,267.01,2013-04-10 08:32:36,"
+  std::string netflowString3 = "267.01,2013-04-10 08:32:36,"
                            "20130410083236.384094,17,UDP,target,"
                            "controller,29986,1900,0,0,1.0,133,0,1,0,1,0,0"; 
 
-  VastNetflow netflow3 = makeNetflow(netflowString3);
+  EdgeType netflow3 = tuplizer(3, netflowString3);
 
-  typedef SubgraphQueryResult<VastNetflow, SourceIp, DestIp, 
-                              TimeSeconds, DurationSeconds> ResultType;
 
   std::shared_ptr<TimeEdgeExpression> startTimeExpressionE1;
   std::shared_ptr<TimeEdgeExpression> endTimeExpressionE1;
@@ -136,7 +145,7 @@ BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
 
   ResultType result(query, netflow1);
 
-  double netflow1Time = std::get<TimeSeconds>(netflow1);
+  double netflow1Time = std::get<TimeSeconds>(netflow1.tuple);
   BOOST_CHECK_EQUAL(result.getExpireTime(), netflow1Time+maxOffset+10);
 
   BOOST_CHECK(!result.complete());
@@ -145,7 +154,7 @@ BOOST_FIXTURE_TEST_CASE( test_expired_edge, F )
 
   BOOST_CHECK(!result.complete());
 
-  double currentTime = std::get<TimeSeconds>(netflow3);
+  double currentTime = std::get<TimeSeconds>(netflow3.tuple);
   BOOST_CHECK(result.isExpired(currentTime));
 
   BOOST_CHECK_EQUAL(result.getExpireTime(), netflow1Time + 
@@ -187,7 +196,8 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
   BOOST_CHECK_EQUAL(query->getMaxTimeExtent(), 110);
   BOOST_CHECK_EQUAL(query->getMaxOffset(), maxOffset);
 
-  BOOST_CHECK_THROW(ResultType(query, netflow1), SubgraphQueryResultException);
+  BOOST_CHECK_THROW(ResultType(query, netflow1), 
+                               SubgraphQueryResultException);
    
   // TopKFeature 
   std::vector<std::string> keys;
@@ -200,8 +210,8 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
   
   ResultType result(query, netflow1);
 
-  double netflow1Time = std::get<TimeSeconds>(netflow1);
-  double duration = std::get<DurationSeconds>(netflow1);
+  double netflow1Time = std::get<TimeSeconds>(netflow1.tuple);
+  double duration = std::get<DurationSeconds>(netflow1.tuple);
   double expireTime = netflow1Time + duration + maxOffset + 10;
   BOOST_CHECK_EQUAL(result.getExpireTime(), expireTime);
 
@@ -211,7 +221,7 @@ BOOST_FIXTURE_TEST_CASE( test_watering_hole, F )
   BOOST_CHECK(pair.first);
   BOOST_CHECK(pair.second.complete());
 
-  double currentTime = std::get<TimeSeconds>(netflow3);
+  double currentTime = std::get<TimeSeconds>(netflow3.tuple);
 
   BOOST_CHECK_EQUAL(pair.second.getExpireTime(), expireTime); 
   

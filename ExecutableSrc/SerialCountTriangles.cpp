@@ -9,11 +9,12 @@
 #include <fstream>
 #include <boost/program_options.hpp>
 #include <sam/Util.hpp>
-#include <sam/VastNetflow.hpp>
+#include <sam/tuples/VastNetflow.hpp>
 
 
 namespace po = boost::program_options;
 using namespace sam;
+using namespace sam::vast_netflow;
 
 int main(int argc, char** argv) {
 
@@ -48,12 +49,10 @@ int main(int argc, char** argv) {
   netflowFile.open(infile);
 
   std::string line;
-  size_t i = 0;
   while (std::getline(netflowFile, line))
   {
-    VastNetflow netflow = makeNetflow(i, line);
+    VastNetflow netflow = makeVastNetflow(line);
     netflows.push_back(netflow);
-    i++;
   }
 
   size_t numTri = sam::numTriangles<VastNetflow, SourceIp, DestIp,
