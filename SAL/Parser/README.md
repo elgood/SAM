@@ -32,20 +32,26 @@ To run using sbt, it must be installed.  sbt requires Java 1.8 or later.
 
 To extend the parser for additional SAM functionality, below we outline common use cases.
 
-1. Additional Tuple types: 
-  * Edit sal/parsing/sam/TupleTypes.scala and add the SAM data structures for the tuple type, the tuplizer, and the connection statement.
-  * Add ConnectionStatement[NameTuple].scala to sal/parsing/sam/statements.  This should have a parser for the new connection statement (e.g. VastStream).  There should be a method defined of the form 
+* Additional Tuple types: 
+  * Edit src/main/scala/sal/parsing/sam/TupleTypes.scala and add the SAM data structures for the tuple type, the tuplizer, the connection statement, and the tuple's namespace.  For example, looking at the definition for NetflowV5.
+  ```scala
+  val NetflowV5           = "NetflowV5"
+  val NetflowV5Tuplizer   = "MakeNetflowV5"
+  val NetflowV5Connect    = "NetflowV5Stream"
+  val NetflowV5Namespace  = "sam::netflowv5"
+  ```
+  * Add ConnectionStatement[NameTuple].scala to src/main/scala/sal/parsing/sam/statements.  This should have a parser for the new connection statement (e.g. *NetflowV5*).  There should be a method defined of the form 
   ```scala
   def connectionStatementNameTuple: Parser[ConnectionStatementNameTuple] = ...
   ```
 
-  * Add the parser method (e.g. connectionStatementVast) to the list of connections in sal/parsing/sam/statemetns/Connections.scala. 
+  * Add the parser method to the list of connections in src/main/scala/sal/parsing/sam/statemetns/Connections.scala. 
   ```scala
   def connectionStatement = connectionStatementVast | connectionStatementNameTuple
   ```
 
-2. Additional operators:
-  * Edit sal/parsing/sam/Operator.scala.  
+* Additional operators:
+  * Edit src/main/scala/sal/parsing/sam/Operator.scala.  
     * Add the operator to the list of operators under "def operator = ...".  
     * Add a corresponding Parser for the operator.
   * Edit sal/parsing/sam/OperatorExp.scala and add a class that extends OperatorExp.  The class will need to override createOpString.
