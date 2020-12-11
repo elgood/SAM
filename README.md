@@ -3,8 +3,7 @@
 # Contents
 
 * ExecutableSrc - This contains the source for executables that utilize
-* SAL - The SAL parser that converts SAL code into c++ code (SAM).
-SAM.
+* SAL - The SAL parser that converts SAL code into c++ code (SAM).  [SAL documentation](SAL/Parser/README.md)
 * SamSrc - The source code for the SAM library.
 * TestSrc - Unit tests.
 * explore - Directory with code that might be useful but not part of SAM.
@@ -77,4 +76,106 @@ this->featureMap->updateInsert(key, this->identifier, feature);
 ```
 
 In this example from `ExponentialHistogramSum`, we get the updated value, which in this case is the sum of the sliding window.  We then create a `SingleFeature`, which is the most common type of feature, a singleton value.  The newly created feature is then added to the feature map using the `key` and the `identifier` of the operator to properly index the fature.
+
+# Tuple Types
+
+SAM processes streams of tuples.  The currently supported tuple types are 
+
+* [Netflow version 5](https://www.cisco.com/c/en/us/td/docs/net_mgmt/netflow_collection_engine/3-6/user/guide/format.html)
+* [Vast challenge format](http://vacommunity.org/VAST+Challenge+2013%3A+Mini-Challenge+3): A netflow format that was used for the 2013 VAST Challenge.
+
+In the future, we will support defining a schema for a tuple, which will then generate the appropriate code, but right now the process is manual.  Tuples are defined in SamSrc/sam/tuples.  NetflowV5.hpp and VastNetflow.hpp provide examples of how to create tuples within SAM.  We will use NetflowV5.hpp for the following examples.
+
+Typically we begin with specifying namespaces:
+```c++
+namespace sam {
+namespace netflowv5 {
+```
+We define a namespace for the tuple type itself because fieldnames can be duplicated between tuple types, potentially causing confusion and compiler errors.
+
+
+
+The first step is to create a list of constants that define the numeric location of each tuple field.  You should have an entry for each field in your tuple.
+
+```c++
+const unsigned int UnixSecs       = 0;
+const unsigned int UnixNsecs     = 1;
+const unsigned int SysUptime     = 2;
+const unsigned int Exaddr        = 3;
+const unsigned int Dpkts         = 4;
+const unsigned int Doctets        = 5;
+...
+```
+
+Next we create a type definition to alias std::tuple to the name of our tuple.  Each template parameter of the tuple needs to match the expected type of the tuple, and in the order previously defined with the numeric indices. 
+
+```c++
+typedef std::tuple<long,        //UnixSecs                      
+                    long,        //UnixNsecs                   
+                    long,        //SysUptime                  
+                    std::string, //Exaddr                    
+                    std::size_t, //Dpkts                    
+                    std::size_t, //Doctets     
+...
+                  > NetflowV5;
+```
+
+Next we create a way to convert a string that is comma delimited into the tuple type we are defining.
+
+
+```c++
+inline
+NetflowV5 makeNetflowV5(std::string s)
+{
+
+  // All these fields will be populated.
+  long        unixSecs;
+  long        unixNsecs;
+  long        sysUptime;
+  std::string exaddr;
+  std::size_t dpkts;
+  std::size_t doctets;
+...
+
+  std::stringstream ss(s);
+  std::string item;
+  std::getline(ss, item, ',');
+  unixSecs = boost::lexical_cast<long>(item);
+  std::getline(ss, item, ',');
+  unixNsecs = boost::lexical_cast<long>(item);
+  std::getline(ss, item, ',');
+  sysUptime = boost::lexical_cast<long>(item);
+  std::getline(ss, item, ',');
+  exaddr = boost::lexical_cast<long>(item);
+  std::getline(ss, item, ',');
+  dpkts = boost::lexical_cast<size_t>(item);
+  std::getline(ss, item, ',');
+  doctets = boost::lexical_cast<size_t>(item);
+...
+
+return std::make_tuple( unixSecs,
+                          unixNsecs,
+                          sysUptime,
+                          exaddr,
+                          dpkts,
+                          doctets,
+...
+                          );
+}
+```
+
+Finally we make a class that performs the transformation from string to tuple type.  We use this pattern so we can pass it to the *Tuplizer* template parameter of many classes within SAM.
+
+```c++
+class MakeNetflowV5
+{
+public:
+  NetflowV5 operator()(std::string const& s)
+  {
+    return makeNetflowV5(s);
+  }
+};
+```
+
+Once all these pieces are defined you can make use of the tuple processing capability within SAM.  To refer to the tuple within SAL, see the [documentation on extending SAL](SAL/Parser/README.md).
 
