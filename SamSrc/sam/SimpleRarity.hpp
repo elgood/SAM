@@ -2,8 +2,7 @@
 #define SIMPLE_RARITY_HPP
 
 /**
- * This is a simple implementation of rarity that is not space efficient
- * (i.e. O(N) where N is the size of the sliding window).
+ * This is a simple implementation of determining rarity using bloom filters. 
  */
 
 #include <iostream>
@@ -26,7 +25,7 @@ class SimpleRarityDataStructure {
 private:
   size_t N;
   T* array;
-  T sum;
+  T rare_item;
   int current = 0;
 
 public:
@@ -34,7 +33,7 @@ public:
     this->N = N;
     array = new T[N]();
     for (int i = 0; i < N; i++) array[i] = 0;
-    sum = 0;
+    total = 0;
   }
 
   ~SimpleRarityDataStructure() {
@@ -42,21 +41,23 @@ public:
   }
 
   /**
-   * Adds an item, removing an item if needbe, and
-   * updating the sum.
+   * Adds an item, removing an item if needbe.
    */
   void insert(T item) {
-    sum = sum - array[current];
+
+    //TODO Add to bloom filter here? 
+
     array[current] = item;
     current++;
     if (current >= N) {
       current = 0;
     }
-    sum = sum + item;
   }
 
-  T getRarity) {
-    return sum;
+  T getRarity()) {
+
+    // TODO  Keep the rarest feature stored here. 
+    return rare_item;
   }
 };
 
@@ -75,8 +76,8 @@ private:
   size_t N; ///> Size of sliding window
   typedef SimpleRarityDetails::SimpleRarityDataStructure<T> value_t;
 
-  /// Mapping from the key (e.g. an ip field) to the simple sum 
-  /// data structure that is keeping track of the values seen.
+  /// Mapping from the key (e.g. an ip field) to the rarity  
+  /// data structure that is keeping track of the values seen and determining rarity. 
   std::map<std::string, value_t*> allWindows; 
   
   // Where the most recent item is located in the array.
@@ -108,7 +109,7 @@ public:
                 << this->feedCount << std::endl;
     }
 
-    // Generates unique key from key fields 
+    // Generates unique key from key fields. Determine proper hash function here to compute bloom filter.  
     std::string key = generateKey<keyFields...>(tuple);
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N); 
@@ -129,12 +130,12 @@ public:
 
     allWindows[key]->insert(value);
     
-    // Getting the current sum and providing that to the featureMap.
-    T currentRarity = allWindows[key]->getRarity();
-    SingleFeature feature(currentRarity);
+    // Get the bloom filter result and provide that to the featureMap.
+    T bloom_filter_result = allWindows[key]->getRarity();
+    SingleFeature feature(bloom_filter_result);
     this->featureMap->updateInsert(key, this->identifier, feature);
 
-    notifySubscribers(edge.id, currentRarity);
+    notifySubscribers(edge.id, bloom_filter_result);
 
     return true;
   }
