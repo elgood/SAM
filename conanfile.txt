@@ -1,0 +1,8 @@
+[requires]
+boost/1.75.0
+zeromq/4.3.4
+protobuf/3.13.0
+cppzmq/4.7.1
+
+[generators]
+cmake
