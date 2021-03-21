@@ -1,6 +1,6 @@
 #define BOOST_TEST_MAIN TestVastNetflow
 #include <boost/test/unit_test.hpp>
-#include <sam/tuples/Netflowv5.hpp>
+#include <sam/tuples/NetflowV5.hpp>
 
 using namespace sam;
 using namespace sam::netflowv5;
