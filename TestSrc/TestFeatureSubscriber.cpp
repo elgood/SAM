@@ -22,6 +22,8 @@ using namespace sam::vast_netflow;
 typedef VastNetflow TupleType;
 typedef EmptyLabel LabelType;
 typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef GeneralNetflowProducer<EdgeType, Tuplizer> GeneralNetflowProducerType;
 
 class DummyFeatureProducer : public FeatureProducer
 {
@@ -213,7 +215,7 @@ BOOST_AUTO_TEST_CASE( test_feature_subscriber )
   int queueLength = 1000;
   int numExamples = 200000;
   size_t nodeId = 0;
-  GeneralNetflowProducer netflowProducer( nodeId,
+  GeneralNetflowProducerType netflowProducer( nodeId,
                                           queueLength,
                                           numExamples,
                                           generators);
