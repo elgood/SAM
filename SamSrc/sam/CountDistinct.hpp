@@ -3,10 +3,7 @@
 
 /**
  * A preliminary, non-streaming implementation to count distinct items. Not
- * space efficient, uses O(N) space where N is size of data (or sliding window,
- * after streaming implementation)
- *
- * TODO: convert to streaming implementation
+ * space efficient, uses O(N) space where N is size of sliding window
  */
 
 #include <iostream>
@@ -27,16 +24,34 @@ namespace CountDistinctDetails {
 template <typename T>
 class CountDistinctDataStructure  {
 private:
+  // Size of sliding window
   size_t N;
+
+  // Sliding window, tracks the last N items
   T* array;
-  T distinct_count;
+
+  // Index of the end of sliding window. Inserted item will be
+  // written to array[current]
   int current = 0;
+
+  // Counter representing distinct values in the sliding window
+  int distinct_count;
+
+  // indicates that distinct_count should be incremented
+  bool new_unique;
+
+  // when overwriting a value, only decrement distinct_count if the
+  // old value was unique
+  int old_value;
+  bool old_unique;
 
 public:
   CountDistinctDataStructure(size_t N) {
     this->N = N;
     array = new T[N]();
-    for (int i = 0; i < N; i++) array[i] = 0;
+    for (int i = 0; i < N; i++) {
+      array[i] = NULL;
+    }
     distinct_count = 0;
   }
 
@@ -45,25 +60,64 @@ public:
   }
 
   /**
-   * If item exists in array, return early. Otherwise, add item and
-   * increment distinct item count.
+   * Sliding window - we don't want to track the last N distinct items,
+   *    we want the distinct count over the last N items. Array should
+   *    track the last N items, count is only edited if a new distinct
+   *    is found or if one is lost
+   *
+   * Add new value to sliding window. If the value is unique in the window,
+   * then increment the counter. Similarly, if a unique value was overwritten
+   * then decrement the counter.
    *
    * TODO: implement sliding window, remove old items & decrement counter
    */
   void insert(T item) {
-    // If item exists in array, return early
+    new_unique = true;
+    old_unique = true;
+
+    // save value to be overwritten
+    old_value = array[current];
+    array[current] = NULL;
+
     for (int i = 0; i < N; i++) {
+      // check if new value is unique
       if (array[i] == item) {
-        return;
+        new_unique = false;
+
+        // if neither are unique, break early
+        if (!old_unique) {
+          break;
+        }
+      }
+
+      // check if old value is unique
+      // NOTE: array[current] == NULL
+      if (array[i] == old_value) {
+        old_unique = false;
+
+        // if neither are unique, break early
+        if (!new_unique) {
+          break;
+        }
       }
     }
+
+    // write new value to sliding window
     array[current] = item;
     current++;
-    // NOTE: Check is irrelevant until sliding window implementation
+
+    // rotate index
     if (current >= N) {
       current = 0;
     }
-    distinct_count++;
+
+    // update counter
+    if (new_unique) {
+      distinct_count++;
+    }
+    if (old_unique) {
+      distinct_count--;
+    }
   }
 
   T getDistinctCount() {
