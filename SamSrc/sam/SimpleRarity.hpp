@@ -14,50 +14,52 @@
 #include <sam/Util.hpp>
 #include <sam/FeatureProducer.hpp>
 #include <sam/tuples/Edge.hpp>
+#include "sam/bloom_filter.hpp"
 
 namespace sam 
 {
 
 namespace SimpleRarityDetails {
 
-template <typename T>
+
+
 class SimpleRarityDataStructure {
 private:
   size_t N;
-  T* array;
-  T rare_item;
-  int current = 0;
 
 public:
+   bloom_parameters  my_parameters;
+   bloom_filter filter;
+
   SimpleRarityDataStructure(size_t N) {
-    this->N = N;
-    array = new T[N]();
-    for (int i = 0; i < N; i++) array[i] = 0;
-    total = 0;
+
+    my_parameters.projected_element_count = 1000;
+    my_parameters.false_positive_probability = 0.0001;
+    my_parameters.random_seed = 0xA5A5A5A5;
+    bloom_filter filter(my_parameters);
+    filter.insert("0.0.0.0"); // need to add one item
+
   }
 
   ~SimpleRarityDataStructure() {
-    delete[] array;
+
   }
 
   /**
-   * Adds an item, removing an item if needbe.
+   * Adds an item to bloom filter
    */
-  void insert(T item) {
+  void insert(std::string key) {
 
-    //TODO Add to bloom filter here? 
-
-    array[current] = item;
-    current++;
-    if (current >= N) {
-      current = 0;
-    }
+    filter.insert(key);
   }
 
-  T getRarity()) {
+  bool isRare(std::string key) {
 
-    // TODO  Keep the rarest feature stored here. 
-    return rare_item;
+      if (filter.contains(key)) {
+          std::cout << "Bloom filter contains this item";
+          return true;
+      }
+      else { return false; }
   }
 };
 
@@ -72,17 +74,14 @@ class SimpleRarity: public AbstractConsumer<EdgeType>,
 {
 public:
   typedef typename EdgeType::LocalTupleType TupleType;
+
+
+
 private:
   size_t N; ///> Size of sliding window
-  typedef SimpleRarityDetails::SimpleRarityDataStructure<T> value_t;
+  bloom_parameters my_parameters;
+  bloom_filter filter;
 
-  /// Mapping from the key (e.g. an ip field) to the rarity  
-  /// data structure that is keeping track of the values seen and determining rarity. 
-  std::map<std::string, value_t*> allWindows; 
-  
-  // Where the most recent item is located in the array.
-  size_t top = 0;
-  
 public:
   SimpleRarity(size_t N,
             size_t nodeId,
@@ -90,13 +89,18 @@ public:
             std::string identifier) :
     BaseComputation(nodeId, featureMap, identifier) 
   {
-    this->N = N;
+
+    this->my_parameters.projected_element_count = 100000;
+    this->my_parameters.false_positive_probability = 0.1;
+    this->my_parameters.random_seed = 0xA5A5A5A5;
+    this->my_parameters.compute_optimal_parameters();
+    this->filter = bloom_filter(my_parameters);
+    //filter.insert("0.0.0.0"); // need to add one item
+    this->N = N; // not really needed.
   }
 
   ~SimpleRarity()   {
-    for (auto p : allWindows) {
-      delete p.second;
-    }
+
   }
 
   bool consume(EdgeType const& edge) 
@@ -109,47 +113,47 @@ public:
                 << this->feedCount << std::endl;
     }
 
-    // Generates unique key from key fields. Determine proper hash function here to compute bloom filter.  
-    std::string key = generateKey<keyFields...>(tuple);
-    if (allWindows.count(key) == 0) {
-      auto value = new value_t(N); 
-      allWindows[key] = value;
-    }
+    // Generates unique key from key fields. Determine proper hash function here to compute bloom filter.
+   // try {
+   std::string key = generateKey<keyFields...>(tuple);
 
-    std::string sValue = 
-      boost::lexical_cast<std::string>(std::get<valueField>(tuple));
-    T value;
-    try {
-      value = boost::lexical_cast<T>(sValue);
-    } catch (std::exception e) {
-      std::cerr << "SimpleRarity::consume Caught exception trying to cast string "
-                << "value of " << sValue << std::endl;
-      std::cerr << e.what() << std::endl;
-      value = 0;
-    }
+   // } catch (std::exception e) {
+   //   std::cerr << "SimpleRarity::consume Caught exception trying to generate key ";
+   //  std::cerr << e.what() << std::endl;
+   // }
 
-    allWindows[key]->insert(value);
-    
+
     // Get the bloom filter result and provide that to the featureMap.
-    T bloom_filter_result = allWindows[key]->getRarity();
+    bool bloom_filter_result = isRare(key);
+   // bool bloom_filter_result = false;
     SingleFeature feature(bloom_filter_result);
     this->featureMap->updateInsert(key, this->identifier, feature);
 
     notifySubscribers(edge.id, bloom_filter_result);
 
+
+  //  try {
+    std::cout << "Inserting value key" << key;
+    filter.insert(key);
+
+   // } catch (std::exception e) {
+   //   std::cerr << "SimpleRarity::consume Caught exception trying to insert key to bloom filter ";
+   //   std::cerr << e.what() << std::endl;
+   // }
+
     return true;
   }
 
-  T getRarity(std::string key) {
-    return allWindows[key]->getRarity();
-  }
+  // return true if key not in bloom filter
+  bool isRare(std::string key) {
 
-  std::vector<std::string> keys() const {
-    std::vector<std::string> theKeys;
-    for (auto p : allWindows) {
-      theKeys.push_back(p.first);
+    if (filter.contains(key)) {
+        std::cout << "Bloom filter contains this item"
+                  << "value of " << key << std::endl;
+
+        return false;
     }
-    return theKeys;
+    else { return true; }
   }
 
   void terminate() {}

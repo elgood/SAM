@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE( simple_sum_test )
   BOOST_CHECK_EQUAL(total, 10);
 
 
-  for (int i = 0; i < 9; i++) 
+  for (int i = 0; i < 9; i++)
   {
     sum.consume(edge1);
     total = sum.getSum("239.255.255.250");
