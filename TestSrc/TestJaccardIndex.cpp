@@ -39,13 +39,17 @@ BOOST_AUTO_TEST_CASE( jaccard_index_test )
   EdgeType edge1 = tuplizer(1, netflowString1);
   EdgeType edge2 = tuplizer(2, netflowString2);
 
+  double jaccardindex = 0.5;
+  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
 
   ji.consume(edge1);
-  float jaccardindex = ji.getJaccardIndex("239.255.255.250");
+  jaccardindex = ji.getJaccardIndex("239.255.255.250");
+  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
   BOOST_CHECK_EQUAL(jaccardindex, 0.5);
 
   for (int i = 0; i < 9; i++) ji.consume(edge1);
   jaccardindex = ji.getJaccardIndex("239.255.255.250");
+  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
   BOOST_CHECK_EQUAL(jaccardindex, 10);
 
 
@@ -53,14 +57,17 @@ BOOST_AUTO_TEST_CASE( jaccard_index_test )
   {
     ji.consume(edge1);
     jaccardindex = ji.getJaccardIndex("239.255.255.250");
+    std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
     BOOST_CHECK_EQUAL(jaccardindex, 10);
   }
 
   ji.consume(edge2);
   jaccardindex = ji.getJaccardIndex("239.255.255.250");
+  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
   BOOST_CHECK_EQUAL(jaccardindex, 11);
 
   ji.consume(edge2);
   jaccardindex = ji.getJaccardIndex("239.255.255.250");
+  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
   BOOST_CHECK_EQUAL(jaccardindex, 12);
 }

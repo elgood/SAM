@@ -61,7 +61,7 @@ public:
     }
   }
 
-  T getJaccardIndex() {
+  double getJaccardIndex() {
     /**
      * Walk through array putting all values from first half into setA
      * and putting the values from the second half into setB
@@ -98,7 +98,8 @@ public:
 
     std::cout << "INDEX = " << jaccardIndex << std::endl; // debug
 
-    return jaccardIndex;
+//    return jaccardIndex;
+    return 0.5; // debug
   }
 };
 
@@ -173,7 +174,7 @@ public:
     allWindows[key]->insert(value);
 
     // Getting the current Jaccard Index and providing that to the featureMap.
-    T currentJaccardIndex = allWindows[key]->getJaccardIndex();
+    double currentJaccardIndex = allWindows[key]->getJaccardIndex();
     SingleFeature feature(currentJaccardIndex);
     this->featureMap->updateInsert(key, this->identifier, feature);
 
