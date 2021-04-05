@@ -5,6 +5,13 @@
 
 using namespace sam;
 
+typedef VastNetflow TupleType;
+typedef EmptyLabel LabelType;
+typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef PopularSites<EdgeType, Tuplizer> PopularSitesType;
+typedef TopKProducer<EdgeType, Tuplizer> TopKProducerType;
+
 BOOST_AUTO_TEST_CASE( test_topkproducer )
 {
   size_t nodeId = 0;
@@ -12,7 +19,7 @@ BOOST_AUTO_TEST_CASE( test_topkproducer )
   int numExamples = 100000;
   int numServers = 2;
   int numNonservers = 2;
-  TopKProducer producer(nodeId, queueLength, numExamples, numServers, 
+  TopKProducerType producer(nodeId, queueLength, numExamples, numServers, 
                         numNonservers);
 
   producer.run();

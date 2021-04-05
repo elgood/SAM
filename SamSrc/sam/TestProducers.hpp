@@ -23,12 +23,10 @@ using namespace sam::vast_netflow;
  * Creates a situation where there are n popular sites that recieve
  * p fraction of the traffic.  
  */
+template <typename EdgeType, typename Tuplizer>
 class PopularSites : 
-  public BaseProducer<Edge<size_t, EmptyLabel, VastNetflow>>
+  public BaseProducer<EdgeType>
 {
-public:
-  typedef Edge<size_t, EmptyLabel, VastNetflow> EdgeType;
-  typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
 private:
   size_t numExamples; ///> Number of netflows to produce
   size_t numPopular; ///> How many IPs are popular.
@@ -46,19 +44,21 @@ public:
   void run();
 };
 
-PopularSites::PopularSites(size_t nodeId,
+template <typename EdgeType, typename Tuplizer>
+PopularSites<EdgeType, Tuplizer>::PopularSites(size_t nodeId,
                            size_t queueLength,
                            size_t numExamples,
                            size_t numPopular,
                            double p) :
-                           BaseProducer(nodeId, queueLength)
+                           BaseProducer<EdgeType>(nodeId, queueLength)
 {
   this->numExamples = numExamples;
   this->numPopular = numPopular;
   this->p = p;
 }
 
-void PopularSites::run()
+template <typename EdgeType, typename Tuplizer>
+void PopularSites<EdgeType, Tuplizer>::run()
 {
   Tuplizer tuplizer;
   RandomGenerator generator;
@@ -78,7 +78,7 @@ void PopularSites::run()
         boost::lexical_cast<std::string>(popId);
     }
 
-    parallelFeed(edge);
+    this->parallelFeed(edge);
   }
 }
 
@@ -92,11 +92,9 @@ void PopularSites::run()
  * server IPs and nonserver IPs when using a filter that uses the topk 
  * feature.
  */
-class TopKProducer : public BaseProducer<Edge<size_t, EmptyLabel, VastNetflow>>
+template <typename EdgeType, typename Tuplizer>
+class TopKProducer : public BaseProducer<EdgeType>
 {
-public: 
-  typedef Edge<size_t, EmptyLabel, VastNetflow> EdgeType;
-  typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
 private:
   int numExamples;
   std::vector<std::shared_ptr<UniformDestPort>> servers;
@@ -127,12 +125,13 @@ public:
 
 };
 
-TopKProducer::TopKProducer(size_t nodeId,
+template <typename EdgeType, typename Tuplizer>
+TopKProducer<EdgeType, Tuplizer>::TopKProducer(size_t nodeId,
                            int queueLength, 
                            int numExamples, 
                            int numServers, 
                            int numNonservers) : 
-                           BaseProducer(nodeId, queueLength)
+                           BaseProducer<EdgeType>(nodeId, queueLength)
 {
   this->numExamples = numExamples;
   int last = 1; 
@@ -168,7 +167,8 @@ TopKProducer::TopKProducer(size_t nodeId,
   }
 }
 
-void TopKProducer::run() {
+template <typename EdgeType, typename Tuplizer>
+void TopKProducer<EdgeType, Tuplizer>::run() {
 
   Tuplizer tuplizer;
   for (int i = 0; i < numExamples; i++) 
@@ -187,7 +187,7 @@ void TopKProducer::run() {
       
       // Doing the parallel feed
       //parallelFeed(serverId * numExamples + i, netflow);
-      parallelFeed(edge);
+      this->parallelFeed(edge);
 
       serverId++;
     }
@@ -201,19 +201,23 @@ void TopKProducer::run() {
         edge.tuple),
         std::get<DestPort>(edge.tuple))] += 1;
 
-      parallelFeed(edge);
+      this->parallelFeed(edge);
       serverId++;
     }
 
   }
 }
 
-std::list<std::string> const& TopKProducer::getServerIps() const
+template <typename EdgeType, typename Tuplizer>
+std::list<std::string> const& 
+TopKProducer<EdgeType, Tuplizer>::getServerIps() const
 {
   return serverIps; 
 }
 
-std::list<std::string> const& TopKProducer::getNonserverIps() const
+template <typename EdgeType, typename Tuplizer>
+std::list<std::string> const& 
+TopKProducer<EdgeType, Tuplizer>::getNonserverIps() const
 {
   return nonserverIps;
 }
@@ -223,12 +227,10 @@ std::list<std::string> const& TopKProducer::getNonserverIps() const
  * to produce netflows.  Generates a netflow numExamples times for
  * each generator.
  */
+template <typename EdgeType, typename Tuplizer>
 class GeneralNetflowProducer : 
-  public BaseProducer<Edge<size_t, EmptyLabel, VastNetflow>>
+  public BaseProducer<EdgeType>
 {
-public:
-  typedef Edge<size_t, EmptyLabel, VastNetflow> EdgeType;
-  typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
 private:
   std::vector<std::shared_ptr<AbstractVastNetflowGenerator>> generators;
   int numExamples;
@@ -239,7 +241,7 @@ public:
     int numExamples,
     std::vector<std::shared_ptr<AbstractVastNetflowGenerator>>  
       const& _generators) :
-    BaseProducer(nodeId, queueLength),
+    BaseProducer<EdgeType>(nodeId, queueLength),
     generators(_generators)
   {
     this->numExamples = numExamples;
@@ -250,7 +252,8 @@ public:
 
 };
 
-void GeneralNetflowProducer::run()
+template <typename EdgeType, typename Tuplizer>
+void GeneralNetflowProducer<EdgeType, Tuplizer>::run()
 {
   int count = 0; //Remove
   Tuplizer tuplizer;
@@ -262,7 +265,7 @@ void GeneralNetflowProducer::run()
       std::string s = generators[j]->generate();
       EdgeType edge = tuplizer(i, s);
 
-      parallelFeed(edge);
+      this->parallelFeed(edge);
     }  
   }
 }

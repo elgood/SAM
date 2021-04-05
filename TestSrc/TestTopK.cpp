@@ -15,6 +15,9 @@ using namespace sam::vast_netflow;
 typedef VastNetflow TupleType;
 typedef EmptyLabel LabelType;
 typedef Edge<size_t, LabelType, TupleType> EdgeType;
+typedef TuplizerFunction<EdgeType, MakeVastNetflow> Tuplizer;
+typedef PopularSites<EdgeType, Tuplizer> PopularSitesType;
+typedef TopKProducer<EdgeType, Tuplizer> TopKProducerType;
 
 struct F
 {
@@ -38,7 +41,7 @@ BOOST_FIXTURE_TEST_CASE( test_topk_no_key, F )
   double probabilityPop = 0.5;
   size_t nodeId = 0;
 
-  PopularSites producer(nodeId, queueLength, numExamples, numPopular,
+  PopularSitesType producer(nodeId, queueLength, numExamples, numPopular,
                         probabilityPop);
 
   auto topk = std::make_shared<TopK<EdgeType, DestIp>>
@@ -76,7 +79,7 @@ BOOST_FIXTURE_TEST_CASE( test_topk_server, F )
   // The TopKProducer creates a situation where there are numServers servers
   // and numNonservers non-servers.  A server is defined as > 90% of traffic
   // to the top two ports.
-  TopKProducer producer(nodeId, queueLength, numExamples, numServers, 
+  TopKProducerType producer(nodeId, queueLength, numExamples, numServers, 
                         numNonservers);
  
   // Creating the topk computation and registering it as a consumer
