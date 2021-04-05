@@ -61,14 +61,6 @@ public:
      * is consumed. Need to add a check to make sure N has been set, but
      * the below doesn't work...
      */
-     try {
-       if (N == 0);
-     } catch (std::exception e) {
-       std::cerr << "getJaccardIndex Caught exception; no edges have been consumed"
-                 << std::endl;
-       std::cerr << e.what() << std::endl;
-       return 0;
-     }
 
     // sets used for calculating the Jaccard index
     std::set<T> setA;
@@ -217,7 +209,13 @@ public:
   }
 
   double getJaccardIndex(std::string key) {
-    return allWindows[key]->getJaccardIndex();
+    if (allWindows.count(key) > 0) 
+    {
+      return allWindows[key]->getJaccardIndex();
+    } else
+    {
+      return 0;
+    }
   }
 
   std::vector<std::string> keys() const {
