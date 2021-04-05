@@ -8,7 +8,7 @@
 
 #include <iostream>
 #include <map>
-#include <bits/stdc++.h>       // needed for sets
+#include <set>
 
 #include <boost/lexical_cast.hpp>
 #include <sam/AbstractConsumer.hpp>
@@ -29,9 +29,6 @@ private:
   size_t N;
   T* array;
   int current = 0;
-  // sets used for calculating the Jaccard index
-  std::set<T> setA;
-  std::set<T> setB;
 
 public:
   JaccardIndexDataStructure(size_t N) {
@@ -43,10 +40,6 @@ public:
 
   ~JaccardIndexDataStructure() {
     delete[] array;
-
-    // what clean up should be done for sets?????
-//    delete setA;
-//    delete setB;
   }
 
   /**
@@ -63,20 +56,32 @@ public:
 
   double getJaccardIndex() {
     /**
-     * Walk through array putting all values from first half into setA
-     * and putting the values from the second half into setB
-    */
-    for (int i = 0; i < N; i++) {
-      if (i <= ((N/2)-1)) {
-        setA.insert(array[i]);
-//        std::cout << "setA[" << i << "] = " << setA[i] << std::endl; // debug
-      }
-      else {
-        setB.insert(array[i]);
-//        std::cout << "setB[" << i << "] = " << setB[i] << std::endl; // debug
-      }
-    }
+     * Note this does not handle the edge case where the array hasn't been
+     * allocated yet, i.e. this function is called before the first edge
+     * is consumed. Need to add a check to make sure N has been set, but
+     * the below doesn't work...
+     */
+     try {
+       if (N == 0);
+     } catch (std::exception e) {
+       std::cerr << "getJaccardIndex Caught exception; no edges have been consumed"
+                 << std::endl;
+       std::cerr << e.what() << std::endl;
+       return 0;
+     }
+
+    // sets used for calculating the Jaccard index
+    std::set<T> setA;
+    std::set<T> setB;
+
+    std::cout << "; size_A = " << setA.size();
+    std::cout << "; size_B = " << setB.size();
+    std::cout << "; N = " << N;
+    std::cout << std::endl; // debug
+
+
     /**
+     *
      * Let number of elements in set A & B be size_A & size_B respectively, and
      * the number of elements in the intersection of sets A & B be size_intAB,
      * then the Jaccard index can be computed by:
@@ -84,22 +89,50 @@ public:
      *
      * Ref: (https://en.wikipedia.org/wiki/Jaccard_index)
      */
+
+    /**
+     * To create the two sets we walk through array and put all values from
+     * first half into setA and the values from the second half into setB.
+     *
+     * If this is called with an empty array it generates a memory access error;
+     * Need to add error handling to catch that case.
+     *
+     */
+    for (int i = 0; i < N; i++) {
+      if (i <= ((N/2)-1)) {
+        setA.insert(array[i]);
+//        std::cout << "setA[" << i << "] = " << array[i] << std::endl; // debug
+      }
+      else {
+        setB.insert(array[i]);
+//        std::cout << "setB[" << i << "] = " << array[i] << std::endl; // debug
+      }
+    }
+
     double size_A = setA.size();
     double size_B = setB.size();
-    std::set<T> intersect;
+    std::set<T> intersectAB;
+
+    std::cout << "; size_A = " << setA.size();
+    std::cout << "; size_B = " << setB.size();
+    std::cout << std::endl; // debug
+
 
     // Find the intersection of the two sets
     set_intersection(setA.begin(), setA.end(), setB.begin(), setB.end(),
-                     inserter(intersect, intersect.begin()));
-    double size_intAB = intersect.size();
+                     inserter(intersectAB, intersectAB.begin()));
+    double size_intAB = intersectAB.size();
 
     // Compute the Jaccard index
     double jaccardIndex = size_intAB / (size_A + size_B - size_intAB);
 
-    std::cout << "INDEX = " << jaccardIndex << std::endl; // debug
+    std::cout << "current = " << current << std::endl; // debug
+    std::cout << "size_intAB = " << size_intAB;
+    std::cout << "; size_A = " << size_A;
+    std::cout << "; size_B = " << size_B;
+    std::cout << std::endl; // debug
 
-//    return jaccardIndex;
-    return 0.5; // debug
+    return jaccardIndex;
   }
 };
 
@@ -153,7 +186,7 @@ public:
 
     // Generates unique key from key fields
     std::string key = generateKey<keyFields...>(tuple);
-    std::cout << "key = " << key << std::endl; // debug
+//    std::cout << "key = " << key << std::endl; // debug
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N);
       allWindows[key] = value;
@@ -183,7 +216,7 @@ public:
     return true;
   }
 
-  T getJaccardIndex(std::string key) {
+  double getJaccardIndex(std::string key) {
     return allWindows[key]->getJaccardIndex();
   }
 
