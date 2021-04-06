@@ -47,7 +47,6 @@ public:
    */
   void insert(T item) {
     array[current] = item;
-    std::cout << "array[" << current << "] = " << array[current] << std::endl; // debug
     current++;
     if (current >= N) {
       current = 0;
@@ -55,25 +54,11 @@ public:
   }
 
   double getJaccardIndex() {
-    /**
-     * Note this does not handle the edge case where the array hasn't been
-     * allocated yet, i.e. this function is called before the first edge
-     * is consumed. Need to add a check to make sure N has been set, but
-     * the below doesn't work...
-     */
-
     // sets used for calculating the Jaccard index
     std::set<T> setA;
     std::set<T> setB;
 
-    std::cout << "; size_A = " << setA.size();
-    std::cout << "; size_B = " << setB.size();
-    std::cout << "; N = " << N;
-    std::cout << std::endl; // debug
-
-
     /**
-     *
      * Let number of elements in set A & B be size_A & size_B respectively, and
      * the number of elements in the intersection of sets A & B be size_intAB,
      * then the Jaccard index can be computed by:
@@ -93,22 +78,15 @@ public:
     for (int i = 0; i < N; i++) {
       if (i <= ((N/2)-1)) {
         setA.insert(array[i]);
-//        std::cout << "setA[" << i << "] = " << array[i] << std::endl; // debug
       }
       else {
         setB.insert(array[i]);
-//        std::cout << "setB[" << i << "] = " << array[i] << std::endl; // debug
       }
     }
 
     double size_A = setA.size();
     double size_B = setB.size();
     std::set<T> intersectAB;
-
-    std::cout << "; size_A = " << setA.size();
-    std::cout << "; size_B = " << setB.size();
-    std::cout << std::endl; // debug
-
 
     // Find the intersection of the two sets
     set_intersection(setA.begin(), setA.end(), setB.begin(), setB.end(),
@@ -117,12 +95,6 @@ public:
 
     // Compute the Jaccard index
     double jaccardIndex = size_intAB / (size_A + size_B - size_intAB);
-
-    std::cout << "current = " << current << std::endl; // debug
-    std::cout << "size_intAB = " << size_intAB;
-    std::cout << "; size_A = " << size_A;
-    std::cout << "; size_B = " << size_B;
-    std::cout << std::endl; // debug
 
     return jaccardIndex;
   }
@@ -178,7 +150,6 @@ public:
 
     // Generates unique key from key fields
     std::string key = generateKey<keyFields...>(tuple);
-//    std::cout << "key = " << key << std::endl; // debug
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N);
       allWindows[key] = value;
@@ -209,7 +180,7 @@ public:
   }
 
   double getJaccardIndex(std::string key) {
-    if (allWindows.count(key) > 0) 
+    if (allWindows.count(key) > 0)
     {
       return allWindows[key]->getJaccardIndex();
     } else

@@ -66,19 +66,21 @@ BOOST_AUTO_TEST_CASE( jaccard_index_test )
   EdgeType edge8 = tuplizer(8, netflowString8);
   EdgeType edge9 = tuplizer(9, netflowString9);
 
+  // For debuging purposes initially setting jaccardindex to an invalid
+  // value which should never be returned. It's a probability so it should
+  // always be a value between 0 and 1.
   double jaccardindex = -0.5;
-  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
-  // No edges have been consumed yet
+
+  // No edges have been consumed yet;
   // Test that JaccardIndex is checking for boundry condition
-  jaccardindex = ji.getJaccardIndex("239.255.255.250"); // debug
+  jaccardindex = ji.getJaccardIndex("239.255.255.250");
 
   // All edges are identical so the two sets are also identical
   for (int i = 0; i < 1; i++) ji.consume(edge0);
   jaccardindex = ji.getJaccardIndex("239.255.255.250");
-  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
   BOOST_CHECK_EQUAL(jaccardindex, 1);
 
-  // All edges are unique so the intersection between sets will be empty
+  // All edges are unique so the intersection between sets will be empty.
   ji.consume(edge1);
   ji.consume(edge2);
   ji.consume(edge3);
@@ -90,11 +92,10 @@ BOOST_AUTO_TEST_CASE( jaccard_index_test )
   ji.consume(edge9);
   ji.consume(edge0);
   jaccardindex = ji.getJaccardIndex("239.255.255.250");
-  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
   BOOST_CHECK_EQUAL(jaccardindex, 0);
 
   // Two edges are the same and the rest are unique so the intersection
-  // between sets will be 2 items
+  // between sets will be 2 items.
   ji.consume(edge1);
   ji.consume(edge2);
   ji.consume(edge3);
@@ -106,7 +107,6 @@ BOOST_AUTO_TEST_CASE( jaccard_index_test )
   ji.consume(edge9);
   ji.consume(edge0);
   jaccardindex = ji.getJaccardIndex("239.255.255.250");
-  std::cout << "Test-INDEX = " << jaccardindex << std::endl; // debug
   BOOST_CHECK_EQUAL(jaccardindex, 0.25);
 
 }
