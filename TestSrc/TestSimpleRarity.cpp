@@ -22,10 +22,11 @@ BOOST_AUTO_TEST_CASE( simple_rarity_test )
   size_t nodeId = 0;
   auto featureMap = std::make_shared<FeatureMap>();
   SimpleRarity<size_t, EdgeType, SrcTotalBytes, DestIp>
-    rarity(10, nodeId, featureMap, "rarity");
-                                
+    rarity(5, nodeId, featureMap, "rarity");
 
-  string netflowString1 = "1365582756.384094,2013-04-10 08:32:36," 
+
+
+  string netflowString1 = "1365582756.384094,2013-04-10 08:32:36,"
                          "20130410083236.384094,17,UDP,172.20.2.18," 
                          "239.255.255.250,29986,1900,0,0,0,133,0,1,0,1,0,0";
   string netflowString2 = "1365582756.384094,2013-04-10 08:32:36," 
@@ -37,42 +38,41 @@ BOOST_AUTO_TEST_CASE( simple_rarity_test )
 
 
   rarity.consume(edge1);
+
+  // netflowString1 & netflowString2 contain dest 239.255.255.250
   bool is_rare = rarity.isRare("239.255.255.250");
-
-  BOOST_TEST(is_rare == false);
-
-  is_rare = rarity.isRare("xvy");
-  BOOST_TEST(is_rare == true);
-
-  is_rare = rarity.isRare("Ti");
-  BOOST_TEST(is_rare == true);
-
-  is_rare = rarity.isRare("12");
-  BOOST_TEST(is_rare == true);
-
-  is_rare = rarity.isRare("9");
-  BOOST_TEST(is_rare == true);
-
-
-
-  for (int i = 0; i < 200; i++) rarity.consume(edge1);
-
-  is_rare = rarity.isRare("239.255.255.250");
   BOOST_TEST(is_rare == false);
 
 
-  //for (int i = 0; i < 9; i++)
-  //{
-   // sum.consume(edge1);
-  //  total = sum.getSum("239.255.255.250");
-  //  BOOST_CHECK_EQUAL(total, 10);
- // }
+  is_rare = rarity.isRare("198.255.255.25");
+  BOOST_TEST(is_rare == true);
 
- // sum.consume(edge2);
- // total = sum.getSum("239.255.255.250");
- // BOOST_CHECK_EQUAL(total, 11);
+  is_rare = rarity.isRare("199.255.255.25");
+  BOOST_TEST(is_rare == true);
 
- // sum.consume(edge2);
- // total = sum.getSum("239.255.255.250");
- // BOOST_CHECK_EQUAL(total, 12);
-}
+  is_rare = rarity.isRare("200.255.255.25");
+  BOOST_TEST(is_rare == true);
+
+
+  string dest_ip;
+  for (int i = 0; i < 1000; i++) {
+
+      int octet_1 = rand() % 255;
+      int octet_2 = rand() % 255;
+      int octet_3 = rand() % 255;
+      int octet_4 = rand() % 255;
+
+      dest_ip = std::to_string(octet_1) + "." + std::to_string(octet_2) + "." + std::to_string(octet_3) + "." + std::to_string(octet_4);
+
+      string netflowStringRandDest = "1365582756.384094,2013-04-10 08:32:36,"
+                                     "20130410083236.384094,17,UDP,172.20.2.18," + dest_ip + ",29986,1900,0,0,0,133,0,2,0,1,0,0";
+
+      EdgeType edge = tuplizer(i, netflowStringRandDest);
+
+      rarity.consume(edge);
+
+  }
+
+   // check the last randon netflow.
+  is_rare = rarity.isRare(dest_ip);
+  BOOST_TEST(is_rare == false);
