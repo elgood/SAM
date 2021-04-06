@@ -16,15 +16,28 @@
 * protobuf
 * cmake
 * zmq
+* conan
+
 
 # Building
 
-To build:  
+Many of the project dependencies such as Boost, protobug, zmq are managed by conan https://conan.io/
+This make it easier to build SAM on cross-plaforms such as osx, windows and linux.
+
+To install conan you need Python installed first. Then install conan by using pip
+
+`pip install conan`
+
+
+To build SAM:
+```
 cd SAM  
 mkdir build  
-cd build  
+cd build
+conan install ..
 cmake ..  
-make  
+make
+```
 
 # Operators
 
