@@ -2,7 +2,12 @@
 #define SIMPLE_RARITY_HPP
 
 /**
- * This is a simple implementation of determining rarity using bloom filters. 
+* This is a simple implementation of determining rarity using sliding bloom filters.
+* The basic idea is to define a window of bloom filters and populate each filter and begin
+* to "slide" to the next filter once the filter has reached capacity. The problem with a fixed
+* static filter is that it will eventually saturate and become useless as it will report too many
+* false positives. This maintains a window of bloom filters to avoid that.
+ *
  */
 
 #include <iostream>
@@ -14,7 +19,7 @@
 #include <sam/Util.hpp>
 #include <sam/FeatureProducer.hpp>
 #include <sam/tuples/Edge.hpp>
-#include "sam/bloom_filter.hpp"
+#include <bloom/bloom_filter.hpp>
 
 namespace sam 
 {
@@ -32,31 +37,34 @@ public:
 
 
 private:
-  const static size_t N = 5; ///> Size of sliding window
-  bloom_parameters parameters; // All bloom filters will receive the same params
+  const static size_t N = 5; // Size of sliding window.  This can be dynmaic and provided in ctor but size of the bloom filter is main driver.
+  bloom_parameters parameters; // All bloom N filters will receive the same params.
   bloom_filter* filters[N];
-  int current_bloom_index = 0;
-  int bloom_filter_counter = 0;
-  const float threshold = .75;  // 75% of bloom filter capacity
-
+  int current_bloom_index = 0; // track which bloom filter index (0 though N)
+  int bloom_filter_counter[N]; // counter to know when to reset a filter
 
 public:
-  SimpleRarity(size_t N,
+  SimpleRarity(int filter_size,
             size_t nodeId,
             std::shared_ptr<FeatureMap> featureMap,
             std::string identifier) :
     BaseComputation(nodeId, featureMap, identifier) 
   {
-
-    parameters.projected_element_count = 100;
+    // Setup the filter params here. Each N filter will receive same params.
+    parameters.projected_element_count = filter_size;
     parameters.false_positive_probability = 0.1;
     parameters.random_seed = 0xA5A5A5A5;
     parameters.compute_optimal_parameters();
-    //this->N = N; // not really needed.
 
+
+    // Create the window of N bloom filters
     for(int i= 0; i < N; i++) {
       filters[i] = new bloom_filter(this->parameters);
     }
+    for(int i= 0; i < N; i++) {
+      bloom_filter_counter[i] = 0;
+    }
+
 
   }
 
@@ -71,59 +79,66 @@ public:
   {
     TupleType tuple = edge.tuple;
 
+    // feedCount is total count since running.
     this->feedCount++;
-    bloom_filter_counter++;
 
-    if (this->feedCount % this->metricInterval == 0) {
-      std::cout << "SimpleRarity: NodeId " << this->nodeId << " feedCount " 
-                << this->feedCount << std::endl;
-    }
+    // Generates unique key from key fields. This value is hashed in bloom_filter.hpp
+     std::string key = "";
+     try {
+         key = generateKey<keyFields...>(tuple);
+      } catch (std::exception e) {
+        std::cerr << "SimpleRarity::consume Caught exception trying to generate key ";
+        std::cerr << e.what() << std::endl;
+        return false;  // exit if key cannot be generated.
+      }
 
-    // Generates unique key from key fields. Determine proper hash function here to compute bloom filter.
-    std::string key = generateKey<keyFields...>(tuple);
-
-
-    // Get the bloom filter result and provide that to the featureMap.
+    /* Get the bloom filter result and provide that to the featureMap
+    *  And then notify notifySubscribers
+    *  If this key is new it'll return true. */
     bool bloom_filter_result = this->isRare(key);
-   // bool bloom_filter_result = false;
     SingleFeature feature(bloom_filter_result);
     this->featureMap->updateInsert(key, this->identifier, feature);
-
     notifySubscribers(edge.id, bloom_filter_result);
 
-    std::cout << "Inserting value key to bloom filter " <<  current_bloom_index;
+    // get the current capacity
+    double capacity_utilization = (double)bloom_filter_counter[current_bloom_index] / (double)parameters.projected_element_count;
 
-    std::cout << "feed count "  << this->feedCount;
-    double capacity = (double)bloom_filter_counter / (double)parameters.projected_element_count;
-    std::cout << std::setprecision(10) << "Current capacity" << capacity;
+    // Insert to the current indexed bloom filter
+  //  filters[current_bloom_index]->insert(key);
+  //  bloom_filter_counter[current_bloom_index]++;
 
-    filters[current_bloom_index]->insert(key);
+     /**
+     *   Based on the capacity_utilization percentage determine what bloom filters
+     *   need to insert to.  This is needed b/c we do not "slide" to the next
+     *   bloom filter that is empty as this would produce many false postives.
+     *   When the next bloom filter slides, it'll already be at 75% capacity utilization.
+     */
 
-    if (capacity < 0.25) {
-      std::cout << "Inserting value key to bloom filter 25";
-      insert(1, key);
+
+    std::cout << std::setprecision(4) << "Bloom Filter Index " <<  current_bloom_index << " Capacity Utilization: " << capacity_utilization << "\n";
+
+    if (capacity_utilization < 0.25) {
+      insert(N - 5, key);
     }
-    else if (capacity < 0.50) {
-      std::cout << "Inserting value key to bloom filter 50";
-      insert(2, key);
+    else if (capacity_utilization < 0.50) {
+      insert(N - 4, key);
     }
-    else if (capacity < 0.75) {
-      std::cout << "Inserting value key to bloom filter 75";
-      insert(3, key);
+    else if (capacity_utilization < 0.75) {
+      insert(N - 3, key);
     }
-    else if (capacity < 1.00) {
-      std::cout << "Inserting value key to bloom filter 100";
-      insert(4, key);
+    else if (capacity_utilization < 1.00) {
+      insert(N - 2, key);
     }
-    else if (capacity >=  1.00) {
+    else if (capacity_utilization >=  1.00) {
 
      // clear contents of full bloom filter
+     std::cout <<   "Bloom Filter Index " << current_bloom_index << " is now full. Clearing contents \n";
      filters[current_bloom_index]->clear();
      // reset counter
-     bloom_filter_counter = 0;
+     bloom_filter_counter[current_bloom_index] = 0;
 
      // move current_bloom_index to next filter
-     if (current_bloom_index + 1 >= 5) {
+     if (current_bloom_index + 1 >= N) {
          current_bloom_index = 0;
      }
      else {
@@ -137,16 +152,20 @@ public:
 
   void insert(int num_of_inserts, std::string key) {
 
-    std::cout << "Inserting key " <<  key << "\n";
-
-    for (int i=num_of_inserts; i<5; i++) {
+    for (int i=0; i <= num_of_inserts; i++) {
     // if index = 3, it'll wrap to 0
 
-      if (current_bloom_index + i >= 5) {
-        filters[current_bloom_index % 5]->insert(key);
+      if (current_bloom_index + i >= N) {
+        int index =  (current_bloom_index + i) % N;
+        std::cout <<   "Inserting key " << key << " to bloom filter index " << index << "\n";
+        filters[index]->insert(key);
+        bloom_filter_counter[index]++;
        }
        else {
-        filters[current_bloom_index]->insert(key);
+        int index =  current_bloom_index + i;
+        std::cout <<   "Inserting key " << key << " to bloom filter index " << index << "\n";
+        filters[index]->insert(key);
+        bloom_filter_counter[index]++;
        }
     }
   }
