@@ -21,7 +21,17 @@ include_directories("${STRING_INCLUDE_PATH}/dummy/../")
 ######################## Dependencies ######################
 
 
-######################## Boost ######################
+######################## Bloom filter ######################
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external_includes)
+execute_process(
+    COMMAND git clone https://github.com/ArashPartow/bloom bloom
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external_includes)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/external_includes)
+
+
+######################## Conan (Boost, zermq, etc ######################
 
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
