@@ -11,7 +11,6 @@
 
 #include <sam/AbstractConsumer.hpp>
 #include <sam/BaseComputation.hpp>
-#include <sam/ExponentialHistogram.hpp>
 #include <sam/Features.hpp>
 #include <sam/Util.hpp>
 #include <sam/FeatureProducer.hpp>
@@ -50,7 +49,9 @@ public:
     this->N = N;
     array = new T[N]();
     for (int i = 0; i < N; i++) {
-      array[i] = NULL;
+      // init array to a known placeholder value, so we can ignore later
+      // NOTE: I'd like to use NULL/nullptr here, but struggled w/ type warnings
+      array[i] = -1;
     }
     distinct_count = 0;
   }
@@ -68,8 +69,6 @@ public:
    * Add new value to sliding window. If the value is unique in the window,
    * then increment the counter. Similarly, if a unique value was overwritten
    * then decrement the counter.
-   *
-   * TODO: implement sliding window, remove old items & decrement counter
    */
   void insert(T item) {
     new_unique = true;
@@ -77,9 +76,12 @@ public:
 
     // save value to be overwritten
     old_value = array[current];
-    array[current] = NULL;
+    array[current] = -1;
 
     for (int i = 0; i < N; i++) {
+      // skip placeholder values
+      if (i == -1) continue;
+
       // check if new value is unique
       if (array[i] == item) {
         new_unique = false;
@@ -91,7 +93,6 @@ public:
       }
 
       // check if old value is unique
-      // NOTE: array[current] == NULL
       if (array[i] == old_value) {
         old_unique = false;
 
@@ -136,8 +137,6 @@ class CountDistinct: public AbstractConsumer<EdgeType>,
 {
 private:
 
-  // NOTE: In streaming implementation, size of sliding window.
-  //       Unused for non-streaming implementation
   // Size of total number of edges (non-streaming implementation)
   size_t N;
   typedef CountDistinctDetails::CountDistinctDataStructure<T> value_t;
@@ -188,7 +187,7 @@ public:
     // Generates unique key from key fields
     std::string key = generateKey<keyFields...>(edge.tuple);
 
-    // Create an exponential histogram if it doesn't exist for the given key
+    // Create new value if it doesn't exist for the given key
     if (allWindows.count(key) == 0) {
       auto value = new value_t(N);
       allWindows[key] = value;
