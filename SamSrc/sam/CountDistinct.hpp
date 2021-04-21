@@ -2,8 +2,12 @@
 #define COUNT_DISTINCT_HPP
 
 /**
- * A preliminary, non-streaming implementation to count distinct items. Not
- * space efficient, uses O(N) space where N is size of sliding window
+ * A preliminary, non-streaming implementation to count distinct items. Bloom
+ * filter implementation inspired from Tim Coleman's add_rarity branch. To
+ * implement a sliding window with bloom filters, values are inserted into
+ * one of several sub bloom filters. After a period of time, the filters are
+ * rotated and emptied. A visual example can be seen here:
+ * https://programming.guide/sliding-bloom-filter.html
  */
 
 #include <iostream>
@@ -15,6 +19,7 @@
 #include <sam/Util.hpp>
 #include <sam/FeatureProducer.hpp>
 #include <sam/tuples/Edge.hpp>
+#include <bloom/bloom_filter.hpp>
 
 namespace sam {
 
@@ -26,102 +31,104 @@ private:
   // Size of sliding window
   size_t N;
 
-  // Sliding window, tracks the last N items
-  T* array;
+  // Number of sub bloom filters, 5 feels sufficient
+  const static short num_filters = 5;
 
-  // Index of the end of sliding window. Inserted item will be
-  // written to array[current]
-  int current = 0;
+  // Parameters to initialize bloom filters
+  bloom_parameters params;
 
-  // Counter representing distinct values in the sliding window
-  int distinct_count;
+  // Array of sub bloom filters. An element is inserted into a
+  // "live" bloom filter, which rotates every N / num_filters
+  // insertions. Each time the live filter rotates, the oldest
+  // filter is emptied.
+  bloom_filter* sub_filters[num_filters];
 
-  // indicates that distinct_count should be incremented
-  bool new_unique;
+  // Keep track of number of insertions
+  int insertion_count = 0;
 
-  // when overwriting a value, only decrement distinct_count if the
-  // old value was unique
-  int old_value;
-  bool old_unique;
+  // Rotate live filter every (N / num_filters) insertions
+  int rotation_freq;
+
+  // Array to keep track of how many unique values are in each
+  // sub bloom filter. The distinct count is the cumulative total
+  // of each filter count.
+  int filter_counts[num_filters];
+
+  // Index tracking current bloom filter
+  short live_filter = 0;
 
 public:
   CountDistinctDataStructure(size_t N) {
     this->N = N;
-    array = new T[N]();
-    for (int i = 0; i < N; i++) {
-      // init array to a known placeholder value, so we can ignore later
-      // NOTE: I'd like to use NULL/nullptr here, but struggled w/ type warnings
-      array[i] = -1;
+
+    // Configure bloom filter params
+    params.projected_element_count = N / num_filters;
+    params.false_positive_probability = 0.0001;
+    params.compute_optimal_parameters();
+
+    // Calculate rotation number
+    rotation_freq = N / num_filters;
+
+    for (int i = 0; i < num_filters; i++) {
+      sub_filters[i] = new bloom_filter(this->params);
+      filter_counts[i] = 0;
     }
-    distinct_count = 0;
   }
 
   ~CountDistinctDataStructure(){
-    delete[] array;
+    for (auto filter : sub_filters) {
+      delete filter;
+    }
   }
 
   /**
-   * Sliding window - we don't want to track the last N distinct items,
-   *    we want the distinct count over the last N items. Array should
-   *    track the last N items, count is only edited if a new distinct
-   *    is found or if one is lost
-   *
-   * Add new value to sliding window. If the value is unique in the window,
-   * then increment the counter. Similarly, if a unique value was overwritten
-   * then decrement the counter.
+   * Attempt to insert value to sliding window. If the value is unique
+   * between all sub bloom filters, then add it to the live filter.
+   * Additionally check if we've hit the rotation frequency, and rotate
+   * the live filter
    */
   void insert(T item) {
-    new_unique = true;
-    old_unique = true;
 
-    // save value to be overwritten
-    old_value = array[current];
-    array[current] = -1;
+    // Set to false if we get a bloom filter hit
+    bool is_unique = true;
 
-    for (int i = 0; i < N; i++) {
-      // skip placeholder values
-      if (i == -1) continue;
-
-      // check if new value is unique
-      if (array[i] == item) {
-        new_unique = false;
-
-        // if neither are unique, break early
-        if (!old_unique) {
-          break;
-        }
-      }
-
-      // check if old value is unique
-      if (array[i] == old_value) {
-        old_unique = false;
-
-        // if neither are unique, break early
-        if (!new_unique) {
-          break;
-        }
+    for (int i = 0; i < num_filters; i++) {
+      if (sub_filters[i]->contains(item)) {
+        is_unique = false;
+        break;
       }
     }
 
-    // write new value to sliding window
-    array[current] = item;
-    current++;
-
-    // rotate index
-    if (current >= N) {
-      current = 0;
+    // If item is unique, add to live filter and increment counter
+    if (is_unique) {
+      sub_filters[live_filter]->insert(item);
+      filter_counts[live_filter]++;
     }
 
-    // update counter
-    if (new_unique) {
-      distinct_count++;
-    }
-    if (old_unique) {
-      distinct_count--;
+    insertion_count++;
+
+    // Check if it's time to rotate live filters
+    if (insertion_count >= rotation_freq) {
+      insertion_count = 0;
+
+      live_filter++;
+
+      // wrap live filter index
+      if (live_filter >= num_filters) {
+        live_filter = 0;
+      }
+
+      // clear oldest filter (new live filter)
+      sub_filters[live_filter]->clear();
+      filter_counts[live_filter] = 0;
     }
   }
 
   T getDistinctCount() {
+    int distinct_count = 0;
+    for (int i = 0; i < num_filters; i++) {
+      distinct_count += filter_counts[i];
+    }
     return distinct_count;
   }
 };

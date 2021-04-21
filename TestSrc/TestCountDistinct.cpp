@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE( count_distinct_test )
 
   // first test object, larger window size
   CountDistinct<size_t, EdgeType, SrcTotalBytes, DestIp>
-    distinct0(10, nodeId, featureMap, "distinct0");
+    distinct0(100, nodeId, featureMap, "distinct0");
 
   // sanity check
   distinct0.consume(edge1);
@@ -77,11 +77,11 @@ BOOST_AUTO_TEST_CASE( count_distinct_test )
   BOOST_CHECK_EQUAL(total, 4);
 
 
-  // second test object, smaller window size
+  // second test object, smaller window size (must be multiple of 5 still)
   CountDistinct<size_t, EdgeType, SrcTotalBytes, DestIp>
-    distinct1(2, nodeId, featureMap, "distinct1");
+    distinct1(5, nodeId, featureMap, "distinct1");
 
-  // basic sanity checks
+  // basic sanity checks, should increment as we add uniques
   distinct1.consume(edge1);
   total = distinct1.getDistinctCount("239.255.255.250");
   BOOST_CHECK_EQUAL(total, 1);
@@ -90,13 +90,12 @@ BOOST_AUTO_TEST_CASE( count_distinct_test )
   total = distinct1.getDistinctCount("239.255.255.250");
   BOOST_CHECK_EQUAL(total, 2);
 
-  // window size is 2, count distinct should remain 2
   distinct1.consume(edge3);
   total = distinct1.getDistinctCount("239.255.255.250");
-  BOOST_CHECK_EQUAL(total, 2);
+  BOOST_CHECK_EQUAL(total, 3);
 
   distinct1.consume(edge4);
   total = distinct1.getDistinctCount("239.255.255.250");
-  BOOST_CHECK_EQUAL(total, 2);
+  BOOST_CHECK_EQUAL(total, 4);
 
 }
