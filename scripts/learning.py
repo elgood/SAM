@@ -8,10 +8,14 @@ from sklearn.metrics import (precision_recall_curve, average_precision_score,
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 import sklearn
+import matplotlib
+#matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import pandas
 import math
 import operator
+
+import shap
 
 def find_optimal_cutoff_closest_to_perfect(fpr, tpr, threshold):
   """ Tries to find the best threshold to select on ROC.
