@@ -3,3 +3,4 @@ shap
 numpy
 matplotlib
 ipython
+xgboost
