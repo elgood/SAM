@@ -18,6 +18,16 @@ include_directories("${STDIO_INCLUDE_PATH}/dummy/../")
 find_path(STRING_INCLUDE_PATH string /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1)
 include_directories("${STRING_INCLUDE_PATH}/dummy/../")
 
+######################## Bloom filter ######################
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external_includes)
+execute_process(
+    COMMAND git clone https://github.com/ArashPartow/bloom bloom
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external_includes)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/external_includes)
+
+
 ######################## Boost ######################
 
 SET(BOOST_ROOT "/Users/elgood/libraries/boost_1_66_0")

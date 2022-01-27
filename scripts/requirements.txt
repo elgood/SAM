@@ -2,3 +2,8 @@ sklearn
 matplotlib
 pandas
 numpy
+shap
+numpy
+matplotlib
+ipython
+xgboost

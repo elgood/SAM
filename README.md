@@ -26,6 +26,9 @@ cd build
 cmake ..  
 make  
 
+Note: On Monterey mac OS, I needed this in my environment:
+LDFLAGS=-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib
+
 # Operators
 
 Operators are sliding window algorithms that extract features from the stream of data.  Typically these operators are polylogarithmic in their spatial complexity and only use one pass through the data.  Currently supported operators are:
