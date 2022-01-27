@@ -1,1 +1,4 @@
 sklearn
+matplotlib
+pandas
+numpy
