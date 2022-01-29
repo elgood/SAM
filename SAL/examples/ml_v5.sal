@@ -4,7 +4,7 @@ HASH SourceIp WITH IpHashFunction;
 HASH DestIp With IpHashFunction;
 VerticesByDest = STREAM Edges BY DestIp;
 VerticesBySrc = STREAM Edges BY SourceIp;
-feature0 = FOREACH VerticesBySrc GENERATE aFirstve(Dpkts,10000,2);
+feature0 = FOREACH VerticesBySrc GENERATE ave(Dpkts,10000,2);
 feature1 = FOREACH VerticesBySrc GENERATE var(Dpkts,10000,2);
 feature2 = FOREACH VerticesBySrc GENERATE ave(Doctets,10000,2);
 feature3 = FOREACH VerticesBySrc GENERATE var(Doctets,10000,2);
