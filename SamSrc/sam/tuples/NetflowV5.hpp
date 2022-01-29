@@ -44,7 +44,7 @@ const unsigned int Tos            = 18;
 const unsigned int TcpFlags       = 19;
 const unsigned int SourceMask     = 20;
 const unsigned int DestMask       = 21;
-const unsigned int SourrcAS       = 22;
+const unsigned int SourceAS       = 22;
 const unsigned int DestAS         = 23;
 
 
@@ -122,53 +122,173 @@ NetflowV5 makeNetflowV5(std::string s)
   std::stringstream ss(s);
   std::string item;
   std::getline(ss, item, ',');
-  unixSecs = boost::lexical_cast<long>(item);
+  try {
+    unixSecs = boost::lexical_cast<long>(item);
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing unixSecs with line: " + s);
+  }
+
+  std::getline(ss, item, ',');       
+  try {              
+    unixNsecs = boost::lexical_cast<long>(item);
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing unixNsecs with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  unixNsecs = boost::lexical_cast<long>(item);
+  try {
+    sysUptime = boost::lexical_cast<long>(item);
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing sysUptime with line: " + s);
+  }
+
+    
   std::getline(ss, item, ',');                     
-  sysUptime = boost::lexical_cast<long>(item);
+  try {
+    exaddr = item;
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing exaddr (" + item + ") with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  exaddr = boost::lexical_cast<long>(item);
+  try {
+    dpkts = boost::lexical_cast<size_t>(item);
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing dpkts with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  dpkts = boost::lexical_cast<size_t>(item);
+  try {
+    doctets = boost::lexical_cast<size_t>(item);
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing doctets with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  doctets = boost::lexical_cast<size_t>(item);
+  try {
+    first = boost::lexical_cast<long>(item);                 
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing first with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  first = boost::lexical_cast<long>(item);                 
+  try {
+    last = boost::lexical_cast<long>(item);              
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing last with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  last = boost::lexical_cast<long>(item);              
+  try {
+    engineType = boost::lexical_cast<size_t>(item);       
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing engineType with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  engineType = boost::lexical_cast<size_t>(item);       
+  try {
+    engineId = boost::lexical_cast<size_t>(item);        
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing engineId with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  engineId = boost::lexical_cast<size_t>(item);        
+  try {
+    sourceIP = item;        
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing sourceIP with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  sourceIP = item;        
+  try {
+    destIp = item;         
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing destIp with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  destIp = item;         
+  try {
+    nextHop = item;       
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing nextHop with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  nextHop = item;       
+  try {
+    snmpInput = boost::lexical_cast<size_t>(item);   
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing snmpInput with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  snmpInput = boost::lexical_cast<size_t>(item);   
+  try {
+    snmpOutput = boost::lexical_cast<size_t>(item);       
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing snmpOutput with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  snmpOutput = boost::lexical_cast<size_t>(item);       
+  try {
+    sourcePort = boost::lexical_cast<size_t>(item);     
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing sourcePort with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  sourcePort = boost::lexical_cast<size_t>(item);     
+  try {
+    destPort = boost::lexical_cast<size_t>(item);        
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing destPort with line: " + s);
+  }
+  
   std::getline(ss, item, ',');                     
-  destPort = boost::lexical_cast<size_t>(item);        
+  try {
+    protocol = boost::lexical_cast<size_t>(item);       
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing protocol with line: " + s);
+  }
+ 
   std::getline(ss, item, ',');                     
-  protocol = boost::lexical_cast<size_t>(item);       
+  try {
+    tos = boost::lexical_cast<size_t>(item);           
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing tos with line: " + s);
+  }
+ 
   std::getline(ss, item, ',');                     
-  tos = boost::lexical_cast<size_t>(item);           
+  try {
+    tcpFlags = boost::lexical_cast<size_t>(item);     
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing tcpFlags with line: " + s);
+  }
+ 
   std::getline(ss, item, ',');                     
-  tcpFlags = boost::lexical_cast<size_t>(item);     
+  try {
+    sourceMask = boost::lexical_cast<size_t>(item); 
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing sourceMask with line: " + s);
+  }
+ 
   std::getline(ss, item, ',');                     
-  sourceMask = boost::lexical_cast<size_t>(item); 
+  try {
+    destMask = boost::lexical_cast<size_t>(item);  
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing destMask with line: " + s);
+  }
+ 
   std::getline(ss, item, ',');                     
-  destMask = boost::lexical_cast<size_t>(item);  
+  try {
+    sourrcAS = boost::lexical_cast<size_t>(item); 
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing sourceAS with line: " + s);
+  }
+ 
   std::getline(ss, item, ',');                     
-  sourrcAS = boost::lexical_cast<size_t>(item); 
-  std::getline(ss, item, ',');                     
-  destAS = boost::lexical_cast<size_t>(item);  
+  try {
+    destAS = boost::lexical_cast<size_t>(item);  
+  } catch (...) {
+    throw NetflowV5Exception("Troubles parsing destAS with line: " + s);
+  }
 
   return std::make_tuple( unixSecs,                       
                           unixNsecs,                   

@@ -30,8 +30,6 @@ void checkCommon(VastNetflow const& netflow)
   BOOST_CHECK_EQUAL(40, std::get<FirstSeenSrcPacketCount>(netflow));
   BOOST_CHECK_EQUAL(54, std::get<FirstSeenDestPacketCount>(netflow));
   BOOST_CHECK_EQUAL(0, std::get<RecordForceOut>(netflow));
-
-
 }
 
 
