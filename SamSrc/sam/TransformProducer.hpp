@@ -95,7 +95,8 @@ consume(InputEdgeType const& edge)
   
   bool b = transformExpressions->get(0)->evaluate(key, 
                                                   edge.tuple, result);
-  auto finalTuple = std::tuple_cat(outTuple, std::tie(result));
+  std::tuple<double> resultTuple = std::make_tuple(result);
+  auto finalTuple = std::tuple_cat(outTuple, resultTuple);
 
   OutputEdgeType outputEdgeType(edge.id, edge.label, finalTuple);
 

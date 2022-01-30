@@ -54,7 +54,7 @@ public:
     // time a DestIp talks to a SrcIp, that stays around forever, no matter
     // how long ago it took place.  
     for (auto id : identifiers) {
-      if (featureMap->exists(origKey, edge.id)) {
+      if (featureMap->exists(origKey, id)) {
         std::shared_ptr<const Feature> origFeature = 
           featureMap->at(origKey, id);
         std::map<std::string, std::shared_ptr<Feature>> localFeatureMap;

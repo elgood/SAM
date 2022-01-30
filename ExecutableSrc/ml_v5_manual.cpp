@@ -34,6 +34,8 @@ void createPipeline(std::shared_ptr<ProducerType> producer,
             size_t queueLength,
             std::string printerLocation)
 {
+
+
   std::string identifier = "";
 
   identifier = "feature0";
@@ -103,6 +105,132 @@ void createPipeline(std::shared_ptr<ProducerType> producer,
   if (subscriber != NULL) {
     feature7->registerSubscriber(subscriber, identifier);
   }
+
+  
+  ////////////////// Creating Time Lapse Series ///////////////////////
+  typedef typename EdgeType::LocalIdType EdgeType_IdType;
+  typedef typename EdgeType::LocalLabelType EdgeType_LabelType;
+  typedef typename EdgeType::LocalTupleType EdgeType_TupleType;
+  typedef std::tuple<typename std::tuple_element<DestIp, typename EdgeType::LocalTupleType>::type,
+                     typename std::tuple_element<SourceIp, typename EdgeType::LocalTupleType>::type,
+                     double>
+                     TimeLapseSeries_TupleType; 
+  #define DestIp_TimeLapseSeries    0
+  #define SrcIp_TimeLapseSeries     1
+  #define TimeDiff_TimeLapseSeries  2 
+  typedef Edge<EdgeType_IdType, EdgeType_LabelType, TimeLapseSeries_TupleType> 
+          TimeLapseSeries_EdgeType;
+ 
+  std::vector<std::shared_ptr<Expression<EdgeType_TupleType>>> expressions;
+  std::vector<std::string> names;
+  std::string name = "TimeLapseSeries_TimeDiff";
+  names.push_back(name);
+ 
+  // Expression First - First.TimeSeconds
+  // 
+  // TimeSeconds field token 
+  std::shared_ptr<ExpressionToken<EdgeType_TupleType>> fieldToken = std::make_shared<
+    FieldToken<First1, EdgeType_TupleType>>(featureMap);
+  // Sub operator token
+  std::shared_ptr<ExpressionToken<EdgeType_TupleType>> subToken = std::make_shared<
+    SubOperator<EdgeType_TupleType>>(featureMap);
+  // Prev.TimeSeconds
+  std::shared_ptr<ExpressionToken<EdgeType_TupleType>> prevToken = std::make_shared<
+    PrevToken<First1, EdgeType_TupleType>>(featureMap);
+    
+  std::list<std::shared_ptr<ExpressionToken<EdgeType_TupleType>>> infixList2;
+  infixList2.push_back(fieldToken);
+  infixList2.push_back(subToken);
+  infixList2.push_back(prevToken);
+ 
+     
+  auto expression = std::make_shared<Expression<EdgeType_TupleType>>(infixList2);
+  expressions.push_back(expression); 
+   
+  auto tupleExpression =std::make_shared<TupleExpression<EdgeType_TupleType>>(expressions);
+  identifier = "destsrc_timelapseseries";
+
+  
+  auto timeLapseSeries = std::make_shared<TransformProducer<
+                     EdgeType, TimeLapseSeries_EdgeType, DestIp, SourceIp>>
+                             (tupleExpression,
+                              nodeId,
+                              featureMap,
+                              identifier,
+                              queueLength);  
+
+  producer->registerConsumer(timeLapseSeries);
+
+    
+  std::list<std::string> destSrcIdentifiers;
+
+  identifier = "destSourceTimeDiffVariance";
+  destSrcIdentifiers.push_back(identifier);
+  auto destSourceTimeDiffVar = 
+    std::make_shared<ExponentialHistogramVariance<double, 
+                           TimeLapseSeries_EdgeType,
+                           TimeDiff_TimeLapseSeries, 
+                           DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>>
+                          (10000, 2, nodeId, featureMap, identifier);
+  timeLapseSeries->registerConsumer(destSourceTimeDiffVar); 
+
+  identifier = "destSourceTimeDiffAve";
+  destSrcIdentifiers.push_back(identifier);
+  auto destSourceTimeDiffAve = 
+    std::make_shared<ExponentialHistogramAve<double, 
+                           TimeLapseSeries_EdgeType,
+                           TimeDiff_TimeLapseSeries, 
+                           DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>>
+                          (10000, 2, nodeId, featureMap, identifier);
+  timeLapseSeries->registerConsumer(destSourceTimeDiffAve); 
+
+
+  
+  identifier = "projectOutSource";
+  auto projectToDest = 
+    std::make_shared<Project<
+      TimeLapseSeries_EdgeType, DestIp_TimeLapseSeries, 
+                SrcIp_TimeLapseSeries,
+                DestIp_TimeLapseSeries, SrcIp_TimeLapseSeries>>
+                (destSrcIdentifiers, 
+                nodeId,
+                featureMap, 
+                identifier);
+               
+  timeLapseSeries->registerConsumer(projectToDest);
+ 
+  auto aveFunction = [](std::list<std::shared_ptr<Feature>> myList)->double {
+    double sum = 0;
+    for (auto feature : myList) {
+      sum = sum + feature->evaluate<double>(valueFunc); 
+    }
+    return sum / myList.size();
+  };
+
+  identifier = "AveTimeDiffVar";
+  auto aveTimeDiffVar = 
+    std::make_shared<CollapsedConsumer<EdgeType, DestIp>>(
+                                               aveFunction,
+                                               "destSourceTimeDiffVariance",
+                                               nodeId, 
+                                               featureMap, 
+                                               identifier); 
+  
+  producer->registerConsumer(aveTimeDiffVar);
+  aveTimeDiffVar->registerSubscriber(subscriber, identifier);
+
+  identifier = "AveTimeDiffAve";
+  auto aveTimeDiffAve = 
+    std::make_shared<CollapsedConsumer<EdgeType, DestIp>>(
+                                               aveFunction,
+                                               "destSourceTimeDiffAve",
+                                               nodeId, 
+                                               featureMap, 
+                                               identifier); 
+  
+  producer->registerConsumer(aveTimeDiffAve);
+  aveTimeDiffAve->registerSubscriber(subscriber, identifier);
+
 
 }
 
