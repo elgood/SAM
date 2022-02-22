@@ -38,6 +38,7 @@ trait BaseParsing extends RegexParsers {
   def sourceKeyWord    = "(?i)source".r
   def targetKeyWord    = "(?i)target".r
   def andKeyWord       = "(?i)and".r
+  def transformKeyWord = "(?i)transform".r
   
   // Preamble related key words for operator default values
   def windowSizeKeyWord = "(?i)windowsize".r
@@ -62,6 +63,8 @@ trait BaseParsing extends RegexParsers {
   def ehVarKeyWord = "(?i)ehvar".r
   def varKeyWord = "(?i)var".r
   def simpleSumKeyWord = "(?i)simplesum".r
+  def selfSimilarityKeyWord = "(?i)similarity".r
+  def countDistinctKeyWord = "(?i)countdistinct".r
   
   // Arithmetic Operators
   def arithmeticOperator = plus | minus

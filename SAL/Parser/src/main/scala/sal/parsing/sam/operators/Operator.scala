@@ -5,12 +5,14 @@ package sal.parsing.sam.operators
  * be added to the disjunction below.
  */
 trait Operator extends TopK with Sum with Average
-  with Variance 
+  with Variance with SelfSimilarity with CountDistinct
 {
 
   def operator = topKOperator |
                  ehSumOperator | sumOperator |
                  ehVarOperator | varOperator |
                  ehAveOperator | aveOperator |
-                 simpleSumOperator
+                 simpleSumOperator | 
+                 selfSimilarityOperator |
+                 countDistinctOperator 
 }

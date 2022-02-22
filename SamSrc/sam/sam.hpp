@@ -12,12 +12,14 @@
 
 #include <sam/AbstractSubgraphPrinter.hpp>
 #include <sam/CollapsedConsumer.hpp>
+#include <sam/CountDistinct.hpp>
 #include <sam/Expression.hpp>
 #include <sam/ExponentialHistogramSum.hpp>
 #include <sam/ExponentialHistogramVariance.hpp>
 #include <sam/Filter.hpp>
 #include <sam/GraphStore.hpp>
 #include <sam/Identity.hpp>
+#include <sam/JaccardIndex.hpp>
 #include <sam/LabelProducer.hpp>
 #include <sam/Project.hpp>
 #include <sam/ReadSocket.hpp>
