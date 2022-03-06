@@ -2,6 +2,7 @@ import numpy as np
 import argparse
 import pandas
 from collections import defaultdict
+import logging
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -10,12 +11,35 @@ def main():
   message = ("This trains on files where the first column is the IP, " +
     "the second column is the label, and the rest are the features.")
   parser = argparse.ArgumentParser(message)
-  parser.add_argument('--train', type=str, required=True,
-    help="The file with the train features and labels and ip addresses.")
-  parser.add_argument('--test', type=str, required=True,
-    help="The file with the test features and labels and ip addresses.")
+  parser.add_argument('--train_features', type=str, nargs='+', required=True,
+    help="The file(s) with the train features and labels.")
+  parser.add_argument('--train_netflows', type=str, nargs='+', required=True,
+    help="The file with the train raw netflow features.")
+  parser.add_argument('--test_features', type=str, nargs='+', required=True,
+    help="The file(s) with the test features and labels.")
+  parser.add_argument('--test_netflows', type=str, nargs='+', required=True,
+    help="The file with the test raw netflow features.")
+  parser.add_argument('--feature_names', type=str, nargs='+', 
+    default=[])
+  parser.add_argument('--netflow_names', type=str, nargs='+',
+    default=[])
 
   FLAGS = parser.parse_args()
+
+  train_feature_pandas = []
+  for f in FLAGS.train_features:
+    logging.debug("Reading training feature file %{0}".format(f))
+    train_feature_pandas.append(pandas.read_csv(f))
+
+  train_netflow_pandas = []
+  for f in FLAGS.train_netflows:
+    logging.debug("Reading training netflow file %{0}".format(f))
+    train_netflow_pandas.append(pandas.read_csv(f))
+
+  assert(len(train_feature_pandas) == len(train_netflow_pandas)),(
+    "The number of train feature sets should be the same as the number " +
+      "of train netflow sets.")
+
 
   train = pandas.read_csv(FLAGS.train)
   test  = pandas.read_csv(FLAGS.test)
