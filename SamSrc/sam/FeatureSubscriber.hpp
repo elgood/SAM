@@ -108,6 +108,8 @@ public:
     }
     names.push_back(name);
     featureIndices[names[names.size() - 1]] = names.size() - 1;
+    DEBUG_PRINT("FeatureSubscriber::addFeature Added feature %s with index "
+     "%lu\n", name.c_str(), names.size() - 1) 
     numFeatures++;
   }
 
@@ -144,12 +146,16 @@ bool FeatureSubscriber::update(std::size_t key,
 {
   //std::lock_guard<std::mutex> lock(mu);
   if (initCalled) {
+    DEBUG_PRINT("FeatureSubscriber::update key %lu featureName %s value %f\n",
+      key, featureName.c_str(), value)
     int index = key % capacity;
     int featureIndex = featureIndices[featureName];
     values[index * numFeatures + featureIndex] = value;
     counts[index].fetch_add(1);
 
     if (counts[index] >= numFeatures) {
+      DEBUG_PRINT("FeatureSubscriber::update key %lu writing out row\n",
+        key, featureName.c_str(), value)
       // counts[indes] >= numFeatures indicates that we have collected
       // all of the features associated with the input item (i.e. netflow
       // or whatever tuple).
@@ -167,6 +173,10 @@ bool FeatureSubscriber::update(std::size_t key,
 
       numRows++;
       //std::cout << "Numrows in FeatureSubscriber " << numRows << std::endl;
+      if (this->numRows % 10000 == 0) {
+        std::cout << "Feature subscriber has written out " << this->numRows 
+                  << " rows" << std::endl;
+      }
 
       return true;
     }

@@ -150,7 +150,7 @@ void BaseProducer<EdgeType>::parallelFeed(EdgeType const& item) {
   //  this->queueLength));
   if (numItems >= queueLength) {
     DEBUG_PRINT("Node %lu BaseProducer::parallelFeed %s numItems %lu >= "
-      "queueLength %lu consumes.size() %lu \n", nodeId, 
+      "queueLength %lu consumers.size() %lu \n", nodeId, 
       item.toString().c_str(), numItems, queueLength, consumers.size()); 
     //for(size_t i = 0; i < consumers.size(); i++) {
     //  threads[i] = std::thread(parallelFeedFunction, i);
@@ -163,11 +163,11 @@ void BaseProducer<EdgeType>::parallelFeed(EdgeType const& item) {
     
     for(size_t j = 0; j < this->queueLength; j++) {
       
-      DEBUG_PRINT("Node %lu BaseProducer::parallelFeed j %lu queueLength "
-        "%lu tuple %s\n", nodeId, j, this->queueLength, 
-        inputQueue[j].toString().c_str());
       
       for(size_t i = 0; i < consumers.size(); i++) {
+        DEBUG_PRINT("Node %lu BaseProducer::parallelFeed j %lu i %lu "
+          "queueLength %lu tuple %s\n", nodeId, j, i, this->queueLength, 
+          inputQueue[j].toString().c_str());
         consumers[i]->consume(inputQueue[j]);
       }
     }

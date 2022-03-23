@@ -1,3 +1,4 @@
+
 #include <string>
 #include <vector>
 #include <stdlib.h>
@@ -13,6 +14,7 @@ namespace po = boost::program_options;
 using namespace std::chrono;
 using namespace sam;
 using namespace sam::netflowv5;
+
 
 template <typename EdgeType, typename Tuplizer,
           typename PartitionType, typename ProducerType>
@@ -157,7 +159,7 @@ void createPipeline(std::shared_ptr<ProducerType> producer,
                               nodeId,
                               featureMap,
                               identifier,
-                              queueLength);  
+                              1);  
 
   producer->registerConsumer(timeLapseSeries);
 
@@ -185,7 +187,6 @@ void createPipeline(std::shared_ptr<ProducerType> producer,
   timeLapseSeries->registerConsumer(destSourceTimeDiffAve); 
 
 
-  
   identifier = "projectOutSource";
   auto projectToDest = 
     std::make_shared<Project<

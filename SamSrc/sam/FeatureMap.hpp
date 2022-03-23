@@ -12,6 +12,13 @@
 
 namespace sam {
 
+class FeatureMapException : public std::runtime_error {
+public:
+  FeatureMapException(char const * message) : std::runtime_error(message) { } 
+  FeatureMapException(std::string message) : std::runtime_error(message) { } 
+};
+
+
 class FeatureMap
 {
 private:
@@ -211,8 +218,8 @@ bool FeatureMap::updateInsert(std::string const& key,
 
     i = (i + 1) % capacity;
   } while (i != index);
-    
-  return false;
+  throw FeatureMapException("Feature map ran out of space.");
+  //return false;
 }
 
 

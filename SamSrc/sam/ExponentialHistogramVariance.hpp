@@ -55,7 +55,10 @@ public:
 
   bool consume(EdgeType const& edge) 
   {
+    DEBUG_PRINT("ExponentialHistogramVariance id %s feedCount %lu\n",
+      this->identifier.c_str(), this->feedCount)
     this->feedCount++;
+
     if (this->feedCount % this->metricInterval == 0) {
       std::string message = "ExponentialHistogramVariance id " +
         this->identifier + " NodeId " +
@@ -99,8 +102,12 @@ public:
     double currentVariance = calculateVariance(currentSquares, currentSum,
                                                numItems);
     SingleFeature feature(currentVariance);
+    DEBUG_PRINT("ExponentialHistogramVariance::consume id %s adding "
+      "feature with key %s\n", this->identifier.c_str(), key.c_str())
     this->featureMap->updateInsert(key, this->identifier, feature);
 
+    DEBUG_PRINT("ExponentialHistogramVariance::consume id %s notifying " 
+      "subscribers with edge id %lu\n", this->identifier.c_str(), edge.id)
     notifySubscribers(edge.id, currentVariance);    
 
     return true;

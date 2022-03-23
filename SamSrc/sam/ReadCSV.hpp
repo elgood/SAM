@@ -50,8 +50,12 @@ public:
       size_t id = idGenerator->generate(); 
       EdgeType edge = tuplizer(id, line); 
       for (auto consumer: this->consumers) {
+        DEBUG_PRINT("ReadCSV::receive feeding edge to consumer id %lu line"
+          " %s\n", id, line.c_str())
+          //toString(edge).c_str())
         consumer->consume(edge);
       }
+      DEBUG_PRINT_SIMPLE("ReadCSV::receive finished feeding line to consumers")
 
       this->notifySubscribers(edge.id, std::get<0>(edge.label));
       

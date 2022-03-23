@@ -54,6 +54,8 @@ public:
     // time a DestIp talks to a SrcIp, that stays around forever, no matter
     // how long ago it took place.  
     for (auto id : identifiers) {
+      DEBUG_PRINT("Project::consume processing id %s\n", id.c_str())
+      DEBUG_PRINT("Project::consume looking for origkey %s\n", origKey.c_str())
       if (featureMap->exists(origKey, id)) {
         std::shared_ptr<const Feature> origFeature = 
           featureMap->at(origKey, id);
@@ -65,6 +67,8 @@ public:
         // no MapFeature associated with the newkey, then we simply add it.
         // If there is a MapFeature, the original MapFeature and the new 
         // MapFeature are unioned.
+        DEBUG_PRINT("Project::consume Inserting map feature with key %s\n", 
+          newKey.c_str())
         this->featureMap->updateInsert(newKey, id, mapFeature);
       }
     }

@@ -175,6 +175,8 @@ public:
     this->featureMap->updateInsert(key, this->identifier, feature);
   
     // Notify any subscribers of the new value, which is a frequency.
+    DEBUG_PRINT("ExponentialHistogramAve::consume id %s notifying " 
+      "subscribers with edge id %lu\n", this->identifier.c_str(), edge.id)
     this->notifySubscribers(edge.id, 
                             currentSum / allWindows[key]->getNumItems());
 

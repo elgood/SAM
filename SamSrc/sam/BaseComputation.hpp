@@ -14,7 +14,7 @@ namespace sam
 class BaseComputation
 {
 protected:
-  size_t metricInterval = 100000; ///> How often (per items) to print metrics
+  size_t metricInterval = 10000; ///> How often (per items) to print metrics
   size_t nodeId; ///> Used for debugging/metrics per node
 
   /// The variable name assigned to this operator.  This is specified

@@ -48,7 +48,20 @@ public:
  
   bool consume(EdgeType const& edge)
   {
+    this->feedCount++;
+
+    if (this->feedCount % this->metricInterval == 0) {
+
+      std::string message = "CollapsedConsumer id " +
+        this->identifier + " NodeId " +
+        boost::lexical_cast<std::string>(this->nodeId) + 
+        + " feedCount " + boost::lexical_cast<std::string>(this->feedCount) +
+        "\n";
+        printf("%s", message.c_str());
+    }
+
     std::string key = generateKey<keyFields...>(edge.tuple);
+    DEBUG_PRINT("CollapsedConsumer::consume key %s\n", key.c_str())
 
     if (featureMap->exists(key, targetId))
     {
@@ -59,9 +72,12 @@ public:
       SingleFeature feature(result);
       this->featureMap->updateInsert(key, this->identifier, feature);
 
-      notifySubscribers(edge.id, result);
+      this->notifySubscribers(edge.id, result);
   
       return true;   
+    } else {
+      DEBUG_PRINT("CollapsedConsumer::consume key %s could not be found!\n",
+        key.c_str())
     }
 
     return false;
