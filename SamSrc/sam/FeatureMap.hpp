@@ -218,7 +218,8 @@ bool FeatureMap::updateInsert(std::string const& key,
 
     i = (i + 1) % capacity;
   } while (i != index);
-  throw FeatureMapException("Feature map ran out of space.");
+  throw FeatureMapException("Feature map ran out of space. Increase with "
+    "--featureCapacity <capacity> command line argument");
   //return false;
 }
 
