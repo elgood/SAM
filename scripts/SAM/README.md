@@ -9,3 +9,5 @@ This folder contains independent files with the code implementation in "K-Median
 with the hope that this will be integrated directly into SAM one day.
 
 Use the CTU Scenario training data to test the implementation.
+
+TODO: Add a loop to read in all 13 CTU Features, and increase sample size.
