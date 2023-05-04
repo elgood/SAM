@@ -6,6 +6,7 @@ from sklearn.metrics import pairwise_distances
 import os
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+import sys
 
 
 class KMedoidsClustering:
@@ -97,14 +98,20 @@ class KMedoidsClustering:
         except Exception as e:
             print(f"Error plotting elbow method graph: {e}")
 
-def main():
-    os.chdir('C:\\Users\\yamin\\OneDrive\\Desktop\\Features')
 
-    kmedoids = KMedoidsClustering('11.txt')
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python kmedoids_clustering.py <data_file>")
+        sys.exit(1)
+
+    data_file = sys.argv[1]
+
+    kmedoids = KMedoidsClustering(data_file)
     features, labels = kmedoids.load_data()
     predicted_labels_and_medoids = kmedoids.cluster_and_analyze(features)
     kmedoids.visualize_clusters(features, predicted_labels_and_medoids)
     kmedoids.elbow_method(features)
+
 
 if __name__ == "__main__":
     main()
