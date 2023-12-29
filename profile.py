@@ -21,6 +21,10 @@ pc.defineParameter("hardware_type", "Optional physical node type",
 pc.defineParameter("link_best_effort", "If set to true, will accept less than 10G links",
                    portal.ParameterType.BOOLEAN, False)
 
+pc.defineParameter("disk_image", "Disk image to use.",
+                  portal.ParameterType.STRING, 
+                  "urn:publicid:IDN+wisc.cloudlab.us+image+streaminggraphs-PG0:SAM"
+
 # Retreive the values the user specifies during instantiation
 params = portal.context.bindParameters()
 
@@ -40,7 +44,8 @@ if params.link_best_effort == True:
 
 for i in range( 0, params.n ):
     node = request.RawPC( "node" + str(i) )
-    node.disk_image = "urn:publicid:IDN+wisc.cloudlab.us+image+streaminggraphs-PG0:SAM"
+    node.disk_image = params.disk_image
+    #node.disk_image = "urn:publicid:IDN+wisc.cloudlab.us+image+streaminggraphs-PG0:SAM"
     if params.hardware_type != "":
         node.hardware_type = params.hardware_type
         
