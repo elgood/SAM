@@ -23,7 +23,7 @@ pc.defineParameter("link_best_effort", "If set to true, will accept less than 10
 
 pc.defineParameter("disk_image", "Disk image to use.",
                   portal.ParameterType.STRING, 
-                  "urn:publicid:IDN+wisc.cloudlab.us+image+streaminggraphs-PG0:SAM"
+                  "urn:publicid:IDN+wisc.cloudlab.us+image+streaminggraphs-PG0:SAM")
 
 # Retreive the values the user specifies during instantiation
 params = portal.context.bindParameters()
