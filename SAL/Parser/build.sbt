@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "2.12.7"
+ThisBuild / scalaVersion := "2.12.16"
 ThisBuild / organization := "gov.sandia"
 Compile/mainClass := Some("sal.parsing.sam.Sal")
 
