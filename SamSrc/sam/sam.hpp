@@ -35,6 +35,7 @@
 
 #include <sam/tuples/VastNetflow.hpp>
 #include <sam/tuples/NetflowV5.hpp>
+#include <sam/tuples/VHS22Netflow.hpp>
 #include <sam/tuples/VastNetflowGenerators.hpp>
 #include <sam/tuples/Edge.hpp>
 #include <sam/tuples/Tuplizer.hpp>
