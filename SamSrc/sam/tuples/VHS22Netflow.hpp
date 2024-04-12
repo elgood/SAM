@@ -133,99 +133,235 @@ typedef std::tuple<
 inline
 VHS22Netflow makeVHS22Netflow(std::string const& s)
 {
+  int X;
+  int ack_nr_count;
+  int b_packet_first_q;
+  int b_packet_max;
+  double b_packet_mean; 
+  double b_packet_median;
+  int b_packet_min;
+  double b_packet_std;
+  int b_packet_third_q;
+  int b_packet_total;
+  int dport;
+  double duration;
+  int fin_nr_count;
+  double first_timestamp;
+  int flags_sum;
+  int iat_first_q;
+  double iat_max;
+  double iat_mean;
+  double iat_median;
+  double iat_min;
+  double iat_std;
+  double iat_third_q;
+  double iat_var;
+  int in_packets;
+  std::string DestIp;
+  int ip_protocol;
+  std::string SourceIp;
+  double last_timestamp;
+  int psh_nr_count;
+  int rst_nr_count;
+  int sport;
+  int syn_nr_count;
+  int urg_nr_count;
+  int connections_from_this_host;
+  int connections_to_this_host;
+  int connections_rst_to_this_host;
+  int connections_rst_from_this_host;
+  int connections_to_this_port;
+  int connections_from_this_port;
+  double connections_ratio_from_this_host;
+  double connections_ratio_to_this_host;
+  double connections_ratio_rst_to_this_host;
+  double connections_ratio_rst_from_this_host;
+  double connections_ratio_to_this_port;
+
+  // TODO Something is going on with this field, maybe end of line stuff
+  double connections_ratio_from_this_port = 0;
 
   std::stringstream ss(s);
   std::string item;
+  
   std::getline(ss, item, ',');
-  int X = boost::lexical_cast<int>(item);
+  try {
+    X = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing X with line: " + s);
+  }
+
   std::getline(ss, item, ',');
-  int ack_nr_count = boost::lexical_cast<int>(item);
+  try {
+    ack_nr_count = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing ack_nr_count with line: " + s);
+  }
+
   std::getline(ss, item, ',');
-  int b_packet_first_q = boost::lexical_cast<int>(item);
+  try {
+    b_packet_first_q = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing b_packet_first_q with line: " + s);
+  }
+
   std::getline(ss, item, ',');
-  int b_packet_max = boost::lexical_cast<int>(item);
+  try {
+    b_packet_max = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing b_packet_max with line: " + s);
+  }
+
   std::getline(ss, item, ',');
-  double b_packet_mean = boost::lexical_cast<double>(item);
+  try {
+    b_packet_mean = boost::lexical_cast<double>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing b_packet_max with line: " + s);
+  }
+
   std::getline(ss, item, ',');
-  double b_packet_median = boost::lexical_cast<double>(item);
+  try {
+  b_packet_median = boost::lexical_cast<double>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing b_packet_median with line: " + s);
+  }
+
   std::getline(ss, item, ',');
-  int b_packet_min = boost::lexical_cast<int>(item);
+  try {
+  b_packet_min = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing b_packet_min with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  double b_packet_std = boost::lexical_cast<double>(item);
+  try {
+  b_packet_std = boost::lexical_cast<double>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing b_packet_std with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  int b_packet_third_q = boost::lexical_cast<int>(item);
+  try {
+  b_packet_third_q = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing b_packet_third_q with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  int b_packet_total = boost::lexical_cast<int>(item);
+  try {
+  b_packet_total = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing b_packet_total with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  int dport = boost::lexical_cast<int>(item);
+  try {
+  dport = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing dport with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  double duration = boost::lexical_cast<double>(item);
+  try {
+  duration = boost::lexical_cast<double>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing duration with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  int fin_nr_count = boost::lexical_cast<int>(item);
+  try {
+  fin_nr_count = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing fin_nr_count with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  double first_timestamp = boost::lexical_cast<double>(item);
+  try {
+  first_timestamp = boost::lexical_cast<double>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing first_timestamp with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  int flags_sum = boost::lexical_cast<int>(item);
+  try {
+  flags_sum = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing flags_sum with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  int iat_first_q = boost::lexical_cast<int>(item);
+  try {
+  iat_first_q = boost::lexical_cast<int>(item);
+  } catch (...) {
+    throw VHS22NetflowException("Troubles parsing iat_first_q with line: " + s);
+  }
+  
   std::getline(ss, item, ',');
-  double iat_max = boost::lexical_cast<double>(item);
+  iat_max = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double iat_mean = boost::lexical_cast<double>(item);
+  iat_mean = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double iat_median = boost::lexical_cast<double>(item);
+  iat_median = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double iat_min = boost::lexical_cast<double>(item);
+  iat_min = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double iat_std = boost::lexical_cast<double>(item);
+  iat_std = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double iat_third_q = boost::lexical_cast<double>(item);
+  iat_third_q = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double iat_var = boost::lexical_cast<double>(item);
+  iat_var = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  int in_packets = boost::lexical_cast<int>(item);
+  in_packets = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  std::string DestIp = item;
+  DestIp = item;
   std::getline(ss, item, ',');
-  int ip_protocol = boost::lexical_cast<int>(item);
+  ip_protocol = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  std::string SourceIp = item;
+  SourceIp = item;
   std::getline(ss, item, ',');
-  double last_timestamp = boost::lexical_cast<double>(item);
+  last_timestamp = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  int psh_nr_count = boost::lexical_cast<int>(item);
+  psh_nr_count = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int rst_nr_count = boost::lexical_cast<int>(item);
+  rst_nr_count = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int sport = boost::lexical_cast<int>(item);
+  sport = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int syn_nr_count = boost::lexical_cast<int>(item);
+  syn_nr_count = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int urg_nr_count = boost::lexical_cast<int>(item);
+  urg_nr_count = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int connections_from_this_host = boost::lexical_cast<int>(item);
+  connections_from_this_host = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int connections_to_this_host = boost::lexical_cast<int>(item);
+  connections_to_this_host = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int connections_rst_to_this_host = boost::lexical_cast<int>(item);
+  connections_rst_to_this_host = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int connections_rst_from_this_host = boost::lexical_cast<int>(item);
+  connections_rst_from_this_host = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int connections_to_this_port = boost::lexical_cast<int>(item);
+  connections_to_this_port = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  int connections_from_this_port = boost::lexical_cast<int>(item);
+  connections_from_this_port = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  double connections_ratio_from_this_host = boost::lexical_cast<double>(item);
+  connections_ratio_from_this_host = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double connections_ratio_to_this_host = boost::lexical_cast<double>(item);
+  connections_ratio_to_this_host = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double connections_ratio_rst_to_this_host = boost::lexical_cast<double>(item);
+  connections_ratio_rst_to_this_host = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double connections_ratio_rst_from_this_host=boost::lexical_cast<double>(item);
+  connections_ratio_rst_from_this_host=boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
-  double connections_ratio_to_this_port = boost::lexical_cast<double>(item);
+  connections_ratio_to_this_port = boost::lexical_cast<double>(item);
+  
   std::getline(ss, item, ',');
-  double connections_ratio_from_this_port = boost::lexical_cast<double>(item);
+  try {
+  connections_ratio_from_this_port = boost::lexical_cast<double>(item);
+  } catch (...) {
+    throw VHS22NetflowException(
+      "Troubles parsing connections_ratio_from_this_port with line: " + s);
+  }
+
+
 
   return std::make_tuple(
      X,
