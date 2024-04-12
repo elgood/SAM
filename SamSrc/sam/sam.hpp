@@ -21,6 +21,7 @@
 #include <sam/Identity.hpp>
 #include <sam/JaccardIndex.hpp>
 #include <sam/LabelProducer.hpp>
+#include <sam/Max.hpp>
 #include <sam/Project.hpp>
 #include <sam/ReadSocket.hpp>
 #include <sam/ReadCSV.hpp>

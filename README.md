@@ -12,10 +12,11 @@
 
 # Prerequisites
 
-* Boost
+* Boost - if boost is in a non-standard location, specify -DBOOST_ROOT=<path to boost> in the cmake command.
 * protobuf
 * cmake
 * zmq
+
 
 # Building
 

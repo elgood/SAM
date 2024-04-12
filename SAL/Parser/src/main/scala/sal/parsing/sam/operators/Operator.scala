@@ -14,5 +14,6 @@ trait Operator extends TopK with Sum with Average
                  ehAveOperator | aveOperator |
                  simpleSumOperator | 
                  selfSimilarityOperator |
-                 countDistinctOperator 
+                 countDistinctOperator |
+                 kMediansOperator
 }
