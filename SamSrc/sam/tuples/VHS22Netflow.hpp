@@ -46,9 +46,9 @@ const unsigned int iat_std                               = 20;
 const unsigned int iat_third_q                           = 21;
 const unsigned int iat_var                               = 22;
 const unsigned int in_packets                            = 23;
-const unsigned int ip_dst_str                            = 24;
+const unsigned int DestIp                            = 24;
 const unsigned int ip_protocol                           = 25;
-const unsigned int ip_src_str                            = 26;
+const unsigned int SourceIp                            = 26;
 const unsigned int last_timestamp                        = 27;
 const unsigned int psh_nr_count                          = 28;
 const unsigned int rst_nr_count                          = 29;
@@ -103,9 +103,9 @@ typedef std::tuple<
   double, // iat_third_q            23               
   double, // iat_var                24               
   int, // in_packets             25               
-  std::string, // ip_dst_str             26               
+  std::string, // DestIp             26               
   int, // ip_protocol            27               
-  std::string, // ip_src_str             28               
+  std::string, // SourceIp             28               
   double, // last_timestamp         29               
   int, // psh_nr_count           30               
   int, // rst_nr_count           31               
@@ -185,11 +185,11 @@ VHS22Netflow makeVHS22Netflow(std::string const& s)
   std::getline(ss, item, ',');
   int in_packets = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  std::string ip_dst_str = item;
+  std::string DestIp = item;
   std::getline(ss, item, ',');
   int ip_protocol = boost::lexical_cast<int>(item);
   std::getline(ss, item, ',');
-  std::string ip_src_str = item;
+  std::string SourceIp = item;
   std::getline(ss, item, ',');
   double last_timestamp = boost::lexical_cast<double>(item);
   std::getline(ss, item, ',');
@@ -252,9 +252,9 @@ VHS22Netflow makeVHS22Netflow(std::string const& s)
      iat_third_q,
      iat_var,
      in_packets,
-     ip_dst_str,
+     DestIp,
      ip_protocol,
-     ip_src_str,
+     SourceIp,
      last_timestamp,
      psh_nr_count,
      rst_nr_count,

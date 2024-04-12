@@ -35,9 +35,9 @@ void checkCommon(TupleType const& netflow)
   BOOST_CHECK_EQUAL(0,std::get<iat_third_q>(netflow));
   BOOST_CHECK_EQUAL(0,std::get<iat_var>(netflow));
   BOOST_CHECK_EQUAL(1,std::get<in_packets>(netflow));
-  BOOST_CHECK_EQUAL("227.213.154.241",std::get<ip_dst_str>(netflow));
+  BOOST_CHECK_EQUAL("227.213.154.241",std::get<DestIp>(netflow));
   BOOST_CHECK_EQUAL(17,std::get<ip_protocol>(netflow));
-  BOOST_CHECK_EQUAL("241.255.142.237",std::get<ip_src_str>(netflow));
+  BOOST_CHECK_EQUAL("241.255.142.237",std::get<SourceIp>(netflow));
   BOOST_CHECK_EQUAL(50000001.50,std::get<last_timestamp>(netflow));
   BOOST_CHECK_EQUAL(0,std::get<psh_nr_count>(netflow));
   BOOST_CHECK_EQUAL(0,std::get<rst_nr_count>(netflow));

@@ -5,7 +5,7 @@ package sal.parsing.sam.operators
  * be added to the disjunction below.
  */
 trait Operator extends TopK with Sum with Average
-  with Variance with SelfSimilarity with CountDistinct
+  with Variance with SelfSimilarity with CountDistinct with KMedians
 {
 
   def operator = topKOperator |

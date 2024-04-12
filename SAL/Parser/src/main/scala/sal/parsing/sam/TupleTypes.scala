@@ -7,6 +7,7 @@ package sal.parsing.sam
  * 1) Tuple type
  * 2) Tuplizer type
  * 3) Connection statement
+ * 4) the namespace name
  *
  * @author elgood
  */
@@ -22,6 +23,11 @@ object TupleTypes {
   val NetflowV5Tuplizer   = "MakeNetflowV5"
   val NetflowV5Connect    = "NetflowV5Stream"
   val NetflowV5Namespace  = "sam::netflowv5"
+
+  val VHS22Netflow        = "VHS22Netflow"
+  val VHS22NetflowTuplizer   = "MakeVHS22Netflow"
+  val VHS22Connect        = "VHS22Stream"
+  val VHS22NetflowNamespace  = "sam::vhs22_netflow"
 
   val Undefined           = "Undefined"
 }
