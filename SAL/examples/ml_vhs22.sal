@@ -1,0 +1,8 @@
+Edges = VHS22Stream("localhost", 9999);
+PARTITION Edges By SourceIp, DestIp;
+HASH SourceIp WITH IpHashFunction;
+HASH DestIp With IpHashFunction;
+VerticesByDest = STREAM Edges BY DestIp;
+VerticesBySrc = STREAM Edges BY SourceIp;
+feature0 = FOREACH VerticesBySrc GENERATE ave(b_packet_max,10000,2);
+feature1 = FOREACH VerticesByDest GENERATE ave(b_packet_max,10000,2);
