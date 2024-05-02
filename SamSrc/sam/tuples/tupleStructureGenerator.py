@@ -9,14 +9,14 @@
 #   Follow the prompts and directions when creating a file. 
 #   An example of inputs that create a correct file are as follows:
 #
-#   isaac
-#   Test
-#   std::string TestOne
-#   std::string TestTwo
-#   std::size_t TestThree
-#   long TestFour
-#   done
-#   ,
+# isaac
+# Test
+# std::string TestOne
+# std::string TestTwo
+# std::size_t TestThree
+# long TestFour
+# done
+# ,
 #
 
 
@@ -81,7 +81,7 @@ def main():
     """
 
     # Add variable declarations indices
-    variable_declarations_with_indices = ""
+    variable_declarations_with_indices = "// Numerical index for each variable\n\t"
     tuple_data_types = []
     for index, variable_declaration in enumerate(variable_declarations):
         variable_type, variable_name = variable_declaration.split()
@@ -104,8 +104,8 @@ def main():
     """
 
     # Construct the tuple data type using the types from variable_declarations
-    tuple_data_types_str = ', \n\t\t\t'.join(tuple_data_types)
-    cpp_code_template += f"// Declare the tuple for future use\n\ttypedef std::tuple<{tuple_data_types_str}> {tuple_name};\n"
+    tuple_data_types_str = ', \n\t\t\t\t'.join(tuple_data_types)
+    cpp_code_template += f"// Declare the tuple for future use\n\ttypedef std::tuple<\n\t\t\t\t{tuple_data_types_str}\n\t\t\t> {tuple_name};\n"
 
     # Create the function that creates the tuple from CSV
     cpp_code_template+= f"""
